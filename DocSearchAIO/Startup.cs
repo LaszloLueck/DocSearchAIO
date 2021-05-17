@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Quartz;
+using Quartz.Impl;
 
 namespace DocSearchAIO
 {

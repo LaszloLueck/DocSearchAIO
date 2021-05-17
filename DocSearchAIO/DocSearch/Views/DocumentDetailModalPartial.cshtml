@@ -1,0 +1,90 @@
+@model DocSearchAIO.DocSearch.TOs.DocumentDetailModel
+
+<div class="modal fade bd-example-modal-xl" id="documentDetailModal" tabindex="-1" role="dialog"
+     aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Dokumenteigenschaften </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="input-group col-md-6 mb-2">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelState">Status</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoResponseState" value="@Html.Raw("OK")">
+                    </div>
+                    <div class="input-group col-md-6 mb-2">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelId">Id</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoResponseId" value="@Html.Raw(Model.Id)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelCreator">Ersteller</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldCreator" value="@Html.Raw(Model.Creator)">
+                    </div>
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelCreated">Am</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldCreated" value="@Html.Raw(Model.Created)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelModifiedBy">Zuletzt geändert von</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldModifiedBy" value="@Html.Raw(Model.LastModifiedBy)">
+                    </div>
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelModified">Am</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldModified" value="@Html.Raw(Model.LastModified)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelTitle">Titel</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldTitle" value="@Html.Raw(Model.Title)">
+                    </div>
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelSubject">Betreff</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldSubject" value="@Html.Raw(Model.Subject)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelVersion">Version</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldVersion" value="@Html.Raw(Model.Version)">
+                    </div>
+                    <div class="input-group mb-2 col-md-6 ">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelRevision">Revision</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldRevision" value="@Html.Raw(Model.Revision)">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
