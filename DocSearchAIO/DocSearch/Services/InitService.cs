@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Services;
 using Microsoft.Extensions.Logging;
 using Nest;
 

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace DocSearchAIO
 {
@@ -38,6 +39,18 @@ namespace DocSearchAIO
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                })
+                .ConfigureLogging(logging =>
+                {
+                    logging
+                        .AddSimpleConsole(options =>
+                        {
+                            options.IncludeScopes = true;
+                            options.SingleLine = true;
+                            options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
+                            options.ColorBehavior = LoggerColorBehavior.Enabled;
+                        })
+                        .AddFilter("*", LogLevel.Information);
                 });
     }
 }

@@ -11,83 +11,102 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using DocSearchAIO.Classes;
+using DocSearchAIO.Configuration;
+using DocSearchAIO.Services;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Optional;
+using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
+    [DisallowConcurrentExecution]
     public class PdfProcessingJob : IJob
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
         private static readonly SHA256 Sha256 = SHA256.Create();
+        private readonly ConfigurationObject _cfg;
+        private readonly ActorSystem _actorSystem;
+        private readonly ElasticSearchService _elasticSearchService;
+        private readonly SchedulerUtils _schedulerUtils;
+
+        public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
+            IElasticClient elasticClient)
+        {
+            _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
+            _cfg = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(_cfg);
+            _actorSystem = actorSystem;
+            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _schedulerUtils = new SchedulerUtils(loggerFactory);
+        }
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var configuration = (ConfigurationObject) context.JobDetail.JobDataMap["configuration"];
-            var actorSystem = (ActorSystem) context.JobDetail.JobDataMap["actorSystem"];
-            var materializer = actorSystem.Materializer();
-            var schedulerEntry = configuration.Processing["pdf"];
-            var schedulerUtils = new SchedulerUtils();
-
             await Task.Run(async () =>
             {
-                _logger = LoggingFactoryBuilder.Build<PdfProcessingJob>();
-                _logger.LogInformation("Start Job");
-                var uriList = configuration.ElasticEndpoints.Select(uri => new Uri(uri));
-                var elasticClient = new ElasticConnection(uriList);
-                var indexName = configuration.IndexName + "-" + schedulerEntry.IndexSuffix;
-
-                if (!await elasticClient.IndexExistsAsync(indexName))
+                var schedulerEntry = _cfg.Processing["pdf"];
+                if (schedulerEntry.Active)
                 {
-                    _logger.LogInformation($"Index {indexName} does not exist, lets create them");
-                    await elasticClient.CreateIndexAsync<ElasticDocument>(indexName);
-                    await elasticClient.RefreshIndexAsync(indexName);
-                    await elasticClient.FlushIndexAsync(indexName);
-                }
+                    var materializer = _actorSystem.Materializer();
+                    _logger.LogInformation("Start Job");
+                    var indexName = _cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
 
-                var compareDirectory = await schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                var comparerBag = FillComparerBag(compareDirectory);
-                _logger.LogInformation("start crunching and indexing some pdf-files");
-                if (!Directory.Exists(configuration.ScanPath))
-                {
-                    _logger.LogWarning($"directory to scan <{configuration.ScanPath}> does not exists. skip working.");
+                    if (!await _elasticSearchService.IndexExistsAsync(indexName))
+                    {
+                        _logger.LogInformation($"Index {indexName} does not exist, lets create them");
+                        await _elasticSearchService.CreateIndexAsync<PdfElasticDocument>(indexName);
+                        await _elasticSearchService.RefreshIndexAsync(indexName);
+                        await _elasticSearchService.FlushIndexAsync(indexName);
+                    }
+
+                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+                    var comparerBag = FillComparerBag(compareDirectory);
+                    _logger.LogInformation("start crunching and indexing some pdf-files");
+                    if (!Directory.Exists(_cfg.ScanPath))
+                    {
+                        _logger.LogWarning(
+                            $"directory to scan <{_cfg.ScanPath}> does not exists. skip working.");
+                    }
+                    else
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var source = Source
+                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
+                                SearchOption.AllDirectories))
+                            .Where(file => UseExcludeFileFilter(schedulerEntry, file))
+                            .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
+                            .SelectAsync(schedulerEntry.Parallelism,
+                                elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
+                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                            .Select(d => d.Values())
+                            .SelectAsync(schedulerEntry.Parallelism,
+                                async elasticDocs =>
+                                    await _elasticSearchService.BulkWriteDocumentsAsync(elasticDocs, indexName));
+                        var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
+                        await Task.WhenAll(runnable);
+
+                        _logger.LogInformation("finished processing pdf-documents.");
+                        _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
+                        File.Delete(compareDirectory);
+                        _logger.LogInformation($"write new comparer file in {compareDirectory}");
+                        await File.WriteAllLinesAsync(compareDirectory,
+                            comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
+
+                        sw.Stop();
+                        _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    }
                 }
                 else
                 {
-                    var sw = Stopwatch.StartNew();
-
-
-                    var procCount = 0;
-                    var source = Source
-                        .From(Directory.GetFiles(configuration.ScanPath, schedulerEntry.FileExtension,
-                            SearchOption.AllDirectories))
-                        .Where(file => UseExcludeFileFilter(schedulerEntry, file))
-                        .SelectAsync(10, file => ProcessPdfDocument(file, configuration))
-                        .SelectAsync(1, elementOpt =>
-                        {
-                            procCount += 1;
-                            if (procCount % 100 == 0)
-                                _logger.LogInformation($"processing {procCount} documents.");
-                            return FilterExistingUnchanged(elementOpt, comparerBag);
-                        })
-                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                        .Select(d => d.Values())
-                        .SelectAsync(6,
-                            async elasticDocs => await elasticClient.BulkWriteDocumentsAsync(elasticDocs, indexName));
-                    var runnable = source.Limit(200).RunWith(Sink.Seq<bool>(), materializer);
-                    await Task.WhenAll(runnable);
-
-                    _logger.LogInformation("finished processing pdf-documents.");
-                    _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
-                    File.Delete(compareDirectory);
-                    _logger.LogInformation($"write new comparer file in {compareDirectory}");
-                    await File.WriteAllLinesAsync(compareDirectory,
-                        comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
-
-                    sw.Stop();
-                    _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    _logger.LogWarning(
+                        "Skip Processing of PDF documents because the scheduler is inactive per config");
                 }
             });
         }
@@ -96,7 +115,7 @@ namespace DocSearchAIO.Scheduler
         {
             if (schedulerEntry.ExcludeFilter == "")
                 return true;
-                            
+
             return !fileName.Contains(schedulerEntry.ExcludeFilter);
         }
 
@@ -112,7 +131,8 @@ namespace DocSearchAIO.Scheduler
             return new ConcurrentDictionary<string, string>(cnv);
         }
 
-        private static async Task<Option<PdfElasticDocument>> FilterExistingUnchanged(Option<PdfElasticDocument> document,
+        private static async Task<Option<PdfElasticDocument>> FilterExistingUnchanged(
+            Option<PdfElasticDocument> document,
             ConcurrentDictionary<string, string> comparerBag)
         {
             return await Task.Run(() =>
@@ -152,7 +172,8 @@ namespace DocSearchAIO.Scheduler
                     for (var i = 1; i <= document.GetNumberOfPages(); i++)
                     {
                         var pdfPage = document.GetPage(i);
-                        pdfPages.Add(new PdfPage(i, PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
+                        pdfPages.Add(new PdfPage(i,
+                            PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
                     }
 
                     var uriPath = fileName

@@ -12,76 +12,104 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using DocSearchAIO.Classes;
+using DocSearchAIO.Configuration;
+using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Optional;
+using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
+    [DisallowConcurrentExecution]
     public class OfficePowerpointProcessingJob : IJob
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
+        private readonly ConfigurationObject _cfg;
+        private readonly ActorSystem _actorSystem;
+        private readonly ElasticSearchService _elasticSearchService;
+        private readonly SchedulerUtils _schedulerUtils;
+
+        public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+            ActorSystem actorSystem, IElasticClient elasticClient)
+        {
+            _logger = loggerFactory.CreateLogger<OfficePowerpointProcessingJob>();
+            _cfg = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(_cfg);
+            _actorSystem = actorSystem;
+            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _schedulerUtils = new SchedulerUtils(loggerFactory);
+        }
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var configuration = (ConfigurationObject) context.JobDetail.JobDataMap["configuration"];
-            var actorSystem = (ActorSystem) context.JobDetail.JobDataMap["actorSystem"];
-            var materializer = actorSystem.Materializer();
-            var schedulerEntry = configuration.Processing["powerpoint"];
-            var schedulerUtils = new SchedulerUtils();
-
             await Task.Run(async () =>
             {
-                _logger = LoggingFactoryBuilder.Build<OfficePowerpointProcessingJob>();
-                _logger.LogInformation("Start Job");
-                var uriList = configuration.ElasticEndpoints.Select(uri => new Uri(uri));
-                var elasticClient = new ElasticConnection(uriList);
-                var indexName = configuration.IndexName + "-" + schedulerEntry.IndexSuffix;
-
-                if (!await elasticClient.IndexExistsAsync(indexName))
+                var schedulerEntry = _cfg.Processing["powerpoint"];
+                if (schedulerEntry.Active)
                 {
-                    _logger.LogInformation($"Index {indexName} does not exist, lets create them");
-                    await elasticClient.CreateIndexAsync<PowerpointElasticDocument>(indexName);
-                    await elasticClient.RefreshIndexAsync(indexName);
-                    await elasticClient.FlushIndexAsync(indexName);
-                }
-                
-                var compareDirectory = await schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+                    var materializer = _actorSystem.Materializer();
+                    _logger.LogInformation("Start Job");
+                    var indexName = _cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
 
-                var comparerBag = FillComparerBag(compareDirectory);
+                    if (!await _elasticSearchService.IndexExistsAsync(indexName))
+                    {
+                        _logger.LogInformation($"Index {indexName} does not exist, lets create them");
+                        await _elasticSearchService.CreateIndexAsync<PowerpointElasticDocument>(indexName);
+                        await _elasticSearchService.RefreshIndexAsync(indexName);
+                        await _elasticSearchService.FlushIndexAsync(indexName);
+                    }
 
-                _logger.LogInformation("start crunching and indexing some powerpoint-documents");
-                if (!Directory.Exists(configuration.ScanPath))
-                {
-                    _logger.LogWarning($"directory to scan <{configuration.ScanPath}> does not exists. skip working.");
+                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+
+                    var comparerBag = FillComparerBag(compareDirectory);
+
+                    _logger.LogInformation("start crunching and indexing some powerpoint-documents");
+                    if (!Directory.Exists(_cfg.ScanPath))
+                    {
+                        _logger.LogWarning(
+                            $"directory to scan <{_cfg.ScanPath}> does not exists. skip working.");
+                    }
+                    else
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var source = Source
+                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
+                                SearchOption.AllDirectories))
+                            .Where(file => !file.Contains(schedulerEntry.ExcludeFilter))
+                            .SelectAsync(10, fileName => ProcessPowerpointDocument(fileName, _cfg))
+                            .SelectAsync(parallelism: 10,
+                                elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
+                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                            .Select(d => d.Values())
+                            .SelectAsync(6,
+                                async processingInfo =>
+                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName));
+
+                        var runnable = source.Limit(200).RunWith(Sink.Seq<bool>(), materializer);
+                        await Task.WhenAll(runnable);
+
+                        _logger.LogInformation("finished processing powerpoint-documents.");
+                        _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
+                        File.Delete(compareDirectory);
+                        _logger.LogInformation($"write new comparer file in {compareDirectory}");
+                        await File.WriteAllLinesAsync(compareDirectory,
+                            comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
+
+                        sw.Stop();
+                        _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    }
                 }
                 else
                 {
-                    var sw = Stopwatch.StartNew();
-                    var source = Source
-                        .From(Directory.GetFiles(configuration.ScanPath, schedulerEntry.FileExtension, SearchOption.AllDirectories))
-                        .Where(file => !file.Contains(schedulerEntry.ExcludeFilter))
-                        .SelectAsync(10, fileName => ProcessPowerpointDocument(fileName, configuration))
-                        .SelectAsync(parallelism: 10, elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
-                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                        .Select(d => d.Values())
-                        .SelectAsync(6, async processingInfo => await elasticClient.BulkWriteDocumentsAsync(@processingInfo, indexName));
-
-                    var runnable = source.Limit(200).RunWith(Sink.Seq<bool>(), materializer);
-                    await Task.WhenAll(runnable);
-                    
-                    _logger.LogInformation("finished processing powerpoint-documents.");
-                    _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
-                    File.Delete(compareDirectory);
-                    _logger.LogInformation($"write new comparer file in {compareDirectory}");
-                    await File.WriteAllLinesAsync(compareDirectory, comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
-
-                    sw.Stop();
-                    _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    _logger.LogWarning(
+                        "Skip Processing of Powerpoint documents because the scheduler is inactive per config");
                 }
             });
         }
@@ -97,16 +125,17 @@ namespace DocSearchAIO.Scheduler
 
             return new ConcurrentDictionary<string, string>(cnv);
         }
-        
 
-        private async Task<Option<PowerpointElasticDocument>> FilterExistingUnchanged(Option<PowerpointElasticDocument> document, ConcurrentDictionary<string, string> comparerBag)
+
+        private async Task<Option<PowerpointElasticDocument>> FilterExistingUnchanged(
+            Option<PowerpointElasticDocument> document, ConcurrentDictionary<string, string> comparerBag)
         {
             return await Task.Run(() =>
             {
                 var opt = document.FlatMap(doc =>
                 {
                     var currentHash = doc.ContentHash;
-                    
+
                     if (!comparerBag.TryGetValue(doc.Id, out var value))
                     {
                         comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
@@ -133,7 +162,7 @@ namespace DocSearchAIO.Scheduler
                 return await Task.Run(() =>
                 {
                     using var wd = PresentationDocument.Open(currentFile, false);
-                    
+
                     var fInfo = wd.PackageProperties;
 
                     var category = fInfo.Category.SomeNotNull().ValueOr("");
@@ -159,37 +188,36 @@ namespace DocSearchAIO.Scheduler
                     var idAsByte = sha256.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
                     var id = Convert.ToBase64String(idAsByte);
                     var slideCount = wd.PresentationPart.SlideParts.Count();
-                    
-                   var elements = wd
+
+                    var elements = wd
                         .PresentationPart
                         .SlideParts
                         .Select(p =>
                         {
                             var slide = p.Slide;
-                            
+
                             var commentArray = p.SlideCommentsPart.SomeNotNull().Match(
                                 some: comments =>
                                 {
                                     return comments.CommentList.Select(comment =>
                                     {
                                         var d = (Comment) comment;
-                                        
+
                                         var retValue = new OfficeDocumentComment();
                                         var dat = d.DateTime != null
                                             ? d.DateTime.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
                                             : new DateTime(1970, 1, 1);
-                                        
+
                                         retValue.Comment = d.Text.Text;
                                         retValue.Date = dat;
-                                        
+
                                         return retValue;
                                     }).ToArray();
-
                                 },
                                 none: Array.Empty<OfficeDocumentComment>
                             );
-                                
-                            
+
+
                             var innerString = GetChildElements(slide.ChildElements);
                             var toReplaced = new List<(string, string)>();
 
@@ -214,12 +242,11 @@ namespace DocSearchAIO.Scheduler
                     };
 
                     var res = listElementsToHash.Concat(commentsOnlyList.SelectMany(k => k).Distinct());
-                    
+
                     var contentHashString = CreateHashString(res);
 
                     var commString = string.Join(" ", commentsArray.Select(d => d.Comment));
-                    
-                    
+
 
                     var suggestedText = Regex.Replace(contentString + " " + commString, "[^a-zA-Zäöüß]", " ");
                     var searchAsYouTypeContent = suggestedText
@@ -239,7 +266,8 @@ namespace DocSearchAIO.Scheduler
                         Identifier = identifier, Keywords = keywordsList, Language = language, Modified = modified,
                         Revision = revision, Subject = subject, Title = title, Version = version,
                         LastPrinted = lastPrinted, ProcessTime = DateTime.Now, LastModifiedBy = lastModifiedBy,
-                        OriginalFilePath = currentFile, UriFilePath = uriPath, SlideCount = slideCount, Comments = commentsArray
+                        OriginalFilePath = currentFile, UriFilePath = uriPath, SlideCount = slideCount,
+                        Comments = commentsArray
                     };
 
                     return Option.Some(returnValue);

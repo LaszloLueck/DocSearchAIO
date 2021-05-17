@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Nest;
 
-namespace DocSearchAIO.DocSearch.Objects
+namespace DocSearchAIO.Classes
 {
     public class ElasticDocument
     {
@@ -35,8 +35,8 @@ namespace DocSearchAIO.DocSearch.Objects
         [Text(Name = "contentType")] public string ContentType { get; set; }
 
         [Text(Name = "lastModifiedBy")] public string LastModifiedBy { get; set; }
-
-        [Text(Name = "content")] public string Content { get; set; }
+        
+        [Text(Name = "content", TermVector = TermVectorOption.WithPositionsOffsetsPayloads)] public string Content { get; set; }
 
         [Text(Name = "originalFilePath")] public string OriginalFilePath { get; set; }
 
@@ -52,5 +52,7 @@ namespace DocSearchAIO.DocSearch.Objects
         [Date(Name = "lastModified")] public DateTime Modified { get; set; }
 
         [Date(Name = "lastPrinted")] public DateTime LastPrinted { get; set; }
+        
+        [Object(Name = "comments")] public IEnumerable<OfficeDocumentComment> Comments { get; set; }
     }
 }

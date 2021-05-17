@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.Objects;
 using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -27,79 +27,88 @@ using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
+    [DisallowConcurrentExecution]
     public class OfficeWordProcessingJob : IJob
     {
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
-        private IConfiguration _configuration;
-        private ActorSystem _actorSystem;
-        private ElasticSearchService _elasticSearchService;
-        
-        public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem, IElasticClient elasticClient)
+        private readonly ConfigurationObject cfg;
+        private readonly ActorSystem _actorSystem;
+        private readonly ElasticSearchService _elasticSearchService;
+        private readonly SchedulerUtils _schedulerUtils;
+
+        public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+            ActorSystem actorSystem, IElasticClient elasticClient)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
-            _loggerFactory = loggerFactory;
-            _configuration = configuration;
+            cfg = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _schedulerUtils = new SchedulerUtils(loggerFactory);
         }
-        
+
         public async Task Execute(IJobExecutionContext context)
         {
-            var cfg = new ConfigurationObject();
-            _configuration.GetSection("configurationObject").Bind(cfg);
-            
-            var materializer = _actorSystem.Materializer();
-            var schedulerEntry = cfg.Processing["word"];
-            var schedulerUtils = new SchedulerUtils(_loggerFactory);
-
             await Task.Run(async () =>
             {
-
-                _logger.LogInformation("Start Job");
-                var uriList = cfg.ElasticEndpoints.Select(uri => new Uri(uri));
-                var indexName = cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
-
-                if (!await _elasticSearchService.IndexExistsAsync(indexName))
+                var schedulerEntry = cfg.Processing["word"];
+                if (schedulerEntry.Active)
                 {
-                    _logger.LogInformation($"Index {indexName} does not exist, lets create them");
-                    await elasticClient.CreateIndexAsync<ElasticDocument>(indexName);
-                    await elasticClient.RefreshIndexAsync(indexName);
-                    await elasticClient.FlushIndexAsync(indexName);
-                }
+                    var materializer = _actorSystem.Materializer();
+                    _logger.LogInformation("Start Job");
+                    var indexName = cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
 
-                var compareDirectory = await schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+                    if (!await _elasticSearchService.IndexExistsAsync(indexName))
+                    {
+                        _logger.LogInformation($"Index {indexName} does not exist, lets create them");
+                        await _elasticSearchService.CreateIndexAsync<ElasticDocument>(indexName);
+                        await _elasticSearchService.RefreshIndexAsync(indexName);
+                        await _elasticSearchService.FlushIndexAsync(indexName);
+                    }
 
-                var comparerBag = FillConmparerBag(compareDirectory);
+                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
 
-                _logger.LogInformation("start crunching and indexing some word-documents");
-                if (!Directory.Exists(configuration.ScanPath))
-                {
-                    _logger.LogWarning($"directory to scan <{configuration.ScanPath}> does not exists. skip working.");
+                    var comparerBag = FillConmparerBag(compareDirectory);
+
+                    _logger.LogInformation("start crunching and indexing some word-documents");
+                    if (!Directory.Exists(cfg.ScanPath))
+                    {
+                        _logger.LogWarning($"directory to scan <{cfg.ScanPath}> does not exists. skip working.");
+                    }
+                    else
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var source = Source
+                            .From(Directory.GetFiles(cfg.ScanPath, schedulerEntry.FileExtension,
+                                SearchOption.AllDirectories))
+                            .Where(file => !file.Contains(schedulerEntry.ExcludeFilter))
+                            .SelectAsync(schedulerEntry.Parallelism, fileName => ProcessWordDocument(fileName, cfg))
+                            .SelectAsync(parallelism: schedulerEntry.Parallelism,
+                                elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
+                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                            .Select(d => d.Values())
+                            .SelectAsync(schedulerEntry.Parallelism,
+                                async processingInfo =>
+                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName));
+
+                        var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
+                        await Task.WhenAll(runnable);
+
+                        _logger.LogInformation("finished processing word-documents.");
+                        _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
+                        File.Delete(compareDirectory);
+                        _logger.LogInformation($"write new comparer file in {compareDirectory}");
+                        await File.WriteAllLinesAsync(compareDirectory,
+                            comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
+
+                        sw.Stop();
+                        _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    }
                 }
                 else
                 {
-                    var sw = Stopwatch.StartNew();
-                    var source = Source
-                        .From(Directory.GetFiles(configuration.ScanPath, schedulerEntry.FileExtension, SearchOption.AllDirectories))
-                        .Where(file => !file.Contains(schedulerEntry.ExcludeFilter))
-                        .SelectAsync(10, fileName => ProcessWordDocument(fileName, configuration))
-                        .SelectAsync(parallelism: 10, elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
-                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                        .Select(d => d.Values())
-                        .SelectAsync(6, async processingInfo => await elasticClient.BulkWriteDocumentsAsync(@processingInfo, indexName));
-
-                    var runnable = source.Limit(200).RunWith(Sink.Seq<bool>(), materializer);
-                    await Task.WhenAll(runnable);
-                    
-                    _logger.LogInformation("finished processing word-documents.");
-                    _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
-                    File.Delete(compareDirectory);
-                    _logger.LogInformation($"write new comparer file in {compareDirectory}");
-                    await File.WriteAllLinesAsync(compareDirectory, comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
-
-                    sw.Stop();
-                    _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                    _logger.LogWarning(
+                        "Skip Processing of Word documents because the scheduler is inactive per config");
                 }
             });
         }
@@ -115,16 +124,17 @@ namespace DocSearchAIO.Scheduler
 
             return new ConcurrentDictionary<string, string>(cnv);
         }
-        
 
-        private async Task<Option<ElasticDocument>> FilterExistingUnchanged(Option<ElasticDocument> document, ConcurrentDictionary<string, string> comparerBag)
+
+        private async Task<Option<ElasticDocument>> FilterExistingUnchanged(Option<ElasticDocument> document,
+            ConcurrentDictionary<string, string> comparerBag)
         {
             return await Task.Run(() =>
             {
                 var opt = document.FlatMap(doc =>
                 {
                     var currentHash = doc.ContentHash;
-                    
+
                     if (!comparerBag.TryGetValue(doc.Id, out var value))
                     {
                         comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
@@ -186,7 +196,7 @@ namespace DocSearchAIO.Scheduler
                                 var dat = d.Date != null
                                     ? d.Date.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
                                     : new DateTime(1970, 1, 1);
-                                
+
                                 retValue.Author = d.Author.Value;
                                 retValue.Comment = d.InnerText;
                                 retValue.Date = dat;
@@ -194,7 +204,6 @@ namespace DocSearchAIO.Scheduler
                                 retValue.Initials = d.Initials.Value;
                                 return retValue;
                             }).ToArray();
-
                         },
                         none: Array.Empty<OfficeDocumentComment>
                     );
@@ -213,7 +222,7 @@ namespace DocSearchAIO.Scheduler
                     var keywordsList = keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
 
                     var commentsString = commentArray.Select(l => l.Comment.Split(" ")).Distinct().ToList();
-                    
+
                     var listElementsToHash = new List<string>()
                     {
                         category, created.ToString(CultureInfo.CurrentCulture), contentString, creator, description,
@@ -229,8 +238,8 @@ namespace DocSearchAIO.Scheduler
 
                     var commString = string.Join(" ", commentArray.Select(d => d.Comment));
                     var suggestedText = Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
-                    
-                    
+
+
                     var searchAsYouTypeContent = suggestedText
                         .ToLower()
                         .Split(" ")

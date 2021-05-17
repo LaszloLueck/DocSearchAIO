@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nest;
 
-namespace DocSearchAIO.DocSearch.Controllers
+namespace DocSearchAIO.Controllers
 {    
     [ApiController]
     [Route("[controller]")]

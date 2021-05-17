@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using DocSearchAIO.Configuration;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,9 +13,11 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
     {
         public static void AddElasticSearch(this IServiceCollection services, IConfiguration configuration)
         {
-            var uriList = new List<Uri> {new("http://127.0.0.1:9200")};
+            var cfg = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(cfg);
+            var uriList = cfg.ElasticEndpoints.Select(e => new Uri(e));
             var pool = new StaticConnectionPool(uriList);
-            var defaultIndex = "officedocuments";
+            var defaultIndex = cfg.IndexName;
             var settings = new ConnectionSettings(pool).DefaultIndex(defaultIndex);
             var client = new ElasticClient(settings);
             services.AddSingleton<IElasticClient>(client);

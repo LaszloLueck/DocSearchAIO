@@ -10,6 +10,7 @@
         <PackageReference Include="Akka.Streams" Version="1.4.20" />
         <PackageReference Include="DocumentFormat.OpenXml" Version="2.13.0" />
         <PackageReference Include="DocumentFormat.OpenXml.DotNet.Core" Version="1.0.1" />
+        <PackageReference Include="itext7" Version="7.1.15" />
         <PackageReference Include="NEST" Version="7.12.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="Optional" Version="4.0.0" />
@@ -21,7 +22,23 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="DocSearch\Objects" />
       <Folder Include="Pages" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="DocSearch\Views\DocumentDetailModalPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="DocSearch\Views\PaginationPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="DocSearch\Views\ResultPageConfigurationModalPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="DocSearch\Views\SearchResultsPartial.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Update="config\config.json">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

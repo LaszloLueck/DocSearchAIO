@@ -32,7 +32,7 @@
         "jobName": "excelProcessingJob",
         "groupName": "excelProcessingGroup",
         "triggerName": "excelProcessingTrigger",
-        "startDelay": 5,
+        "startDelay": 3,
         "runsEvery": 3600
       },
       "powerpoint": {
@@ -46,11 +46,11 @@
         "jobName": "powerpointProcessingJob",
         "groupName": "powerpointProcessingGroup",
         "triggerName": "powerpointProcessingTrigger",
-        "startDelay": 10,
+        "startDelay": 5,
         "runsEvery": 3600
       },
       "pdf": {
-        "active": true,
+        "active": false,
         "parallelism": 10,
         "indexSuffix": "pdf",
         "comparerDirectory": "./comparer/",
@@ -60,7 +60,7 @@
         "jobName": "pdfProcessingJob",
         "groupName": "pdfProcessingGroup",
         "triggerName": "pdfProcessingTrigger",
-        "startDelay": 10,
+        "startDelay": 7,
         "runsEvery": 3600
       }
     }

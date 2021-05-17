@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
-namespace DocSearchAIO.DocSearch.Controllers
+namespace DocSearchAIO.Controllers
 {
     public static class ControllerExtensions
     {

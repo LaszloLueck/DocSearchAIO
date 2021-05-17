@@ -4,7 +4,7 @@ using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace DocSearchAIO.DocSearch.Controllers
+namespace DocSearchAIO.Controllers
 {
     [ApiController]
     [Route("[controller]")]

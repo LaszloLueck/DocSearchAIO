@@ -1,6 +1,6 @@
 ﻿using Nest;
 
-namespace DocSearchAIO.DocSearch.Objects
+namespace DocSearchAIO.Classes
 {
     public class PowerpointElasticDocument : ElasticDocument
     {

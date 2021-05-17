@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DocSearchAIO.DocSearch.Objects;
+using DocSearchAIO.Classes;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Logging;
 using Nest;

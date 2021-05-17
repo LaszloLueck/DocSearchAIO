@@ -35,7 +35,6 @@ namespace DocSearchAIO
         {
             var cfg = new ConfigurationObject();
             Configuration.GetSection("configurationObject").Bind(cfg);
-            
             services.AddControllers();
             services.AddRazorPages();
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
@@ -50,24 +49,44 @@ namespace DocSearchAIO
                 {
                     q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName)
-                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                        .WithDailyTimeIntervalSchedule(x => x.WithInterval(scheduler.RunsEvery, IntervalUnit.Second))
+                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
+                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for word-processing and indexing")
-                        .ForJob(scheduler.JobName)
                     );
+                    q.UseMicrosoftDependencyInjectionJobFactory();
                 });
             }
-            
-            // services.AddQuartz(q =>
-            // {
-            //     q.ScheduleJob<TestSched>(trigger => trigger
-            //         .WithIdentity("Combined Configuration Trigger")
-            //         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds()))
-            //         .WithDailyTimeIntervalSchedule(x => x.WithInterval(10, IntervalUnit.Second))
-            //         .WithDescription("my awesome trigger configured for a job with single call")
-            //     );
-            //     q.UseMicrosoftDependencyInjectionJobFactory();
-            // });
+            //implement powerpoint scheduler
+            if (cfg.Processing.ContainsKey("powerpoint"))
+            {
+                var scheduler = cfg.Processing["powerpoint"];
+                services.AddQuartz(q =>
+                {
+                    q.ScheduleJob<OfficePowerpointProcessingJob>(trigger => trigger
+                        .WithIdentity(scheduler.TriggerName)
+                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
+                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                        .WithDescription("trigger for powerpoint-processing and indexing")
+                    );
+                    q.UseMicrosoftDependencyInjectionJobFactory();
+                });
+            }
+           
+            //implement pdf scheduler
+            if (cfg.Processing.ContainsKey("pdf"))
+            {
+                var scheduler = cfg.Processing["pdf"];
+                services.AddQuartz(q =>
+                {
+                    q.ScheduleJob<PdfProcessingJob>(trigger => trigger
+                        .WithIdentity(scheduler.TriggerName)
+                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
+                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                        .WithDescription("trigger for pdf-processing and indexing")
+                    );
+                    q.UseMicrosoftDependencyInjectionJobFactory();
+                });
+            }
             services.AddQuartzServer(options => options.WaitForJobsToComplete = true);
             services.AddSwaggerGen(c =>
             {
@@ -90,11 +109,9 @@ namespace DocSearchAIO
                 app.ApplicationServices.GetService<ActorSystem>().Terminate().Wait());
             
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseAuthorization();
-
+            app.UseStaticFiles();
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
