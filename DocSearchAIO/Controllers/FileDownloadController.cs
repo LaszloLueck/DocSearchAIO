@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
+using System.Web;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ namespace DocSearchAIO.Controllers
                 _ => Response.ContentType
             };
 
-            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{Path.GetFileName(path)}\"");
+            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{HttpUtility.UrlEncode(Path.GetFileName(path))}\"");
             await using var fs = _fileDownloadService.GetDownloadFileStream(path);
             await fs.CopyToAsync(Response.Body);
         }
