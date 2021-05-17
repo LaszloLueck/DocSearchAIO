@@ -1,0 +1,68 @@
+{
+  "configurationObject": {
+    "elasticEndpoints": [
+      "http://127.0.0.1:9200"
+    ],
+    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
+    "indexName": "officedocuments",
+    "actorSystemName": "actorSystem",
+    "processing": {
+      "word": {
+        "active": false,
+        "parallelism": 6,
+        "indexSuffix": "word",
+        "comparerDirectory": "./comparer/",
+        "comparerFile": "word.cmp",
+        "excludeFilter": "~$",
+        "fileExtension": "*.docx",
+        "jobName": "wordProcessingJob",
+        "groupName": "wordProcessingGroup",
+        "triggerName": "wordProcessingTrigger",
+        "startDelay": 1,
+        "runsEvery": 3600
+      },
+      "excel": {
+        "active": false,
+        "parallelism": 6,
+        "indexSuffix": "excel",
+        "comparerDirectory": "./comparer/",
+        "comparerFile": "excel.cmp",
+        "excludeFilter": "~$",
+        "fileExtension": "*.xlsx",
+        "jobName": "excelProcessingJob",
+        "groupName": "excelProcessingGroup",
+        "triggerName": "excelProcessingTrigger",
+        "startDelay": 5,
+        "runsEvery": 3600
+      },
+      "powerpoint": {
+        "active": false,
+        "parallelism": 6,
+        "indexSuffix": "powerpoint",
+        "comparerDirectory": "./comparer/",
+        "comparerFile": "powerpoint.cmp",
+        "excludeFilter": "~$",
+        "fileExtension": "*.pptx",
+        "jobName": "powerpointProcessingJob",
+        "groupName": "powerpointProcessingGroup",
+        "triggerName": "powerpointProcessingTrigger",
+        "startDelay": 10,
+        "runsEvery": 3600
+      },
+      "pdf": {
+        "active": true,
+        "parallelism": 10,
+        "indexSuffix": "pdf",
+        "comparerDirectory": "./comparer/",
+        "comparerFile": "pdf.cmp",
+        "excludeFilter": "",
+        "fileExtension": "*.pdf",
+        "jobName": "pdfProcessingJob",
+        "groupName": "pdfProcessingGroup",
+        "triggerName": "pdfProcessingTrigger",
+        "startDelay": 10,
+        "runsEvery": 3600
+      }
+    }
+  }
+}
