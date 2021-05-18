@@ -48,7 +48,7 @@ namespace DocSearchAIO
                 services.AddQuartz(q =>
                 {
                     q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
-                        .WithIdentity(scheduler.TriggerName)
+                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for word-processing and indexing")
@@ -60,10 +60,11 @@ namespace DocSearchAIO
             if (cfg.Processing.ContainsKey("powerpoint"))
             {
                 var scheduler = cfg.Processing["powerpoint"];
+                
                 services.AddQuartz(q =>
                 {
                     q.ScheduleJob<OfficePowerpointProcessingJob>(trigger => trigger
-                        .WithIdentity(scheduler.TriggerName)
+                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for powerpoint-processing and indexing")
@@ -76,10 +77,12 @@ namespace DocSearchAIO
             if (cfg.Processing.ContainsKey("pdf"))
             {
                 var scheduler = cfg.Processing["pdf"];
+                
+                
                 services.AddQuartz(q =>
                 {
                     q.ScheduleJob<PdfProcessingJob>(trigger => trigger
-                        .WithIdentity(scheduler.TriggerName)
+                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for pdf-processing and indexing")

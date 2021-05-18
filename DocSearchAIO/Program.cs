@@ -45,7 +45,7 @@ namespace DocSearchAIO
                     logging
                         .AddSimpleConsole(options =>
                         {
-                            options.IncludeScopes = true;
+                            options.IncludeScopes = false;
                             options.SingleLine = true;
                             options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
                             options.ColorBehavior = LoggerColorBehavior.Enabled;

@@ -236,20 +236,6 @@ namespace DocSearchAIO.Scheduler
         }
     }
 
-    internal class PdfDocumentContainer
-    {
-        public readonly string OriginalFileName;
-        public readonly List<PdfPage> PdfPages;
-        public readonly PdfDocumentInfo PdfDocumentInfo;
-
-        public PdfDocumentContainer(string originalFileName, List<PdfPage> pdfPages, PdfDocumentInfo pdfDocumentInfo)
-        {
-            OriginalFileName = originalFileName;
-            PdfPages = pdfPages;
-            PdfDocumentInfo = pdfDocumentInfo;
-        }
-    }
-
     internal class PdfPage
     {
         public readonly int PageNumber;
