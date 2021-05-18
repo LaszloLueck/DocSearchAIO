@@ -25,7 +25,6 @@
 
     <ItemGroup>
       <Folder Include="DocSearch\Objects" />
-      <Folder Include="Pages" />
     </ItemGroup>
 
     <ItemGroup>

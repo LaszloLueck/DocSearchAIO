@@ -22,7 +22,9 @@ namespace DocSearchAIO.DocSearch.Services
         public SchedulerStatisticsService(ILoggerFactory loggerFactory, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<SchedulerStatisticsService>();
-            configuration.GetSection("configurationObject").Bind(_configurationObject);
+            var tmpConfig = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(tmpConfig);
+            _configurationObject = tmpConfig;
         }
 
         public async Task<IEnumerable<SchedulerStatistics>> GetSchedulerStatistics()
@@ -31,23 +33,30 @@ namespace DocSearchAIO.DocSearch.Services
             var resultTasks = (await schedulerFactory.GetAllSchedulers()).Select(async scheduler =>
             {
                 var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+                
                 var results = triggerKeys.Select(async trigger =>
                 {
-                    var result = new SchedulerStatistics();
-                    result.TriggerName = trigger.Name;
-                    result.GroupName = trigger.Group;
+                    var result = new SchedulerStatistics
+                    {
+                        ProcessingState = _configurationObject
+                            .Processing
+                            .Where(r => r.Value.TriggerName == trigger.Name)
+                            .Select(d => d.Value.Active)
+                            .First(),
+                        TriggerName = trigger.Name,
+                        GroupName = trigger.Group
+                    };
+
 
                     var trg = await scheduler.GetTrigger(trigger);
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
-                    
-                    if (trg != null)
-                    {
-                        result.NextFireTime = trg.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                        result.Description = trg.Description;
-                        result.StartTime = trg.StartTimeUtc.LocalDateTime;
-                        result.LastFireTime = trg.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                    }
-                    return result;    
+
+                    if (trg == null) return result;
+                    result.NextFireTime = trg.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
+                    result.Description = trg.Description;
+                    result.StartTime = trg.StartTimeUtc.LocalDateTime;
+                    result.LastFireTime = trg.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
+                    return result;
                 });
 
                 return await Task.WhenAll(results);

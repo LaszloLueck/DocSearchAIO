@@ -73,6 +73,25 @@ setAutoCompleteWithCondition = () => {
     }
 }
 
+getAdministrationModal = () => {
+    $.ajax({
+        url: "https://localhost:5001/AdministrationModal",
+        "dataType" : "json",
+        "method" : "POST",
+        "contentType" : "application/json",
+    })
+        .done(function(result){
+            $('body').append(result.content);
+            $(result.elementName).on('hidden.bs.modal', function (e) {
+                $(result.elementName).remove();
+            });
+            $(result.elementName).modal('show');
+        })
+        .fail(function(xhr, status, error){
+            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+        });
+}
+
 showAlert = (alertText, alertType) => {
     $('body').append('<div style="display: none; position: fixed; top: 0px; left: 0px; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText + 
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
@@ -111,6 +130,10 @@ $(document).ready(function () {
         }
         event.preventDefault();
     });
+    
+    $('#openAdministration').click(function(event){
+        getAdministrationModal();
+    })
 
 })
 
