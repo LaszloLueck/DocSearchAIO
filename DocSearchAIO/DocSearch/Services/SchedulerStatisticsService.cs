@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Util.Internal;
@@ -36,12 +37,9 @@ namespace DocSearchAIO.DocSearch.Services
                     result.TriggerName = trigger.Name;
                     result.GroupName = trigger.Group;
 
-                    result.ProcessingState = _configurationObject.Processing
-                        .Where(p => p.Value.TriggerName == trigger.Name).First().Value.Active;
-                    
                     var trg = await scheduler.GetTrigger(trigger);
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
-
+                    
                     if (trg != null)
                     {
                         result.NextFireTime = trg.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();

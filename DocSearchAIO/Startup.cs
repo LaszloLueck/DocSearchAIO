@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Scheduler;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Quartz;
 using Quartz.Impl;
+using IScheduler = Quartz.IScheduler;
 
 namespace DocSearchAIO
 {
@@ -40,13 +42,15 @@ namespace DocSearchAIO
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
-            
+
             //implement word scheduler
             if (cfg.Processing.ContainsKey("word"))
             {
                 var scheduler = cfg.Processing["word"];
                 services.AddQuartz(q =>
                 {
+                    q.SchedulerId = "1234";
+                    q.UseMicrosoftDependencyInjectionJobFactory();
                     q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
@@ -60,9 +64,9 @@ namespace DocSearchAIO
             if (cfg.Processing.ContainsKey("powerpoint"))
             {
                 var scheduler = cfg.Processing["powerpoint"];
-                
                 services.AddQuartz(q =>
                 {
+                    q.SchedulerId = "6789";
                     q.ScheduleJob<OfficePowerpointProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
@@ -77,8 +81,6 @@ namespace DocSearchAIO
             if (cfg.Processing.ContainsKey("pdf"))
             {
                 var scheduler = cfg.Processing["pdf"];
-                
-                
                 services.AddQuartz(q =>
                 {
                     q.ScheduleJob<PdfProcessingJob>(trigger => trigger
@@ -90,6 +92,7 @@ namespace DocSearchAIO
                     q.UseMicrosoftDependencyInjectionJobFactory();
                 });
             }
+
             services.AddQuartzServer(options => options.WaitForJobsToComplete = true);
             services.AddSwaggerGen(c =>
             {
