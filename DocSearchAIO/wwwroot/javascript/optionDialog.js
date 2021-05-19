@@ -11,7 +11,7 @@ openOptionDialog = () => {
         method: "POST",
         dataType: "json",
         contentType: "application/json",
-        url: "https://localhost:5001/OptionDialog",
+        url: "https://localhost:5001/api/administration/getOptionsDialog",
         data: JSON.stringify(data)
     })
         .done(function (result) {

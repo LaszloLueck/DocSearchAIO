@@ -22,7 +22,7 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
         }
 
-        public async Task<OptionDialogController.OptionDialogResponse> GetOptionDialog(
+        public async Task<OptionDialogResponse> GetOptionDialog(
             OptionDialogRequest optionDialogRequest)
         {
             var indexResponse = await _elasticSearchService.GetIndicesWithPatternAsync("officedocuments-*");
@@ -34,7 +34,7 @@ namespace DocSearchAIO.DocSearch.Services
             optionDialogRequest.PdfIndexExists = knownIndices.Contains("officedocuments-pdf");
 
             var html = await _viewToStringRenderer.Render("ResultPageConfigurationModalPartial", optionDialogRequest);
-            return new OptionDialogController.OptionDialogResponse()
+            return new OptionDialogResponse()
                 {State = "OK", Content = html, ElementName = "#optionModal"};
         }
     }

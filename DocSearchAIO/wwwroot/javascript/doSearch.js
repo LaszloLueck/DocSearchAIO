@@ -12,7 +12,7 @@ doSearch = (searchText, from) => {
         method: "POST",
         dataType: "json",
         contentType: "application/json",
-        url: "https://localhost:5001/DoSearch",
+        url: "https://localhost:5001/api/search/doSearch",
         data: JSON.stringify(data)
     })
         .done(function (result) {
