@@ -24,10 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="DocSearch\Objects" />
-    </ItemGroup>
-
-    <ItemGroup>
       <_ContentIncludedByDefault Remove="DocSearch\Views\DocumentDetailModalPartial.cshtml" />
       <_ContentIncludedByDefault Remove="DocSearch\Views\PaginationPartial.cshtml" />
       <_ContentIncludedByDefault Remove="DocSearch\Views\ResultPageConfigurationModalPartial.cshtml" />
