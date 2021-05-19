@@ -37,17 +37,10 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task GetFileFromAbsolutePath(string path, string documentType)
         {
-            Response.ContentType = documentType switch
-            {
-                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "pdf" => "application/pdf",
-                _ => Response.ContentType
-            };
-
-            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{HttpUtility.UrlEncode(Path.GetFileName(path))}\"");
-            await using var fs = _fileDownloadService.GetDownloadFileStream(path);
+            var returnValue = _fileDownloadService.GetDownloadFileStream(path, documentType);
+            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{returnValue.ReturnFileName}\"");
+            Response.ContentType = returnValue.ContentType;
+            await using var fs = returnValue.DownloadFileStream;
             await fs.CopyToAsync(Response.Body);
         }
     }
