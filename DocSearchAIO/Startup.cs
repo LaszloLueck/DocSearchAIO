@@ -42,14 +42,12 @@ namespace DocSearchAIO
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
-
             //implement word scheduler
             if (cfg.Processing.ContainsKey("word"))
             {
                 var scheduler = cfg.Processing["word"];
                 services.AddQuartz(q =>
                 {
-                    q.SchedulerId = "1234";
                     q.UseMicrosoftDependencyInjectionJobFactory();
                     q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
@@ -66,7 +64,6 @@ namespace DocSearchAIO
                 var scheduler = cfg.Processing["powerpoint"];
                 services.AddQuartz(q =>
                 {
-                    q.SchedulerId = "6789";
                     q.ScheduleJob<OfficePowerpointProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
