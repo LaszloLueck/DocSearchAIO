@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Common.Logging.Configuration;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
@@ -42,20 +43,26 @@ namespace DocSearchAIO
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
+
+            services.AddQuartz(q =>
+            {
+                q.SchedulerName = cfg.SchedulerName;
+                q.SchedulerId = cfg.SchedulerId;
+                q.UseMicrosoftDependencyInjectionJobFactory();
+            });
+            
             //implement word scheduler
             if (cfg.Processing.ContainsKey("word"))
             {
                 var scheduler = cfg.Processing["word"];
                 services.AddQuartz(q =>
                 {
-                    q.UseMicrosoftDependencyInjectionJobFactory();
                     q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for word-processing and indexing")
                     );
-                    q.UseMicrosoftDependencyInjectionJobFactory();
                 });
             }
             //implement powerpoint scheduler
@@ -70,7 +77,6 @@ namespace DocSearchAIO
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for powerpoint-processing and indexing")
                     );
-                    q.UseMicrosoftDependencyInjectionJobFactory();
                 });
             }
            
@@ -86,7 +92,6 @@ namespace DocSearchAIO
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for pdf-processing and indexing")
                     );
-                    q.UseMicrosoftDependencyInjectionJobFactory();
                 });
             }
 

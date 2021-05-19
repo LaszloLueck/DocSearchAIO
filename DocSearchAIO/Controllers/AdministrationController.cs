@@ -21,7 +21,7 @@ namespace DocSearchAIO.Controllers
         public AdministrationController(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IConfiguration configuration, IElasticClient elasticClient)
         {
             _logger = loggerFactory.CreateLogger<AdministrationController>();
-            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer);
+            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticClient);
         }

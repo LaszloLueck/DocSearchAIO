@@ -17,6 +17,12 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("actorSystemName")]
         public string ActorSystemName { get; set; }
         
+        [JsonProperty("schedulerName")]
+        public string SchedulerName { get; set; }
+        
+        [JsonProperty("schedulerId")]
+        public string SchedulerId { get; set; }
+        
         [JsonProperty("processing")]
         public Dictionary<string, SchedulerEntry> Processing { get; set; }
     }

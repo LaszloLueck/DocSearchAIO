@@ -6,6 +6,8 @@
     "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
+    "schedulerName" : "DocSearchScheduler",
+    "schedulerId" : "DocSearchScheduler_001",
     "processing": {
       "word": {
         "active": false,
