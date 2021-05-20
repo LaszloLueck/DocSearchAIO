@@ -16,8 +16,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             configuration.GetSection("configurationObject").Bind(cfg);
             var uriList = cfg.ElasticEndpoints.Select(e => new Uri(e));
             var pool = new StaticConnectionPool(uriList);
-            var defaultIndex = cfg.IndexName;
-            var settings = new ConnectionSettings(pool).DefaultIndex(defaultIndex);
+            var settings = new ConnectionSettings(pool).DefaultIndex(cfg.IndexName);
             var client = new ElasticClient(settings);
             services.AddSingleton<IElasticClient>(client);
         }
