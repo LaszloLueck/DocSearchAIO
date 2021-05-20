@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using DocSearchAIO.Configuration;
 using Elasticsearch.Net;
@@ -21,7 +20,6 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             var settings = new ConnectionSettings(pool).DefaultIndex(defaultIndex);
             var client = new ElasticClient(settings);
             services.AddSingleton<IElasticClient>(client);
-
         }
     }
 }
