@@ -1,3 +1,42 @@
+<script type="text/javascript">
+    switchAdminContent = (element) => {
+        $('ul.nav-tabs li.nav-item a.nav-link').each(function (index){
+            $(this).removeClass('active');
+            if ($(this).attr("id") === $(element).attr("id")){
+                $(this).addClass('active');               
+            }
+        });
+        
+        $('#navContainer').fadeOut(function(){
+            $('#navContainer').empty();
+            switch ($(element).attr('id')) {
+                case 'generalSettings':
+                    $('#navContainer').append("Allgemeiner Inhalt");
+                    $('#navContainer').fadeIn();
+                    break;
+                case 'schedulerSettings':
+                    $('#navContainer').append("Scheduler Inhalt");
+                    $('#navContainer').fadeIn();
+                    break;
+                case 'statisticSettings':
+                    $('#navContainer').append("Statistik Inhalt");
+                    $('#navContainer').fadeIn();
+                    break;
+                case 'actionSettings':
+                    $('#navContainer').append("Aktionen Inhalt");
+                    $('#navContainer').fadeIn();
+                    break;
+            }            
+        });         
+        
+        
+    }
+
+    $(document).ready(function () {
+        switchAdminContent($('#generalSettings'));    
+    });
+    
+</script>
 <div class="modal fade bd-example-modal-xl" id="adminModal" tabindex="-1" role="dialog"
      aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
@@ -9,19 +48,21 @@
                 </button>
             </div>
             <div class="modal-body">
-                <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                    <div class="container-fluid">
-                        
-                        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                            <div class="navbar-nav">
-                                <a class="nav-link active disabled" href="#">Generell</a>
-                                <a class="nav-link" href="#">Scheduler</a>
-                                <a class="nav-link" href="#">Statistiken</a>
-                                <a class="nav-link" href="#">Aktionen</a>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
+                <ul class="nav nav-tabs nav-fill">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="javascript:void(0);" onclick="switchAdminContent(this)" id="generalSettings">Allgemein</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="schedulerSettings">Scheduler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="statisticSettings">Statistiken</a>
+                    </li>  
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="actionSettings">Aktionen</a>
+                    </li>  
+                </ul>
+                <div class="form-row" style="display: none" id="navContainer"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
@@ -29,3 +70,4 @@
         </div>
     </div>
 </div>
+
