@@ -1,5 +1,5 @@
-const openDocumentDetailDialog = function (id) {
-    const data = {id: id};
+openDocumentDetailDialog = (id) => {
+    var data = {id: id};
     $.ajax({
         method: "POST",
         dataType: "json",

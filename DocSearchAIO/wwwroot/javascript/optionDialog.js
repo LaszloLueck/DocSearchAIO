@@ -1,5 +1,5 @@
 openOptionDialog = () => {
-    const data = {
+    var data = {
         filterWord: localStorage.getItem("filterWord") === "true",
         filterExcel: localStorage.getItem("filterExcel") === "true",
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === "true",

@@ -1,5 +1,5 @@
 init = () => {
-    const data = {
+    var data = {
         filterExcel: localStorage.getItem("filterExcel") === 'true',
         filterWord: localStorage.getItem("filterWord") === 'true',
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === 'true',
@@ -45,8 +45,8 @@ setAutoCompleteWithCondition = () => {
             noResultsText: 'Keine Ergebnisse',
             events: {
                 search: function (qry, callback) {
-                    const lastElement = $("#searchField").val().split(" ");
-                    const currentStep = lastElement[lastElement.length - 1];
+                    var lastElement = $("#searchField").val().split(" ");
+                    var currentStep = lastElement[lastElement.length - 1];
                     $.ajax({
                         url: "https://localhost:5001/api/search/doSuggest",
                         dataType: "json",

@@ -1,5 +1,5 @@
 doSearch = (searchText, from) => {
-    const data = {
+    var data = {
         searchPhrase: unescape(searchText),
         from: from,
         size: localStorage.getItem("itemsPerPage"),
