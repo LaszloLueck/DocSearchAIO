@@ -7,7 +7,7 @@
             }
         });
 
-        $('#navContainer').fadeOut(function () {
+        $('#navContainer').slideUp(function () {
             switch ($(element).attr('id')) {
                 case 'generalSettings':
                     loadGenericContent();
@@ -31,11 +31,8 @@
             method: "GET",
         })
             .done(function (result) {
-                $('#navContainer').html(function(){
-                    $('#navContainer').fadeIn();
-                    return result;
-                });
-                
+                $('#navContainer').html(result);
+                $('#navContainer').slideDown();
             })
             .fail(function (xhr, status, error) {
                 showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
@@ -48,10 +45,8 @@
             method: "GET",
         })
         .done(function(result){
-            $('#navContainer').html(function () {
-                $('#navContainer').fadeIn();
-                return result;
-            });
+            $('#navContainer').html(result);
+            $('#navContainer').slideDown();
         })
         .fail(function(xhr, status, error){
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
@@ -59,13 +54,31 @@
     }
 
     loadStatisticContent = () => {
-        $('#navContainer').append("Statistik Inhalt");
-        $('#navContainer').fadeIn();
+        $.ajax({
+            url: "/api/administration/getStatisticsContent",
+            method: "GET",
+        })
+        .done(function(result){
+            $('#navContainer').html(result);
+            $('#navContainer').slideDown();
+        })
+        .fail(function(xhr, status, error){
+            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+        });
     }
 
     loadActionContent = () => {
-        $('#navContainer').append("Aktionen Inhalt");
-        $('#navContainer').fadeIn();
+        $.ajax({
+            url: "/api/administration/getActionContent",
+            method: "GET",
+        })
+        .done(function(result){
+            $('#navContainer').html(result);
+            $('#navContainer').slideDown();
+        })
+        .fail(function(xhr, status, error){
+            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+        });
     }
 
     $(document).ready(function () {

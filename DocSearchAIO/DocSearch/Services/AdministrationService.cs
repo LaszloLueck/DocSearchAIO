@@ -85,5 +85,15 @@ namespace DocSearchAIO.DocSearch.Services
             return content;
         }
 
+        public async Task<string> GetStatisticsContent(){
+            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", new { });
+            return content;
+        }
+
+        public async Task<string> GetActionContent(){
+            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", new { });
+            return content;
+        }
+
     }
 }

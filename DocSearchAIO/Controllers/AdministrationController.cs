@@ -84,5 +84,19 @@ namespace DocSearchAIO.Controllers
             return await _administrationService.GetSchedulerContent();
         }
 
+        [Route("getStatisticsContent")]
+        [HttpGet]
+        public async Task<string> GetStatisticsContent(){
+            _logger.LogInformation("method called");
+            return await _administrationService.GetStatisticsContent();
+        }
+
+        [Route("getActionContent")]
+        [HttpGet]
+        public async Task<string> GetActionContent(){
+            _logger.LogInformation("method called");
+            return await _administrationService.GetActionContent();
+        }
+
     }
 }
