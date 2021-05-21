@@ -8,7 +8,6 @@
         });
 
         $('#navContainer').fadeOut(function () {
-            $('#navContainer').empty();
             switch ($(element).attr('id')) {
                 case 'generalSettings':
                     loadGenericContent();
@@ -32,8 +31,11 @@
             method: "GET",
         })
             .done(function (result) {
-                $('#navContainer').append(result);
-                $('#navContainer').fadeIn();
+                $('#navContainer').html(function(){
+                    $('#navContainer').fadeIn();
+                    return result;
+                });
+                
             })
             .fail(function (xhr, status, error) {
                 showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
@@ -41,8 +43,19 @@
     }
 
     loadSchedulerContent = () => {
-        $('#navContainer').append("Scheduler Inhalt");
-        $('#navContainer').fadeIn();
+        $.ajax({
+            url: "/api/administration/getSchedulerContent",
+            method: "GET",
+        })
+        .done(function(result){
+            $('#navContainer').html(function () {
+                $('#navContainer').fadeIn();
+                return result;
+            });
+        })
+        .fail(function(xhr, status, error){
+            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+        });
     }
 
     loadStatisticContent = () => {
@@ -60,7 +73,7 @@
     });
 
 </script>
-<div class="modal fade bd-example-modal-xl" id="adminModal" tabindex="-1" role="dialog"
+<div class="modal fade bd-example-modal-xl" style="height:80%" id="adminModal" tabindex="-1" role="dialog"
     aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
@@ -89,7 +102,7 @@
                             id="actionSettings">Aktionen</a>
                     </li>
                 </ul>
-                <div class="form-row" style="display: none" id="navContainer"></div>
+                <div class="form-row" style="display: none; height: 100px" id="navContainer">&nbsp;</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
