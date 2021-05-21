@@ -25,7 +25,7 @@ namespace DocSearchAIO.Controllers
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticClient);
         }
-        
+
         [Route("getAdministrationModal")]
         [HttpGet]
         public async Task<AdministrationModalResponse> GetAdministrationModal()
@@ -60,7 +60,7 @@ namespace DocSearchAIO.Controllers
         {
             return await _administrationService.GetTriggerStatusById(triggerStateRequest);
         }
-        
+
         [Route("getOptionsDialog")]
         [HttpPost]
         public async Task<OptionDialogResponse> OptionDialog(OptionDialogRequest optionDialogRequest)
@@ -68,6 +68,21 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method called!");
             return await _optionDialogService.GetOptionDialog(optionDialogRequest);
         }
-        
+
+        [Route("getGenericContent")]
+        [HttpGet]
+        public async Task<string> GetGenericContent()
+        {
+            _logger.LogInformation("method called");
+            return await _administrationService.GetGenericContent();
+        }
+
+        [Route("getSchedulerContent")]
+        [HttpGet]
+        public async Task<string> GetSchedulerContent(){
+            _logger.LogInformation("method called");
+            return await _administrationService.GetSchedulerContent();
+        }
+
     }
 }

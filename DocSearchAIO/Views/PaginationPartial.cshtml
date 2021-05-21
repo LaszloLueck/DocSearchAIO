@@ -9,7 +9,7 @@
         <ul class="pagination">
             @if (currentPage > 1 && pagingCount > 1)
             {
-                var link = "javascript:doSearch('" + Model.SearchPhrase + "', " + (currentPage - 2) * Model.CurrentPageSize + ")";
+                var link = $"javascript:doSearch('{Model.SearchPhrase}', {(currentPage - 2) * Model.CurrentPageSize})";
                 <li class="page-item">
                     <a class="page-link" href="@link" aria-label="Zurück">
                         <span aria-hidden="true">&laquo;</span><span class="sr-only">Zurück</span>
@@ -39,12 +39,15 @@
                 string pager;
                 if ((x - 1) * Model.CurrentPageSize == Model.CurrentPage)
                 {
-                    pager = "<li class=\"page-item active\"><div class=\"page-link\"><span aria-hidden=\"true\">" + x + "</span></div></li>";
+                    pager = $"<li class=\"page-item active\"><div class=\"page-link\"><span aria-hidden=\"true\">{x}</span></div></li>";
                 }
                 else
                 {
-                    var link = "javascript:doSearch('" + Html.Encode(Model.SearchPhrase) + "', " + ((x - 1) * Model.CurrentPageSize) + ")";
-                    pager = "<li class=\"page-item\"><a class=\"page-link\" href=\"" + link + "\">" + x + "</a></li>";
+                    var searchPhrase = Html.Encode(Model.SearchPhrase);
+                    var calculatedValue = (x - 1) * Model.CurrentPageSize;
+                    
+                    var link = $"javascript:doSearch('{searchPhrase}', {calculatedValue})";
+                    pager = $"<li name=\"popel\" class=\"page-item\"><a class=\"page-link\" href=\"{link}\">{x}</a></li>";
                 }
                 if (pagingCount > 12)
                 {
@@ -86,7 +89,7 @@
 
             @if (currentPage < pagingCount)
             {
-                var link = "javascript:doSearch('" + @Model.SearchPhrase + "', " + currentPage * Model.CurrentPageSize + ")";
+                var link = $"javascript:doSearch('{Model.SearchPhrase}', {currentPage * Model.CurrentPageSize})";
                 <li class="page-item">
                     <a class="page-link" href="@link" aria-label="Vor">
                         <span aria-hidden="true">&raquo;</span><span class="sr-only">Vor</span>

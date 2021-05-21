@@ -1,5 +1,13 @@
 @model DocSearchAIO.DocSearch.TOs.SearchStatisticsModel
 
 <div class="w-50 mx-auto d-flex justify-content-center">
-    <span id="suggestedDocCount">@Model.DocCount Dokumente</span>&nbsp;|&nbsp;<span id="searchTime">Suchzeit @Model.SearchTime ms</span>
+    @if (Model.DocCount == 0)
+    {
+        <span id="suggestedDocCount">Keine Ergebnisse vorhanden (@Model.SearchTime ms)</span>        
+    }
+    else
+    {
+        <span id="suggestedDocCount">@Model.DocCount Dokumente</span><span class="mr-1 ml-1">|</span><span id="searchTime">Suchzeit @Model.SearchTime ms</span>
+    }
+
 </div>

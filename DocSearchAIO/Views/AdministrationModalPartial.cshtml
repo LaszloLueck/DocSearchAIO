@@ -1,42 +1,67 @@
 <script type="text/javascript">
     switchAdminContent = (element) => {
-        $('ul.nav-tabs li.nav-item a.nav-link').each(function (index){
+        $('ul.nav-tabs li.nav-item a.nav-link').each(function (index) {
             $(this).removeClass('active');
-            if ($(this).attr("id") === $(element).attr("id")){
-                $(this).addClass('active');               
+            if ($(this).attr("id") === $(element).attr("id")) {
+                $(this).addClass('active');
             }
         });
-        
-        $('#navContainer').fadeOut(function(){
+
+        $('#navContainer').fadeOut(function () {
             $('#navContainer').empty();
             switch ($(element).attr('id')) {
                 case 'generalSettings':
-                    $('#navContainer').append("Allgemeiner Inhalt");
-                    $('#navContainer').fadeIn();
+                    loadGenericContent();
                     break;
                 case 'schedulerSettings':
-                    $('#navContainer').append("Scheduler Inhalt");
-                    $('#navContainer').fadeIn();
+                    loadSchedulerContent();
                     break;
                 case 'statisticSettings':
-                    $('#navContainer').append("Statistik Inhalt");
-                    $('#navContainer').fadeIn();
+                    loadStatisticContent();
                     break;
                 case 'actionSettings':
-                    $('#navContainer').append("Aktionen Inhalt");
-                    $('#navContainer').fadeIn();
+                    loadActionContent();
                     break;
-            }            
-        });         
+            }
+        });
+    }
+
+    loadGenericContent = () => {
+        $.ajax({
+            url: "/api/administration/getGenericContent",
+            method: "GET",
+        })
+            .done(function (result) {
+                $('#navContainer').append(result);
+                $('#navContainer').fadeIn();
+            })
+            .fail(function (xhr, status, error) {
+                showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+            });
+    }
+
+    loadSchedulerContent = () => {
+        $('#navContainer').append("Scheduler Inhalt");
+        $('#navContainer').fadeIn();
+    }
+
+    loadStatisticContent = () => {
+        $('#navContainer').append("Statistik Inhalt");
+        $('#navContainer').fadeIn();
+    }
+
+    loadActionContent = () => {
+        $('#navContainer').append("Aktionen Inhalt");
+        $('#navContainer').fadeIn();
     }
 
     $(document).ready(function () {
-        switchAdminContent($('#generalSettings'));    
+        switchAdminContent($('#generalSettings'));
     });
-    
+
 </script>
 <div class="modal fade bd-example-modal-xl" id="adminModal" tabindex="-1" role="dialog"
-     aria-labelledby="exampleModalLabel" aria-hidden="true">
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -48,17 +73,21 @@
             <div class="modal-body">
                 <ul class="nav nav-tabs nav-fill">
                     <li class="nav-item">
-                        <a class="nav-link active" href="javascript:void(0);" onclick="switchAdminContent(this)" id="generalSettings">Allgemein</a>
+                        <a class="nav-link active" href="javascript:void(0);" onclick="switchAdminContent(this)"
+                            id="generalSettings">Allgemein</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="schedulerSettings">Scheduler</a>
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
+                            id="schedulerSettings">Scheduler</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="statisticSettings">Statistiken</a>
-                    </li>  
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
+                            id="statisticSettings">Statistiken</a>
+                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)" id="actionSettings">Aktionen</a>
-                    </li>  
+                        <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
+                            id="actionSettings">Aktionen</a>
+                    </li>
                 </ul>
                 <div class="form-row" style="display: none" id="navContainer"></div>
             </div>
@@ -68,4 +97,3 @@
         </div>
     </div>
 </div>
-

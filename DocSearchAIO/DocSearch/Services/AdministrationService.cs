@@ -27,7 +27,7 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse() {Content = content, ElementName = "#adminModal"};
+            return new AdministrationModalResponse() { Content = content, ElementName = "#adminModal" };
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -72,5 +72,18 @@ namespace DocSearchAIO.DocSearch.Services
             _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
             return "";
         }
+
+        public async Task<string> GetGenericContent()
+        {
+            var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", new { });
+            return content;
+        }
+
+        public async Task<string> GetSchedulerContent()
+        {
+            var content = await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", new { });
+            return content;
+        }
+
     }
 }
