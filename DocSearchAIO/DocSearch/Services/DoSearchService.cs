@@ -104,9 +104,12 @@ namespace DocSearchAIO.DocSearch.Services
                 var pagination = await _viewToStringRenderer.Render("PaginationPartial", paginationResult);
                 outResponse.SearchPhrase = searchPhrase;
                 outResponse.Pagination = pagination;
-                outResponse.DocCount = result.Total;
-                outResponse.SearchTime = sw.ElapsedMilliseconds;
 
+                var statisticsModel = new SearchStatisticsModel()
+                    {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
+                var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
+                outResponse.Statistics = statisticResponse;
+                
                 var retCol = result.Hits.Select(hit =>
                 {
                     var iconType = hit.Source.ContentType switch

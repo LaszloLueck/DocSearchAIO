@@ -10,7 +10,7 @@ namespace DocSearchAIO.Controllers
 {
     [ApiController]
     [Route("api/search")]
-    public partial class DoSearchController : ControllerBase
+    public class DoSearchController : ControllerBase
     {
         private readonly ILogger _logger;
         private readonly DoSearchService _doSearchService;

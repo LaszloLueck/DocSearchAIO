@@ -4,7 +4,7 @@ openDocumentDetailDialog = (id) => {
         method: "POST",
         dataType: "json",
         contentType: "application/json",
-        url: "https://localhost:5001/api/search/documentDetail",
+        url: "/api/search/documentDetail",
         data: JSON.stringify(data)
     })
         .done(function (result) {

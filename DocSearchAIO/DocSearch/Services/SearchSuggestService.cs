@@ -40,20 +40,18 @@ namespace DocSearchAIO.DocSearch.Services
 
             var f = new SourceFilter {Excludes = "*"};
 
-            // var i1 = "*";
-            // var i = Indices.Index()
-
             var request = new SearchRequest("officedocuments-*") {Suggest = suggestQuery, Source = f};
             var sw = Stopwatch.StartNew();
             var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
             sw.Stop();
-            var suggestResult = result.Suggest["searchfieldsuggest"];
-            var suggest = suggestResult.First();
-            var suggests = suggest.Options.Select(d => new SuggestEntry() {id = d.Id, label = d.Text});
+            var suggestsEntries = result.Suggest["searchfieldsuggest"];
+            var suggestResult = suggestsEntries.First();
+            _logger.LogInformation($"found {suggestResult.Options.Count} suggests in {sw.ElapsedMilliseconds} ms");
+            var suggests = suggestResult.Options.Select(d => new SuggestEntry() {id = d.Id, label = d.Text});
 
             return new SuggestResult()
             {
-                DocCount = result.Total, SearchPhrase = searchPhrase, SearchTime = sw.ElapsedMilliseconds,
+                SearchPhrase = searchPhrase,
                 suggests = suggests
             };
         }

@@ -12,12 +12,10 @@ doSearch = (searchText, from) => {
         method: "POST",
         dataType: "json",
         contentType: "application/json",
-        url: "https://localhost:5001/api/search/doSearch",
+        url: "/api/search/doSearch",
         data: JSON.stringify(data)
     })
         .done(function (result) {
-            $("#suggestedDocCount").text(result.docCount + " Dokumente");
-            $("#searchTime").text("Suchzeit " + result.searchTime + " ms");
             $('#searchField').val(result.searchPhrase);
             if(result.docCount == 0){
                 showAlert("Keine Dokumente mit dem Suchbegriff " + result.searchPhrase + " gefunden!", "alert-warning")
@@ -32,6 +30,9 @@ doSearch = (searchText, from) => {
 
             $("#pagination").empty();
             $("#pagination").append(result.pagination);
+            
+            $("#statsContainer").empty();
+            $("#statsContainer").append(result.statistics);
 
         })
         .fail(function(xhr, status, error){

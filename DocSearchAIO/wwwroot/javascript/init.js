@@ -8,7 +8,7 @@ init = () => {
     };
 
     $.ajax({
-        url: "https://localhost:5001/api/base/init",
+        url: "/api/base/init",
         dataType: "json",
         method: "POST",
         contentType: "application/json",
@@ -48,7 +48,7 @@ setAutoCompleteWithCondition = () => {
                     var lastElement = $("#searchField").val().split(" ");
                     var currentStep = lastElement[lastElement.length - 1];
                     $.ajax({
-                        url: "https://localhost:5001/api/search/doSuggest",
+                        url: "/api/search/doSuggest",
                         dataType: "json",
                         method: "POST",
                         contentType: "application/json",
@@ -75,7 +75,7 @@ setAutoCompleteWithCondition = () => {
 
 getAdministrationModal = () => {
     $.ajax({
-        url: "https://localhost:5001/api/administration/getAdministrationModal",
+        url: "/api/administration/getAdministrationModal",
         "dataType" : "json",
         "method" : "GET",
         "contentType" : "application/json",
