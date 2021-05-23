@@ -31,7 +31,7 @@ namespace DocSearchAIO.Scheduler
     public class OfficeWordProcessingJob : IJob
     {
         private readonly ILogger _logger;
-        private readonly ConfigurationObject cfg;
+        private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
         private readonly ElasticSearchService _elasticSearchService;
         private readonly SchedulerUtils _schedulerUtils;
@@ -40,8 +40,8 @@ namespace DocSearchAIO.Scheduler
             ActorSystem actorSystem, IElasticClient elasticClient)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
-            cfg = new ConfigurationObject();
-            configuration.GetSection("configurationObject").Bind(cfg);
+            _cfg = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
             _schedulerUtils = new SchedulerUtils(loggerFactory);
@@ -49,14 +49,14 @@ namespace DocSearchAIO.Scheduler
 
         public async Task Execute(IJobExecutionContext context)
         {
+            var schedulerEntry = _cfg.Processing["word"];
             await Task.Run(async () =>
             {
-                var schedulerEntry = cfg.Processing["word"];
                 if (schedulerEntry.Active)
                 {
                     var materializer = _actorSystem.Materializer();
                     _logger.LogInformation("Start Job");
-                    var indexName = cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
+                    var indexName = _cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
 
                     if (!await _elasticSearchService.IndexExistsAsync(indexName))
                     {
@@ -71,18 +71,18 @@ namespace DocSearchAIO.Scheduler
                     var comparerBag = FillConmparerBag(compareDirectory);
 
                     _logger.LogInformation("start crunching and indexing some word-documents");
-                    if (!Directory.Exists(cfg.ScanPath))
+                    if (!Directory.Exists(_cfg.ScanPath))
                     {
-                        _logger.LogWarning($"directory to scan <{cfg.ScanPath}> does not exists. skip working.");
+                        _logger.LogWarning($"directory to scan <{_cfg.ScanPath}> does not exists. skip working.");
                     }
                     else
                     {
                         var sw = Stopwatch.StartNew();
                         var source = Source
-                            .From(Directory.GetFiles(cfg.ScanPath, schedulerEntry.FileExtension,
+                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
                                 SearchOption.AllDirectories))
                             .Where(file => !file.Contains(schedulerEntry.ExcludeFilter))
-                            .SelectAsync(schedulerEntry.Parallelism, fileName => ProcessWordDocument(fileName, cfg))
+                            .SelectAsync(schedulerEntry.Parallelism, fileName => ProcessWordDocument(fileName, _cfg))
                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                 elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -107,6 +107,17 @@ namespace DocSearchAIO.Scheduler
                 }
                 else
                 {
+                    var currentTriggerState =
+                        await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
+                            schedulerEntry.GroupName));
+                    if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
+                    {
+                        _logger.LogWarning(
+                            $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
+                        await context.Scheduler.PauseTrigger(new TriggerKey(schedulerEntry.TriggerName,
+                            schedulerEntry.GroupName));
+                    }
+
                     _logger.LogWarning(
                         "Skip Processing of Word documents because the scheduler is inactive per config");
                 }

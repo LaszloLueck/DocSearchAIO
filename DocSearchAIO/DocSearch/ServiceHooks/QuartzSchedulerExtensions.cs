@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Quartz;
+using Quartz.Impl;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
 {

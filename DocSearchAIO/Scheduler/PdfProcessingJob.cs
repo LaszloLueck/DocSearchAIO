@@ -49,9 +49,9 @@ namespace DocSearchAIO.Scheduler
 
         public async Task Execute(IJobExecutionContext context)
         {
+            var schedulerEntry = _cfg.Processing["pdf"];
             await Task.Run(async () =>
             {
-                var schedulerEntry = _cfg.Processing["pdf"];
                 if (schedulerEntry.Active)
                 {
                     var materializer = _actorSystem.Materializer();
@@ -105,6 +105,15 @@ namespace DocSearchAIO.Scheduler
                 }
                 else
                 {
+                    if (await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
+                        schedulerEntry.GroupName)) == TriggerState.Normal)
+                    {
+                        _logger.LogWarning(
+                            $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
+                        await context.Scheduler.PauseTrigger(new TriggerKey(schedulerEntry.TriggerName,
+                            schedulerEntry.GroupName));
+                    }
+
                     _logger.LogWarning(
                         "Skip Processing of PDF documents because the scheduler is inactive per config");
                 }

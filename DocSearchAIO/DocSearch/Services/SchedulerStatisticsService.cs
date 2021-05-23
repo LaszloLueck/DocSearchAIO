@@ -32,11 +32,20 @@ namespace DocSearchAIO.DocSearch.Services
             var schedulerFactory = new StdSchedulerFactory();
             var resultTasks = (await schedulerFactory.GetAllSchedulers()).Select(async scheduler =>
             {
+                var schedulerStatistics = new SchedulerStatistics
+                {
+                    SchedulerName = scheduler.SchedulerName,
+                    SchedulerInstanceId = scheduler.SchedulerInstanceId,
+                    State = scheduler.IsStarted ? "Gestartet" :
+                        scheduler.IsShutdown ? "Heruntergefahren" :
+                        scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
+                };
+
                 var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
                 
-                var results = triggerKeys.Select(async trigger =>
+                var innerResultTasks = triggerKeys.Select(async trigger =>
                 {
-                    var result = new SchedulerStatistics
+                    var result = new SchedulerTriggerStatisticElement
                     {
                         ProcessingState = _configurationObject
                             .Processing
@@ -49,6 +58,14 @@ namespace DocSearchAIO.DocSearch.Services
 
 
                     var trg = await scheduler.GetTrigger(trigger);
+                    /*
+                        blocked
+			            complete
+			            error
+			            none
+			            normal
+			            paused
+                     */
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
 
                     if (trg == null) return result;
@@ -59,11 +76,12 @@ namespace DocSearchAIO.DocSearch.Services
                     return result;
                 });
 
-                return await Task.WhenAll(results);
+                var results = await Task.WhenAll(innerResultTasks);
+                schedulerStatistics.TriggerElements = results;
+                return schedulerStatistics;
             });
 
-            var tmp = (await Task.WhenAll(resultTasks)).SelectMany(i => i);
-            return tmp;
+            return await Task.WhenAll(resultTasks);
         }
     }
 }

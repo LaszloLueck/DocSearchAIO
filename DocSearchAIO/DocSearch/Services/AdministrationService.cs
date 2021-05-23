@@ -12,14 +12,20 @@ namespace DocSearchAIO.DocSearch.Services
     public class AdministrationService
     {
         private readonly ILogger _logger;
+
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly ConfigurationObject _configurationObject;
+
+        private readonly IConfiguration _configuration;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
+            _loggerFactory = loggerFactory;
             _viewToStringRenderer = viewToStringRenderer;
             var cfgTmp = new ConfigurationObject();
+            _configuration = configuration;
             configuration.GetSection("configurationObject").Bind(cfgTmp);
             _configurationObject = cfgTmp;
         }
@@ -81,16 +87,21 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetSchedulerContent()
         {
-            var content = await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", new { });
+            var schedulerStatisticsService = new SchedulerStatisticsService(_loggerFactory, _configuration);
+
+            var schedulerStatistics = await schedulerStatisticsService.GetSchedulerStatistics();
+            var content = await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", schedulerStatistics);
             return content;
         }
 
-        public async Task<string> GetStatisticsContent(){
+        public async Task<string> GetStatisticsContent()
+        {
             var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", new { });
             return content;
         }
 
-        public async Task<string> GetActionContent(){
+        public async Task<string> GetActionContent()
+        {
             var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", new { });
             return content;
         }
