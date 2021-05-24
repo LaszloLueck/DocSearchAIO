@@ -57,8 +57,11 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["pdf"];
                 services.AddQuartz(q =>
                 {
-                    q.ScheduleJob<PdfProcessingJob>(trigger => trigger
+                    var jk = new JobKey("pdfJob", "pdfGroup");
+                    q.AddJob<PdfProcessingJob>(new JobKey("pdfJob", "pdfGroup"), p => p.WithDescription("job for processing and indexing pdf documents"));
+                    q.AddTrigger(t => t
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
+                        .ForJob(jk)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for pdf-processing and indexing")

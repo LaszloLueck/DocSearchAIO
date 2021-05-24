@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
@@ -23,6 +24,7 @@ using Nest;
 using Optional;
 using Optional.Collections;
 using Quartz;
+using Quartz.Impl.Matchers;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -105,11 +107,17 @@ namespace DocSearchAIO.Scheduler
                 }
                 else
                 {
-                    if (await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
-                        schedulerEntry.GroupName)) == TriggerState.Normal)
+                    var currentTriggerState =
+                        await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
+                            schedulerEntry.GroupName));
+                    if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
                     {
                         _logger.LogWarning(
                             $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
+                        (await context.Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup())).ForEach(jb =>
+                        {
+                            _logger.LogInformation("j: " + jb.Name + "; g: " + jb.Group);
+                        });
                         await context.Scheduler.PauseTrigger(new TriggerKey(schedulerEntry.TriggerName,
                             schedulerEntry.GroupName));
                     }

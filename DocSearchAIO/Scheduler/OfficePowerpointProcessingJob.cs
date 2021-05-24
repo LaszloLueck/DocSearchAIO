@@ -110,8 +110,10 @@ namespace DocSearchAIO.Scheduler
                 }
                 else
                 {
-                    if (await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
-                        schedulerEntry.GroupName)) == TriggerState.Normal)
+                    var currentTriggerState =
+                        await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
+                            schedulerEntry.GroupName));
+                    if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
                     {
                         _logger.LogWarning(
                             $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
