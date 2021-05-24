@@ -67,12 +67,14 @@ namespace DocSearchAIO.DocSearch.Services
 			            paused
                      */
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
+                    
 
                     if (trg == null) return result;
                     result.NextFireTime = trg.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
                     result.Description = trg.Description;
                     result.StartTime = trg.StartTimeUtc.LocalDateTime;
                     result.LastFireTime = trg.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
+                    result.JobName = trg.JobKey.Name;
                     return result;
                 });
 

@@ -114,10 +114,6 @@ namespace DocSearchAIO.Scheduler
                     {
                         _logger.LogWarning(
                             $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
-                        (await context.Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup())).ForEach(jb =>
-                        {
-                            _logger.LogInformation("j: " + jb.Name + "; g: " + jb.Group);
-                        });
                         await context.Scheduler.PauseTrigger(new TriggerKey(schedulerEntry.TriggerName,
                             schedulerEntry.GroupName));
                     }

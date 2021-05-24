@@ -13,5 +13,8 @@ namespace DocSearchAIO.DocSearch.TOs
         public string TriggerState { get; set; }
         public string Description { get; set; }
         public bool ProcessingState { get; set; }
+
+        public string JobName { get; set; }
+        
     }
 }

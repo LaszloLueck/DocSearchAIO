@@ -1,11 +1,8 @@
 ﻿using System;
-
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using Quartz;
 using Quartz.Impl;
 
@@ -29,7 +26,12 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["word"];
                 services.AddQuartz(q =>
                 {
-                    q.ScheduleJob<OfficeWordProcessingJob>(trigger => trigger
+                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    q.AddJob<OfficeWordProcessingJob>(jk,
+                        p => p.WithDescription("job for processing and indexing word documents"));
+                    
+                    q.AddTrigger(t => t
+                        .ForJob(jk)
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
@@ -43,7 +45,12 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["powerpoint"];
                 services.AddQuartz(q =>
                 {
-                    q.ScheduleJob<OfficePowerpointProcessingJob>(trigger => trigger
+                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    q.AddJob<OfficePowerpointProcessingJob>(jk,
+                        p => p.WithDescription("job for processing and indexing powerpoint documents"));
+
+                    q.AddTrigger(t => t
+                        .ForJob(jk)
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
@@ -57,8 +64,9 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["pdf"];
                 services.AddQuartz(q =>
                 {
-                    var jk = new JobKey("pdfJob", "pdfGroup");
-                    q.AddJob<PdfProcessingJob>(new JobKey("pdfJob", "pdfGroup"), p => p.WithDescription("job for processing and indexing pdf documents"));
+                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    q.AddJob<PdfProcessingJob>(jk,
+                        p => p.WithDescription("job for processing and indexing pdf documents"));
                     q.AddTrigger(t => t
                         .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
                         .ForJob(jk)
