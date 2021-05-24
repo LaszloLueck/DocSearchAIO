@@ -1,3 +1,53 @@
-<div class="form-row mr-2 ml-2 mt-1 mb-1">
-    <span>Allgemeiner Inhalt</span>
+@model DocSearchAIO.DocSearch.TOs.AdministrationGenericModel
+
+<div class="form-row mr-2 ml-2 mt-2 mb-1 w-100">
+    <div class="input-group col-md-12 mb-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelState">Scan-Pfad</span>
+        </div>
+        <input type="text" class="form-control" id="scanPath" value="@Model.ScanPath">
+    </div>
+</div>
+@for (var i = 0; i < Model.ElasticEndpoints.Count; i++)
+{
+    <div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
+        <div class="input-group col-md-12 mb-2">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="labelElasticEndpoint_@i">Elastic-Endpunkt @(i+1)</span>
+            </div>
+            <input type="text" class="form-control" id="elastic_endpoint_@i" value="@Model.ElasticEndpoints[i]">
+        </div>
+    </div>
+}
+<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
+    <div class="input-group col-md-12 mb-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelIndexName">Index-Name (Prefix)</span>
+        </div>
+        <input type="text" class="form-control" id="indexName" value="@Model.IndexName">
+    </div>
+</div>
+<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
+    <div class="input-group col-md-12 mb-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelSchedulerName">Scheduler-Name</span>
+        </div>
+        <input type="text" class="form-control" id="schedulerName" value="@Model.SchedulerName">
+    </div>
+</div>
+<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
+    <div class="input-group col-md-12 mb-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelSchedulerId">Scheduler-Id</span>
+        </div>
+        <input type="text" class="form-control" id="schedulerId" value="@Model.SchedulerId">
+    </div>
+</div>
+<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
+    <div class="input-group col-md-12 mb-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelActorSystemName">Actorsystem-Name</span>
+        </div>
+        <input type="text" class="form-control" id="ActorSystemName" value="@Model.ActorSystemName">
+    </div>
 </div>

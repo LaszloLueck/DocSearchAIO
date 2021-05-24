@@ -81,7 +81,15 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetGenericContent()
         {
-            var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", new { });
+            var adminGenModel = new AdministrationGenericModel();
+            adminGenModel.ScanPath = _configurationObject.ScanPath;
+            adminGenModel.ElasticEndpoints = _configurationObject.ElasticEndpoints;
+            adminGenModel.IndexName = _configurationObject.IndexName;
+            adminGenModel.SchedulerName = _configurationObject.SchedulerName;
+            adminGenModel.SchedulerId = _configurationObject.SchedulerId;
+            adminGenModel.ActorSystemName = _configurationObject.ActorSystemName;
+            
+            var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
             return content;
         }
 
