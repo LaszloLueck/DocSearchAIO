@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
+using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
@@ -18,13 +20,17 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ILogger<DoSearchService> _logger;
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly IElasticSearchService _elasticSearchService;
-
+        private readonly ConfigurationObject _configurationObject;
+        
         public DoSearchService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
-            ViewToStringRenderer viewToStringRenderer)
+            ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<DoSearchService>();
             _viewToStringRenderer = viewToStringRenderer;
             _elasticSearchService = elasticSearchService;
+            var cfgTmp = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(cfgTmp);
+            _configurationObject = cfgTmp;
         }
 
 
@@ -57,7 +63,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 Field[] io = new[] {new Field("completionContent")};
 
-                var indicesResponse = await _elasticSearchService.GetIndicesWithPatternAsync("officedocuments-*");
+                var indicesResponse = await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 

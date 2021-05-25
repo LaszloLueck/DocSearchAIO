@@ -1,3 +1,26 @@
-<div class="form-row mr-2 ml-2 mt-1 mb-1">
-    <span>Statistik Inhalt</span>
+@model IEnumerable<DocSearchAIO.DocSearch.TOs.IndexStatisticModel>
+
+<div class="container mt-2 border rounded border-color-gray">
+    <div class="row">
+        <div class="col-12">
+            <span class="h5">Statistiken</span>
+        </div>
+    </div>
+    @foreach (var indexStatisticModel in Model)
+    {
+        <div class="row">
+            <div class="col-12">
+                <span class="h6">@indexStatisticModel.IndexName</span>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Anzahl Dokumente</div>
+            <div class="col-9">@indexStatisticModel.DocCount</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Größe ind Bytes</div>
+            <div class="col-9">@($"{indexStatisticModel.SizeInBytes:0,0}")</div>
+        </div>
+    }
+
 </div>

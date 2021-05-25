@@ -14,6 +14,8 @@ namespace DocSearchAIO.Services
         Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument;
 
+        Task<IndicesStatsResponse> GetIndexStatistics(string indexName);
+
         Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
         Task<bool> DeleteIndexAsync(string indexName);
         Task<bool> RefreshIndexAsync(string indexName);
@@ -34,12 +36,18 @@ namespace DocSearchAIO.Services
             _elasticClient = elasticClient;
         }
 
+        public async Task<IndicesStatsResponse> GetIndexStatistics(string indexName)
+        {
+            var result = await _elasticClient.Indices.StatsAsync(indexName);
+            ProcessResponse(result);
+            return result;
+        }
+
         public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument
         {
             if (!documents.Any())
                 return await Task.Run(() => false);
-            
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
             return ProcessResponse(result);
         }
@@ -116,6 +124,11 @@ namespace DocSearchAIO.Services
         {
             switch (response)
             {
+                case IndicesStatsResponse indicesStatsResponse:
+                    if (indicesStatsResponse.IsValid) return indicesStatsResponse.IsValid;
+                    _logger.LogWarning(indicesStatsResponse.DebugInformation);
+                    _logger.LogError(indicesStatsResponse.OriginalException, indicesStatsResponse.ServerError.Error.Reason);
+                    return indicesStatsResponse.IsValid;
                 case ISearchResponse<ElasticDocument> searchResponse:
                     if (searchResponse.IsValid) return searchResponse.IsValid;
                     _logger.LogWarning(searchResponse.DebugInformation);

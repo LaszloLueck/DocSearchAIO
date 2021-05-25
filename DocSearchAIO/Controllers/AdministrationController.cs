@@ -23,7 +23,7 @@ namespace DocSearchAIO.Controllers
             IConfiguration configuration, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<AdministrationController>();
-            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration);
+            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration, elasticSearchService);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticSearchService);
         }

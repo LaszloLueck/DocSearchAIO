@@ -1,7 +1,9 @@
+using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -18,22 +20,25 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly ConfigurationObject _configurationObject;
         private readonly IConfiguration _configuration;
+        private readonly IElasticSearchService _elasticSearchService;
 
-        public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
+        public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
+            IConfiguration configuration, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
             _loggerFactory = loggerFactory;
             _viewToStringRenderer = viewToStringRenderer;
-            var cfgTmp = new ConfigurationObject();
             _configuration = configuration;
+            var cfgTmp = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(cfgTmp);
             _configurationObject = cfgTmp;
+            _elasticSearchService = elasticSearchService;
         }
 
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse() { Content = content, ElementName = "#adminModal" };
+            return new AdministrationModalResponse() {Content = content, ElementName = "#adminModal"};
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -75,6 +80,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 return (await scheduler.GetTriggerState(triggerKey)).ToString();
             }
+
             _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
             return "";
         }
@@ -88,7 +94,7 @@ namespace DocSearchAIO.DocSearch.Services
             adminGenModel.SchedulerName = _configurationObject.SchedulerName;
             adminGenModel.SchedulerId = _configurationObject.SchedulerId;
             adminGenModel.ActorSystemName = _configurationObject.ActorSystemName;
-            
+
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
             return content;
         }
@@ -98,16 +104,29 @@ namespace DocSearchAIO.DocSearch.Services
             var schedulerStatisticsService = new SchedulerStatisticsService(_loggerFactory, _configuration);
 
             var schedulerStatistics = await schedulerStatisticsService.GetSchedulerStatistics();
-            var content = await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", schedulerStatistics);
+            var content =
+                await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", schedulerStatistics);
             return content;
         }
 
         public async Task<string> GetStatisticsContent()
         {
+            var indicesResponse =
+                await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
+            var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
+
+            var indexStatsResponses =
+                await Task.WhenAll(knownIndices.Select(async index =>
+                    await _elasticSearchService.GetIndexStatistics(index)));
+
+            var models = indexStatsResponses.Select(index => new IndexStatisticModel
+            {
+                IndexName = index.Indices.ToList()[0].Key,
+                DocCount = index.Stats.Total.Documents.Count,
+                SizeInBytes = index.Stats.Total.Store.SizeInBytes
+            });
             
-            
-            
-            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", new { });
+            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", models);
             return content;
         }
 
@@ -116,6 +135,5 @@ namespace DocSearchAIO.DocSearch.Services
             var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", new { });
             return content;
         }
-
     }
 }
