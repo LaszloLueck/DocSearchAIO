@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nest;
 
 namespace DocSearchAIO.Controllers
 {
@@ -18,12 +18,14 @@ namespace DocSearchAIO.Controllers
         private readonly AdministrationService _administrationService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
         private readonly OptionDialogService _optionDialogService;
-        public AdministrationController(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IConfiguration configuration, IElasticClient elasticClient)
+
+        public AdministrationController(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
+            IConfiguration configuration, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<AdministrationController>();
             _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticClient);
+            _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticSearchService);
         }
 
         [Route("getAdministrationModal")]
@@ -79,24 +81,26 @@ namespace DocSearchAIO.Controllers
 
         [Route("getSchedulerContent")]
         [HttpGet]
-        public async Task<string> GetSchedulerContent(){
+        public async Task<string> GetSchedulerContent()
+        {
             _logger.LogInformation("method called");
             return await _administrationService.GetSchedulerContent();
         }
 
         [Route("getStatisticsContent")]
         [HttpGet]
-        public async Task<string> GetStatisticsContent(){
+        public async Task<string> GetStatisticsContent()
+        {
             _logger.LogInformation("method called");
             return await _administrationService.GetStatisticsContent();
         }
 
         [Route("getActionContent")]
         [HttpGet]
-        public async Task<string> GetActionContent(){
+        public async Task<string> GetActionContent()
+        {
             _logger.LogInformation("method called");
             return await _administrationService.GetActionContent();
         }
-
     }
 }

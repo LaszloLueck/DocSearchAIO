@@ -13,13 +13,13 @@ namespace DocSearchAIO.DocSearch.Services
     {
         private readonly ILogger _logger;
         private readonly ViewToStringRenderer _viewToStringRenderer;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
 
-        public OptionDialogService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IElasticClient elasticClient)
+        public OptionDialogService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<OptionDialogService>();
             _viewToStringRenderer = viewToStringRenderer;
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
         }
 
         public async Task<OptionDialogResponse> GetOptionDialog(

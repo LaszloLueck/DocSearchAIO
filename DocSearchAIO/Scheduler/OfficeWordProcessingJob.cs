@@ -33,17 +33,17 @@ namespace DocSearchAIO.Scheduler
         private readonly ILogger _logger;
         private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtils _schedulerUtils;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticClient elasticClient)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
             _schedulerUtils = new SchedulerUtils(loggerFactory);
         }
 

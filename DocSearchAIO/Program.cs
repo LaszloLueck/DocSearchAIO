@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +14,7 @@ namespace DocSearchAIO
 {
     public class Program
     {
-        public static Dictionary<string, string> arrayDict = 
+        public static Dictionary<string, string> arrayDict =
             new Dictionary<string, string>
             {
                 {"array:entries:0", "value0"},
@@ -22,7 +23,7 @@ namespace DocSearchAIO
                 {"array:entries:4", "value4"},
                 {"array:entries:5", "value5"}
             };
-        
+
         public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
@@ -36,10 +37,7 @@ namespace DocSearchAIO
                     config.AddJsonFile("config/config.json", optional: false, reloadOnChange: true);
                     config.AddCommandLine(args);
                 })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                })
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
                 .ConfigureLogging(logging =>
                 {
                     logging

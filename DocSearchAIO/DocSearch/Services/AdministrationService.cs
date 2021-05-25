@@ -4,6 +4,7 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Nest;
 using Quartz;
 using Quartz.Impl;
 
@@ -16,7 +17,6 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ILoggerFactory _loggerFactory;
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly ConfigurationObject _configurationObject;
-
         private readonly IConfiguration _configuration;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
@@ -104,6 +104,9 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetStatisticsContent()
         {
+            
+            
+            
             var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", new { });
             return content;
         }

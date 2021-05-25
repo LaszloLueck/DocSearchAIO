@@ -2,6 +2,7 @@
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -17,12 +18,12 @@ namespace DocSearchAIO.Controllers
         private readonly SearchSuggestService _searchSuggestService;
         private readonly DocumentDetailService _documentDetailService;
 
-        public DoSearchController(IElasticClient elasticClient, ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer)
+        public DoSearchController(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer)
         {
             _logger = loggerFactory.CreateLogger<DoSearchController>();
-            _doSearchService = new DoSearchService(elasticClient, loggerFactory, viewToStringRenderer);
-            _searchSuggestService = new SearchSuggestService(elasticClient, loggerFactory);
-            _documentDetailService = new DocumentDetailService(elasticClient, loggerFactory, viewToStringRenderer);
+            _doSearchService = new DoSearchService(elasticSearchService, loggerFactory, viewToStringRenderer);
+            _searchSuggestService = new SearchSuggestService(elasticSearchService, loggerFactory);
+            _documentDetailService = new DocumentDetailService(elasticSearchService, loggerFactory, viewToStringRenderer);
         }
 
         [Route("doSearch")]

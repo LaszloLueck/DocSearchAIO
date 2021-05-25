@@ -17,14 +17,14 @@ namespace DocSearchAIO.DocSearch.Services
     {
         private readonly ILogger<DoSearchService> _logger;
         private readonly ViewToStringRenderer _viewToStringRenderer;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
 
-        public DoSearchService(IElasticClient elasticClient, ILoggerFactory loggerFactory,
+        public DoSearchService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
             ViewToStringRenderer viewToStringRenderer)
         {
             _logger = loggerFactory.CreateLogger<DoSearchService>();
             _viewToStringRenderer = viewToStringRenderer;
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
         }
 
 
@@ -109,7 +109,7 @@ namespace DocSearchAIO.DocSearch.Services
                     {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
                 var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
                 outResponse.Statistics = statisticResponse;
-                
+
                 var retCol = result.Hits.Select(hit =>
                 {
                     var iconType = hit.Source.ContentType switch

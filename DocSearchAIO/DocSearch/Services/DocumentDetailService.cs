@@ -16,13 +16,13 @@ namespace DocSearchAIO.DocSearch.Services
     {
         private readonly ILogger _logger;
         private readonly ViewToStringRenderer _viewToStringRenderer;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
 
-        public DocumentDetailService(IElasticClient elasticClient, ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer)
+        public DocumentDetailService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer)
         {
             _logger = loggerFactory.CreateLogger<DocumentDetailService>();
             _viewToStringRenderer = viewToStringRenderer;
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
         }
 
         public async Task<DocumentDetailResponse> GetDocumentDetail(

@@ -12,13 +12,13 @@ namespace DocSearchAIO.DocSearch.Services
 {
     public class SearchSuggestService
     {
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
         private readonly ILogger<SearchSuggestService> _logger;
 
-        public SearchSuggestService(IElasticClient elasticClient, ILoggerFactory loggerFactory)
+        public SearchSuggestService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory)
         {
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
             _logger = loggerFactory.CreateLogger<SearchSuggestService>();
+            _elasticSearchService = elasticSearchService;
         }
 
         public async Task<SuggestResult> GetSuggestions(string searchPhrase)

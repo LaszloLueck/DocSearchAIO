@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.Services;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nest;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
@@ -18,7 +20,8 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             var pool = new StaticConnectionPool(uriList);
             var settings = new ConnectionSettings(pool).DefaultIndex(cfg.IndexName);
             var client = new ElasticClient(settings);
-            services.AddSingleton<IElasticClient>(client);
+            var elasticSearchService = new ElasticSearchService(client);
+            services.AddSingleton<IElasticSearchService>(elasticSearchService);
         }
     }
 }

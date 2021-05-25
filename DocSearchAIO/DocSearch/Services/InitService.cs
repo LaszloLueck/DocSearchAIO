@@ -10,12 +10,12 @@ namespace DocSearchAIO.DocSearch.Services
     public class InitService
     {
         private readonly ILogger _logger;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
 
-        public InitService(ILoggerFactory loggerFactory, IElasticClient elasticClient)
+        public InitService(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<InitService>();
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
         }
 
         public async Task<InitResponseObject> Init(InitRequestObject initRequestObject)

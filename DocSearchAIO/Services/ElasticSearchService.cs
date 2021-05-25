@@ -2,20 +2,35 @@
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Logging;
 using Nest;
 
 namespace DocSearchAIO.Services
 {
-    public class ElasticSearchService
+    public interface IElasticSearchService
+    {
+        Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
+            where T : ElasticDocument;
+
+        Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
+        Task<bool> DeleteIndexAsync(string indexName);
+        Task<bool> RefreshIndexAsync(string indexName);
+        Task<bool> FlushIndexAsync(string indexName);
+        Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true);
+        Task<bool> IndexExistsAsync(string indexName);
+        Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true) where T: ElasticDocument;
+    }
+
+    public class ElasticSearchService : IElasticSearchService
     {
         private readonly ILogger _logger;
         private readonly IElasticClient _elasticClient;
 
-        public ElasticSearchService(ILoggerFactory loggerFactory, IElasticClient elasticClient)
+        public ElasticSearchService(IElasticClient elasticClient)
         {
-            _logger = loggerFactory.CreateLogger<ElasticSearchService>();
+            _logger = LoggingFactoryBuilder.Build<ElasticSearchService>();
             _elasticClient = elasticClient;
         }
 

@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
@@ -24,7 +23,6 @@ using Nest;
 using Optional;
 using Optional.Collections;
 using Quartz;
-using Quartz.Impl.Matchers;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -35,17 +33,17 @@ namespace DocSearchAIO.Scheduler
         private static readonly SHA256 Sha256 = SHA256.Create();
         private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
-        private readonly ElasticSearchService _elasticSearchService;
+        private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtils _schedulerUtils;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-            IElasticClient elasticClient)
+            IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
-            _elasticSearchService = new ElasticSearchService(loggerFactory, elasticClient);
+            _elasticSearchService = elasticSearchService;
             _schedulerUtils = new SchedulerUtils(loggerFactory);
         }
 
