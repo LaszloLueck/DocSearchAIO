@@ -1,7 +1,31 @@
 @model DocSearchAIO.DocSearch.TOs.AdministrationGenericModel
 
-<div class="form-row mr-2 ml-2 mt-2 mb-1 w-100">
-    <div class="input-group col-md-12 mb-2">
+<script type="text/javascript">
+    addNewElasticNode = () => {
+        var currentElements = $('#elasticNodeContainer > div').length;
+        
+        var element = '<div style="display: none" class="input-group m-2" id="elasticEndpoint_' + (currentElements + 1) + '">';
+        element += '<div class="input-group-prepend">';
+        element += '<span class="input-group-text" id="labelElasticEndpoint_' + (currentElements + 1) + '">Elastic-Endpunkt ' + (currentElements + 1) + '</span>'
+        element += '</div>';
+        element += '<input type="text" class="form-control mr-1" id="elastic_endpoint_' + (currentElements + 1) + '" placeholder="Elastice-Node als http://Host:Port">';
+        element += '<button type="button" class="btn btn-danger" onclick="removeNodeEntry(' + (currentElements + 1) + ')"><i class="bi bi-trash"></i> Entfernen</button>';
+        element += '</div>';
+        
+        $('#elasticNodeContainer').append(element);
+        $('#elasticEndpoint_' + (currentElements + 1)).fadeIn();        
+    }
+    
+    removeNodeEntry = (id) => {
+        $('#elasticEndpoint_' + id).fadeOut(function (){
+            $("#elasticEndpoint_" + id).remove();        
+        });
+    }
+
+</script>
+
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gra">
+    <div class="input-group m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelState">Scan-Pfad</span>
         </div>
@@ -10,41 +34,49 @@
 </div>
 @for (var i = 0; i < Model.ElasticEndpoints.Count; i++)
 {
-    <div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
-        <div class="input-group col-md-12 mb-2">
+    <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="elasticNodeContainer">
+        <div class="input-group m-2" id="elasticEndpoint_@i">
             <div class="input-group-prepend">
-                <span class="input-group-text" id="labelElasticEndpoint_@i">Elastic-Endpunkt @(i+1)</span>
+                <span class="input-group-text" id="labelElasticEndpoint_@i">Elastic-Endpunkt @(i + 1)</span>
             </div>
-            <input type="text" class="form-control" id="elastic_endpoint_@i" value="@Model.ElasticEndpoints[i]">
+            <input type="text" class="form-control mr-1" id="elastic_endpoint_@i" value="@Model.ElasticEndpoints[i]">
+            @if (i + 1 == Model.ElasticEndpoints.Count)
+            {
+                <button type="button" class="btn btn-primary" onclick="addNewElasticNode()"><i class="bi bi-plus"></i> Neu</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-danger" onclick="removeNodeEntry(@i)"><i class="bi bi-trash"></i> Entfernen</button>
+            }
         </div>
     </div>
 }
-<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
-    <div class="input-group col-md-12 mb-2">
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelIndexName">Index-Name (Prefix)</span>
         </div>
         <input type="text" class="form-control" id="indexName" value="@Model.IndexName">
     </div>
 </div>
-<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
-    <div class="input-group col-md-12 mb-2">
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelSchedulerName">Scheduler-Name</span>
         </div>
         <input type="text" class="form-control" id="schedulerName" value="@Model.SchedulerName">
     </div>
 </div>
-<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
-    <div class="input-group col-md-12 mb-2">
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelSchedulerId">Scheduler-Id</span>
         </div>
         <input type="text" class="form-control" id="schedulerId" value="@Model.SchedulerId">
     </div>
 </div>
-<div class="form-row mr-2 ml-2 mt-1 mb-1 w-100">
-    <div class="input-group col-md-12 mb-2">
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelActorSystemName">Actorsystem-Name</span>
         </div>

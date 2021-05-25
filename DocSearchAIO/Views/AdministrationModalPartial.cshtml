@@ -1,90 +1,3 @@
-<script type="text/javascript">
-    switchAdminContent = (element) => {
-        $('ul.nav-tabs li.nav-item a.nav-link').each(function (index) {
-            $(this).removeClass('active');
-            if ($(this).attr("id") === $(element).attr("id")) {
-                $(this).addClass('active');
-            }
-        });
-
-        $('#navContainer').slideUp(function () {
-            switch ($(element).attr('id')) {
-                case 'generalSettings':
-                    loadGenericContent();
-                    break;
-                case 'schedulerSettings':
-                    loadSchedulerContent();
-                    break;
-                case 'statisticSettings':
-                    loadStatisticContent();
-                    break;
-                case 'actionSettings':
-                    loadActionContent();
-                    break;
-            }
-        });
-    }
-
-    loadGenericContent = () => {
-        $.ajax({
-            url: "/api/administration/getGenericContent",
-            method: "GET",
-        })
-            .done(function (result) {
-                $('#navContainer').html(result);
-                $('#navContainer').slideDown();
-            })
-            .fail(function (xhr, status, error) {
-                showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-            });
-    }
-
-    loadSchedulerContent = () => {
-        $.ajax({
-            url: "/api/administration/getSchedulerContent",
-            method: "GET",
-        })
-        .done(function(result){
-            $('#navContainer').html(result);
-            $('#navContainer').slideDown();
-        })
-        .fail(function(xhr, status, error){
-            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-        });
-    }
-
-    loadStatisticContent = () => {
-        $.ajax({
-            url: "/api/administration/getStatisticsContent",
-            method: "GET",
-        })
-        .done(function(result){
-            $('#navContainer').html(result);
-            $('#navContainer').slideDown();
-        })
-        .fail(function(xhr, status, error){
-            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-        });
-    }
-
-    loadActionContent = () => {
-        $.ajax({
-            url: "/api/administration/getActionContent",
-            method: "GET",
-        })
-        .done(function(result){
-            $('#navContainer').html(result);
-            $('#navContainer').slideDown();
-        })
-        .fail(function(xhr, status, error){
-            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-        });
-    }
-
-    $(document).ready(function () {
-        switchAdminContent($('#generalSettings'));
-    });
-</script>
 <div class="modal fade bd-example-modal-xl" id="adminModal" tabindex="-1" role="dialog"
     aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" style="height: 80%;" role="document">
@@ -99,26 +12,119 @@
                 <ul class="nav nav-tabs nav-fill">
                     <li class="nav-item">
                         <a class="nav-link active" href="javascript:void(0);" onclick="switchAdminContent(this)"
-                            id="generalSettings">Allgemein</a>
+                           id="generalSettings">Allgemein</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
-                            id="schedulerSettings">Scheduler</a>
+                           id="schedulerSettings">Scheduler</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
-                            id="statisticSettings">Statistiken</a>
+                           id="statisticSettings">Statistiken</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="javascript:void(0);" onclick="switchAdminContent(this)"
-                            id="actionSettings">Aktionen</a>
+                           id="actionSettings">Aktionen</a>
                     </li>
                 </ul>
                 <div class="form-row" style="display: none;" id="navContainer">&nbsp;</div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" onclick="saveAdminContent();">Speichern</button>
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        switchAdminContent = (element) => {
+            $('ul.nav-tabs li.nav-item a.nav-link').each(function (index) {
+                $(this).removeClass('active');
+                if ($(this).attr("id") === $(element).attr("id")) {
+                    $(this).addClass('active');
+                }
+            });
+    
+            $('#navContainer').slideUp(function () {
+                switch ($(element).attr('id')) {
+                    case 'generalSettings':
+                        loadGenericContent();
+                        break;
+                    case 'schedulerSettings':
+                        loadSchedulerContent();
+                        break;
+                    case 'statisticSettings':
+                        loadStatisticContent();
+                        break;
+                    case 'actionSettings':
+                        loadActionContent();
+                        break;
+                }
+            });
+        }
+    
+        loadGenericContent = () => {
+            $.ajax({
+                url: "/api/administration/getGenericContent",
+                method: "GET",
+            })
+                .done(function (result) {
+                    $('#navContainer').html(result);
+                    $('#navContainer').slideDown();
+                })
+                .fail(function (xhr, status, error) {
+                    showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                });
+        }
+    
+        loadSchedulerContent = () => {
+            $.ajax({
+                url: "/api/administration/getSchedulerContent",
+                method: "GET",
+            })
+            .done(function(result){
+                $('#navContainer').html(result);
+                $('#navContainer').slideDown();
+            })
+            .fail(function(xhr, status, error){
+                showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+            });
+        }
+    
+        loadStatisticContent = () => {
+            $.ajax({
+                url: "/api/administration/getStatisticsContent",
+                method: "GET",
+            })
+            .done(function(result){
+                $('#navContainer').html(result);
+                $('#navContainer').slideDown();
+            })
+            .fail(function(xhr, status, error){
+                showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+            });
+        }
+    
+        loadActionContent = () => {
+            $.ajax({
+                url: "/api/administration/getActionContent",
+                method: "GET",
+            })
+            .done(function(result){
+                $('#navContainer').html(result);
+                $('#navContainer').slideDown();
+            })
+            .fail(function(xhr, status, error){
+                showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+            });
+        }
+        
+        saveAdminContent = () => {
+            showAlert("Daten werden gespeichert!", "alert-info");
+            $('#adminModal').modal('toggle');
+        };
+    
+        $(document).ready(function () {
+            switchAdminContent($('#generalSettings'));
+        });
+    </script>
 </div>
