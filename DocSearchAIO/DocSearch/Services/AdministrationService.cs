@@ -87,13 +87,15 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetGenericContent()
         {
-            var adminGenModel = new AdministrationGenericModel();
-            adminGenModel.ScanPath = _configurationObject.ScanPath;
-            adminGenModel.ElasticEndpoints = _configurationObject.ElasticEndpoints;
-            adminGenModel.IndexName = _configurationObject.IndexName;
-            adminGenModel.SchedulerName = _configurationObject.SchedulerName;
-            adminGenModel.SchedulerId = _configurationObject.SchedulerId;
-            adminGenModel.ActorSystemName = _configurationObject.ActorSystemName;
+            var adminGenModel = new AdministrationGenericModel
+            {
+                ScanPath = _configurationObject.ScanPath,
+                ElasticEndpoints = _configurationObject.ElasticEndpoints,
+                IndexName = _configurationObject.IndexName,
+                SchedulerName = _configurationObject.SchedulerName,
+                SchedulerId = _configurationObject.SchedulerId,
+                ActorSystemName = _configurationObject.ActorSystemName
+            };
 
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
             return content;
@@ -123,7 +125,13 @@ namespace DocSearchAIO.DocSearch.Services
             {
                 IndexName = index.Indices.ToList()[0].Key,
                 DocCount = index.Stats.Total.Documents.Count,
-                SizeInBytes = index.Stats.Total.Store.SizeInBytes
+                SizeInBytes = index.Stats.Total.Store.SizeInBytes,
+                FetchTimeMs = index.Stats.Total.Search.FetchTimeInMilliseconds,
+                FetchTotal = index.Stats.Total.Search.FetchTotal,
+                QueryTimeMs = index.Stats.Total.Search.QueryTimeInMilliseconds,
+                QueryTotal = index.Stats.Total.Search.QueryTotal,
+                SuggestTimeMs = index.Stats.Total.Search.SuggestTimeInMilliseconds,
+                SuggestTotal = index.Stats.Total.Search.SuggestTotal
             });
             
             var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", models);

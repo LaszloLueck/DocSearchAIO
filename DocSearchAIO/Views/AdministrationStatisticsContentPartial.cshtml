@@ -1,9 +1,30 @@
 @model IEnumerable<DocSearchAIO.DocSearch.TOs.IndexStatisticModel>
-
-<div class="container mt-2 border rounded border-color-gray">
+<div class="container mt-2">
     <div class="row">
         <div class="col-12">
             <span class="h5">Statistiken</span>
+        </div>
+    </div>
+</div>
+<div class="container mt-2 border rounded border-color-gray">
+    <div class="row mt-1">
+        <div class="col-12">
+            <span class="h5">Allgemein</span>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <div class="col-3">Gesamtanzahl Dokumente</div>
+        <div class="col-9">@(Model.Sum(a => a.DocCount))</div>
+    </div>
+    <div class="row mt-1">
+        <div class="col-3">Gesamte Indexgröße in Byte</div>
+        <div class="col-9">@($"{Model.Sum(a => a.SizeInBytes):0,0}")</div>
+    </div>
+</div>
+<div class="container mt-2 border rounded border-color-gray">
+    <div class="row mt-1">
+        <div class="col-12">
+            <span class="h5">Pro Index</span>
         </div>
     </div>
     @foreach (var indexStatisticModel in Model)
@@ -20,6 +41,30 @@
         <div class="row mb-2">
             <div class="col-3">Größe ind Bytes</div>
             <div class="col-9">@($"{indexStatisticModel.SizeInBytes:0,0}")</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Fetch-Time in ms</div>
+            <div class="col-9">@(indexStatisticModel.FetchTimeMs)</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Fetches total</div>
+            <div class="col-9">@(indexStatisticModel.FetchTotal)</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Suggest-Time in ms</div>
+            <div class="col-9">@(indexStatisticModel.SuggestTimeMs)</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Suggests total</div>
+            <div class="col-9">@(indexStatisticModel.SuggestTotal)</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Query-Time in ms</div>
+            <div class="col-9">@(indexStatisticModel.QueryTimeMs)</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-3">Queries total</div>
+            <div class="col-9">@(indexStatisticModel.QueryTotal)</div>
         </div>
     }
 
