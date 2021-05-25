@@ -6,7 +6,6 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nest;
 using Quartz;
 using Quartz.Impl;
 
@@ -15,24 +14,21 @@ namespace DocSearchAIO.DocSearch.Services
     public class AdministrationService
     {
         private readonly ILogger _logger;
-
-        private readonly ILoggerFactory _loggerFactory;
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly ConfigurationObject _configurationObject;
-        private readonly IConfiguration _configuration;
         private readonly IElasticSearchService _elasticSearchService;
+        private readonly SchedulerStatisticsService _schedulerStatisticsService;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
             IConfiguration configuration, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
-            _loggerFactory = loggerFactory;
             _viewToStringRenderer = viewToStringRenderer;
-            _configuration = configuration;
             var cfgTmp = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(cfgTmp);
             _configurationObject = cfgTmp;
             _elasticSearchService = elasticSearchService;
+            _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
         }
 
         public async Task<AdministrationModalResponse> GetAdministrationModal()
@@ -103,9 +99,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetSchedulerContent()
         {
-            var schedulerStatisticsService = new SchedulerStatisticsService(_loggerFactory, _configuration);
-
-            var schedulerStatistics = await schedulerStatisticsService.GetSchedulerStatistics();
+            var schedulerStatistics = await _schedulerStatisticsService.GetSchedulerStatistics();
             var content =
                 await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", schedulerStatistics);
             return content;
@@ -140,6 +134,10 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetActionContent()
         {
+            var schedulerStatistics = await _schedulerStatisticsService.GetSchedulerStatistics();
+            
+            
+            
             var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", new { });
             return content;
         }
