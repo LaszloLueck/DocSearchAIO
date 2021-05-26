@@ -10,5 +10,6 @@ namespace DocSearchAIO.DocSearch.TOs
         public string SchedulerName { get; set; }
         public string SchedulerId { get; set; }
         public string ActorSystemName { get; set; }
+        public string GroupName { get; set; }
     }
 }

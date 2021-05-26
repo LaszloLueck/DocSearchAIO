@@ -45,6 +45,14 @@ namespace DocSearchAIO.DocSearch.Services
             if (scheduler != null)
             {
                 await scheduler.PauseTrigger(triggerKey);
+                var currentSelected = _configurationObject
+                    .Processing
+                    .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
+                    .Select(r => r.Key)
+                    .First();
+
+                _configurationObject.Processing[currentSelected].Active = false;
+                await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
             }
 
@@ -60,12 +68,37 @@ namespace DocSearchAIO.DocSearch.Services
             if (scheduler != null)
             {
                 await scheduler.ResumeTrigger(triggerKey);
+                var currentSelected = _configurationObject
+                    .Processing
+                    .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
+                    .Select(r => r.Key)
+                    .First();
+
+                _configurationObject.Processing[currentSelected].Active = true;
+
+                await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
             }
 
             _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
             return false;
         }
+
+        public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
+        {
+            var schedulerFactory = new StdSchedulerFactory();
+            var scheduler = await schedulerFactory.GetScheduler(_configurationObject.SchedulerName);
+            if (scheduler != null)
+            {
+                var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
+                await scheduler.TriggerJob(jobKey);
+                return true;
+            }
+            
+            _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
+            return false;
+        }
+
 
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
@@ -90,7 +123,8 @@ namespace DocSearchAIO.DocSearch.Services
                 IndexName = _configurationObject.IndexName,
                 SchedulerName = _configurationObject.SchedulerName,
                 SchedulerId = _configurationObject.SchedulerId,
-                ActorSystemName = _configurationObject.ActorSystemName
+                ActorSystemName = _configurationObject.ActorSystemName,
+                GroupName = _configurationObject.GroupName
             };
 
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
@@ -127,7 +161,7 @@ namespace DocSearchAIO.DocSearch.Services
                 SuggestTimeMs = index.Stats.Total.Search.SuggestTimeInMilliseconds,
                 SuggestTotal = index.Stats.Total.Search.SuggestTotal
             });
-            
+
             var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", models);
             return content;
         }
@@ -135,10 +169,28 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<string> GetActionContent()
         {
             var schedulerStatistics = await _schedulerStatisticsService.GetSchedulerStatistics();
-            
-            
-            
-            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", new { });
+            var schedulerModels = schedulerStatistics.Select(scheduler =>
+            {
+                var schedulerModel = new AdministrationActionSchedulerModel
+                {
+                    SchedulerName = scheduler.SchedulerName,
+                    Triggers = scheduler.TriggerElements.Select(trigger =>
+                    {
+                        var triggerModel = new AdministrationActionTriggerModel
+                        {
+                            TriggerName = trigger.TriggerName,
+                            GroupName = trigger.GroupName,
+                            JobName = trigger.JobName,
+                            CurrentState = trigger.TriggerState
+                        };
+                        return triggerModel;
+                    })
+                };
+                return schedulerModel;
+            });
+
+
+            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", schedulerModels);
             return content;
         }
     }

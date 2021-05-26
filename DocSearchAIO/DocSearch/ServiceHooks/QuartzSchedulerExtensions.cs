@@ -26,13 +26,13 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["word"];
                 services.AddQuartz(q =>
                 {
-                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
                     q.AddJob<OfficeWordProcessingJob>(jk,
                         p => p.WithDescription("job for processing and indexing word documents"));
                     
                     q.AddTrigger(t => t
                         .ForJob(jk)
-                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
+                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for word-processing and indexing")
@@ -45,13 +45,13 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["powerpoint"];
                 services.AddQuartz(q =>
                 {
-                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
                     q.AddJob<OfficePowerpointProcessingJob>(jk,
                         p => p.WithDescription("job for processing and indexing powerpoint documents"));
 
                     q.AddTrigger(t => t
                         .ForJob(jk)
-                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
+                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
                         .WithDescription("trigger for powerpoint-processing and indexing")
@@ -64,11 +64,11 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 var scheduler = cfg.Processing["pdf"];
                 services.AddQuartz(q =>
                 {
-                    var jk = new JobKey(scheduler.JobName, scheduler.GroupName);
+                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
                     q.AddJob<PdfProcessingJob>(jk,
                         p => p.WithDescription("job for processing and indexing pdf documents"));
                     q.AddTrigger(t => t
-                        .WithIdentity(scheduler.TriggerName, scheduler.GroupName)
+                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
                         .ForJob(jk)
                         .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())

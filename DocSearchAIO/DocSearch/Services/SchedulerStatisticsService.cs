@@ -41,7 +41,7 @@ namespace DocSearchAIO.DocSearch.Services
                         scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
                 };
 
-                var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+                var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(_configurationObject.GroupName));
                 
                 var innerResultTasks = triggerKeys.Select(async trigger =>
                 {

@@ -25,6 +25,9 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("processing")]
         public Dictionary<string, SchedulerEntry> Processing { get; set; }
+        
+        [JsonProperty("groupName")]
+        public string GroupName { get; set; }
     }
 
     public class SchedulerEntry
@@ -50,10 +53,7 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("jobName")]
         public string JobName { get; set; }
-        
-        [JsonProperty("groupName")]
-        public string GroupName { get; set; }
-        
+
         [JsonProperty("triggerName")]
         public string TriggerName { get; set; }
         

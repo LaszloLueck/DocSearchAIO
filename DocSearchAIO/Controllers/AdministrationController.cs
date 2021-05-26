@@ -56,6 +56,13 @@ namespace DocSearchAIO.Controllers
             return await _administrationService.ResumeTriggerWithTriggerId(triggerStateRequest);
         }
 
+        [Route("instantStartJob")]
+        [HttpPost]
+        public async Task<bool> InstandStartJob(JobStatusRequest jobStatusRequest)
+        {
+            return await _administrationService.InstantStartJobWithJobId(jobStatusRequest);
+        }
+        
         [Route("getTriggerStatus")]
         [HttpPost]
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
