@@ -1,0 +1,67 @@
+﻿{
+  "configurationObject": {
+    "elasticEndpoints": [
+      "http://127.0.0.1:9200"
+    ],
+    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
+    "indexName": "officedocuments",
+    "actorSystemName": "actorSystem",
+    "schedulerName": "DocSearchScheduler",
+    "schedulerId": "DocSearchScheduler_001",
+    "processing": {
+      "excel": {
+        "active": false,
+        "parallelism": 6,
+        "excludeFilter": "~$",
+        "fileExtension": "*.xlsx",
+        "indexSuffix": "excel",
+        "comparerFile": "excel.cmp",
+        "comparerDirectory": "./comparer/",
+        "jobName": "excelProcessingJob",
+        "triggerName": "excelProcessingTrigger",
+        "startDelay": 3,
+        "runsEvery": 3600
+      },
+      "pdf": {
+        "active": false,
+        "parallelism": 10,
+        "excludeFilter": "",
+        "fileExtension": "*.pdf",
+        "indexSuffix": "pdf",
+        "comparerFile": "pdf.cmp",
+        "comparerDirectory": "./comparer/",
+        "jobName": "pdfProcessingJob",
+        "triggerName": "pdfProcessingTrigger",
+        "startDelay": 7,
+        "runsEvery": 3600
+      },
+      "powerpoint": {
+        "active": false,
+        "parallelism": 6,
+        "excludeFilter": "~$",
+        "fileExtension": "*.pptx",
+        "indexSuffix": "powerpoint",
+        "comparerFile": "powerpoint.cmp",
+        "comparerDirectory": "./comparer/",
+        "jobName": "powerpointProcessingJob",
+        "triggerName": "powerpointProcessingTrigger",
+        "startDelay": 5,
+        "runsEvery": 3600
+      },
+      "word": {
+        "active": false,
+        "parallelism": 6,
+        "excludeFilter": "~$",
+        "fileExtension": "*.docx",
+        "indexSuffix": "word",
+        "comparerFile": "word.cmp",
+        "comparerDirectory": "./comparer/",
+        "jobName": "wordProcessingJob",
+        "triggerName": "wordProcessingTrigger",
+        "startDelay": 1,
+        "runsEvery": 3600
+      }
+    },
+    "groupName": "docSearch_Processing"
+  }
+}
