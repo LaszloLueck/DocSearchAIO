@@ -6,8 +6,8 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Optional.Unsafe;
 using Quartz;
-using Quartz.Impl;
 
 namespace DocSearchAIO.DocSearch.Services
 {
@@ -39,11 +39,10 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = await schedulerFactory.GetScheduler(_configurationObject.SchedulerName);
-            var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-            if (scheduler != null)
+            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            return await schedulerOpt.Map(async scheduler =>
             {
+                var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 await scheduler.PauseTrigger(triggerKey);
                 var currentSelected = _configurationObject
                     .Processing
@@ -54,19 +53,20 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.Processing[currentSelected].Active = false;
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
-            }
+            }).ValueOr(() =>
+            {
+                _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
+                return new Task<bool>(() => false);
+            });
 
-            _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
-            return false;
         }
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = await schedulerFactory.GetScheduler(_configurationObject.SchedulerName);
-            var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-            if (scheduler != null)
+            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            return await schedulerOpt.Map(async scheduler =>
             {
+                var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 await scheduler.ResumeTrigger(triggerKey);
                 var currentSelected = _configurationObject
                     .Processing
@@ -78,40 +78,44 @@ namespace DocSearchAIO.DocSearch.Services
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
-            }
+            }).ValueOr(() =>
+            {
+                _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
+                return new Task<bool>(() => false);
+            });
 
-            _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
-            return false;
+
         }
 
         public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = await schedulerFactory.GetScheduler(_configurationObject.SchedulerName);
-            if (scheduler != null)
+            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            return await schedulerOpt.Map(async scheduler =>
             {
                 var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                 await scheduler.TriggerJob(jobKey);
                 return true;
-            }
-            
-            _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
-            return false;
+            }).ValueOr(() =>
+            {
+                _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
+                return new Task<bool>(() => false);
+            });
+
         }
 
 
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = await schedulerFactory.GetScheduler(_configurationObject.SchedulerName);
-            if (scheduler != null)
+            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            return await schedulerOpt.Map(async scheduler =>
             {
                 var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 return (await scheduler.GetTriggerState(triggerKey)).ToString();
-            }
-
-            _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
-            return "";
+            }).ValueOr(() =>
+            {
+                _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
+                return new Task<string>(() => "");
+            });
         }
 
         public async Task<string> GetGenericContent()

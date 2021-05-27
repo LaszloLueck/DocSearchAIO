@@ -67,7 +67,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 
-                List<string> selectedIndices = new List<string>();
+                var selectedIndices = new List<string>();
                 if (knownIndices.Contains("officedocuments-word") && doSearchRequest.FilterWord)
                     selectedIndices.Add("officedocuments-word");
                 if (knownIndices.Contains("officedocuments-excel") && doSearchRequest.FilterExcel)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Akka.Util.Internal;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -29,8 +30,8 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<IEnumerable<SchedulerStatistics>> GetSchedulerStatistics()
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var resultTasks = (await schedulerFactory.GetAllSchedulers()).Select(async scheduler =>
+            
+            var resultTasks = (await SchedulerUtils.GetAllScheduler()).Select(async scheduler =>
             {
                 var schedulerStatistics = new SchedulerStatistics
                 {
