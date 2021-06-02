@@ -44,7 +44,7 @@ namespace DocSearchAIO.Scheduler
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory);
+            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -56,18 +56,12 @@ namespace DocSearchAIO.Scheduler
                 {
                     var materializer = _actorSystem.Materializer();
                     _logger.LogInformation("Start Job");
-                    var indexName = _cfg.IndexName + "-" + schedulerEntry.IndexSuffix;
+                    var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                    if (!await _elasticSearchService.IndexExistsAsync(indexName))
-                    {
-                        _logger.LogInformation($"Index {indexName} does not exist, lets create them");
-                        await _elasticSearchService.CreateIndexAsync<PdfElasticDocument>(indexName);
-                        await _elasticSearchService.RefreshIndexAsync(indexName);
-                        await _elasticSearchService.FlushIndexAsync(indexName);
-                    }
+                    await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
 
                     var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                    var comparerBag = FillComparerBag(compareDirectory);
+                    var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
                     _logger.LogInformation("start crunching and indexing some pdf-files");
                     if (!Directory.Exists(_cfg.ScanPath))
                     {
@@ -80,10 +74,10 @@ namespace DocSearchAIO.Scheduler
                         var source = Source
                             .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
                                 SearchOption.AllDirectories))
-                            .Where(file => UseExcludeFileFilter(schedulerEntry, file))
+                            .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
                             .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
                             .SelectAsync(schedulerEntry.Parallelism,
-                                elementOpt => FilterExistingUnchanged(elementOpt, comparerBag))
+                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .Select(d => d.Values())
                             .SelectAsync(schedulerEntry.Parallelism,
@@ -93,11 +87,8 @@ namespace DocSearchAIO.Scheduler
                         await Task.WhenAll(runnable);
 
                         _logger.LogInformation("finished processing pdf-documents.");
-                        _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
-                        File.Delete(compareDirectory);
-                        _logger.LogInformation($"write new comparer file in {compareDirectory}");
-                        await File.WriteAllLinesAsync(compareDirectory,
-                            comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
+                        _schedulerUtils.DeleteComparerFile(compareDirectory);
+                        await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
 
                         sw.Stop();
                         _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
@@ -105,66 +96,11 @@ namespace DocSearchAIO.Scheduler
                 }
                 else
                 {
-                    var currentTriggerState =
-                        await context.Scheduler.GetTriggerState(new TriggerKey(schedulerEntry.TriggerName,
-                            _cfg.GroupName));
-                    if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
-                    {
-                        _logger.LogWarning(
-                            $"Set Trigger for {schedulerEntry.TriggerName} in scheduler {context.Scheduler.SchedulerName} to pause because of user settings!");
-                        await context.Scheduler.PauseTrigger(new TriggerKey(schedulerEntry.TriggerName,
-                            _cfg.GroupName));
-                    }
-
+                    await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
+                        _cfg.GroupName);
                     _logger.LogWarning(
                         "Skip Processing of PDF documents because the scheduler is inactive per config");
                 }
-            });
-        }
-
-        private static bool UseExcludeFileFilter(SchedulerEntry schedulerEntry, string fileName)
-        {
-            if (schedulerEntry.ExcludeFilter == "")
-                return true;
-
-            return !fileName.Contains(schedulerEntry.ExcludeFilter);
-        }
-
-        private static ConcurrentDictionary<string, string> FillComparerBag(string fileName)
-        {
-            var str = File.ReadLines(fileName);
-            var cnv = str.Select(str =>
-            {
-                var spl = str.Split(";");
-                return new KeyValuePair<string, string>(spl[0], spl[1]);
-            });
-
-            return new ConcurrentDictionary<string, string>(cnv);
-        }
-
-        private static async Task<Option<PdfElasticDocument>> FilterExistingUnchanged(
-            Option<PdfElasticDocument> document,
-            ConcurrentDictionary<string, string> comparerBag)
-        {
-            return await Task.Run(() =>
-            {
-                var opt = document.FlatMap(doc =>
-                {
-                    var currentHash = doc.ContentHash;
-
-                    if (!comparerBag.TryGetValue(doc.Id, out var value))
-                    {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
-                        return Option.Some(doc);
-                    }
-
-                    if (currentHash == value) return Option.None<PdfElasticDocument>();
-                    {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
-                        return Option.Some(doc);
-                    }
-                });
-                return opt;
             });
         }
 
@@ -227,7 +163,7 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = CreateHashString(listElementsToHash);
+                    elasticDoc.ContentHash = _schedulerUtils.CreateHashString(listElementsToHash);
 
                     return Option.Some(elasticDoc);
                 }
@@ -237,13 +173,6 @@ namespace DocSearchAIO.Scheduler
                     return Option.None<PdfElasticDocument>();
                 }
             });
-        }
-
-        private static string CreateHashString(IEnumerable<string> elements)
-        {
-            var contentString = string.Join("", elements);
-            var hash = Sha256.ComputeHash(Encoding.UTF8.GetBytes(contentString));
-            return Convert.ToBase64String(hash);
         }
     }
 
