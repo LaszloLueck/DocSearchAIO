@@ -1,14 +1,14 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
+EXPOSE 5000
+EXPOSE 5001
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["DocSearchAIO/DocSearchAIO.csproj", "DocSearchAIO/"]
+COPY ["DocSearchAIO.csproj", "DocSearchAIO/"]
 RUN dotnet restore "DocSearchAIO/DocSearchAIO.csproj"
-COPY . .
 WORKDIR "/src/DocSearchAIO"
+COPY . ./
 RUN dotnet build "DocSearchAIO.csproj" -c Release -o /app/build
 
 FROM build AS publish
