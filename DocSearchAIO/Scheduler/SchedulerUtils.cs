@@ -18,6 +18,7 @@ namespace DocSearchAIO.Scheduler
     public class SchedulerUtils
     {
         private static ILogger _logger;
+
         private readonly IElasticSearchService _elasticSearchService;
         //private static readonly SHA256 Sha256 = SHA256.Create();
 
@@ -114,14 +115,14 @@ namespace DocSearchAIO.Scheduler
                     if (!comparerBag.TryGetValue(doc.Id, out var value))
                     {
                         _logger.LogInformation("document not in bag: {NotInBag}", doc.OriginalFilePath);
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => currentHash);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, _) => currentHash);
                         return Option.Some(doc);
                     }
 
                     if (currentHash == value) return Option.None<T>();
                     {
                         _logger.LogInformation("changed document: {ChangedDocument}", doc.OriginalFilePath);
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => currentHash);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, _) => currentHash);
                         return Option.Some(doc);
                     }
                 });
