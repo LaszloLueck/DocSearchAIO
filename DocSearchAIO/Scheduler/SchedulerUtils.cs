@@ -19,44 +19,46 @@ namespace DocSearchAIO.Scheduler
     {
         private static ILogger _logger;
         private readonly IElasticSearchService _elasticSearchService;
-
+        private static readonly SHA256 Sha256 = SHA256.Create();
+        
         public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtils>();
             _elasticSearchService = elasticSearchService;
         }
 
-        public async Task<string> CreateComparerDirectoryIfNotExists(SchedulerEntry schedulerEntry)
+        public readonly Func<SchedulerEntry, Task<string>> CreateComparerDirectoryIfNotExists = async schedulerEntry =>
         {
-            var compareDirectory = schedulerEntry.ComparerDirectory + schedulerEntry.ComparerFile;
-            if (!File.Exists(compareDirectory))
+            var compareFilePath = schedulerEntry.ComparerDirectory + schedulerEntry.ComparerFile;
+            if (File.Exists(compareFilePath)) return await Task.Run(() => compareFilePath);
+            if (!Directory.Exists(schedulerEntry.ComparerDirectory))
             {
-                if (!Directory.Exists(schedulerEntry.ComparerDirectory))
-                {
-                    _logger.LogWarning(
-                        $"Comparer directory <{schedulerEntry.ComparerDirectory}> does not exist, lets create it");
-                    Directory.CreateDirectory(schedulerEntry.ComparerDirectory);
-                }
-
-                _logger.LogWarning($"Comparerfile <{compareDirectory}> does not exists, lets create it");
-                await File.Create(compareDirectory).DisposeAsync();
+                _logger.LogWarning(
+                    "comparer directory <{ComparerDirectory}> does not exist, lets create it",
+                    schedulerEntry.ComparerDirectory);
+                Directory.CreateDirectory(schedulerEntry.ComparerDirectory);
             }
 
-            return await Task.Run(() => compareDirectory);
-        }
+            _logger.LogWarning("comparer file <{ComparerDirectory}> does not exists, lets create it", compareFilePath);
+            await File.Create(compareFilePath).DisposeAsync();
 
-        public void DeleteComparerFile(string compareDirectory)
+            return await Task.Run(() => compareFilePath);
+        };
+
+        public readonly Action<string> DeleteComparerFile = compareDirectory =>
         {
-            _logger.LogInformation($"delete comparer file in <{compareDirectory}>");
+            _logger.LogInformation("delete comparer file in <{ComparerDirectory}>", compareDirectory);
             File.Delete(compareDirectory);
-        }
+        };
 
-        public async Task WriteAllLinesAsync(string compareDirectory, ConcurrentDictionary<string, string> comparerBag)
-        {
-            _logger.LogInformation($"write new comparer file in {compareDirectory}");
-            await File.WriteAllLinesAsync(compareDirectory,
-                comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
-        }
+
+        public readonly Func<string, ConcurrentDictionary<string, string>, Task> WriteAllLinesAsync =
+            async (compareDirectory, comparerBag) =>
+            {
+                _logger.LogInformation("write new comparer file in {ComparerDirectory}", compareDirectory);
+                await File.WriteAllLinesAsync(compareDirectory,
+                    comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
+            };
 
 
         public readonly Func<IScheduler, string, string, Task> SetTriggerStateByUserAction =
@@ -66,36 +68,39 @@ namespace DocSearchAIO.Scheduler
                 if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
                 {
                     _logger.LogWarning(
-                        $"Set Trigger for {triggerName} in scheduler {scheduler.SchedulerName} to pause because of user settings!");
+                        "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
+                        triggerName, scheduler.SchedulerName);
                     await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
                 }
             };
 
         public async Task CheckAndCreateElasticIndex<T>(string indexName) where T : ElasticDocument
         {
-            if (!await _elasticSearchService.IndexExistsAsync(indexName))
-            {
-                _logger.LogInformation($"Index {indexName} does not exist, lets create them");
-                await _elasticSearchService.CreateIndexAsync<T>(indexName);
-                await _elasticSearchService.RefreshIndexAsync(indexName);
-                await _elasticSearchService.FlushIndexAsync(indexName);
-            }
+            if (await _elasticSearchService.IndexExistsAsync(indexName))
+                return;
+            _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
+            await _elasticSearchService.CreateIndexAsync<T>(indexName);
+            await _elasticSearchService.RefreshIndexAsync(indexName);
+            await _elasticSearchService.FlushIndexAsync(indexName);
         }
 
         public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
             (excludeFilter == "") || !fileName.Contains(excludeFilter);
 
 
-        public readonly Func<string, ConcurrentDictionary<string, string>> FillComparerBag = (fileName) =>
+        public readonly Func<string, ConcurrentDictionary<string, string>> FillComparerBag = fileName =>
         {
-            return (ConcurrentDictionary<string, string>) File.ReadAllLines(fileName).Select(str =>
+            var result = File.ReadAllLines(fileName).Select(str =>
             {
                 var spl = str.Split(";");
                 return new KeyValuePair<string, string>(spl[0], spl[1]);
             });
+            return result.Any()
+                ? (ConcurrentDictionary<string, string>) result
+                : new ConcurrentDictionary<string, string>();
         };
 
-        public async Task<Option<T>> FilterExistingUnchanged<T>(
+        public static async Task<Option<T>> FilterExistingUnchanged<T>(
             Option<T> document, ConcurrentDictionary<string, string> comparerBag) where T : ElasticDocument
         {
             return await Task.Run(() =>
@@ -106,13 +111,13 @@ namespace DocSearchAIO.Scheduler
 
                     if (!comparerBag.TryGetValue(doc.Id, out var value))
                     {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, innerValue) => innerValue);
                         return Option.Some(doc);
                     }
 
                     if (currentHash == value) return Option.None<T>();
                     {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => innerValue);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, innerValue) => innerValue);
                         return Option.Some(doc);
                     }
                 });
@@ -122,9 +127,9 @@ namespace DocSearchAIO.Scheduler
 
         public readonly Func<IEnumerable<string>, string> CreateHashString = (elements) =>
         {
-            var contentString = string.Join("", elements);
-            var sha256 = SHA256.Create();
-            var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(contentString));
+            using var myReader = new StringReader(string.Join("", elements));
+            var hash = Sha256.ComputeHash(Encoding.UTF8.GetBytes(myReader.ReadToEnd()));
+            myReader.Dispose();
             return Convert.ToBase64String(hash);
         };
 

@@ -55,7 +55,7 @@ namespace DocSearchAIO.Scheduler
                 if (schedulerEntry.Active)
                 {
                     var materializer = _actorSystem.Materializer();
-                    _logger.LogInformation("Start Job");
+                    _logger.LogInformation("start job");
                     var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                     await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
@@ -66,7 +66,7 @@ namespace DocSearchAIO.Scheduler
                     if (!Directory.Exists(_cfg.ScanPath))
                     {
                         _logger.LogWarning(
-                            $"directory to scan <{_cfg.ScanPath}> does not exists. skip working.");
+                            "directory to scan <{ScanPath}> does not exists, skip working", _cfg.ScanPath);
                     }
                     else
                     {
@@ -77,7 +77,7 @@ namespace DocSearchAIO.Scheduler
                             .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
                             .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
                             .SelectAsync(schedulerEntry.Parallelism,
-                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .Select(d => d.Values())
                             .SelectAsync(schedulerEntry.Parallelism,
@@ -86,12 +86,12 @@ namespace DocSearchAIO.Scheduler
                         var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
                         await Task.WhenAll(runnable);
 
-                        _logger.LogInformation("finished processing pdf-documents.");
+                        _logger.LogInformation("finished processing pdf documents");
                         _schedulerUtils.DeleteComparerFile(compareDirectory);
                         await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
 
                         sw.Stop();
-                        _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                        _logger.LogInformation("index documents in {ElapsedMillis} ms", sw.ElapsedMilliseconds);
                     }
                 }
                 else
@@ -99,7 +99,7 @@ namespace DocSearchAIO.Scheduler
                     await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
                         _cfg.GroupName);
                     _logger.LogWarning(
-                        "Skip Processing of PDF documents because the scheduler is inactive per config");
+                        "skip Processing of PDF documents because the scheduler is inactive per config");
                 }
             });
         }
@@ -119,32 +119,33 @@ namespace DocSearchAIO.Scheduler
                     for (var i = 1; i <= document.GetNumberOfPages(); i++)
                     {
                         var pdfPage = document.GetPage(i);
-                        pdfPages.Add(new PdfPage(i,
-                            PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
+                        pdfPages.Add(
+                            new PdfPage(PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
                     }
 
                     var uriPath = fileName
                         .Replace(configuration.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
                         .Replace(@"\", "/");
 
-                    var elasticDoc = new PdfElasticDocument();
-                    elasticDoc.OriginalFilePath = fileName;
-                    elasticDoc.PageCount = pdfPages.Count;
-                    elasticDoc.Creator = info.GetCreator();
-                    elasticDoc.Keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
-                        ? Array.Empty<string>()
-                        : info.GetKeywords().Split(" ");
-                    elasticDoc.Subject = info.GetSubject();
-                    elasticDoc.Title = info.GetTitle();
-                    elasticDoc.ProcessTime = DateTime.Now;
-                    elasticDoc.Created = new DateTime(1970, 1, 1);
-                    elasticDoc.Modified = new DateTime(1970, 1, 1);
-                    elasticDoc.LastPrinted = new DateTime(1970, 1, 1);
-                    elasticDoc.Id =
-                        Convert.ToBase64String(
-                            Sha256.ComputeHash(Encoding.UTF8.GetBytes(fileName)));
-                    elasticDoc.UriFilePath = uriPath;
-                    elasticDoc.ContentType = "pdf";
+                    var elasticDoc = new PdfElasticDocument
+                    {
+                        OriginalFilePath = fileName,
+                        PageCount = pdfPages.Count,
+                        Creator = info.GetCreator(),
+                        Keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
+                            ? Array.Empty<string>()
+                            : info.GetKeywords().Split(" "),
+                        Subject = info.GetSubject(),
+                        Title = info.GetTitle(),
+                        ProcessTime = DateTime.Now,
+                        Created = new DateTime(1970, 1, 1),
+                        Modified = new DateTime(1970, 1, 1),
+                        LastPrinted = new DateTime(1970, 1, 1),
+                        Id = Convert.ToBase64String(
+                            Sha256.ComputeHash(Encoding.UTF8.GetBytes(fileName))),
+                        UriFilePath = uriPath,
+                        ContentType = "pdf"
+                    };
 
                     var contentString = string.Join(" ", pdfPages.Select(p => p.PageText));
                     var suggestedText = Regex.Replace(contentString, "[^a-zA-Zäöüß]", " ");
@@ -178,12 +179,10 @@ namespace DocSearchAIO.Scheduler
 
     internal class PdfPage
     {
-        public readonly int PageNumber;
         public readonly string PageText;
 
-        public PdfPage(int pageNumber, string pageText)
+        public PdfPage(string pageText)
         {
-            PageNumber = pageNumber;
             PageText = pageText;
         }
     }

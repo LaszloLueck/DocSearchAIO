@@ -55,7 +55,7 @@ namespace DocSearchAIO.Scheduler
                 if (schedulerEntry.Active)
                 {
                     var materializer = _actorSystem.Materializer();
-                    _logger.LogInformation("Start Job");
+                    _logger.LogInformation("start job");
                     var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                     await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
@@ -65,7 +65,8 @@ namespace DocSearchAIO.Scheduler
                     _logger.LogInformation("start crunching and indexing some word-documents");
                     if (!Directory.Exists(_cfg.ScanPath))
                     {
-                        _logger.LogWarning($"directory to scan <{_cfg.ScanPath}> does not exists. skip working.");
+                        _logger.LogWarning("directory to scan <{ScanPath}> does not exists. skip working",
+                            _cfg.ScanPath);
                     }
                     else
                     {
@@ -76,7 +77,7 @@ namespace DocSearchAIO.Scheduler
                             .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
                             .SelectAsync(schedulerEntry.Parallelism, fileName => ProcessWordDocument(fileName, _cfg))
                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .Select(d => d.Values())
                             .SelectAsync(schedulerEntry.Parallelism,
@@ -86,12 +87,12 @@ namespace DocSearchAIO.Scheduler
                         var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
                         await Task.WhenAll(runnable);
 
-                        _logger.LogInformation("finished processing word-documents.");
+                        _logger.LogInformation("finished processing word-documents");
                         _schedulerUtils.DeleteComparerFile(compareDirectory);
                         await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
 
                         sw.Stop();
-                        _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
                     }
                 }
                 else
@@ -99,7 +100,7 @@ namespace DocSearchAIO.Scheduler
                     await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
                         _cfg.GroupName);
                     _logger.LogWarning(
-                        "Skip Processing of Word documents because the scheduler is inactive per config");
+                        "skip processing of word documents because the scheduler is inactive per config");
                 }
             });
         }
@@ -111,113 +112,132 @@ namespace DocSearchAIO.Scheduler
             {
                 return await Task.Run(() =>
                 {
-                    using var wd = WordprocessingDocument.Open(currentFile, false);
                     var sha256 = SHA256.Create();
-                    var fInfo = wd.PackageProperties;
-
-                    var category = fInfo.Category.SomeNotNull().ValueOr("");
-                    var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                    var creator = fInfo.Creator.SomeNotNull().ValueOr("");
-                    var description = fInfo.Description.SomeNotNull().ValueOr("");
-                    var identifier = fInfo.Identifier.SomeNotNull().ValueOr("");
-                    var keywords = fInfo.Keywords.SomeNotNull().ValueOr("");
-                    var language = fInfo.Language.SomeNotNull().ValueOr("");
-                    var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                    var revision = fInfo.Revision.SomeNotNull().ValueOr("");
-                    var subject = fInfo.Subject.SomeNotNull().ValueOr("");
-                    var title = fInfo.Title.SomeNotNull().ValueOr("");
-                    var version = fInfo.Version.SomeNotNull().ValueOr("");
-                    var contentStatus = fInfo.ContentStatus.SomeNotNull().ValueOr("");
-                    const string contentType = "docx";
-                    var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                    var lastModifiedBy = fInfo.LastModifiedBy.SomeNotNull().ValueOr("");
-                    var uriPath = currentFile
-                        .Replace(configurationObject.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
-                        .Replace(@"\", "/");
-
-                    var idAsByte = sha256.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                    var id = Convert.ToBase64String(idAsByte);
-
-                    var commentArray = wd.MainDocumentPart.WordprocessingCommentsPart.SomeNotNull().Match(
-                        some: comments =>
+                    var wdOpt = WordprocessingDocument.Open(currentFile, false).SomeNotNull();
+                    return wdOpt.Map(wd =>
+                    {
+                        var mainDocumentPartOpt = wd.MainDocumentPart.SomeNotNull();
+                        return mainDocumentPartOpt.Map(mainDocumentPart =>
                         {
-                            return comments.Comments.Select(comment =>
+                            var fInfo = wd.PackageProperties;
+                            var category = fInfo.Category.SomeNotNull().ValueOr("");
+                            var created = fInfo.Created ?? new DateTime(1970, 1, 1);
+                            var creator = fInfo.Creator.SomeNotNull().ValueOr("");
+                            var description = fInfo.Description.SomeNotNull().ValueOr("");
+                            var identifier = fInfo.Identifier.SomeNotNull().ValueOr("");
+                            var keywords = fInfo.Keywords.SomeNotNull().ValueOr("");
+                            var language = fInfo.Language.SomeNotNull().ValueOr("");
+                            var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
+                            var revision = fInfo.Revision.SomeNotNull().ValueOr("");
+                            var subject = fInfo.Subject.SomeNotNull().ValueOr("");
+                            var title = fInfo.Title.SomeNotNull().ValueOr("");
+                            var version = fInfo.Version.SomeNotNull().ValueOr("");
+                            var contentStatus = fInfo.ContentStatus.SomeNotNull().ValueOr("");
+                            const string contentType = "docx";
+                            var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
+                            var lastModifiedBy = fInfo.LastModifiedBy.SomeNotNull().ValueOr("");
+                            var uriPath = currentFile
+                                .Replace(configurationObject.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
+                                .Replace(@"\", "/");
+
+                            var idAsByte = sha256.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
+                            var id = Convert.ToBase64String(idAsByte);
+
+                            var commentArray = mainDocumentPart.WordprocessingCommentsPart.SomeNotNull().Match(
+                                some: comments =>
+                                {
+                                    return comments.Comments.Select(comment =>
+                                    {
+                                        var d = (Comment) comment;
+                                        var retValue = new OfficeDocumentComment();
+                                        var dat = d.Date != null
+                                            ? d.Date.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
+                                            : new DateTime(1970, 1, 1);
+
+                                        retValue.Author = d.Author?.Value;
+                                        retValue.Comment = d.InnerText;
+                                        retValue.Date = dat;
+                                        retValue.Id = d.Id?.Value;
+                                        retValue.Initials = d.Initials?.Value;
+                                        return retValue;
+                                    }).ToArray();
+                                },
+                                none: Array.Empty<OfficeDocumentComment>
+                            );
+
+                            var elements = mainDocumentPart
+                                .Document
+                                .Body?
+                                .ChildElements;
+
+                            var contentString = GetChildElements(elements);
+                            var toReplaced = new List<(string, string)>();
+
+                            ReplaceSpecialStringsTailR(ref contentString, toReplaced);
+
+                            var keywordsList = keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
+
+                            var commentsString = commentArray.Select(l => l.Comment.Split(" ")).Distinct().ToList();
+
+                            var listElementsToHash = new List<string>()
                             {
-                                var d = (Comment) comment;
-                                var retValue = new OfficeDocumentComment();
-                                var dat = d.Date != null
-                                    ? d.Date.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
-                                    : new DateTime(1970, 1, 1);
+                                category, created.ToString(CultureInfo.CurrentCulture), contentString, creator,
+                                description,
+                                identifier,
+                                string.Join("", keywords), language, modified.ToString(CultureInfo.CurrentCulture),
+                                revision,
+                                subject, title, version,
+                                contentStatus, contentType, lastPrinted.ToString(CultureInfo.CurrentCulture),
+                                lastModifiedBy
+                            };
 
-                                retValue.Author = d.Author.Value;
-                                retValue.Comment = d.InnerText;
-                                retValue.Date = dat;
-                                retValue.Id = d.Id.Value;
-                                retValue.Initials = d.Initials.Value;
-                                return retValue;
-                            }).ToArray();
-                        },
-                        none: Array.Empty<OfficeDocumentComment>
-                    );
+                            var res = listElementsToHash.Concat(commentsString.SelectMany(k => k).Distinct());
 
-                    var elements = wd
-                        .MainDocumentPart
-                        .Document
-                        .Body
-                        .ChildElements;
+                            var contentHashString = _schedulerUtils.CreateHashString(res);
 
-                    var contentString = GetChildElements(elements);
-                    var toReplaced = new List<(string, string)>();
+                            var commString = string.Join(" ", commentArray.Select(d => d.Comment));
+                            var suggestedText =
+                                Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
 
-                    ReplaceSpecialStringsTailR(ref contentString, toReplaced);
 
-                    var keywordsList = keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
+                            var searchAsYouTypeContent = suggestedText
+                                .ToLower()
+                                .Split(" ")
+                                .Distinct()
+                                .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+                                .Where(d => d.Length > 2);
 
-                    var commentsString = commentArray.Select(l => l.Comment.Split(" ")).Distinct().ToList();
+                            var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
-                    var listElementsToHash = new List<string>()
+                            var returnValue = new ElasticDocument()
+                            {
+                                Category = category, CompletionContent = completionField, Content = contentString,
+                                ContentHash = contentHashString, ContentStatus = contentStatus,
+                                ContentType = contentType,
+                                Created = created, Creator = creator, Description = description, Id = id,
+                                Identifier = identifier, Keywords = keywordsList, Language = language,
+                                Modified = modified,
+                                Revision = revision, Subject = subject, Title = title, Version = version,
+                                LastPrinted = lastPrinted, ProcessTime = DateTime.Now, LastModifiedBy = lastModifiedBy,
+                                OriginalFilePath = currentFile, UriFilePath = uriPath, Comments = commentArray
+                            };
+
+                            return Option.Some(returnValue);
+                        }).ValueOr(() =>
+                        {
+                            _logger.LogWarning("cannot process maindocumentpart of file {CurrentFile}, because it is null", currentFile);
+                            return Option.None<ElasticDocument>();
+                        });
+                    }).ValueOr(() =>
                     {
-                        category, created.ToString(CultureInfo.CurrentCulture), contentString, creator, description,
-                        identifier,
-                        string.Join("", keywords), language, modified.ToString(CultureInfo.CurrentCulture), revision,
-                        subject, title, version,
-                        contentStatus, contentType, lastPrinted.ToString(CultureInfo.CurrentCulture), lastModifiedBy
-                    };
-
-                    var res = listElementsToHash.Concat(commentsString.SelectMany(k => k).Distinct());
-
-                    var contentHashString = _schedulerUtils.CreateHashString(res);
-
-                    var commString = string.Join(" ", commentArray.Select(d => d.Comment));
-                    var suggestedText = Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
-
-
-                    var searchAsYouTypeContent = suggestedText
-                        .ToLower()
-                        .Split(" ")
-                        .Distinct()
-                        .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                        .Where(d => d.Length > 2);
-
-                    var completionField = new CompletionField {Input = searchAsYouTypeContent};
-
-                    var returnValue = new ElasticDocument()
-                    {
-                        Category = category, CompletionContent = completionField, Content = contentString,
-                        ContentHash = contentHashString, ContentStatus = contentStatus, ContentType = contentType,
-                        Created = created, Creator = creator, Description = description, Id = id,
-                        Identifier = identifier, Keywords = keywordsList, Language = language, Modified = modified,
-                        Revision = revision, Subject = subject, Title = title, Version = version,
-                        LastPrinted = lastPrinted, ProcessTime = DateTime.Now, LastModifiedBy = lastModifiedBy,
-                        OriginalFilePath = currentFile, UriFilePath = uriPath, Comments = commentArray
-                    };
-
-                    return Option.Some(returnValue);
+                        _logger.LogWarning("cannot process the basedocument of file {CurrentFile}, because it is null", currentFile);
+                        return Option.None<ElasticDocument>();
+                    });
                 });
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "An error while creating a indexing object");
+                _logger.LogError(e, "an error while creating a indexing object");
                 return await Task.Run(Option.None<ElasticDocument>);
             }
         }
@@ -239,14 +259,15 @@ namespace DocSearchAIO.Scheduler
             };
         }
 
-        private void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)
+        private static void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)
         {
-            if (!replaceList.Any())
-                return;
+            while (true)
+            {
+                if (!replaceList.Any()) return;
 
-            input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
-            replaceList.RemoveAt(0);
-            ReplaceSpecialStringsTailR(ref input, replaceList);
+                input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
+                replaceList.RemoveAt(0);
+            }
         }
     }
 }
