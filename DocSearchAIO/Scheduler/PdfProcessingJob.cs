@@ -30,7 +30,6 @@ namespace DocSearchAIO.Scheduler
     public class PdfProcessingJob : IJob
     {
         private readonly ILogger _logger;
-        private static readonly SHA256 Sha256 = SHA256.Create();
         private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
@@ -107,10 +106,11 @@ namespace DocSearchAIO.Scheduler
         private async Task<Option<PdfElasticDocument>> ProcessPdfDocument(string fileName,
             ConfigurationObject configuration)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 try
                 {
+                    var md5 = MD5.Create();
                     var pdfReader = new PdfReader(fileName);
                     var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();
@@ -142,7 +142,7 @@ namespace DocSearchAIO.Scheduler
                         Modified = new DateTime(1970, 1, 1),
                         LastPrinted = new DateTime(1970, 1, 1),
                         Id = Convert.ToBase64String(
-                            Sha256.ComputeHash(Encoding.UTF8.GetBytes(fileName))),
+                            md5.ComputeHash(Encoding.UTF8.GetBytes(fileName))),
                         UriFilePath = uriPath,
                         ContentType = "pdf"
                     };
@@ -164,7 +164,7 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = _schedulerUtils.CreateHashString(listElementsToHash);
+                    elasticDoc.ContentHash = await _schedulerUtils.CreateHashString(listElementsToHash);
 
                     return Option.Some(elasticDoc);
                 }

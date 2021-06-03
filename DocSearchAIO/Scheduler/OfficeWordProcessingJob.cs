@@ -110,14 +110,14 @@ namespace DocSearchAIO.Scheduler
         {
             try
             {
-                return await Task.Run(() =>
+                return await Task.Run(async () =>
                 {
-                    var sha256 = SHA256.Create();
+                    var md5 = MD5.Create();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).SomeNotNull();
-                    return wdOpt.Map(wd =>
+                    return await wdOpt.Map(async wd =>
                     {
                         var mainDocumentPartOpt = wd.MainDocumentPart.SomeNotNull();
-                        return mainDocumentPartOpt.Map(mainDocumentPart =>
+                        return await mainDocumentPartOpt.Map(async mainDocumentPart =>
                         {
                             var fInfo = wd.PackageProperties;
                             var category = fInfo.Category.SomeNotNull().ValueOr("");
@@ -140,7 +140,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(configurationObject.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
                                 .Replace(@"\", "/");
 
-                            var idAsByte = sha256.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
+                            var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
                             var id = Convert.ToBase64String(idAsByte);
 
                             var commentArray = mainDocumentPart.WordprocessingCommentsPart.SomeNotNull().Match(
@@ -193,7 +193,7 @@ namespace DocSearchAIO.Scheduler
 
                             var res = listElementsToHash.Concat(commentsString.SelectMany(k => k).Distinct());
 
-                            var contentHashString = _schedulerUtils.CreateHashString(res);
+                            var contentHashString = await _schedulerUtils.CreateHashString(res);
 
                             var commString = string.Join(" ", commentArray.Select(d => d.Comment));
                             var suggestedText =
@@ -223,15 +223,15 @@ namespace DocSearchAIO.Scheduler
                             };
 
                             return Option.Some(returnValue);
-                        }).ValueOr(() =>
+                        }).ValueOr(async () =>
                         {
                             _logger.LogWarning("cannot process maindocumentpart of file {CurrentFile}, because it is null", currentFile);
-                            return Option.None<ElasticDocument>();
+                            return await Task.Run(() => Option.None<ElasticDocument>());
                         });
-                    }).ValueOr(() =>
+                    }).ValueOr(async () =>
                     {
                         _logger.LogWarning("cannot process the basedocument of file {CurrentFile}, because it is null", currentFile);
-                        return Option.None<ElasticDocument>();
+                        return await Task.Run(() => Option.None<ElasticDocument>());
                     });
                 });
             }

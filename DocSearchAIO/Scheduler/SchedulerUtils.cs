@@ -19,8 +19,8 @@ namespace DocSearchAIO.Scheduler
     {
         private static ILogger _logger;
         private readonly IElasticSearchService _elasticSearchService;
-        private static readonly SHA256 Sha256 = SHA256.Create();
-        
+        //private static readonly SHA256 Sha256 = SHA256.Create();
+
         public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtils>();
@@ -95,8 +95,10 @@ namespace DocSearchAIO.Scheduler
                 var spl = str.Split(";");
                 return new KeyValuePair<string, string>(spl[0], spl[1]);
             });
-            return result.Any()
-                ? (ConcurrentDictionary<string, string>) result
+            var hashPairs = result as KeyValuePair<string, string>[] ?? result.ToArray();
+            return hashPairs.Any()
+                ? new ConcurrentDictionary<string, string>(hashPairs.ToDictionary(element => element.Key,
+                    element => element.Value))
                 : new ConcurrentDictionary<string, string>();
         };
 
@@ -111,13 +113,15 @@ namespace DocSearchAIO.Scheduler
 
                     if (!comparerBag.TryGetValue(doc.Id, out var value))
                     {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, innerValue) => innerValue);
+                        _logger.LogInformation("document not in bag: {NotInBag}", doc.OriginalFilePath);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => currentHash);
                         return Option.Some(doc);
                     }
 
                     if (currentHash == value) return Option.None<T>();
                     {
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, innerValue) => innerValue);
+                        _logger.LogInformation("changed document: {ChangedDocument}", doc.OriginalFilePath);
+                        comparerBag.AddOrUpdate(doc.Id, currentHash, (key, innerValue) => currentHash);
                         return Option.Some(doc);
                     }
                 });
@@ -125,12 +129,15 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public readonly Func<IEnumerable<string>, string> CreateHashString = (elements) =>
+        public readonly Func<IEnumerable<string>, Task<string>> CreateHashString = async (elements) =>
         {
-            using var myReader = new StringReader(string.Join("", elements));
-            var hash = Sha256.ComputeHash(Encoding.UTF8.GetBytes(myReader.ReadToEnd()));
-            myReader.Dispose();
-            return Convert.ToBase64String(hash);
+            return await Task.Run(() =>
+            {
+                using var myReader = new StringReader(string.Join("", elements));
+                var md5 = MD5.Create();
+                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(myReader.ReadToEnd()));
+                return Convert.ToBase64String(hash);
+            });
         };
 
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
