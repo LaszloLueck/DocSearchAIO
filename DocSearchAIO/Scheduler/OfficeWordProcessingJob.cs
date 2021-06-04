@@ -71,7 +71,7 @@ namespace DocSearchAIO.Scheduler
                     else
                     {
                         var sw = Stopwatch.StartNew();
-                        var source = Source
+                        var runnable = Source
                             .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
                                 SearchOption.AllDirectories))
                             .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
@@ -79,14 +79,13 @@ namespace DocSearchAIO.Scheduler
                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                 elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .Select(d => d.Values())
+                            .WithOptionFilter()
                             .SelectAsync(schedulerEntry.Parallelism,
                                 async processingInfo =>
-                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName));
+                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName))
+                            .RunWith(Sink.Ignore<bool>(), materializer);
 
-                        var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
                         await Task.WhenAll(runnable);
-
                         _logger.LogInformation("finished processing word-documents");
                         _schedulerUtils.DeleteComparerFile(compareDirectory);
                         await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);

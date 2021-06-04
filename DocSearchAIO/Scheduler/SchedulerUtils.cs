@@ -6,11 +6,13 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using Microsoft.Extensions.Logging;
 using Optional;
+using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -143,4 +145,15 @@ namespace DocSearchAIO.Scheduler
 
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
     }
+
+    public static class Filters
+    {
+        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(this Source<IEnumerable<Option<TSource>>, TMat> source)
+        {
+            return source.Select(d => d.Values());
+        }
+        
+        
+    }
+    
 }

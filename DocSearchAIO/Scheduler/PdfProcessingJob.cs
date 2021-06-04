@@ -70,7 +70,7 @@ namespace DocSearchAIO.Scheduler
                     else
                     {
                         var sw = Stopwatch.StartNew();
-                        var source = Source
+                        var runnable = Source
                             .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
                                 SearchOption.AllDirectories))
                             .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
@@ -78,11 +78,11 @@ namespace DocSearchAIO.Scheduler
                             .SelectAsync(schedulerEntry.Parallelism,
                                 elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .Select(d => d.Values())
+                            .WithOptionFilter()
                             .SelectAsync(schedulerEntry.Parallelism,
                                 async elasticDocs =>
-                                    await _elasticSearchService.BulkWriteDocumentsAsync(elasticDocs, indexName));
-                        var runnable = source.RunWith(Sink.Seq<bool>(), materializer);
+                                    await _elasticSearchService.BulkWriteDocumentsAsync(elasticDocs, indexName))
+                            .RunWith(Sink.Ignore<bool>(), materializer);
                         await Task.WhenAll(runnable);
 
                         _logger.LogInformation("finished processing pdf documents");
