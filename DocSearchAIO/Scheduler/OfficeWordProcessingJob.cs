@@ -21,7 +21,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Optional;
-using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -52,55 +51,61 @@ namespace DocSearchAIO.Scheduler
             var schedulerEntry = _cfg.Processing["word"];
             await Task.Run(async () =>
             {
-                if (schedulerEntry.Active)
-                {
-                    var materializer = _actorSystem.Materializer();
-                    _logger.LogInformation("start job");
-                    var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
-
-                    await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
-                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                    var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
-
-                    _logger.LogInformation("start crunching and indexing some word-documents");
-                    if (!Directory.Exists(_cfg.ScanPath))
+                await schedulerEntry.Active.BooleanAsOptional().Match(
+                    async _ =>
                     {
-                        _logger.LogWarning("directory to scan <{ScanPath}> does not exists. skip working",
-                            _cfg.ScanPath);
-                    }
-                    else
+                        var materializer = _actorSystem.Materializer();
+                        _logger.LogInformation("start job");
+                        var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+
+                        await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
+                        var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+                        var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
+
+                        _logger.LogInformation("start crunching and indexing some word-documents");
+                        Directory.Exists(_cfg.ScanPath).BooleanAsOptional().Match(
+                            async _ =>
+                            {
+                                var sw = Stopwatch.StartNew();
+                                var runnable = Source
+                                    .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
+                                        SearchOption.AllDirectories))
+                                    .Where(file =>
+                                        _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
+                                    .SelectAsync(schedulerEntry.Parallelism,
+                                        fileName => ProcessWordDocument(fileName, _cfg))
+                                    .SelectAsync(parallelism: schedulerEntry.Parallelism,
+                                        elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                    .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                    .WithOptionFilter()
+                                    .SelectAsync(schedulerEntry.Parallelism,
+                                        async processingInfo =>
+                                            await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo,
+                                                indexName))
+                                    .RunWith(Sink.Ignore<bool>(), materializer);
+
+                                await Task.WhenAll(runnable);
+                                _logger.LogInformation("finished processing word-documents");
+                                _schedulerUtils.DeleteComparerFile(compareDirectory);
+                                await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
+
+                                sw.Stop();
+                                _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
+                            },
+                            () =>
+                            {
+                                _logger.LogWarning("directory to scan <{ScanPath}> does not exists. skip working",
+                                    _cfg.ScanPath);
+                            });
+                    },
+                    async () =>
                     {
-                        var sw = Stopwatch.StartNew();
-                        var runnable = Source
-                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
-                                SearchOption.AllDirectories))
-                            .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
-                            .SelectAsync(schedulerEntry.Parallelism, fileName => ProcessWordDocument(fileName, _cfg))
-                            .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
-                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .WithOptionFilter()
-                            .SelectAsync(schedulerEntry.Parallelism,
-                                async processingInfo =>
-                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName))
-                            .RunWith(Sink.Ignore<bool>(), materializer);
-
-                        await Task.WhenAll(runnable);
-                        _logger.LogInformation("finished processing word-documents");
-                        _schedulerUtils.DeleteComparerFile(compareDirectory);
-                        await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
-
-                        sw.Stop();
-                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
+                        await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
+                            _cfg.GroupName);
+                        _logger.LogWarning(
+                            "skip processing of word documents because the scheduler is inactive per config");
                     }
-                }
-                else
-                {
-                    await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
-                        _cfg.GroupName);
-                    _logger.LogWarning(
-                        "skip processing of word documents because the scheduler is inactive per config");
-                }
+                );
             });
         }
 
@@ -224,12 +229,15 @@ namespace DocSearchAIO.Scheduler
                             return Option.Some(returnValue);
                         }).ValueOr(async () =>
                         {
-                            _logger.LogWarning("cannot process maindocumentpart of file {CurrentFile}, because it is null", currentFile);
+                            _logger.LogWarning(
+                                "cannot process maindocumentpart of file {CurrentFile}, because it is null",
+                                currentFile);
                             return await Task.Run(() => Option.None<ElasticDocument>());
                         });
                     }).ValueOr(async () =>
                     {
-                        _logger.LogWarning("cannot process the basedocument of file {CurrentFile}, because it is null", currentFile);
+                        _logger.LogWarning("cannot process the basedocument of file {CurrentFile}, because it is null",
+                            currentFile);
                         return await Task.Run(() => Option.None<ElasticDocument>());
                     });
                 });

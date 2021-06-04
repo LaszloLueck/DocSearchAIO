@@ -148,6 +148,11 @@ namespace DocSearchAIO.Scheduler
 
     public static class Filters
     {
+        public static Option<bool> BooleanAsOptional(this bool source)
+        {
+            return source.SomeWhen(t => t);
+        }
+        
         public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(this Source<IEnumerable<Option<TSource>>, TMat> source)
         {
             return source.Select(d => d.Values());
