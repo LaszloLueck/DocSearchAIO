@@ -17,11 +17,11 @@ using DocSearchAIO.Services;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Optional;
-using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -36,14 +36,14 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtils _schedulerUtils;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-            IElasticSearchService elasticSearchService)
+            IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService);
+            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -58,9 +58,6 @@ namespace DocSearchAIO.Scheduler
                     var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                     await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
-
-                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                    var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
                     _logger.LogInformation("start crunching and indexing some pdf-files");
                     if (!Directory.Exists(_cfg.ScanPath))
                     {
@@ -76,7 +73,7 @@ namespace DocSearchAIO.Scheduler
                             .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
                             .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
                             .SelectAsync(schedulerEntry.Parallelism,
-                                elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .WithOptionFilter()
                             .SelectAsync(schedulerEntry.Parallelism,
@@ -86,9 +83,6 @@ namespace DocSearchAIO.Scheduler
                         await Task.WhenAll(runnable);
 
                         _logger.LogInformation("finished processing pdf documents");
-                        _schedulerUtils.DeleteComparerFile(compareDirectory);
-                        await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
-
                         sw.Stop();
                         _logger.LogInformation("index documents in {ElapsedMillis} ms", sw.ElapsedMilliseconds);
                     }

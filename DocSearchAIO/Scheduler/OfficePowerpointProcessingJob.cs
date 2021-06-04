@@ -17,11 +17,11 @@ using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Optional;
-using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -36,14 +36,14 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtils _schedulerUtils;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<OfficePowerpointProcessingJob>();
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService);
+            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -58,8 +58,6 @@ namespace DocSearchAIO.Scheduler
                     var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                     await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
-                    var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                    var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
 
                     _logger.LogInformation("start crunching and indexing some powerpoint documents");
                     if (!Directory.Exists(_cfg.ScanPath))
@@ -77,19 +75,17 @@ namespace DocSearchAIO.Scheduler
                             .SelectAsync(schedulerEntry.Parallelism,
                                 fileName => ProcessPowerpointDocument(fileName, _cfg))
                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .WithOptionFilter()
                             .SelectAsync(schedulerEntry.Parallelism,
                                 async processingInfo =>
                                     await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo, indexName))
                             .RunWith(Sink.Ignore<bool>(), materializer);
-                        
+
                         await Task.WhenAll(runnable);
 
                         _logger.LogInformation("finished processing powerpoint documents");
-                        _schedulerUtils.DeleteComparerFile(compareDirectory);
-                        await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
 
                         sw.Stop();
                         _logger.LogInformation("index documents in {ElapsedMilliseconds} ms", sw.ElapsedMilliseconds);

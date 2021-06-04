@@ -10,6 +10,7 @@ using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
+using LiteDB;
 using Microsoft.Extensions.Logging;
 using Optional;
 using Optional.Collections;
@@ -22,47 +23,15 @@ namespace DocSearchAIO.Scheduler
         private static ILogger _logger;
 
         private readonly IElasticSearchService _elasticSearchService;
-        //private static readonly SHA256 Sha256 = SHA256.Create();
+        private readonly ILiteCollection<ComparerObject> _col;
 
-        public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
+        public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtils>();
             _elasticSearchService = elasticSearchService;
+            _col = liteDatabase.GetCollection<ComparerObject>("comparers");
+            _col.EnsureIndex(x => x.PathHash);
         }
-
-        public readonly Func<SchedulerEntry, Task<string>> CreateComparerDirectoryIfNotExists = async schedulerEntry =>
-        {
-            var compareFilePath = schedulerEntry.ComparerDirectory + schedulerEntry.ComparerFile;
-            if (File.Exists(compareFilePath)) return await Task.Run(() => compareFilePath);
-            if (!Directory.Exists(schedulerEntry.ComparerDirectory))
-            {
-                _logger.LogWarning(
-                    "comparer directory <{ComparerDirectory}> does not exist, lets create it",
-                    schedulerEntry.ComparerDirectory);
-                Directory.CreateDirectory(schedulerEntry.ComparerDirectory);
-            }
-
-            _logger.LogWarning("comparer file <{ComparerDirectory}> does not exists, lets create it", compareFilePath);
-            await File.Create(compareFilePath).DisposeAsync();
-
-            return await Task.Run(() => compareFilePath);
-        };
-
-        public readonly Action<string> DeleteComparerFile = compareDirectory =>
-        {
-            _logger.LogInformation("delete comparer file in <{ComparerDirectory}>", compareDirectory);
-            File.Delete(compareDirectory);
-        };
-
-
-        public readonly Func<string, ConcurrentDictionary<string, string>, Task> WriteAllLinesAsync =
-            async (compareDirectory, comparerBag) =>
-            {
-                _logger.LogInformation("write new comparer file in {ComparerDirectory}", compareDirectory);
-                await File.WriteAllLinesAsync(compareDirectory,
-                    comparerBag.Select(tpl => tpl.Key + ";" + tpl.Value));
-            };
-
 
         public readonly Func<IScheduler, string, string, Task> SetTriggerStateByUserAction =
             async (scheduler, triggerName, groupName) =>
@@ -91,42 +60,33 @@ namespace DocSearchAIO.Scheduler
             (excludeFilter == "") || !fileName.Contains(excludeFilter);
 
 
-        public readonly Func<string, ConcurrentDictionary<string, string>> FillComparerBag = fileName =>
-        {
-            var result = File.ReadAllLines(fileName).Select(str =>
-            {
-                var spl = str.Split(";");
-                return new KeyValuePair<string, string>(spl[0], spl[1]);
-            });
-            var hashPairs = result as KeyValuePair<string, string>[] ?? result.ToArray();
-            return hashPairs.Any()
-                ? new ConcurrentDictionary<string, string>(hashPairs.ToDictionary(element => element.Key,
-                    element => element.Value))
-                : new ConcurrentDictionary<string, string>();
-        };
-
-        public static async Task<Option<T>> FilterExistingUnchanged<T>(
-            Option<T> document, ConcurrentDictionary<string, string> comparerBag) where T : ElasticDocument
+        public async Task<Option<T>> FilterExistingUnchanged<T>(
+            Option<T> document) where T : ElasticDocument
         {
             return await Task.Run(() =>
             {
                 var opt = document.FlatMap(doc =>
                 {
-                    var currentHash = doc.ContentHash;
-
-                    if (!comparerBag.TryGetValue(doc.Id, out var value))
+                    var contentHash = doc.ContentHash;
+                    var pathHash = doc.Id;
+                    return _col.FindOne(comp => comp.PathHash == pathHash).SomeNotNull().Map(innerDoc =>
                     {
-                        _logger.LogInformation("document not in bag: {NotInBag}", doc.OriginalFilePath);
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, _) => currentHash);
-                        return Option.Some(doc);
-                    }
+                        if (innerDoc.DocumentHash == contentHash)
+                            return Option.None<T>();
 
-                    if (currentHash == value) return Option.None<T>();
-                    {
-                        _logger.LogInformation("changed document: {ChangedDocument}", doc.OriginalFilePath);
-                        comparerBag.AddOrUpdate(doc.Id, currentHash, (_, _) => currentHash);
+                        innerDoc.DocumentHash = contentHash;
+                        _col.Update(innerDoc);
                         return Option.Some(doc);
-                    }
+                    }).ValueOr(() =>
+                    {
+                        var innerDocument = new ComparerObject()
+                        {
+                            DocumentHash = contentHash,
+                            PathHash = pathHash
+                        };
+                        _col.Insert(innerDocument);
+                        return Option.Some(doc);
+                    });
                 });
                 return opt;
             });
@@ -146,11 +106,17 @@ namespace DocSearchAIO.Scheduler
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
     }
 
+    public class ComparerObject
+    {
+        public string PathHash { get; set; }
+        public string DocumentHash { get; set; }
+    }
+
     public static class Filters
     {
-        public static Option<bool> BooleanAsOptional(this bool source)
+        public static Option<TOut> BooleanAsOptional<TOut>(this bool source, Func<TOut> mapper)
         {
-            return source.SomeWhen(t => t);
+            return source.SomeWhen(t => t).Map(_ => mapper.Invoke());
         }
         
         public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(this Source<IEnumerable<Option<TSource>>, TMat> source)

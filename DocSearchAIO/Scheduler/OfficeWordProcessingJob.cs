@@ -17,6 +17,7 @@ using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -35,7 +36,7 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtils _schedulerUtils;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -43,7 +44,7 @@ namespace DocSearchAIO.Scheduler
 
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService);
+            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -51,7 +52,7 @@ namespace DocSearchAIO.Scheduler
             var schedulerEntry = _cfg.Processing["word"];
             await Task.Run(async () =>
             {
-                await schedulerEntry.Active.BooleanAsOptional().Match(
+                await schedulerEntry.Active.BooleanAsOptional(() => true).Match(
                     async _ =>
                     {
                         var materializer = _actorSystem.Materializer();
@@ -59,23 +60,25 @@ namespace DocSearchAIO.Scheduler
                         var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                         await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
-                        var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                        var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
+                        
+                        //var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
+                        //var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
 
                         _logger.LogInformation("start crunching and indexing some word-documents");
-                        Directory.Exists(_cfg.ScanPath).BooleanAsOptional().Match(
-                            async _ =>
+                       
+                        Directory.Exists(_cfg.ScanPath).BooleanAsOptional(() => _cfg.ScanPath).Match(
+                            async scanPath =>
                             {
                                 var sw = Stopwatch.StartNew();
                                 var runnable = Source
-                                    .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
+                                    .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                         SearchOption.AllDirectories))
                                     .Where(file =>
                                         _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
                                     .SelectAsync(schedulerEntry.Parallelism,
                                         fileName => ProcessWordDocument(fileName, _cfg))
                                     .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                        elementOpt => SchedulerUtils.FilterExistingUnchanged(elementOpt, comparerBag))
+                                        elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
                                     .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                     .WithOptionFilter()
                                     .SelectAsync(schedulerEntry.Parallelism,
@@ -86,8 +89,9 @@ namespace DocSearchAIO.Scheduler
 
                                 await Task.WhenAll(runnable);
                                 _logger.LogInformation("finished processing word-documents");
-                                _schedulerUtils.DeleteComparerFile(compareDirectory);
-                                await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
+                                
+                                // _schedulerUtils.DeleteComparerFile(compareDirectory);
+                                // await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
 
                                 sw.Stop();
                                 _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);

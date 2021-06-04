@@ -28,6 +28,7 @@ namespace DocSearchAIO
             services.AddRazorPages();
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
+            services.AddLiteDb(Configuration);
             services.AddQuartzScheduler(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
 
