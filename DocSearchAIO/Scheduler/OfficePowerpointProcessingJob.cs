@@ -53,7 +53,9 @@ namespace DocSearchAIO.Scheduler
             {
                 schedulerEntry
                     .Active
-                    .Either(new { },
+                    .Either(
+                        new { }, 
+                        new { },
                         async _ =>
                         {
                             await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
@@ -73,7 +75,9 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogInformation("start crunching and indexing some powerpoint documents");
                             Directory
                                 .Exists(_cfg.ScanPath)
-                                .Either(_cfg.ScanPath,
+                                .Either(
+                                    _cfg.ScanPath,
+                                    _cfg.ScanPath,
                                     scanPath =>
                                     {
                                         _logger.LogWarning(

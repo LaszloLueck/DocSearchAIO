@@ -116,15 +116,15 @@ namespace DocSearchAIO.Scheduler
             return source.SomeWhen(t => t).Map(_ => action.Invoke());
         }
 
-        public static void Either<TIn>(this bool source, TIn parameter, Action<TIn> left, Action<TIn> right)
+        public static void Either<TInputLeft, TInputRight>(this bool source, Option<TInputLeft> parameterLeft, Option<TInputRight> parameterRight, Action<TInputLeft> left, Action<TInputRight> right)
         {
             if (source)
             {
-                right.Invoke(parameter);
+                right.Invoke(parameterRight);
             }
             else
             {
-                left.Invoke(parameter);
+                left.Invoke(parameterLeft);
             }
         }
 
