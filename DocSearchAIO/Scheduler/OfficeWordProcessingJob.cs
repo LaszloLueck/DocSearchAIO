@@ -36,7 +36,7 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtils _schedulerUtils;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -50,66 +50,67 @@ namespace DocSearchAIO.Scheduler
         public async Task Execute(IJobExecutionContext context)
         {
             var schedulerEntry = _cfg.Processing["word"];
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
-                await schedulerEntry.Active.BooleanAsOptional(() => true).Match(
-                    async _ =>
-                    {
-                        var materializer = _actorSystem.Materializer();
-                        _logger.LogInformation("start job");
-                        var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                schedulerEntry
+                    .Active
+                    .Either(new { },
+                        async _ =>
+                        {
+                            await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
+                                schedulerEntry.TriggerName,
+                                _cfg.GroupName);
+                            _logger.LogWarning(
+                                "skip processing of word documents because the scheduler is inactive per config");
+                        },
+                        async _ =>
+                        {
+                            var materializer = _actorSystem.Materializer();
+                            _logger.LogInformation("start job");
+                            var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                        await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
-                        
-                        //var compareDirectory = await _schedulerUtils.CreateComparerDirectoryIfNotExists(schedulerEntry);
-                        //var comparerBag = _schedulerUtils.FillComparerBag(compareDirectory);
+                            await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
 
-                        _logger.LogInformation("start crunching and indexing some word-documents");
-                       
-                        Directory.Exists(_cfg.ScanPath).BooleanAsOptional(() => _cfg.ScanPath).Match(
-                            async scanPath =>
-                            {
-                                var sw = Stopwatch.StartNew();
-                                var runnable = Source
-                                    .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
-                                        SearchOption.AllDirectories))
-                                    .Where(file =>
-                                        _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
-                                    .SelectAsync(schedulerEntry.Parallelism,
-                                        fileName => ProcessWordDocument(fileName, _cfg))
-                                    .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                        elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
-                                    .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                    .WithOptionFilter()
-                                    .SelectAsync(schedulerEntry.Parallelism,
-                                        async processingInfo =>
-                                            await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo,
-                                                indexName))
-                                    .RunWith(Sink.Ignore<bool>(), materializer);
+                            _logger.LogInformation("start crunching and indexing some word-documents");
 
-                                await Task.WhenAll(runnable);
-                                _logger.LogInformation("finished processing word-documents");
-                                
-                                // _schedulerUtils.DeleteComparerFile(compareDirectory);
-                                // await _schedulerUtils.WriteAllLinesAsync(compareDirectory, comparerBag);
+                            Directory
+                                .Exists(_cfg.ScanPath)
+                                .Either(_cfg.ScanPath,
+                                    scanPath =>
+                                    {
+                                        _logger.LogWarning(
+                                            "directory to scan <{ScanPath}> does not exists. skip working",
+                                            scanPath);
+                                    },
+                                    async scanPath =>
+                                    {
+                                        var sw = Stopwatch.StartNew();
+                                        var runnable = Source
+                                            .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
+                                                SearchOption.AllDirectories))
+                                            .Where(file =>
+                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
+                                                    file))
+                                            .SelectAsync(schedulerEntry.Parallelism,
+                                                fileName => ProcessWordDocument(fileName, _cfg))
+                                            .SelectAsync(parallelism: schedulerEntry.Parallelism,
+                                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
+                                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                            .WithOptionFilter()
+                                            .SelectAsync(schedulerEntry.Parallelism,
+                                                async processingInfo =>
+                                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo,
+                                                        indexName))
+                                            .RunWith(Sink.Ignore<bool>(), materializer);
 
-                                sw.Stop();
-                                _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
-                            },
-                            () =>
-                            {
-                                _logger.LogWarning("directory to scan <{ScanPath}> does not exists. skip working",
-                                    _cfg.ScanPath);
-                            });
-                    },
-                    async () =>
-                    {
-                        await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
-                            _cfg.GroupName);
-                        _logger.LogWarning(
-                            "skip processing of word documents because the scheduler is inactive per config");
-                    }
-                );
+                                        await Task.WhenAll(runnable);
+                                        _logger.LogInformation("finished processing word-documents");
+
+                                        sw.Stop();
+                                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                                            sw.ElapsedMilliseconds);
+                                    });
+                        });
             });
         }
 

@@ -36,7 +36,7 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtils _schedulerUtils;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-            IElasticSearchService elasticSearchService, LiteDatabase liteDatabase)
+            IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
             _cfg = new ConfigurationObject();
