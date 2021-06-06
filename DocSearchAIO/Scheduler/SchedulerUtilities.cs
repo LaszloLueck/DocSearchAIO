@@ -4,13 +4,11 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using Optional;
-using Optional.Collections;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -108,38 +106,4 @@ namespace DocSearchAIO.Scheduler
         public string PathHash { get; set; }
         public string DocumentHash { get; set; }
     }
-    
-    public static class Helpers
-    {
-        public static Option<TOut> AsOptionalValue<TOut>(this bool source, Func<TOut> action)
-        {
-            return source.SomeWhen(t => t).Map(_ => action.Invoke());
-        }
-
-        public static void Either<TInputLeft, TInputRight>(this bool source, Option<TInputLeft> parameterLeft, Option<TInputRight> parameterRight, Action<TInputLeft> left, Action<TInputRight> right)
-        {
-            if (source)
-            {
-                right.Invoke(parameterRight);
-            }
-            else
-            {
-                left.Invoke(parameterLeft);
-            }
-        }
-
-        public static void DirectoryNotExistsAction(this string path, Action<string> action)
-        {
-            if (!Directory.Exists(path))
-                action.Invoke(path);
-        }
-
-        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(this Source<IEnumerable<Option<TSource>>, TMat> source)
-        {
-            return source.Select(d => d.Values());
-        }
-        
-        
-    }
-    
 }

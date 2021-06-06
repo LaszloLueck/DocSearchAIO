@@ -49,51 +49,60 @@ namespace DocSearchAIO.Scheduler
         public async Task Execute(IJobExecutionContext context)
         {
             var schedulerEntry = _cfg.Processing["pdf"];
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
-                if (schedulerEntry.Active)
-                {
-                    var materializer = _actorSystem.Materializer();
-                    _logger.LogInformation("start job");
-                    var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                schedulerEntry
+                    .Active
+                    .Either((new { }, new { }),
+                        async _ =>
+                        {
+                            await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
+                                schedulerEntry.TriggerName,
+                                _cfg.GroupName);
+                            _logger.LogWarning(
+                                "skip Processing of PDF documents because the scheduler is inactive per config");
+                        },
+                        async _ =>
+                        {
+                            var materializer = _actorSystem.Materializer();
+                            _logger.LogInformation("start job");
+                            var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                    await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
-                    _logger.LogInformation("start crunching and indexing some pdf-files");
-                    if (!Directory.Exists(_cfg.ScanPath))
-                    {
-                        _logger.LogWarning(
-                            "directory to scan <{ScanPath}> does not exists, skip working", _cfg.ScanPath);
-                    }
-                    else
-                    {
-                        var sw = Stopwatch.StartNew();
-                        var runnable = Source
-                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
-                                SearchOption.AllDirectories))
-                            .Where(file => _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
-                            .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
-                            .SelectAsync(schedulerEntry.Parallelism,
-                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
-                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .WithOptionFilter()
-                            .SelectAsync(schedulerEntry.Parallelism,
-                                async elasticDocs =>
-                                    await _elasticSearchService.BulkWriteDocumentsAsync(elasticDocs, indexName))
-                            .RunWith(Sink.Ignore<bool>(), materializer);
-                        await Task.WhenAll(runnable);
+                            await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
+                            _logger.LogInformation("start crunching and indexing some pdf-files");
+                            Directory
+                                .Exists(_cfg.ScanPath)
+                                .Either((_cfg.ScanPath, _cfg.ScanPath),
+                                    scanPath =>
+                                    {
+                                        _logger.LogWarning(
+                                            "directory to scan <{ScanPath}> does not exists, skip working", scanPath);
+                                    },
+                                    async scanPath =>
+                                    {
+                                        var sw = Stopwatch.StartNew();
+                                        var runnable = Source
+                                            .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
+                                                SearchOption.AllDirectories))
+                                            .Where(file =>
+                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
+                                            .SelectAsync(schedulerEntry.Parallelism, file => ProcessPdfDocument(file, _cfg))
+                                            .SelectAsync(schedulerEntry.Parallelism,
+                                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
+                                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                            .WithOptionFilter()
+                                            .SelectAsync(schedulerEntry.Parallelism,
+                                                async elasticDocs =>
+                                                    await _elasticSearchService.BulkWriteDocumentsAsync(elasticDocs, indexName))
+                                            .RunWith(Sink.Ignore<bool>(), materializer);
+                                        await Task.WhenAll(runnable);
 
-                        _logger.LogInformation("finished processing pdf documents");
-                        sw.Stop();
-                        _logger.LogInformation("index documents in {ElapsedMillis} ms", sw.ElapsedMilliseconds);
-                    }
-                }
-                else
-                {
-                    await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler, schedulerEntry.TriggerName,
-                        _cfg.GroupName);
-                    _logger.LogWarning(
-                        "skip Processing of PDF documents because the scheduler is inactive per config");
-                }
+                                        _logger.LogInformation("finished processing pdf documents");
+                                        sw.Stop();
+                                        _logger.LogInformation("index documents in {ElapsedMillis} ms", sw.ElapsedMilliseconds);
+                                    });
+                        }
+                    );
             });
         }
 
