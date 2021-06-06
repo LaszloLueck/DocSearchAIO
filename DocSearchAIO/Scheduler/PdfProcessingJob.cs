@@ -53,8 +53,8 @@ namespace DocSearchAIO.Scheduler
             {
                 schedulerEntry
                     .Active
-                    .Either((new { }, new { }),
-                        async _ =>
+                    .IfTrueFalse(
+                        async () =>
                         {
                             await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
@@ -62,7 +62,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogWarning(
                                 "skip Processing of PDF documents because the scheduler is inactive per config");
                         },
-                        async _ =>
+                        async () =>
                         {
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
@@ -72,7 +72,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogInformation("start crunching and indexing some pdf-files");
                             Directory
                                 .Exists(_cfg.ScanPath)
-                                .Either((_cfg.ScanPath, _cfg.ScanPath),
+                                .IfTrueFalse((_cfg.ScanPath, _cfg.ScanPath),
                                     scanPath =>
                                     {
                                         _logger.LogWarning(
@@ -127,7 +127,7 @@ namespace DocSearchAIO.Scheduler
                     }
 
                     var uriPath = fileName
-                        .Replace(configuration.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
+                        .Replace(configuration.ScanPath, _cfg.UriReplacement)
                         .Replace(@"\", "/");
 
                     var elasticDoc = new PdfElasticDocument

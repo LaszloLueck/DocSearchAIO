@@ -23,6 +23,9 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("schedulerId")]
         public string SchedulerId { get; set; }
         
+        [JsonProperty("uriReplacement")]
+        public string UriReplacement { get; set; }
+        
         [JsonProperty("processing")]
         public Dictionary<string, SchedulerEntry> Processing { get; set; }
         

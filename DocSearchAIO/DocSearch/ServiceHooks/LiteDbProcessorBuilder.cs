@@ -14,10 +14,17 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             const string liteDbPath = "./litedb";
             
             liteDbPath
-                .DirectoryNotExistsAction(p => Directory.CreateDirectory(p));
-
-            ILiteDatabase db = new LiteDatabase($"{liteDbPath}/docsearchaio.db");
-            services.AddSingleton(db);
+                .AsGenericSourceString()
+                .DirectoryNotExistsAction(source =>
+                { 
+                    Directory.CreateDirectory(source.Value);
+                    return source;
+                })
+                .AndThen(source =>
+                {
+                    ILiteDatabase db = new LiteDatabase($"{source.Value}/docsearchaio.db");
+                    services.AddSingleton(db); 
+                });
         }
     }
 }

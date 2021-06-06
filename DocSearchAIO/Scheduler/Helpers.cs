@@ -14,29 +14,85 @@ namespace DocSearchAIO.Scheduler
             return source.SomeWhen(t => t).Map(_ => action.Invoke());
         }
 
-        public static void Either<TInputLeft, TInputRight>(this bool source, (TInputLeft, TInputRight) parameters, Action<TInputLeft> left,
-            Action<TInputRight> right)
+        public static void IfTrue<TIn>(this bool value, TIn input, Action<TIn> action)
         {
-            var (inputLeft, inputRight) = parameters;
-            if (source)
+            if (value)
+                action.Invoke(input);
+        }
+
+        public static void IfTrue(this bool value, Action action)
+        {
+            if(value)
+                action.Invoke();
+        }
+
+        public static void IfTrueFalse(this bool value, Action falseAction, Action trueAction)
+        {
+            if(value)
             {
-                right.Invoke(inputRight);
+                trueAction.Invoke();
             }
             else
             {
-                left.Invoke(inputLeft);
+                falseAction.Invoke();
+            }
+        }
+        
+        public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
+            Action<TInputLeft> falseAction,
+            Action<TInputRight> trueAction)
+        {
+            var (inputLeft, inputRight) = parameters;
+            if (value)
+            {
+                trueAction.Invoke(inputRight);
+            }
+            else
+            {
+                falseAction.Invoke(inputLeft);
             }
         }
 
-        public static void DirectoryNotExistsAction(this string path, Action<string> action)
+        public static TOut DirectoryNotExistsAction<TIn, TOut>(this TIn path, Func<TIn, TOut> action)
+            where TOut : GenericSourceString 
+            where TIn : TOut
         {
-            if (!Directory.Exists(path))
-                action.Invoke(path);
+            return !Directory.Exists(path.Value) ? action.Invoke(path) : path;
         }
 
-        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(this Source<IEnumerable<Option<TSource>>, TMat> source)
+        public static void DictionaryKeyExistsAction<TDicKey, TDicValue>(
+            this Dictionary<TDicKey, TDicValue> source, TDicKey comparer,
+            Action<KeyValuePair<TDicKey, TDicValue>> action)
+        {
+            if (source.ContainsKey(comparer))
+                action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
+        }
+
+        public static void AndThen<TIn>(this TIn source, Action<TIn> action)
+        {
+            action.Invoke(source);
+        }
+
+        public static TOut AndThen<TIn, TOut>(this TIn source, Func<TIn, TOut> action)
+        {
+            return action.Invoke(source);
+        }
+
+        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
+
+        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
+            this Source<IEnumerable<Option<TSource>>, TMat> source)
         {
             return source.Select(d => d.Values());
         }
+    }
+
+    public class GenericSourceString : GenericSource<string>
+    {
+    }
+
+    public abstract class GenericSource<T>
+    {
+        public T Value { get; set; }
     }
 }

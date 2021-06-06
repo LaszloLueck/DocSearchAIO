@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Akka.Util.Internal;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Quartz.Impl;
 using Quartz.Impl.Matchers;
-using Quartz.Listener;
 
 namespace DocSearchAIO.DocSearch.Services
 {

@@ -4,7 +4,6 @@ using DocSearchAIO.Scheduler;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using Quartz.Impl;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
 {
@@ -21,61 +20,67 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 q.UseMicrosoftDependencyInjectionJobFactory();
             });
 
-            if (cfg.Processing.ContainsKey("word"))
-            {
-                var scheduler = cfg.Processing["word"];
-                services.AddQuartz(q =>
+            cfg
+                .Processing
+                .DictionaryKeyExistsAction("word", kv =>
                 {
-                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                    q.AddJob<OfficeWordProcessingJob>(jk,
-                        p => p.WithDescription("job for processing and indexing word documents"));
-                    
-                    q.AddTrigger(t => t
-                        .ForJob(jk)
-                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
-                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                        .WithDescription("trigger for word-processing and indexing")
-                    );
-                });
-            }
+                    var scheduler = kv.Value;
+                    services.AddQuartz(q =>
+                    {
+                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
+                        q.AddJob<OfficeWordProcessingJob>(jk,
+                            p => p.WithDescription("job for processing and indexing word documents"));
 
-            if (cfg.Processing.ContainsKey("powerpoint"))
-            {
-                var scheduler = cfg.Processing["powerpoint"];
-                services.AddQuartz(q =>
+                        q.AddTrigger(t => t
+                            .ForJob(jk)
+                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
+                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
+                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                            .WithDescription("trigger for word-processing and indexing")
+                        );
+                    });
+                });
+
+            cfg
+                .Processing
+                .DictionaryKeyExistsAction("powerpoint", kv =>
                 {
-                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                    q.AddJob<OfficePowerpointProcessingJob>(jk,
-                        p => p.WithDescription("job for processing and indexing powerpoint documents"));
+                    var scheduler = kv.Value;
+                    services.AddQuartz(q =>
+                    {
+                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
+                        q.AddJob<OfficePowerpointProcessingJob>(jk,
+                            p => p.WithDescription("job for processing and indexing powerpoint documents"));
 
-                    q.AddTrigger(t => t
-                        .ForJob(jk)
-                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                        .WithDescription("trigger for powerpoint-processing and indexing")
-                    );
+                        q.AddTrigger(t => t
+                            .ForJob(jk)
+                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
+                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
+                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                            .WithDescription("trigger for powerpoint-processing and indexing")
+                        );
+                    });
                 });
-            }
 
-            if (cfg.Processing.ContainsKey("pdf"))
-            {
-                var scheduler = cfg.Processing["pdf"];
-                services.AddQuartz(q =>
+            cfg
+                .Processing
+                .DictionaryKeyExistsAction("pdf", kv =>
                 {
-                    var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                    q.AddJob<PdfProcessingJob>(jk,
-                        p => p.WithDescription("job for processing and indexing pdf documents"));
-                    q.AddTrigger(t => t
-                        .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                        .ForJob(jk)
-                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                        .WithDescription("trigger for pdf-processing and indexing")
-                    );
+                    var scheduler = kv.Value;
+                    services.AddQuartz(q =>
+                    {
+                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
+                        q.AddJob<PdfProcessingJob>(jk,
+                            p => p.WithDescription("job for processing and indexing pdf documents"));
+                        q.AddTrigger(t => t
+                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
+                            .ForJob(jk)
+                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
+                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                            .WithDescription("trigger for pdf-processing and indexing")
+                        );
+                    });
                 });
-            }
 
             services.AddQuartzServer(options => options.WaitForJobsToComplete = true);
         }

@@ -128,7 +128,8 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerName = _configurationObject.SchedulerName,
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
-                GroupName = _configurationObject.GroupName
+                GroupName = _configurationObject.GroupName,
+                UriReplacement = _configurationObject.UriReplacement
             };
 
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);

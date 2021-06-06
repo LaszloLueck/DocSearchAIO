@@ -53,9 +53,8 @@ namespace DocSearchAIO.Scheduler
             {
                 schedulerEntry
                     .Active
-                    .Either(
-                        (new { }, new { }),
-                        async _ =>
+                    .IfTrueFalse(
+                        async () =>
                         {
                             await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
@@ -63,7 +62,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogWarning(
                                 "skip processing of powerpoint documents because the scheduler is inactive per config");
                         },
-                        async _ =>
+                        async () =>
                         {
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
@@ -74,7 +73,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogInformation("start crunching and indexing some powerpoint documents");
                             Directory
                                 .Exists(_cfg.ScanPath)
-                                .Either((_cfg.ScanPath, _cfg.ScanPath),
+                                .IfTrueFalse((_cfg.ScanPath, _cfg.ScanPath),
                                     scanPath =>
                                     {
                                         _logger.LogWarning(
@@ -84,10 +83,11 @@ namespace DocSearchAIO.Scheduler
                                     {
                                         var sw = Stopwatch.StartNew();
                                         var runnable = Source
-                                            .From(Directory.GetFiles(_cfg.ScanPath, schedulerEntry.FileExtension,
+                                            .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
                                             .Where(file =>
-                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter, file))
+                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
+                                                    file))
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 fileName => ProcessPowerpointDocument(fileName, _cfg))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
@@ -141,7 +141,7 @@ namespace DocSearchAIO.Scheduler
                         var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
                         var lastModifiedBy = fInfo.LastModifiedBy.SomeNotNull().ValueOr("");
                         var uriPath = currentFile
-                            .Replace(configurationObject.ScanPath, @"https://risprepository:8800/svns/PNR/extern")
+                            .Replace(configurationObject.ScanPath, _cfg.UriReplacement)
                             .Replace(@"\", "/");
 
                         var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
@@ -156,26 +156,29 @@ namespace DocSearchAIO.Scheduler
                             {
                                 var slide = p.Slide;
 
-                                var commentArray = p.SlideCommentsPart.SomeNotNull().Match(
-                                    some: comments =>
-                                    {
-                                        return comments.CommentList.Select(comment =>
+                                var commentArray = p
+                                    .SlideCommentsPart
+                                    .SomeNotNull()
+                                    .Match(
+                                        some: comments =>
                                         {
-                                            var d = (Comment) comment;
+                                            return comments.CommentList.Select(comment =>
+                                            {
+                                                var d = (Comment) comment;
 
-                                            var retValue = new OfficeDocumentComment();
-                                            var dat = d.DateTime != null
-                                                ? d.DateTime.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
-                                                : new DateTime(1970, 1, 1);
+                                                var retValue = new OfficeDocumentComment();
+                                                var dat = d.DateTime != null
+                                                    ? d.DateTime.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
+                                                    : new DateTime(1970, 1, 1);
 
-                                            retValue.Comment = d.Text?.Text;
-                                            retValue.Date = dat;
+                                                retValue.Comment = d.Text?.Text;
+                                                retValue.Date = dat;
 
-                                            return retValue;
-                                        }).ToArray();
-                                    },
-                                    none: Array.Empty<OfficeDocumentComment>
-                                );
+                                                return retValue;
+                                            }).ToArray();
+                                        },
+                                        none: Array.Empty<OfficeDocumentComment>
+                                    );
 
 
                                 var innerString = GetChildElements(slide.ChildElements);
@@ -275,12 +278,13 @@ namespace DocSearchAIO.Scheduler
 
         private void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)
         {
-            if (!replaceList.Any())
-                return;
+            while (true)
+            {
+                if (!replaceList.Any()) return;
 
-            input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
-            replaceList.RemoveAt(0);
-            ReplaceSpecialStringsTailR(ref input, replaceList);
+                input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
+                replaceList.RemoveAt(0);
+            }
         }
     }
 }

@@ -20,7 +20,8 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ILiteCollection<ComparerObject> _col;
 
-        public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
+        public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService,
+            ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtils>();
             _elasticSearchService = elasticSearchService;
@@ -32,23 +33,26 @@ namespace DocSearchAIO.Scheduler
             async (scheduler, triggerName, groupName) =>
             {
                 var currentTriggerState = await scheduler.GetTriggerState(new TriggerKey(triggerName, groupName));
-                if (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
-                {
-                    _logger.LogWarning(
-                        "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
-                        triggerName, scheduler.SchedulerName);
-                    await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
-                }
+                (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
+                    .IfTrue(async () =>
+                    {
+                        _logger.LogWarning(
+                            "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
+                            triggerName, scheduler.SchedulerName);
+                        await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
+                    });
             };
 
         public async Task CheckAndCreateElasticIndex<T>(string indexName) where T : ElasticDocument
         {
-            if (await _elasticSearchService.IndexExistsAsync(indexName))
-                return;
-            _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
-            await _elasticSearchService.CreateIndexAsync<T>(indexName);
-            await _elasticSearchService.RefreshIndexAsync(indexName);
-            await _elasticSearchService.FlushIndexAsync(indexName);
+            (!await _elasticSearchService.IndexExistsAsync(indexName))
+                .IfTrue(async () =>
+                {
+                    _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
+                    await _elasticSearchService.CreateIndexAsync<T>(indexName);
+                    await _elasticSearchService.RefreshIndexAsync(indexName);
+                    await _elasticSearchService.FlushIndexAsync(indexName);
+                });
         }
 
         public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
@@ -64,24 +68,28 @@ namespace DocSearchAIO.Scheduler
                 {
                     var contentHash = doc.ContentHash;
                     var pathHash = doc.Id;
-                    return _col.FindOne(comp => comp.PathHash == pathHash).SomeNotNull().Map(innerDoc =>
-                    {
-                        if (innerDoc.DocumentHash == contentHash)
-                            return Option.None<T>();
-
-                        innerDoc.DocumentHash = contentHash;
-                        _col.Update(innerDoc);
-                        return Option.Some(doc);
-                    }).ValueOr(() =>
-                    {
-                        var innerDocument = new ComparerObject()
+                    return _col
+                        .FindOne(comp => comp.PathHash == pathHash)
+                        .SomeNotNull()
+                        .Map(innerDoc =>
                         {
-                            DocumentHash = contentHash,
-                            PathHash = pathHash
-                        };
-                        _col.Insert(innerDocument);
-                        return Option.Some(doc);
-                    });
+                            if (innerDoc.DocumentHash == contentHash)
+                                return Option.None<T>();
+
+                            innerDoc.DocumentHash = contentHash;
+                            _col.Update(innerDoc);
+                            return Option.Some(doc);
+                        })
+                        .ValueOr(() =>
+                        {
+                            var innerDocument = new ComparerObject()
+                            {
+                                DocumentHash = contentHash,
+                                PathHash = pathHash
+                            };
+                            _col.Insert(innerDocument);
+                            return Option.Some(doc);
+                        });
                 });
                 return opt;
             });
