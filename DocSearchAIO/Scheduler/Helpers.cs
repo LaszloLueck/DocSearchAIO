@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Akka.Streams.Dsl;
+using CSharpFunctionalExtensions;
 using Optional;
 using Optional.Collections;
 
@@ -19,7 +20,7 @@ namespace DocSearchAIO.Scheduler
         {
             return value ? Option.Some(action.Invoke(input)) : Option.None<TOut>();
         }
-        
+
         public static void IfTrue<TIn>(this bool value, TIn input, Action<TIn> action)
         {
             if (value)
@@ -28,13 +29,24 @@ namespace DocSearchAIO.Scheduler
 
         public static void IfTrue(this bool value, Action action)
         {
-            if(value)
+            if (value)
                 action.Invoke();
+        }
+
+        public static void MaybeTrue<TIn>(this Maybe<TIn> source, Action<TIn> processor)
+        {
+            if (source.HasValue)
+                processor.Invoke(source.Value);
+        }
+
+        public static Maybe<TOut> MaybeValue<TOut>(this TOut value)
+        {
+            return value == null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
         }
 
         public static void IfTrueFalse(this bool value, Action falseAction, Action trueAction)
         {
-            if(value)
+            if (value)
             {
                 trueAction.Invoke();
             }
@@ -43,7 +55,7 @@ namespace DocSearchAIO.Scheduler
                 falseAction.Invoke();
             }
         }
-        
+
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
             Action<TInputLeft> falseAction,
             Action<TInputRight> trueAction)
@@ -60,7 +72,7 @@ namespace DocSearchAIO.Scheduler
         }
 
         public static TOut DirectoryNotExistsAction<TIn, TOut>(this TIn path, Func<TIn, TOut> action)
-            where TOut : GenericSourceString 
+            where TOut : GenericSourceString
             where TIn : TOut
         {
             return !Directory.Exists(path.Value) ? action.Invoke(path) : path;

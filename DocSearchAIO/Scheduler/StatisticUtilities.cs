@@ -1,9 +1,9 @@
 using System.Linq;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Statistics;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Optional;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -28,15 +28,16 @@ namespace DocSearchAIO.Scheduler
             liteCollection.Insert(jobStatistic);
         }
 
-        public Option<ProcessingJobStatistic> GetLatestJobStatisticByModel<TModel>()
+        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel<TModel>()
         {
             var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
             _logger.LogInformation("get statistic for {Type}", typeof(TModel).Name);
             return liteCollection
                 .FindAll()
                 .OrderByDescending(d => d.StartJob)
-                .First()
-                .SomeNotNull();
+                .TryFirst();
+
+
         }
     }
 }

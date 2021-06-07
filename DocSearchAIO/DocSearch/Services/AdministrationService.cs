@@ -7,11 +7,9 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
-using DocumentFormat.OpenXml.Packaging;
 using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Optional.Unsafe;
 using Quartz;
 using SchedulerUtils = DocSearchAIO.DocSearch.ServiceHooks.SchedulerUtils;
 
@@ -66,7 +64,6 @@ namespace DocSearchAIO.DocSearch.Services
                 _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
                 return new Task<bool>(() => false);
             });
-
         }
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -91,8 +88,6 @@ namespace DocSearchAIO.DocSearch.Services
                 _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
                 return new Task<bool>(() => false);
             });
-
-
         }
 
         public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
@@ -108,7 +103,6 @@ namespace DocSearchAIO.DocSearch.Services
                 _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
                 return new Task<bool>(() => false);
             });
-
         }
 
 
@@ -178,9 +172,10 @@ namespace DocSearchAIO.DocSearch.Services
             });
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
-            
-            _statisticUtilities.GetLatestJobStatisticByModel<WordElasticDocument>().MatchSome(
-                doc =>
+
+            _statisticUtilities
+                .GetLatestJobStatisticByModel<WordElasticDocument>()
+                .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
                     {
@@ -194,34 +189,40 @@ namespace DocSearchAIO.DocSearch.Services
                     };
                     runtimeStatistic.Add("Word", excModel);
                 });
-            _statisticUtilities.GetLatestJobStatisticByModel<PowerpointElasticDocument>().MatchSome(doc =>
-            {
-                var excModel = new RunnableStatistic()
+
+
+            _statisticUtilities
+                .GetLatestJobStatisticByModel<PowerpointElasticDocument>()
+                .MaybeTrue(doc =>
                 {
-                    Id = doc.Id,
-                    EndJob = doc.EndJob,
-                    StartJob = doc.StartJob,
-                    ProcessingError = doc.ProcessingError,
-                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                    EntireDocCount = doc.EntireDocCount,
-                    IndexedDocCount = doc.IndexedDocCount
-                };
-                runtimeStatistic.Add("Powerpoint", excModel);
-            });
-            _statisticUtilities.GetLatestJobStatisticByModel<PdfElasticDocument>().MatchSome(doc =>
-            {
-                var excModel = new RunnableStatistic()
+                    var excModel = new RunnableStatistic()
+                    {
+                        Id = doc.Id,
+                        EndJob = doc.EndJob,
+                        StartJob = doc.StartJob,
+                        ProcessingError = doc.ProcessingError,
+                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                        EntireDocCount = doc.EntireDocCount,
+                        IndexedDocCount = doc.IndexedDocCount
+                    };
+                    runtimeStatistic.Add("Powerpoint", excModel);
+                });
+            _statisticUtilities
+                .GetLatestJobStatisticByModel<PdfElasticDocument>()
+                .MaybeTrue(doc =>
                 {
-                    Id = doc.Id,
-                    EndJob = doc.EndJob,
-                    StartJob = doc.StartJob,
-                    ProcessingError = doc.ProcessingError,
-                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                    EntireDocCount = doc.EntireDocCount,
-                    IndexedDocCount = doc.IndexedDocCount
-                };
-                runtimeStatistic.Add("PDF", excModel);
-            });
+                    var excModel = new RunnableStatistic()
+                    {
+                        Id = doc.Id,
+                        EndJob = doc.EndJob,
+                        StartJob = doc.StartJob,
+                        ProcessingError = doc.ProcessingError,
+                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                        EntireDocCount = doc.EntireDocCount,
+                        IndexedDocCount = doc.IndexedDocCount
+                    };
+                    runtimeStatistic.Add("PDF", excModel);
+                });
 
             responseModel.RuntimeStatistics = runtimeStatistic;
 
