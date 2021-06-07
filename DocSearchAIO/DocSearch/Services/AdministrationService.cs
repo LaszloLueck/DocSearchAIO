@@ -1,13 +1,19 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
+using DocumentFormat.OpenXml.Packaging;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Optional.Unsafe;
 using Quartz;
+using SchedulerUtils = DocSearchAIO.DocSearch.ServiceHooks.SchedulerUtils;
 
 namespace DocSearchAIO.DocSearch.Services
 {
@@ -18,9 +24,10 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ConfigurationObject _configurationObject;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
+        private readonly StatisticUtilities _statisticUtilities;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
-            IConfiguration configuration, IElasticSearchService elasticSearchService)
+            IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
             _viewToStringRenderer = viewToStringRenderer;
@@ -29,6 +36,7 @@ namespace DocSearchAIO.DocSearch.Services
             _configurationObject = cfgTmp;
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
+            _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
         }
 
         public async Task<AdministrationModalResponse> GetAdministrationModal()
@@ -154,7 +162,9 @@ namespace DocSearchAIO.DocSearch.Services
                 await Task.WhenAll(knownIndices.Select(async index =>
                     await _elasticSearchService.GetIndexStatistics(index)));
 
-            var models = indexStatsResponses.Select(index => new IndexStatisticModel
+            var responseModel = new IndexStatistic();
+
+            responseModel.IndexStatisticModels = indexStatsResponses.Select(index => new IndexStatisticModel
             {
                 IndexName = index.Indices.ToList()[0].Key,
                 DocCount = index.Stats.Total.Documents.Count,
@@ -167,7 +177,55 @@ namespace DocSearchAIO.DocSearch.Services
                 SuggestTotal = index.Stats.Total.Search.SuggestTotal
             });
 
-            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", models);
+            var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
+            
+            _statisticUtilities.GetLatestJobStatisticByModel<WordElasticDocument>().MatchSome(
+                doc =>
+                {
+                    var excModel = new RunnableStatistic
+                    {
+                        Id = doc.Id,
+                        EndJob = doc.EndJob,
+                        StartJob = doc.StartJob,
+                        ProcessingError = doc.ProcessingError,
+                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                        EntireDocCount = doc.EntireDocCount,
+                        IndexedDocCount = doc.IndexedDocCount
+                    };
+                    runtimeStatistic.Add("Word", excModel);
+                });
+            _statisticUtilities.GetLatestJobStatisticByModel<PowerpointElasticDocument>().MatchSome(doc =>
+            {
+                var excModel = new RunnableStatistic()
+                {
+                    Id = doc.Id,
+                    EndJob = doc.EndJob,
+                    StartJob = doc.StartJob,
+                    ProcessingError = doc.ProcessingError,
+                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                    EntireDocCount = doc.EntireDocCount,
+                    IndexedDocCount = doc.IndexedDocCount
+                };
+                runtimeStatistic.Add("Powerpoint", excModel);
+            });
+            _statisticUtilities.GetLatestJobStatisticByModel<PdfElasticDocument>().MatchSome(doc =>
+            {
+                var excModel = new RunnableStatistic()
+                {
+                    Id = doc.Id,
+                    EndJob = doc.EndJob,
+                    StartJob = doc.StartJob,
+                    ProcessingError = doc.ProcessingError,
+                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                    EntireDocCount = doc.EntireDocCount,
+                    IndexedDocCount = doc.IndexedDocCount
+                };
+                runtimeStatistic.Add("PDF", excModel);
+            });
+
+            responseModel.RuntimeStatistics = runtimeStatistic;
+
+            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", responseModel);
             return content;
         }
 

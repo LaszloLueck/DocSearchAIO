@@ -1,4 +1,5 @@
-@model IEnumerable<DocSearchAIO.DocSearch.TOs.IndexStatisticModel>
+@model DocSearchAIO.DocSearch.TOs.IndexStatistic 
+@* IEnumerable<DocSearchAIO.DocSearch.TOs.IndexStatisticModel> *@
 <div class="container mt-2">
     <div class="row">
         <div class="col-12">
@@ -14,12 +15,55 @@
     </div>
     <div class="row mt-1">
         <div class="col-3">Gesamtanzahl Dokumente</div>
-        <div class="col-9">@(Model.Sum(a => a.DocCount))</div>
+        <div class="col-9">@(Model.IndexStatisticModels.Sum(a => a.DocCount))</div>
     </div>
     <div class="row mt-1">
         <div class="col-3">Gesamte Indexgröße in Byte</div>
-        <div class="col-9">@($"{Model.Sum(a => a.SizeInBytes):0,0}")</div>
+        <div class="col-9">@($"{Model.IndexStatisticModels.Sum(a => a.SizeInBytes):0,0}")</div>
     </div>
+</div>
+<div class="container mt-2 border rounded border-color-gray">
+    <div class="row mt-1">
+        <div class="col-12">
+            <span class="h5">Letzte Ausführung</span>
+        </div>
+    </div>
+    @foreach (var runtimeModel in Model.RuntimeStatistics)
+    {
+        <div class="row">
+            <div class="col-12">
+                <span class="h5">@runtimeModel.Key</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Id:</span></div>
+            <div class="col-9"><span>@runtimeModel.Value.Id</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Startzeit:</span></div>
+            <div class="col-9"><span>@($"{runtimeModel.Value.StartJob:dd.MM.yyyy HH:mm:ss}")</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Endezeit:</span></div>
+            <div class="col-9"><span>@($"{runtimeModel.Value.EndJob:dd.MM.yyyy HH:mm:ss}")</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Dokumente verarbeitet:</span></div>
+            <div class="col-9"><span>@runtimeModel.Value.EntireDocCount</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Dokumente mit Fehlern:</span></div>
+            <div class="col-9"><span>@runtimeModel.Value.ProcessingError</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Dokumente indexiert:</span></div>
+            <div class="col-9"><span>@runtimeModel.Value.IndexedDocCount</span></div>
+        </div>
+        <div class="row">
+            <div class="col-3"><span>Dokumente verarbeitet/s:</span></div>
+            <div class="col-9"><span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span></div>
+        </div>
+    }
 </div>
 <div class="container mt-2 border rounded border-color-gray">
     <div class="row mt-1">
@@ -27,7 +71,7 @@
             <span class="h5">Pro Index</span>
         </div>
     </div>
-    @foreach (var indexStatisticModel in Model)
+    @foreach (var indexStatisticModel in Model.IndexStatisticModels)
     {
         <div class="row">
             <div class="col-12">

@@ -4,6 +4,7 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
+using LiteDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -20,10 +21,10 @@ namespace DocSearchAIO.Controllers
         private readonly OptionDialogService _optionDialogService;
 
         public AdministrationController(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
-            IConfiguration configuration, IElasticSearchService elasticSearchService)
+            IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<AdministrationController>();
-            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration, elasticSearchService);
+            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration, elasticSearchService, liteDatabase);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticSearchService);
         }

@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 
-namespace DocSearchAIO.Statistics
+namespace DocSearchAIO.DocSearch.TOs
 {
-    public class ProcessingJobStatistic
+    public class RunnableStatistic
     {
         public string Id { get; set; }
         public int EntireDocCount { get; set; }

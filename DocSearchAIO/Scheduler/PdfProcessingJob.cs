@@ -35,7 +35,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtils _schedulerUtils;
-        private readonly StatisticUtilities<PdfElasticDocument> _statisticUtilities;
+        private readonly StatisticUtilities _statisticUtilities;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -46,7 +46,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
-            _statisticUtilities = new StatisticUtilities<PdfElasticDocument>(loggerFactory, liteDatabase);
+            _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -121,7 +121,7 @@ namespace DocSearchAIO.Scheduler
                                         jobStatistic.EntireDocCount = entireDocs.GetCurrent();
                                         jobStatistic.ProcessingError = missedDocs.GetCurrent();
                                         jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
-                                        _statisticUtilities.AddJobStatisticToDatabase(jobStatistic);
+                                        _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedMillis} ms",
                                             sw.ElapsedMilliseconds);
                                     });

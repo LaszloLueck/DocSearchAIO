@@ -24,7 +24,7 @@
         "runsEvery": 3600
       },
       "pdf": {
-        "active": true,
+        "active": false,
         "parallelism": 10,
         "excludeFilter": "",
         "fileExtension": "*.pdf",
@@ -37,7 +37,7 @@
         "runsEvery": 3600
       },
       "powerpoint": {
-        "active": true,
+        "active": false,
         "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.pptx",
@@ -50,7 +50,7 @@
         "runsEvery": 3600
       },
       "word": {
-        "active": true,
+        "active": false,
         "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.docx",
