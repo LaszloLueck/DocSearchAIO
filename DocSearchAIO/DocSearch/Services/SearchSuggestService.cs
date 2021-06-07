@@ -42,7 +42,7 @@ namespace DocSearchAIO.DocSearch.Services
 
             var request = new SearchRequest("officedocuments-*") {Suggest = suggestQuery, Source = f};
             var sw = Stopwatch.StartNew();
-            var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
+            var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(request);
             sw.Stop();
             var suggestsEntries = result.Suggest["searchfieldsuggest"];
             var suggestResult = suggestsEntries.First();

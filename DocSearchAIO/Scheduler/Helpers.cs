@@ -14,6 +14,11 @@ namespace DocSearchAIO.Scheduler
             return source.SomeWhen(t => t).Map(_ => action.Invoke());
         }
 
+        public static Option<TOut> IfTrue<TIn, TOut>(this bool value, TIn input, Func<TIn, TOut> action)
+        {
+            return value ? Option.Some(action.Invoke(input)) : Option.None<TOut>();
+        }
+        
         public static void IfTrue<TIn>(this bool value, TIn input, Action<TIn> action)
         {
             if (value)

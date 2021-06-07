@@ -40,7 +40,7 @@ namespace DocSearchAIO.DocSearch.Services
                     Query = new QueryContainer(query), Source = sf
                 };
                 var sw = Stopwatch.StartNew();
-                var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(searchRequest);
+                var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(searchRequest);
                 sw.Stop();
                 _logger.LogInformation($"find documentdetail in {sw.ElapsedMilliseconds} ms");
 

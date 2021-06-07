@@ -68,6 +68,7 @@ namespace DocSearchAIO.Scheduler
                 {
                     var contentHash = doc.ContentHash;
                     var pathHash = doc.Id;
+                    var originalFilePath = doc.OriginalFilePath;
                     return _col
                         .FindOne(comp => comp.PathHash == pathHash)
                         .SomeNotNull()
@@ -85,7 +86,8 @@ namespace DocSearchAIO.Scheduler
                             var innerDocument = new ComparerObject()
                             {
                                 DocumentHash = contentHash,
-                                PathHash = pathHash
+                                PathHash = pathHash,
+                                OriginalPath = originalFilePath
                             };
                             _col.Insert(innerDocument);
                             return Option.Some(doc);
@@ -113,5 +115,7 @@ namespace DocSearchAIO.Scheduler
     {
         public string PathHash { get; set; }
         public string DocumentHash { get; set; }
+        
+        public string OriginalPath { get; set; }
     }
 }

@@ -35,7 +35,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtils _schedulerUtils;
-        private readonly StatisticUtilities<ElasticDocument> _statisticUtilities;
+        private readonly StatisticUtilities<WordElasticDocument> _statisticUtilities;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -47,7 +47,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
-            _statisticUtilities = new StatisticUtilities<ElasticDocument>(loggerFactory, liteDatabase);
+            _statisticUtilities = new StatisticUtilities<WordElasticDocument>(loggerFactory, liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -72,7 +72,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogInformation("start job");
                             var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                            await _schedulerUtils.CheckAndCreateElasticIndex<ElasticDocument>(indexName);
+                            await _schedulerUtils.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
 
                             _logger.LogInformation("start crunching and indexing some word-documents");
 
@@ -92,6 +92,10 @@ namespace DocSearchAIO.Scheduler
                                         {
                                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                         };
+                                        var entireDocs = new InterlockedCounter();
+                                        var missedDocs = new InterlockedCounter();
+                                        var indexedDocs = new InterlockedCounter();
+                                        
                                         var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
@@ -100,25 +104,19 @@ namespace DocSearchAIO.Scheduler
                                                 _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
-                                                fileName =>
-                                                {
-                                                    jobStatistic.EntireDocCount += 1;
-                                                    return ProcessWordDocument(fileName, _cfg, jobStatistic);
-                                                })
+                                                fileName => ProcessWordDocument(fileName, _cfg, entireDocs, missedDocs))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                 elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithOptionFilter()
-                                            .Select(grp =>
-                                            {
-                                                var values = grp.ToList();
-                                                jobStatistic.IndexedDocCount += values.Count;
-                                                return values.Distinct();
-                                            })
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 async processingInfo =>
-                                                    await _elasticSearchService.BulkWriteDocumentsAsync(@processingInfo,
-                                                        indexName))
+                                                {
+                                                    var values = processingInfo.ToList();
+                                                    indexedDocs.Add(values.Count);
+                                                    return await _elasticSearchService.BulkWriteDocumentsAsync(values,
+                                                        indexName);
+                                                })
                                             .RunWith(Sink.Ignore<bool>(), materializer);
 
                                         await Task.WhenAll(runnable);
@@ -127,6 +125,9 @@ namespace DocSearchAIO.Scheduler
                                         sw.Stop();
                                         jobStatistic.EndJob = DateTime.Now;
                                         jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                                        jobStatistic.EntireDocCount = entireDocs.GetCurrent();
+                                        jobStatistic.ProcessingError = missedDocs.GetCurrent();
+                                        jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
                                         _statisticUtilities.AddJobStatisticToDatabase(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
                                             sw.ElapsedMilliseconds);
@@ -135,14 +136,15 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Option<ElasticDocument>> ProcessWordDocument(string currentFile,
-            ConfigurationObject configurationObject, ProcessingJobStatistic jobStatistic)
+        private async Task<Option<WordElasticDocument>> ProcessWordDocument(string currentFile,
+            ConfigurationObject configurationObject, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
         {
             try
             {
                 return await Task.Run(async () =>
                 {
                     var md5 = MD5.Create();
+                    entireDocs.Increment();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).SomeNotNull();
                     return await wdOpt.Map(async wd =>
                         {
@@ -247,7 +249,7 @@ namespace DocSearchAIO.Scheduler
 
                                     var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
-                                    var returnValue = new ElasticDocument()
+                                    var returnValue = new WordElasticDocument()
                                     {
                                         Category = category, CompletionContent = completionField,
                                         Content = contentString,
@@ -269,7 +271,7 @@ namespace DocSearchAIO.Scheduler
                                     _logger.LogWarning(
                                         "cannot process maindocumentpart of file {CurrentFile}, because it is null",
                                         currentFile);
-                                    return await Task.Run(Option.None<ElasticDocument>);
+                                    return await Task.Run(Option.None<WordElasticDocument>);
                                 });
                         })
                         .ValueOr(async () =>
@@ -277,15 +279,15 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogWarning(
                                 "cannot process the basedocument of file {CurrentFile}, because it is null",
                                 currentFile);
-                            return await Task.Run(Option.None<ElasticDocument>);
+                            return await Task.Run(Option.None<WordElasticDocument>);
                         });
                 });
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "an error while creating a indexing object");
-                jobStatistic.ProcessingError += 1;
-                return await Task.Run(Option.None<ElasticDocument>);
+                missedDocs.Increment();
+                return await Task.Run(Option.None<WordElasticDocument>);
             }
         }
 

@@ -129,7 +129,7 @@ namespace DocSearchAIO.Services
                     _logger.LogWarning(indicesStatsResponse.DebugInformation);
                     _logger.LogError(indicesStatsResponse.OriginalException, indicesStatsResponse.ServerError.Error.Reason);
                     return indicesStatsResponse.IsValid;
-                case ISearchResponse<ElasticDocument> searchResponse:
+                case ISearchResponse<WordElasticDocument> searchResponse:
                     if (searchResponse.IsValid) return searchResponse.IsValid;
                     _logger.LogWarning(searchResponse.DebugInformation);
                     _logger.LogError(searchResponse.OriginalException, searchResponse.ServerError.Error.Reason);
