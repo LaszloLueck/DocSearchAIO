@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
 using LiteDB;
@@ -13,17 +14,17 @@ using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
-    public class SchedulerUtils
+    public class SchedulerUtilities
     {
         private static ILogger _logger;
 
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ILiteCollection<ComparerObject> _col;
 
-        public SchedulerUtils(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService,
+        public SchedulerUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService,
             ILiteDatabase liteDatabase)
         {
-            _logger = loggerFactory.CreateLogger<SchedulerUtils>();
+            _logger = loggerFactory.CreateLogger<SchedulerUtilities>();
             _elasticSearchService = elasticSearchService;
             _col = liteDatabase.GetCollection<ComparerObject>("comparers");
             _col.EnsureIndex(x => x.PathHash);
@@ -59,6 +60,44 @@ namespace DocSearchAIO.Scheduler
             (excludeFilter == "") || !fileName.Contains(excludeFilter);
 
 
+        public async Task<Maybe<T>> FilterExistingUnchanged<T>(Maybe<T> document) where T : ElasticDocument
+        {
+            return await Task.Run(() =>
+            {
+                var opt = document.Bind(doc =>
+                {
+                    var contentHash = doc.ContentHash;
+                    var pathHash = doc.Id;
+                    var originalFilePath = doc.OriginalFilePath;
+                    return _col
+                        .FindOne(comp => comp.PathHash == pathHash)
+                        .MaybeValue()
+                        .ResolveOr(
+                            innerDoc =>
+                            {
+                                if (innerDoc.DocumentHash == contentHash)
+                                    return Maybe<T>.None;
+
+                                innerDoc.DocumentHash = contentHash;
+                                _col.Update(innerDoc);
+                                return Maybe<T>.From(doc);
+                            },
+                            () =>
+                            {
+                                var innerDocument = new ComparerObject
+                                {
+                                    DocumentHash = contentHash,
+                                    PathHash = pathHash,
+                                    OriginalPath = originalFilePath
+                                };
+                                _col.Insert(innerDocument);
+                                return Maybe<T>.From(doc);
+                            });
+                });
+                return opt;
+            });
+        }
+
         public async Task<Option<T>> FilterExistingUnchanged<T>(
             Option<T> document) where T : ElasticDocument
         {
@@ -83,7 +122,7 @@ namespace DocSearchAIO.Scheduler
                         })
                         .ValueOr(() =>
                         {
-                            var innerDocument = new ComparerObject()
+                            var innerDocument = new ComparerObject
                             {
                                 DocumentHash = contentHash,
                                 PathHash = pathHash,

@@ -34,7 +34,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
-        private readonly SchedulerUtils _schedulerUtils;
+        private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
@@ -45,7 +45,7 @@ namespace DocSearchAIO.Scheduler
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService, liteDatabase);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
         }
 
@@ -59,7 +59,7 @@ namespace DocSearchAIO.Scheduler
                     .IfTrueFalse(
                         async () =>
                         {
-                            await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
+                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
                                 _cfg.GroupName);
                             _logger.LogWarning(
@@ -69,9 +69,9 @@ namespace DocSearchAIO.Scheduler
                         {
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
-                            var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                            var indexName = _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                            await _schedulerUtils.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
+                            await _schedulerUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
                             _logger.LogInformation("start crunching and indexing some pdf-files");
                             Directory
                                 .Exists(_cfg.ScanPath)
@@ -95,12 +95,12 @@ namespace DocSearchAIO.Scheduler
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
                                             .Where(file =>
-                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
+                                                _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 file => ProcessPdfDocument(file, _cfg, entireDocs, missedDocs))
                                             .SelectAsync(schedulerEntry.Parallelism,
-                                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
+                                                elementOpt => _schedulerUtilities.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithOptionFilter()
                                             .SelectAsync(schedulerEntry.Parallelism,
@@ -184,13 +184,13 @@ namespace DocSearchAIO.Scheduler
                     var completionField = new CompletionField {Input = searchAsYouTypeContent};
                     elasticDoc.CompletionContent = completionField;
 
-                    var listElementsToHash = new List<string>()
+                    var listElementsToHash = new List<string>
                     {
                         contentString, elasticDoc.Creator, string.Join("", elasticDoc.Keywords),
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = await _schedulerUtils.CreateHashString(listElementsToHash);
+                    elasticDoc.ContentHash = await _schedulerUtilities.CreateHashString(listElementsToHash);
 
                     return Option.Some(elasticDoc);
                 }

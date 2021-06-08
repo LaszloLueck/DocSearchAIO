@@ -62,13 +62,12 @@ namespace DocSearchAIO.DocSearch.Services
                 var partialContent = await _viewToStringRenderer.Render("DocumentDetailModalPartial", returnObject);
 
 
-                return new DocumentDetailResponse()
-                    {Content = partialContent, State = "OK", ElementName = "#documentDetailModal"};
+                return new DocumentDetailResponse {Content = partialContent, State = "OK", ElementName = "#documentDetailModal"};
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, "An error occured");
-                return new DocumentDetailResponse() {State = "ERROR"};
+                return new DocumentDetailResponse {State = "ERROR"};
             }
         }
     }

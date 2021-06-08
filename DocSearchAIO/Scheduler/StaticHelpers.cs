@@ -9,29 +9,19 @@ using Optional.Collections;
 
 namespace DocSearchAIO.Scheduler
 {
-    public static class Helpers
+    public static class StaticHelpers
     {
-        public static Option<TOut> AsOptionalValue<TOut>(this bool source, Func<TOut> action)
-        {
-            return source.SomeWhen(t => t).Map(_ => action.Invoke());
-        }
-
-        public static Option<TOut> IfTrue<TIn, TOut>(this bool value, TIn input, Func<TIn, TOut> action)
-        {
-            return value ? Option.Some(action.Invoke(input)) : Option.None<TOut>();
-        }
-
-        public static void IfTrue<TIn>(this bool value, TIn input, Action<TIn> action)
-        {
-            if (value)
-                action.Invoke(input);
-        }
-
         public static void IfTrue(this bool value, Action action)
         {
             if (value)
                 action.Invoke();
         }
+
+        public static TOut ResolveOr<TIn, TOut>(this Maybe<TIn> source, Func<TIn, TOut> resolver,
+            Func<TOut> alternative) => !source.HasValue ? alternative.Invoke() : resolver.Invoke(source.Value);
+
+        public static TOut ResolveOr<TOut>(this Maybe<TOut> source, TOut alternative) =>
+            !source.HasValue ? alternative : source.Value;
 
         public static void MaybeTrue<TIn>(this Maybe<TIn> source, Action<TIn> processor)
         {
@@ -39,6 +29,12 @@ namespace DocSearchAIO.Scheduler
                 processor.Invoke(source.Value);
         }
 
+        /*
+         * if(EqualityComparer<T>.Default.Equals(obj, default(T))) {
+    return obj;
+}
+         */
+        
         public static Maybe<TOut> MaybeValue<TOut>(this TOut value)
         {
             return value == null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
@@ -86,31 +82,29 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
         }
 
-        public static void AndThen<TIn>(this TIn source, Action<TIn> action)
-        {
-            action.Invoke(source);
-        }
+        public static void AndThen<TIn>(this TIn source, Action<TIn> action) => action.Invoke(source);
 
-        public static TOut AndThen<TIn, TOut>(this TIn source, Func<TIn, TOut> action)
-        {
-            return action.Invoke(source);
-        }
-
-        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
+        public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
 
         public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
             this Source<IEnumerable<Option<TSource>>, TMat> source)
         {
             return source.Select(d => d.Values());
         }
-    }
 
-    public class GenericSourceString : GenericSource<string>
-    {
-    }
+        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
+            this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(d => d.Values());
 
-    public abstract class GenericSource<T>
-    {
-        public T Value { get; set; }
+        public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
+            source.Where(filtered => filtered.HasValue).Select(selected => selected.Value);
     }
+}
+
+public class GenericSourceString : GenericSource<string>
+{
+}
+
+public abstract class GenericSource<T>
+{
+    public T Value { get; set; }
 }

@@ -34,8 +34,7 @@ namespace DocSearchAIO.DocSearch.Services
             optionDialogRequest.PdfIndexExists = knownIndices.Contains("officedocuments-pdf");
 
             var html = await _viewToStringRenderer.Render("ResultPageConfigurationModalPartial", optionDialogRequest);
-            return new OptionDialogResponse()
-                {State = "OK", Content = html, ElementName = "#optionModal"};
+            return new OptionDialogResponse {State = "OK", Content = html, ElementName = "#optionModal"};
         }
     }
 }

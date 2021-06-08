@@ -27,7 +27,7 @@ namespace DocSearchAIO.DocSearch.Services
 
             var returnFileName = HttpUtility.UrlEncode(Path.GetFileName(path));
             
-            var downloadFileResponse = new DownloadFileResponse()
+            var downloadFileResponse = new DownloadFileResponse
             {
                 ReturnFileName = returnFileName,
                 DownloadFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096),

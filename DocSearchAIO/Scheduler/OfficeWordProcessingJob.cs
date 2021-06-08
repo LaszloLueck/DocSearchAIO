@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
@@ -34,7 +35,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ConfigurationObject _cfg;
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
-        private readonly SchedulerUtils _schedulerUtils;
+        private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
@@ -46,7 +47,7 @@ namespace DocSearchAIO.Scheduler
 
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtils = new SchedulerUtils(loggerFactory, elasticSearchService, liteDatabase);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService, liteDatabase);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
         }
 
@@ -60,7 +61,7 @@ namespace DocSearchAIO.Scheduler
                     .IfTrueFalse(
                         async () =>
                         {
-                            await _schedulerUtils.SetTriggerStateByUserAction(context.Scheduler,
+                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
                                 _cfg.GroupName);
                             _logger.LogWarning(
@@ -70,9 +71,10 @@ namespace DocSearchAIO.Scheduler
                         {
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
-                            var indexName = _schedulerUtils.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                            var indexName =
+                                _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
-                            await _schedulerUtils.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
+                            await _schedulerUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
 
                             _logger.LogInformation("start crunching and indexing some word-documents");
 
@@ -95,18 +97,18 @@ namespace DocSearchAIO.Scheduler
                                         var entireDocs = new InterlockedCounter();
                                         var missedDocs = new InterlockedCounter();
                                         var indexedDocs = new InterlockedCounter();
-                                        
+
                                         var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
                                             .Where(file =>
-                                                _schedulerUtils.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
+                                                _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 fileName => ProcessWordDocument(fileName, _cfg, entireDocs, missedDocs))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                elementOpt => _schedulerUtils.FilterExistingUnchanged(elementOpt))
+                                                elementOpt => _schedulerUtilities.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithOptionFilter()
                                             .SelectAsync(schedulerEntry.Parallelism,
@@ -128,7 +130,8 @@ namespace DocSearchAIO.Scheduler
                                         jobStatistic.EntireDocCount = entireDocs.GetCurrent();
                                         jobStatistic.ProcessingError = missedDocs.GetCurrent();
                                         jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
-                                        _statisticUtilities.AddJobStatisticToDatabase<WordprocessingDocument>(jobStatistic);
+                                        _statisticUtilities
+                                            .AddJobStatisticToDatabase<WordElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
                                             sw.ElapsedMilliseconds);
                                     });
@@ -136,7 +139,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Option<WordElasticDocument>> ProcessWordDocument(string currentFile,
+        private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
             ConfigurationObject configurationObject, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
         {
             try
@@ -144,30 +147,32 @@ namespace DocSearchAIO.Scheduler
                 return await Task.Run(async () =>
                 {
                     var md5 = MD5.Create();
+                    var wdOpt = WordprocessingDocument.Open(currentFile, false).MaybeValue();
                     entireDocs.Increment();
-                    var wdOpt = WordprocessingDocument.Open(currentFile, false).SomeNotNull();
-                    return await wdOpt.Map(async wd =>
+                    return await wdOpt.ResolveOr(
+                        async wd =>
                         {
-                            var mainDocumentPartOpt = wd.MainDocumentPart.SomeNotNull();
-                            return await mainDocumentPartOpt.Map(async mainDocumentPart =>
+                            var mainDocumentPartOpt = wd.MainDocumentPart.MaybeValue();
+                            return await mainDocumentPartOpt.ResolveOr(
+                                async mainDocumentPart =>
                                 {
                                     var fInfo = wd.PackageProperties;
-                                    var category = fInfo.Category.SomeNotNull().ValueOr("");
+                                    var category = fInfo.Category.MaybeValue().ResolveOr("");
                                     var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                                    var creator = fInfo.Creator.SomeNotNull().ValueOr("");
-                                    var description = fInfo.Description.SomeNotNull().ValueOr("");
-                                    var identifier = fInfo.Identifier.SomeNotNull().ValueOr("");
-                                    var keywords = fInfo.Keywords.SomeNotNull().ValueOr("");
-                                    var language = fInfo.Language.SomeNotNull().ValueOr("");
+                                    var creator = fInfo.Creator.MaybeValue().ResolveOr("");
+                                    var description = fInfo.Description.MaybeValue().ResolveOr("");
+                                    var identifier = fInfo.Identifier.MaybeValue().ResolveOr("");
+                                    var keywords = fInfo.Keywords.MaybeValue().ResolveOr("");
+                                    var language = fInfo.Language.MaybeValue().ResolveOr("");
                                     var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                                    var revision = fInfo.Revision.SomeNotNull().ValueOr("");
-                                    var subject = fInfo.Subject.SomeNotNull().ValueOr("");
-                                    var title = fInfo.Title.SomeNotNull().ValueOr("");
-                                    var version = fInfo.Version.SomeNotNull().ValueOr("");
-                                    var contentStatus = fInfo.ContentStatus.SomeNotNull().ValueOr("");
+                                    var revision = fInfo.Revision.MaybeValue().ResolveOr("");
+                                    var subject = fInfo.Subject.MaybeValue().ResolveOr("");
+                                    var title = fInfo.Title.MaybeValue().ResolveOr("");
+                                    var version = fInfo.Version.MaybeValue().ResolveOr("");
+                                    var contentStatus = fInfo.ContentStatus.MaybeValue().ResolveOr("");
                                     const string contentType = "docx";
                                     var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                                    var lastModifiedBy = fInfo.LastModifiedBy.SomeNotNull().ValueOr("");
+                                    var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().ResolveOr("");
                                     var uriPath = currentFile
                                         .Replace(configurationObject.ScanPath,
                                             _cfg.UriReplacement)
@@ -178,10 +183,12 @@ namespace DocSearchAIO.Scheduler
 
                                     var commentArray = mainDocumentPart
                                         .WordprocessingCommentsPart
-                                        .SomeNotNull()
-                                        .Match(
-                                            some: comments =>
+                                        .MaybeValue()
+                                        .ResolveOr(
+                                            comments =>
                                             {
+                                                
+                                                
                                                 return comments.Comments.Select(comment =>
                                                 {
                                                     var d = (Comment) comment;
@@ -198,8 +205,7 @@ namespace DocSearchAIO.Scheduler
                                                     return retValue;
                                                 }).ToArray();
                                             },
-                                            none: Array.Empty<OfficeDocumentComment>
-                                        );
+                                            Array.Empty<OfficeDocumentComment>);
 
                                     var elements = mainDocumentPart
                                         .Document
@@ -233,7 +239,7 @@ namespace DocSearchAIO.Scheduler
 
                                     var res = listElementsToHash.Concat(commentsString.SelectMany(k => k).Distinct());
 
-                                    var contentHashString = await _schedulerUtils.CreateHashString(res);
+                                    var contentHashString = await _schedulerUtilities.CreateHashString(res);
 
                                     var commString = string.Join(" ", commentArray.Select(d => d.Comment));
                                     var suggestedText =
@@ -249,7 +255,7 @@ namespace DocSearchAIO.Scheduler
 
                                     var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
-                                    var returnValue = new WordElasticDocument()
+                                    var returnValue = new WordElasticDocument
                                     {
                                         Category = category, CompletionContent = completionField,
                                         Content = contentString,
@@ -263,23 +269,24 @@ namespace DocSearchAIO.Scheduler
                                         LastModifiedBy = lastModifiedBy,
                                         OriginalFilePath = currentFile, UriFilePath = uriPath, Comments = commentArray
                                     };
-
-                                    return Option.Some(returnValue);
-                                })
-                                .ValueOr(async () =>
+                                    
+                                    return Maybe<WordElasticDocument>.From(returnValue);
+                                    
+                                },
+                                async () =>
                                 {
                                     _logger.LogWarning(
                                         "cannot process maindocumentpart of file {CurrentFile}, because it is null",
                                         currentFile);
-                                    return await Task.Run(Option.None<WordElasticDocument>);
+                                    return await Task.Run(() => Maybe<WordElasticDocument>.None);
                                 });
-                        })
-                        .ValueOr(async () =>
+                        },
+                        async () =>
                         {
                             _logger.LogWarning(
                                 "cannot process the basedocument of file {CurrentFile}, because it is null",
                                 currentFile);
-                            return await Task.Run(Option.None<WordElasticDocument>);
+                            return await Task.Run(() => Maybe<WordElasticDocument>.None);
                         });
                 });
             }
@@ -287,7 +294,7 @@ namespace DocSearchAIO.Scheduler
             {
                 _logger.LogError(e, "an error while creating a indexing object");
                 missedDocs.Increment();
-                return await Task.Run(Option.None<WordElasticDocument>);
+                return await Task.Run(() => Maybe<WordElasticDocument>.None);
             }
         }
 

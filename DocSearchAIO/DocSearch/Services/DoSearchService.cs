@@ -51,7 +51,7 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     PreTags = new[] {"[#OO#]"},
                     PostTags = new[] {"[#CO#]"},
-                    Fields = new Dictionary<Field, IHighlightField>()
+                    Fields = new Dictionary<Field, IHighlightField>
                     {
                         {"content", new HighlightField()}, {"comments.comment", new HighlightField()}
                     },
@@ -111,8 +111,7 @@ namespace DocSearchAIO.DocSearch.Services
                 outResponse.SearchPhrase = searchPhrase;
                 outResponse.Pagination = pagination;
 
-                var statisticsModel = new SearchStatisticsModel()
-                    {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
+                var statisticsModel = new SearchStatisticsModel {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
                 var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
                 outResponse.Statistics = statisticResponse;
 
@@ -151,10 +150,9 @@ namespace DocSearchAIO.DocSearch.Services
                     }
 
                     var grouped = highlightContent.Concat(highlightComments).GroupBy(item => item.Item1).Select(o =>
-                        new ContentTypeAndValues()
-                            {ContentType = o.Key, ContentValues = o.Select(s => s.Item2)});
+                        new ContentTypeAndValues {ContentType = o.Key, ContentValues = o.Select(s => s.Item2)});
 
-                    return new DoSearchResultContainer()
+                    return new DoSearchResultContainer
                     {
                         RelativeUrl = hit.Source.UriFilePath,
                         Relevance = hit.Score ?? 0,

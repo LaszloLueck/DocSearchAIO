@@ -1,5 +1,6 @@
 using System.Linq;
 using CSharpFunctionalExtensions;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
 using LiteDB;
 using Microsoft.Extensions.Logging;
@@ -19,7 +20,7 @@ namespace DocSearchAIO.Scheduler
             _liteDatabase = liteDatabase;
         }
 
-        public void AddJobStatisticToDatabase<TModel>(ProcessingJobStatistic jobStatistic)
+        public void AddJobStatisticToDatabase<TModel>(ProcessingJobStatistic jobStatistic) where TModel : ElasticDocument
         {
             var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
             _logger.LogInformation("write statistic for {Type}", typeof(TModel).Name);
@@ -28,7 +29,7 @@ namespace DocSearchAIO.Scheduler
             liteCollection.Insert(jobStatistic);
         }
 
-        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel<TModel>()
+        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel<TModel>() where TModel : ElasticDocument
         {
             var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
             _logger.LogInformation("get statistic for {Type}", typeof(TModel).Name);
@@ -36,8 +37,6 @@ namespace DocSearchAIO.Scheduler
                 .FindAll()
                 .OrderByDescending(d => d.StartJob)
                 .TryFirst();
-
-
         }
     }
 }

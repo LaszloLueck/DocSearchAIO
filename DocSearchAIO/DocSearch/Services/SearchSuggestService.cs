@@ -47,9 +47,9 @@ namespace DocSearchAIO.DocSearch.Services
             var suggestsEntries = result.Suggest["searchfieldsuggest"];
             var suggestResult = suggestsEntries.First();
             _logger.LogInformation($"found {suggestResult.Options.Count} suggests in {sw.ElapsedMilliseconds} ms");
-            var suggests = suggestResult.Options.Select(d => new SuggestEntry() {id = d.Id, label = d.Text});
+            var suggests = suggestResult.Options.Select(d => new SuggestEntry {id = d.Id, label = d.Text});
 
-            return new SuggestResult()
+            return new SuggestResult
             {
                 SearchPhrase = searchPhrase,
                 suggests = suggests
