@@ -67,8 +67,6 @@ namespace DocSearchAIO.DocSearch.Services
 			            paused
                      */
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
-                    
-                    _logger.LogInformation("current state for Trigger {TriggerName} is {TriggerState}", result.TriggerName, result.TriggerState);
 
                     trg
                         .MaybeValue()

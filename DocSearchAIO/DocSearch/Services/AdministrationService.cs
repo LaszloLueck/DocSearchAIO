@@ -44,7 +44,7 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse { Content = content, ElementName = "#adminModal" };
+            return new AdministrationModalResponse {Content = content, ElementName = "#adminModal"};
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -128,10 +128,10 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
         {
             var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
-            return await schedulerOpt.Match(
+            await schedulerOpt.Match(
                 async scheduler =>
                 {
-                    _configurationObject
+                    var t = await _configurationObject
                         .Processing
                         .Where(d => d.Value.JobName == jobStatusRequest.JobName)
                         .TryFirst()
@@ -141,7 +141,9 @@ namespace DocSearchAIO.DocSearch.Services
                                 var (key, value) = kv;
                                 var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
                                     value.IndexSuffix);
-                                _logger.LogInformation("try to remove index {IndexName}", indexName);
+
+
+                                _logger.LogInformation("1. try to remove index {IndexName}", indexName);
                                 await _elasticSearchService.DeleteIndexAsync(indexName);
 
                                 switch (key)
@@ -152,10 +154,11 @@ namespace DocSearchAIO.DocSearch.Services
                                         comparer
                                             .RemoveNamedCollection()
                                             .IfTrueFalse(
-                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                () => _logger.LogWarning(
+                                                    "2. error while removing Collection {Collection}",
                                                     nameof(WordElasticDocument)),
                                                 () => _logger.LogInformation(
-                                                    "collection {Collection} successfully removed",
+                                                    "2. collection {Collection} successfully removed",
                                                     nameof(WordElasticDocument))
                                             );
                                         break;
@@ -166,10 +169,11 @@ namespace DocSearchAIO.DocSearch.Services
                                         comparer
                                             .RemoveNamedCollection()
                                             .IfTrueFalse(
-                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                () => _logger.LogWarning(
+                                                    "2. error while removing Collection {Collection}",
                                                     nameof(PdfElasticDocument)),
                                                 () => _logger.LogInformation(
-                                                    "collection {Collection} successfully removed",
+                                                    "2. collection {Collection} successfully removed",
                                                     nameof(PdfElasticDocument))
                                             );
                                         break;
@@ -180,25 +184,28 @@ namespace DocSearchAIO.DocSearch.Services
                                         comparer
                                             .RemoveNamedCollection()
                                             .IfTrueFalse(
-                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                () => _logger.LogWarning(
+                                                    "2. error while removing Collection {Collection}",
                                                     nameof(PowerpointElasticDocument)),
                                                 () => _logger.LogInformation(
-                                                    "collection {Collection} successfully removed",
+                                                    "2. collection {Collection} successfully removed",
                                                     nameof(PowerpointElasticDocument))
                                             );
                                         break;
                                     }
                                 }
+                                _logger.LogInformation("3. trigger job for jobname {JobName}",
+                                    jobStatusRequest.JobName);
                                 var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                                 await scheduler.TriggerJob(jobKey);
+                                return await Task.Run(() => true);
                             },
-                            () =>
+                            async () =>
                             {
-                                _logger.LogWarning("cannot remove elastic index.");
+                                _logger.LogWarning("cannot remove elastic index");
+                                return await Task.Run(() => false);
                             });
-
-
-                    return true;
+                    return t;
                 },
                 async () =>
                 {
@@ -206,6 +213,7 @@ namespace DocSearchAIO.DocSearch.Services
                         _configurationObject.SchedulerName);
                     return await Task.Run(() => false);
                 });
+            return true;
         }
 
 
