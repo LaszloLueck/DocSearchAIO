@@ -9,7 +9,6 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
 using LiteDB;
 using Microsoft.Extensions.Logging;
-using Optional;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -72,7 +71,7 @@ namespace DocSearchAIO.Scheduler
                     return _col
                         .FindOne(comp => comp.PathHash == pathHash)
                         .MaybeValue()
-                        .ResolveOr(
+                        .Match(
                             innerDoc =>
                             {
                                 if (innerDoc.DocumentHash == contentHash)
@@ -93,44 +92,6 @@ namespace DocSearchAIO.Scheduler
                                 _col.Insert(innerDocument);
                                 return Maybe<T>.From(doc);
                             });
-                });
-                return opt;
-            });
-        }
-
-        public async Task<Option<T>> FilterExistingUnchanged<T>(
-            Option<T> document) where T : ElasticDocument
-        {
-            return await Task.Run(() =>
-            {
-                var opt = document.FlatMap(doc =>
-                {
-                    var contentHash = doc.ContentHash;
-                    var pathHash = doc.Id;
-                    var originalFilePath = doc.OriginalFilePath;
-                    return _col
-                        .FindOne(comp => comp.PathHash == pathHash)
-                        .SomeNotNull()
-                        .Map(innerDoc =>
-                        {
-                            if (innerDoc.DocumentHash == contentHash)
-                                return Option.None<T>();
-
-                            innerDoc.DocumentHash = contentHash;
-                            _col.Update(innerDoc);
-                            return Option.Some(doc);
-                        })
-                        .ValueOr(() =>
-                        {
-                            var innerDocument = new ComparerObject
-                            {
-                                DocumentHash = contentHash,
-                                PathHash = pathHash,
-                                OriginalPath = originalFilePath
-                            };
-                            _col.Insert(innerDocument);
-                            return Option.Some(doc);
-                        });
                 });
                 return opt;
             });

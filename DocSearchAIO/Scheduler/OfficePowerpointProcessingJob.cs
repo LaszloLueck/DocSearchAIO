@@ -90,6 +90,7 @@ namespace DocSearchAIO.Scheduler
                                             Id = Guid.NewGuid().ToString(),
                                             StartJob = DateTime.Now
                                         };
+                                        
                                         var entireDocs = new InterlockedCounter();
                                         var missedDocs = new InterlockedCounter();
                                         var indexedDocs = new InterlockedCounter();
@@ -148,26 +149,27 @@ namespace DocSearchAIO.Scheduler
                     var wdOpt = PresentationDocument
                         .Open(currentFile, false)
                         .MaybeValue();
-                    return await wdOpt.ResolveOr(
+
+                    return await wdOpt.Match(
                         async wd =>
                         {
                             var fInfo = wd.PackageProperties;
-                            var category = fInfo.Category.MaybeValue().ResolveOr("");
+                            var category = fInfo.Category.MaybeValue().Unwrap("");
                             var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                            var creator = fInfo.Creator.MaybeValue().ResolveOr("");
-                            var description = fInfo.Description.MaybeValue().ResolveOr("");
-                            var identifier = fInfo.Identifier.MaybeValue().ResolveOr("");
-                            var keywords = fInfo.Keywords.MaybeValue().ResolveOr("");
-                            var language = fInfo.Language.MaybeValue().ResolveOr("");
+                            var creator = fInfo.Creator.MaybeValue().Unwrap("");
+                            var description = fInfo.Description.MaybeValue().Unwrap("");
+                            var identifier = fInfo.Identifier.MaybeValue().Unwrap("");
+                            var keywords = fInfo.Keywords.MaybeValue().Unwrap("");
+                            var language = fInfo.Language.MaybeValue().Unwrap("");
                             var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                            var revision = fInfo.Revision.MaybeValue().ResolveOr("");
-                            var subject = fInfo.Subject.MaybeValue().ResolveOr("");
-                            var title = fInfo.Title.MaybeValue().ResolveOr("");
-                            var version = fInfo.Version.MaybeValue().ResolveOr("");
-                            var contentStatus = fInfo.ContentStatus.MaybeValue().ResolveOr("");
+                            var revision = fInfo.Revision.MaybeValue().Unwrap("");
+                            var subject = fInfo.Subject.MaybeValue().Unwrap("");
+                            var title = fInfo.Title.MaybeValue().Unwrap("");
+                            var version = fInfo.Version.MaybeValue().Unwrap("");
+                            var contentStatus = fInfo.ContentStatus.MaybeValue().Unwrap("");
                             var contentType = "pptx";
                             var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                            var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().ResolveOr("");
+                            var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().Unwrap("");
                             var uriPath = currentFile
                                 .Replace(configurationObject.ScanPath, _cfg.UriReplacement)
                                 .Replace(@"\", "/");
@@ -177,7 +179,7 @@ namespace DocSearchAIO.Scheduler
                             var slideCount = wd
                                 .PresentationPart
                                 .MaybeValue()
-                                .ResolveOr(
+                                .Match(
                                     part => part.SlideParts.Count(),
                                     () => 0);
 
@@ -191,7 +193,7 @@ namespace DocSearchAIO.Scheduler
                                     var commentArray = p
                                         .SlideCommentsPart
                                         .MaybeValue()
-                                        .ResolveOr(
+                                        .Match(
                                             comments =>
                                             {
                                                 return comments.CommentList.Select(comment =>
@@ -200,8 +202,10 @@ namespace DocSearchAIO.Scheduler
 
                                                     var retValue = new OfficeDocumentComment();
                                                     var dat = d.DateTime != null
-                                                        ? d.DateTime.Value.MaybeValue()
-                                                            .ResolveOr(new DateTime(1970, 1, 1))
+                                                        ? d.DateTime
+                                                            .Value
+                                                            .MaybeValue()
+                                                            .Unwrap(new DateTime(1970, 1, 1))
                                                         : new DateTime(1970, 1, 1);
 
                                                     retValue.Comment = d.Text?.Text;
@@ -223,7 +227,7 @@ namespace DocSearchAIO.Scheduler
 
                             var enumerable = elements as Tuple<string, OfficeDocumentComment[]>[] ?? elements
                                 .MaybeValue()
-                                .ResolveOr(
+                                .Match(
                                     element => element.ToArray(),
                                     Array.Empty<Tuple<string, OfficeDocumentComment[]>>
                                 );

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
@@ -22,7 +23,6 @@ using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
-using Optional;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -130,7 +130,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Option<PdfElasticDocument>> ProcessPdfDocument(string fileName,
+        private async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(string fileName,
             ConfigurationObject configuration, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
         {
             return await Task.Run(async () =>
@@ -192,13 +192,13 @@ namespace DocSearchAIO.Scheduler
                     elasticDoc.Content = contentString;
                     elasticDoc.ContentHash = await _schedulerUtilities.CreateHashString(listElementsToHash);
 
-                    return Option.Some(elasticDoc);
+                    return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogInformation(exception, "An error occured");
                     missedDocs.Increment();
-                    return Option.None<PdfElasticDocument>();
+                    return Maybe<PdfElasticDocument>.None;
                 }
             });
         }

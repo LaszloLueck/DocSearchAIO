@@ -23,7 +23,6 @@ using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
-using Optional;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -149,30 +148,31 @@ namespace DocSearchAIO.Scheduler
                     var md5 = MD5.Create();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).MaybeValue();
                     entireDocs.Increment();
-                    return await wdOpt.ResolveOr(
+                    return await wdOpt.Match(
                         async wd =>
                         {
                             var mainDocumentPartOpt = wd.MainDocumentPart.MaybeValue();
-                            return await mainDocumentPartOpt.ResolveOr(
+                            return await mainDocumentPartOpt
+                                .Match(
                                 async mainDocumentPart =>
                                 {
                                     var fInfo = wd.PackageProperties;
-                                    var category = fInfo.Category.MaybeValue().ResolveOr("");
+                                    var category = fInfo.Category.MaybeValue().Unwrap("");
                                     var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                                    var creator = fInfo.Creator.MaybeValue().ResolveOr("");
-                                    var description = fInfo.Description.MaybeValue().ResolveOr("");
-                                    var identifier = fInfo.Identifier.MaybeValue().ResolveOr("");
-                                    var keywords = fInfo.Keywords.MaybeValue().ResolveOr("");
-                                    var language = fInfo.Language.MaybeValue().ResolveOr("");
+                                    var creator = fInfo.Creator.MaybeValue().Unwrap("");
+                                    var description = fInfo.Description.MaybeValue().Unwrap("");
+                                    var identifier = fInfo.Identifier.MaybeValue().Unwrap("");
+                                    var keywords = fInfo.Keywords.MaybeValue().Unwrap("");
+                                    var language = fInfo.Language.MaybeValue().Unwrap("");
                                     var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                                    var revision = fInfo.Revision.MaybeValue().ResolveOr("");
-                                    var subject = fInfo.Subject.MaybeValue().ResolveOr("");
-                                    var title = fInfo.Title.MaybeValue().ResolveOr("");
-                                    var version = fInfo.Version.MaybeValue().ResolveOr("");
-                                    var contentStatus = fInfo.ContentStatus.MaybeValue().ResolveOr("");
+                                    var revision = fInfo.Revision.MaybeValue().Unwrap("");
+                                    var subject = fInfo.Subject.MaybeValue().Unwrap("");
+                                    var title = fInfo.Title.MaybeValue().Unwrap("");
+                                    var version = fInfo.Version.MaybeValue().Unwrap("");
+                                    var contentStatus = fInfo.ContentStatus.MaybeValue().Unwrap("");
                                     const string contentType = "docx";
                                     var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                                    var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().ResolveOr("");
+                                    var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().Unwrap("");
                                     var uriPath = currentFile
                                         .Replace(configurationObject.ScanPath,
                                             _cfg.UriReplacement)
@@ -184,17 +184,19 @@ namespace DocSearchAIO.Scheduler
                                     var commentArray = mainDocumentPart
                                         .WordprocessingCommentsPart
                                         .MaybeValue()
-                                        .ResolveOr(
+                                        .Match(
                                             comments =>
                                             {
                                                 
                                                 
                                                 return comments.Comments.Select(comment =>
                                                 {
-                                                    var d = (Comment) comment;
+                                                    var d = (Comment)comment;
                                                     var retValue = new OfficeDocumentComment();
                                                     var dat = d.Date != null
-                                                        ? d.Date.Value.SomeNotNull().ValueOr(new DateTime(1970, 1, 1))
+                                                        ? d.Date.Value
+                                                            .MaybeValue()
+                                                            .Unwrap(new DateTime(1970, 1, 1))
                                                         : new DateTime(1970, 1, 1);
 
                                                     retValue.Author = d.Author?.Value;

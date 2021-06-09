@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
-using Optional;
-using Optional.Collections;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -17,23 +15,11 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke();
         }
 
-        public static TOut ResolveOr<TIn, TOut>(this Maybe<TIn> source, Func<TIn, TOut> resolver,
-            Func<TOut> alternative) => !source.HasValue ? alternative.Invoke() : resolver.Invoke(source.Value);
-
-        public static TOut ResolveOr<TOut>(this Maybe<TOut> source, TOut alternative) =>
-            !source.HasValue ? alternative : source.Value;
-
         public static void MaybeTrue<TIn>(this Maybe<TIn> source, Action<TIn> processor)
         {
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
-
-        /*
-         * if(EqualityComparer<T>.Default.Equals(obj, default(T))) {
-    return obj;
-}
-         */
         
         public static Maybe<TOut> MaybeValue<TOut>(this TOut value)
         {
@@ -85,12 +71,6 @@ namespace DocSearchAIO.Scheduler
         public static void AndThen<TIn>(this TIn source, Action<TIn> action) => action.Invoke(source);
 
         public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
-
-        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
-            this Source<IEnumerable<Option<TSource>>, TMat> source)
-        {
-            return source.Select(d => d.Values());
-        }
 
         public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(d => d.Values());
