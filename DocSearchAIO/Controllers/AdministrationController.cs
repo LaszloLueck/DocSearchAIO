@@ -63,6 +63,13 @@ namespace DocSearchAIO.Controllers
         {
             return await _administrationService.InstantStartJobWithJobId(jobStatusRequest);
         }
+
+        [Route("reindexAndStartJob")]
+        [HttpPost]
+        public async Task<bool> ReindexAndStartJob(JobStatusRequest jobStatusRequest)
+        {
+            return await _administrationService.DeleteIndexAndStartJob(jobStatusRequest);
+        }
         
         [Route("getTriggerStatus")]
         [HttpPost]

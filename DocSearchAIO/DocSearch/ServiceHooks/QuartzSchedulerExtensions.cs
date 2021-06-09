@@ -1,4 +1,5 @@
 ﻿using System;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +23,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
             cfg
                 .Processing
-                .DictionaryKeyExistsAction("word", kv =>
+                .DictionaryKeyExistsAction(nameof(WordElasticDocument), kv =>
                 {
                     var scheduler = kv.Value;
                     services.AddQuartz(q =>
@@ -43,7 +44,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
             cfg
                 .Processing
-                .DictionaryKeyExistsAction("powerpoint", kv =>
+                .DictionaryKeyExistsAction(nameof(PowerpointElasticDocument), kv =>
                 {
                     var scheduler = kv.Value;
                     services.AddQuartz(q =>
@@ -64,7 +65,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
             cfg
                 .Processing
-                .DictionaryKeyExistsAction("pdf", kv =>
+                .DictionaryKeyExistsAction(nameof(PdfElasticDocument), kv =>
                 {
                     var scheduler = kv.Value;
                     services.AddQuartz(q =>

@@ -23,6 +23,8 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
         private readonly StatisticUtilities _statisticUtilities;
+        private readonly SchedulerUtilities _schedulerUtilities;
+        private readonly ILiteDatabase _liteDatabase;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
             IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -35,12 +37,14 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
+            _liteDatabase = liteDatabase;
         }
 
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse {Content = content, ElementName = "#adminModal"};
+            return new AdministrationModalResponse { Content = content, ElementName = "#adminModal" };
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -54,12 +58,11 @@ namespace DocSearchAIO.DocSearch.Services
                     return await _configurationObject
                         .Processing
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
-                        .Select(r => r.Key)
                         .TryFirst()
                         .Match(
                             async currentSelected =>
                             {
-                                _configurationObject.Processing[currentSelected].Active = false;
+                                _configurationObject.Processing[currentSelected.Key].Active = false;
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
                             },
@@ -82,16 +85,19 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                     await scheduler.ResumeTrigger(triggerKey);
-                    var currentSelected = _configurationObject
+                    return await _configurationObject
                         .Processing
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
-                        .Select(r => r.Key)
-                        .First();
-
-                    _configurationObject.Processing[currentSelected].Active = true;
-
-                    await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
-                    return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
+                        .TryFirst()
+                        .Match(
+                            async currentSelected =>
+                            {
+                                _configurationObject.Processing[currentSelected.Key].Active = true;
+                                await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
+                                return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
+                            },
+                            async () => await Task.Run(() => false)
+                        );
                 },
                 async () =>
                 {
@@ -109,6 +115,89 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                     await scheduler.TriggerJob(jobKey);
+                    return true;
+                },
+                async () =>
+                {
+                    _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
+                        _configurationObject.SchedulerName);
+                    return await Task.Run(() => false);
+                });
+        }
+
+        public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
+        {
+            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            return await schedulerOpt.Match(
+                async scheduler =>
+                {
+                    _configurationObject
+                        .Processing
+                        .Where(d => d.Value.JobName == jobStatusRequest.JobName)
+                        .TryFirst()
+                        .Match(
+                            async kv =>
+                            {
+                                var (key, value) = kv;
+                                var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
+                                    value.IndexSuffix);
+                                _logger.LogInformation("try to remove index {IndexName}", indexName);
+                                await _elasticSearchService.DeleteIndexAsync(indexName);
+
+                                switch (key)
+                                {
+                                    case nameof(WordElasticDocument):
+                                    {
+                                        var comparer = new Comparers<WordElasticDocument>(_liteDatabase);
+                                        comparer
+                                            .RemoveNamedCollection()
+                                            .IfTrueFalse(
+                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                    nameof(WordElasticDocument)),
+                                                () => _logger.LogInformation(
+                                                    "collection {Collection} successfully removed",
+                                                    nameof(WordElasticDocument))
+                                            );
+                                        break;
+                                    }
+                                    case nameof(PdfElasticDocument):
+                                    {
+                                        var comparer = new Comparers<PdfElasticDocument>(_liteDatabase);
+                                        comparer
+                                            .RemoveNamedCollection()
+                                            .IfTrueFalse(
+                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                    nameof(PdfElasticDocument)),
+                                                () => _logger.LogInformation(
+                                                    "collection {Collection} successfully removed",
+                                                    nameof(PdfElasticDocument))
+                                            );
+                                        break;
+                                    }
+                                    case nameof(PowerpointElasticDocument):
+                                    {
+                                        var comparer = new Comparers<PowerpointElasticDocument>(_liteDatabase);
+                                        comparer
+                                            .RemoveNamedCollection()
+                                            .IfTrueFalse(
+                                                () => _logger.LogWarning("error while removing Collection {Collection}",
+                                                    nameof(PowerpointElasticDocument)),
+                                                () => _logger.LogInformation(
+                                                    "collection {Collection} successfully removed",
+                                                    nameof(PowerpointElasticDocument))
+                                            );
+                                        break;
+                                    }
+                                }
+                                var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
+                                await scheduler.TriggerJob(jobKey);
+                            },
+                            () =>
+                            {
+                                _logger.LogWarning("cannot remove elastic index.");
+                            });
+
+
                     return true;
                 },
                 async () =>

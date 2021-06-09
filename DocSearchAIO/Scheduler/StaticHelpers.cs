@@ -68,23 +68,16 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
         }
 
-        public static void AndThen<TIn>(this TIn source, Action<TIn> action) => action.Invoke(source);
+        public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource => action.Invoke(source);
 
         public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
 
-        public static Source<IEnumerable<TSource>, TMat> WithOptionFilter<TSource, TMat>(
-            this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(d => d.Values());
+        public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
+            this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
-        public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
-            source.Where(filtered => filtered.HasValue).Select(selected => selected.Value);
+        private static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
+            source
+                .Where(filtered => filtered.HasValue)
+                .Select(selected => selected.Value);
     }
-}
-
-public class GenericSourceString : GenericSource<string>
-{
-}
-
-public abstract class GenericSource<T>
-{
-    public T Value { get; set; }
 }

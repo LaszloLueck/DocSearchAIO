@@ -18,15 +18,13 @@ namespace DocSearchAIO.Scheduler
         private static ILogger _logger;
 
         private readonly IElasticSearchService _elasticSearchService;
-        private readonly ILiteCollection<ComparerObject> _col;
+        
 
-        public SchedulerUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService,
-            ILiteDatabase liteDatabase)
+        public SchedulerUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtilities>();
             _elasticSearchService = elasticSearchService;
-            _col = liteDatabase.GetCollection<ComparerObject>("comparers");
-            _col.EnsureIndex(x => x.PathHash);
+
         }
 
         public readonly Func<IScheduler, string, string, Task> SetTriggerStateByUserAction =
@@ -58,45 +56,7 @@ namespace DocSearchAIO.Scheduler
         public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
             (excludeFilter == "") || !fileName.Contains(excludeFilter);
 
-
-        public async Task<Maybe<T>> FilterExistingUnchanged<T>(Maybe<T> document) where T : ElasticDocument
-        {
-            return await Task.Run(() =>
-            {
-                var opt = document.Bind(doc =>
-                {
-                    var contentHash = doc.ContentHash;
-                    var pathHash = doc.Id;
-                    var originalFilePath = doc.OriginalFilePath;
-                    return _col
-                        .FindOne(comp => comp.PathHash == pathHash)
-                        .MaybeValue()
-                        .Match(
-                            innerDoc =>
-                            {
-                                if (innerDoc.DocumentHash == contentHash)
-                                    return Maybe<T>.None;
-
-                                innerDoc.DocumentHash = contentHash;
-                                _col.Update(innerDoc);
-                                return Maybe<T>.From(doc);
-                            },
-                            () =>
-                            {
-                                var innerDocument = new ComparerObject
-                                {
-                                    DocumentHash = contentHash,
-                                    PathHash = pathHash,
-                                    OriginalPath = originalFilePath
-                                };
-                                _col.Insert(innerDocument);
-                                return Maybe<T>.From(doc);
-                            });
-                });
-                return opt;
-            });
-        }
-
+ 
         public readonly Func<IEnumerable<string>, Task<string>> CreateHashString = async (elements) =>
         {
             return await Task.Run(() =>

@@ -47,15 +47,27 @@
                                 @if (triggerModel.CurrentState.ToLower() == "paused")
                                 {
                                     <button type="button" disabled class="btn btn-secondary mr-2"><i class="bi bi-pause-btn"></i> Pause</button>
-                                    <button type="button" class="btn btn-success mr-2" onclick="resumeTrigger('@triggerModel.TriggerName','@triggerModel.GroupName')"><i class="bi bi-play-btn"></i> Start</button>
+                                    if (triggerModel.CurrentState.ToLower() != "blocked")
+                                    {
+                                        <button type="button" class="btn btn-success mr-2" onclick="resumeTrigger('@triggerModel.TriggerName','@triggerModel.GroupName')"><i class="bi bi-play-btn"></i> Start</button>
+                                    }
                                 }
                                 else
                                 {
                                     <button type="button" class="btn btn-warning mr-2" onclick="pauseTrigger('@triggerModel.TriggerName','@triggerModel.GroupName')"><i class="bi bi-pause-btn"></i> Pause</button>
                                     <button type="button" disabled class="btn btn-secondary mr-2"><i class="bi bi-play-btn"></i> Start</button>
                                 }
-                                <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
-                                <button type="button" class="btn btn-danger mr-2"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                @if (triggerModel.CurrentState.ToLower() != "blocked" && triggerModel.CurrentState.ToLower() != "paused")
+                                {
+                                    <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
+                                    <button type="button" class="btn btn-danger mr-2" onclick="reindexAndStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-recycle"></i> Indexieren</button>
+                                    <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                }
+
                             </div>
                         </div>
                     </div>
@@ -76,13 +88,33 @@
                     data: JSON.stringify(request)
                 })
                 .done(function (){
-                    
+                    loadActionContent()
                 })
                 .fail(function (){
                     showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
                 });                
             }
         
+             reindexAndStartJob = (jobId, groupId) => {
+                 var request = {
+                     jobName: jobId,
+                     groupId: groupId
+                 };
+                 $.ajax({
+                     url: "/api/administration/reindexAndStartJob",
+                     method: "POST",
+                     contentType: "application/json",
+                     dataType: "json",
+                     data: JSON.stringify(request)
+                 })
+                 .done(function (){
+                     loadActionContent()
+                 })
+                 .fail(function (){
+                     showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                 });                
+             }           
+            
             resumeTrigger = (triggerId, triggerGroup) => {
                 var request = {
                     triggerId: triggerId,

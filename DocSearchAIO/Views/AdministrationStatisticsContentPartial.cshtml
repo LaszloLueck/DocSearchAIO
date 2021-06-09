@@ -61,7 +61,17 @@
         </div>
         <div class="row">
             <div class="col-3"><span>Dokumente verarbeitet/s:</span></div>
-            <div class="col-9"><span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span></div>
+            @{
+                if (runtimeModel.Value.ElapsedTimeMillis > 0 && runtimeModel.Value.EntireDocCount > 0 && (runtimeModel.Value.ElapsedTimeMillis / 1000) > 0)
+                {
+                    <div class="col-9"><span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span></div>
+                }
+                else
+                {
+                    <div class="col-9"><span>0</span></div> 
+                }
+            }
+            
         </div>
     }
 </div>

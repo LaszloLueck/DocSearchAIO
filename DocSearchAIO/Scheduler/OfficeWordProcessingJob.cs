@@ -36,6 +36,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
+        private readonly Comparers<WordElasticDocument> _comparers;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -46,13 +47,14 @@ namespace DocSearchAIO.Scheduler
 
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService, liteDatabase);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
+            _comparers = new Comparers<WordElasticDocument>(liteDatabase);
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var schedulerEntry = _cfg.Processing["word"];
+            var schedulerEntry = _cfg.Processing[nameof(WordElasticDocument)];
             await Task.Run(() =>
             {
                 schedulerEntry
@@ -107,9 +109,9 @@ namespace DocSearchAIO.Scheduler
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 fileName => ProcessWordDocument(fileName, _cfg, entireDocs, missedDocs))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                elementOpt => _schedulerUtilities.FilterExistingUnchanged(elementOpt))
+                                                elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                            .WithOptionFilter()
+                                            .WithMaybeFilter()
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 async processingInfo =>
                                                 {

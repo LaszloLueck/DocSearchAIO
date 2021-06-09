@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Scheduler;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -50,7 +52,8 @@ namespace DocSearchAIO.DocSearch.Services
                             .Select(d => d.Value.Active)
                             .First(),
                         TriggerName = trigger.Name,
-                        GroupName = trigger.Group
+                        GroupName = trigger.Group,
+                        
                     };
 
 
@@ -65,13 +68,22 @@ namespace DocSearchAIO.DocSearch.Services
                      */
                     result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
                     
+                    _logger.LogInformation("current state for Trigger {TriggerName} is {TriggerState}", result.TriggerName, result.TriggerState);
 
-                    if (trg == null) return result;
-                    result.NextFireTime = trg.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                    result.Description = trg.Description;
-                    result.StartTime = trg.StartTimeUtc.LocalDateTime;
-                    result.LastFireTime = trg.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                    result.JobName = trg.JobKey.Name;
+                    trg
+                        .MaybeValue()
+                        .Match(
+                            trgOpt =>
+                            {
+                                result.NextFireTime = trgOpt.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
+                                result.Description = trgOpt.Description;
+                                result.StartTime = trgOpt.StartTimeUtc.LocalDateTime;
+                                result.LastFireTime = trgOpt.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
+                                result.JobName = trgOpt.JobKey.Name;
+                                return result;
+                            },
+                            () => result
+                        );
                     return result;
                 });
 

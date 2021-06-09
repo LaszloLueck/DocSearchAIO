@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\00-Gesamtprojekt\\",
+    "scanPath": "c:\\Temp\\Neuer Ordner\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -23,8 +23,8 @@
         "startDelay": 3,
         "runsEvery": 3600
       },
-      "pdf": {
-        "active": false,
+      "PdfElasticDocument": {
+        "active": true,
         "parallelism": 10,
         "excludeFilter": "",
         "fileExtension": "*.pdf",
@@ -36,8 +36,8 @@
         "startDelay": 7,
         "runsEvery": 3600
       },
-      "powerpoint": {
-        "active": false,
+      "PowerpointElasticDocument": {
+        "active": true,
         "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.pptx",
@@ -49,8 +49,8 @@
         "startDelay": 5,
         "runsEvery": 3600
       },
-      "word": {
-        "active": false,
+      "WordElasticDocument": {
+        "active": true,
         "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.docx",
