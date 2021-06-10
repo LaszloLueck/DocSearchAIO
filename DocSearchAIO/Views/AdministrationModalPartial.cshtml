@@ -30,8 +30,7 @@
                 <div class="form-row" style="display: none;" id="navContainer">&nbsp;</div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-primary" onclick="saveAdminContent();">Speichern</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>
             </div>
         </div>
     </div>
@@ -118,11 +117,6 @@
             });
         }
         
-        saveAdminContent = () => {
-            showAlert("Daten werden gespeichert!", "alert-info");
-            $('#adminModal').modal('toggle');
-        };
-    
         $(document).ready(function () {
             switchAdminContent($('#generalSettings'));
         });

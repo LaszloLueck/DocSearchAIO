@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,6 +124,31 @@ namespace DocSearchAIO.DocSearch.Services
                         _configurationObject.SchedulerName);
                     return await Task.Run(() => false);
                 });
+        }
+
+        public async Task<bool> SetAdministrationGenericContent(AdministrationGenericModel model)
+        {
+            try
+            {
+                _configurationObject.ElasticEndpoints = model.ElasticEndpoints;
+                _configurationObject.GroupName = model.GroupName;
+                _configurationObject.IndexName = model.IndexName;
+                _configurationObject.ScanPath = model.ScanPath;
+                _configurationObject.SchedulerId = model.SchedulerId;
+                _configurationObject.SchedulerName = model.SchedulerName;
+                _configurationObject.UriReplacement = model.UriReplacement;
+                _configurationObject.ActorSystemName = model.ActorSystemName;
+
+                await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
+                _logger.LogInformation("configuration succesfully updated");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("an error while updating the configuration occured", ex);
+                return false;
+            }
+
         }
 
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)

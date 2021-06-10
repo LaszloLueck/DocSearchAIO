@@ -29,6 +29,13 @@ namespace DocSearchAIO.Controllers
             _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticSearchService);
         }
 
+        [Route("setGenericContent")]
+        [HttpPost]
+        public async Task<bool> SetGenericContent(AdministrationGenericModel model)
+        {
+            return await _administrationService.SetAdministrationGenericContent(model);
+        }
+        
         [Route("getAdministrationModal")]
         [HttpGet]
         public async Task<AdministrationModalResponse> GetAdministrationModal()

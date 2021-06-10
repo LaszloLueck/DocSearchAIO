@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.Scheduler;
 using Newtonsoft.Json;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
