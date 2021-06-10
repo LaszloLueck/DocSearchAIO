@@ -75,7 +75,7 @@ namespace DocSearchAIO.Scheduler
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
-        private static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
+        public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);

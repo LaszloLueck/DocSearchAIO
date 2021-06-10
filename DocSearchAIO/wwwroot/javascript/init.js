@@ -1,4 +1,5 @@
 init = () => {
+    
     var data = {
         filterExcel: localStorage.getItem("filterExcel") === 'true',
         filterWord: localStorage.getItem("filterWord") === 'true',
@@ -106,7 +107,7 @@ showAlert = (alertText, alertType) => {
 $(document).ready(function () {
     init();
     setAutoCompleteWithCondition();
-
+    
     $('#searchField').keyup(function (e) {
         const code = e.key;
         if (code === "Enter") {

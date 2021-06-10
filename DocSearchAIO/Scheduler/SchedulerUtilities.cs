@@ -4,10 +4,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
-using LiteDB;
 using Microsoft.Extensions.Logging;
 using Quartz;
 

@@ -6,6 +6,94 @@
             <span class="h5">Statistiken</span>
         </div>
     </div>
+    <script type="application/javascript">
+                $(function () {
+                    $('[data-toggle="tooltip"]').tooltip()
+                })
+            
+                instantStartJob = (jobId, groupId) => {
+                    var request = {
+                        jobName: jobId,
+                        groupId: groupId
+                    };
+                    $.ajax({
+                        url: "/api/administration/instantStartJob",
+                        method: "POST",
+                        contentType: "application/json",
+                        dataType: "json",
+                        data: JSON.stringify(request)
+                    })
+                    .done(function (){
+                        loadActionContent()
+                    })
+                    .fail(function (){
+                        showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                    });                
+                }
+            
+                 reindexAndStartJob = (jobId, groupId) => {
+                     var request = {
+                         jobName: jobId,
+                         groupId: groupId
+                     };
+                     $.ajax({
+                         url: "/api/administration/reindexAndStartJob",
+                         method: "POST",
+                         contentType: "application/json",
+                         dataType: "json",
+                         data: JSON.stringify(request)
+                     })
+                     .done(function (){
+                         loadActionContent()
+                     })
+                     .fail(function (){
+                         showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                     });                
+                 }           
+                
+                resumeTrigger = (triggerId, triggerGroup) => {
+                    var request = {
+                        triggerId: triggerId,
+                        groupId: triggerGroup
+                    };
+                    
+                    $.ajax({
+                        url: "/api/administration/resumeTrigger",
+                        method: "POST",
+                        contentType: "application/json",
+                        dataType: "json",
+                        data: JSON.stringify(request)
+                    })
+                    .done(function (){
+                        loadActionContent()
+                    })
+                    .fail(function (){
+                        showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                    });
+                }
+            
+                pauseTrigger = (triggerId, triggerGroup) => {
+                    var request = {
+                        triggerId: triggerId,
+                        groupId: triggerGroup
+                    };
+                    
+                    $.ajax({
+                        url: "/api/administration/pauseTrigger",
+                        method: "POST",
+                        contentType: "application/json",
+                        dataType: "json",
+                        data: JSON.stringify(request)
+                    })
+                    .done(function (){
+                        loadActionContent()
+                    })
+                    .fail(function (){
+                        showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
+                    });
+                }
+                
+        </script>
 </div>
 @foreach (var administrationActionSchedulerModel in Model)
 {
@@ -59,13 +147,13 @@
                                 }
                                 @if (triggerModel.CurrentState.ToLower() != "blocked" && triggerModel.CurrentState.ToLower() != "paused")
                                 {
-                                    <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
-                                    <button type="button" class="btn btn-danger mr-2" onclick="reindexAndStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                    <button type="button" class="btn btn-orange mr-2" data-toggle="tooltip" data-placement="top" title="liest alle Dokumente neu ein und schreibt Änderungen in den Index" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
+                                    <button type="button" class="btn btn-danger mr-2" data-toggle="tooltip" data-placement="top" title="entfernt alle Inhalte aus dem Index und fügt die Dokumente neu hinzu" onclick="reindexAndStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
                                 }
                                 else
                                 {
-                                    <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-recycle"></i> Indexieren</button>
-                                    <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                    <button type="button" class="btn btn-secondary mr-2" data-toggle="tooltip" data-placement="top" disabled><i class="bi bi-recycle" title="Aktion kann nicht durchgeführt werden, eine Indexierung läuft."></i> Indexieren</button>
+                                    <button type="button" class="btn btn-secondary mr-2" data-toggle="tooltip" data-placement="top" disabled title="Aktion kann nicht durchgeführt werden, eine Indexierung läuft."><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
                                 }
 
                             </div>
@@ -74,89 +162,5 @@
                 }
             </div>
         </div>
-        <script type="application/javascript">
-            instantStartJob = (jobId, groupId) => {
-                var request = {
-                    jobName: jobId,
-                    groupId: groupId
-                };
-                $.ajax({
-                    url: "/api/administration/instantStartJob",
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(request)
-                })
-                .done(function (){
-                    loadActionContent()
-                })
-                .fail(function (){
-                    showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-                });                
-            }
-        
-             reindexAndStartJob = (jobId, groupId) => {
-                 var request = {
-                     jobName: jobId,
-                     groupId: groupId
-                 };
-                 $.ajax({
-                     url: "/api/administration/reindexAndStartJob",
-                     method: "POST",
-                     contentType: "application/json",
-                     dataType: "json",
-                     data: JSON.stringify(request)
-                 })
-                 .done(function (){
-                     loadActionContent()
-                 })
-                 .fail(function (){
-                     showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-                 });                
-             }           
-            
-            resumeTrigger = (triggerId, triggerGroup) => {
-                var request = {
-                    triggerId: triggerId,
-                    groupId: triggerGroup
-                };
-                
-                $.ajax({
-                    url: "/api/administration/resumeTrigger",
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(request)
-                })
-                .done(function (){
-                    loadActionContent()
-                })
-                .fail(function (){
-                    showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-                });
-            }
-        
-            pauseTrigger = (triggerId, triggerGroup) => {
-                var request = {
-                    triggerId: triggerId,
-                    groupId: triggerGroup
-                };
-                
-                $.ajax({
-                    url: "/api/administration/pauseTrigger",
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(request)
-                })
-                .done(function (){
-                    loadActionContent()
-                })
-                .fail(function (){
-                    showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-                });
-            }
-            
-        </script>
     </div>
 }
