@@ -37,6 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<PowerpointElasticDocument> _comparers;
+        private readonly JobEvents<OfficePowerpointProcessingJob> _jobEvents;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -49,10 +50,12 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<PowerpointElasticDocument>(liteDatabase);
+            _jobEvents = new JobEvents<OfficePowerpointProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
+            _jobEvents.SetJobStarted(this);
             var schedulerEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
             await Task.Run(() =>
             {
@@ -77,6 +80,7 @@ namespace DocSearchAIO.Scheduler
                             await _schedulerUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
 
                             _logger.LogInformation("start crunching and indexing some powerpoint documents");
+
                             Directory
                                 .Exists(_cfg.ScanPath)
                                 .IfTrueFalse((_cfg.ScanPath, _cfg.ScanPath),
@@ -93,9 +97,6 @@ namespace DocSearchAIO.Scheduler
                                             StartJob = DateTime.Now
                                         };
                                         
-                                        var entireDocs = new InterlockedCounter();
-                                        var missedDocs = new InterlockedCounter();
-                                        var indexedDocs = new InterlockedCounter();
                                         var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
@@ -104,8 +105,7 @@ namespace DocSearchAIO.Scheduler
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
-                                                fileName => ProcessPowerpointDocument(fileName, _cfg, entireDocs,
-                                                    missedDocs))
+                                                fileName => ProcessPowerpointDocument(fileName, _cfg))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -114,7 +114,7 @@ namespace DocSearchAIO.Scheduler
                                                 async processingInfo =>
                                                 {
                                                     var values = processingInfo.ToList();
-                                                    indexedDocs.Add(values.Count);
+                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
                                                     return await _elasticSearchService.BulkWriteDocumentsAsync(values,
                                                         indexName);
                                                 })
@@ -127,9 +127,9 @@ namespace DocSearchAIO.Scheduler
                                         sw.Stop();
                                         jobStatistic.EndJob = DateTime.Now;
                                         jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                        jobStatistic.EntireDocCount = entireDocs.GetCurrent();
-                                        jobStatistic.ProcessingError = missedDocs.GetCurrent();
-                                        jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
+                                        jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                        jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
+                                        jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
                                         _statisticUtilities.AddJobStatisticToDatabase<PowerpointElasticDocument>(
                                             jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedMilliseconds} ms",
@@ -137,17 +137,18 @@ namespace DocSearchAIO.Scheduler
                                     });
                         });
             });
+            _jobEvents.SetJobCompleted(this);
         }
 
         private async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
-            ConfigurationObject configurationObject, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
+            ConfigurationObject configurationObject)
         {
             try
             {
                 return await Task.Run(async () =>
                 {
                     var md5 = MD5.Create();
-                    entireDocs.Increment();
+                    _statisticUtilities.AddToEntireDocuments();
                     var wdOpt = PresentationDocument
                         .Open(currentFile, false)
                         .MaybeValue();
@@ -299,7 +300,7 @@ namespace DocSearchAIO.Scheduler
             catch (Exception e)
             {
                 _logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
-                missedDocs.Increment();
+                _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
             }
         }

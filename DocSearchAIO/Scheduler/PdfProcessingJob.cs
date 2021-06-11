@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -37,8 +36,11 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<PdfElasticDocument> _comparers;
-
-        public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
+        private readonly JobEvents<PdfProcessingJob> _jobEvents;
+        private readonly ProcessTimeMeasurement<PdfProcessingJob>
+            _processTimeMeasurement;
+        
+public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
@@ -49,10 +51,14 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<PdfElasticDocument>(liteDatabase);
+            _jobEvents = new JobEvents<PdfProcessingJob>(loggerFactory);
+            _processTimeMeasurement =
+                new ProcessTimeMeasurement<PdfProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
+
             var schedulerEntry = _cfg.Processing[nameof(PdfElasticDocument)];
             await Task.Run(() =>
             {
@@ -69,6 +75,7 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
+                            _jobEvents.SetJobStarted(this);
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName = _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
@@ -89,10 +96,7 @@ namespace DocSearchAIO.Scheduler
                                         {
                                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                         };
-                                        var entireDocs = new InterlockedCounter();
-                                        var missedDocs = new InterlockedCounter();
-                                        var indexedDocs = new InterlockedCounter();
-                                        var sw = Stopwatch.StartNew();
+
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
@@ -100,7 +104,7 @@ namespace DocSearchAIO.Scheduler
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
-                                                file => ProcessPdfDocument(file, _cfg, entireDocs, missedDocs))
+                                                file => ProcessPdfDocument(file, _cfg))
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -109,7 +113,7 @@ namespace DocSearchAIO.Scheduler
                                                 async processingInfo =>
                                                 {
                                                     var values = processingInfo.ToList();
-                                                    indexedDocs.Add(values.Count);
+                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
                                                     return await _elasticSearchService.BulkWriteDocumentsAsync(
                                                         values, indexName);
                                                 })
@@ -117,15 +121,15 @@ namespace DocSearchAIO.Scheduler
                                         await Task.WhenAll(runnable);
 
                                         _logger.LogInformation("finished processing pdf documents");
-                                        sw.Stop();
+                                        _jobEvents.SetJobCompleted(this);
                                         jobStatistic.EndJob = DateTime.Now;
-                                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                        jobStatistic.EntireDocCount = entireDocs.GetCurrent();
-                                        jobStatistic.ProcessingError = missedDocs.GetCurrent();
-                                        jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
+                                        jobStatistic.ElapsedTimeMillis = _processTimeMeasurement.GetElapsedValueMs;
+                                        jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                        jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
+                                        jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
                                         _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                                            sw.ElapsedMilliseconds);
+                                            _processTimeMeasurement.GetElapsedValueMs);
                                     });
                         }
                     );
@@ -133,14 +137,14 @@ namespace DocSearchAIO.Scheduler
         }
 
         private async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(string fileName,
-            ConfigurationObject configuration, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
+            ConfigurationObject configuration)
         {
             return await Task.Run(async () =>
             {
                 try
                 {
                     var md5 = MD5.Create();
-                    entireDocs.Increment();
+                    _statisticUtilities.AddToEntireDocuments();
                     var pdfReader = new PdfReader(fileName);
                     using var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();
@@ -199,7 +203,7 @@ namespace DocSearchAIO.Scheduler
                 catch (Exception exception)
                 {
                     _logger.LogInformation(exception, "An error occured");
-                    missedDocs.Increment();
+                    _statisticUtilities.AddToFailedDocuments();
                     return Maybe<PdfElasticDocument>.None;
                 }
             });

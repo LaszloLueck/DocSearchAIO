@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -37,6 +36,8 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<WordElasticDocument> _comparers;
+        private readonly ProcessEvent<OfficeWordProcessingJob> _jobEvents;
+        private readonly ProcessTimeMeasurement<OfficeWordProcessingJob> _processTimeMeasurement;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -50,6 +51,8 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<WordElasticDocument>(liteDatabase);
+            _jobEvents = new JobEvents<OfficeWordProcessingJob>(loggerFactory);
+            _processTimeMeasurement = new ProcessTimeMeasurement<OfficeWordProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -70,6 +73,7 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
+                            _jobEvents.SetJobStarted(this);
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName =
@@ -95,11 +99,6 @@ namespace DocSearchAIO.Scheduler
                                         {
                                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                         };
-                                        var entireDocs = new InterlockedCounter();
-                                        var missedDocs = new InterlockedCounter();
-                                        var indexedDocs = new InterlockedCounter();
-
-                                        var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
@@ -107,7 +106,7 @@ namespace DocSearchAIO.Scheduler
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
                                             .SelectAsync(schedulerEntry.Parallelism,
-                                                fileName => ProcessWordDocument(fileName, _cfg, entireDocs, missedDocs))
+                                                fileName => ProcessWordDocument(fileName, _cfg))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -116,7 +115,7 @@ namespace DocSearchAIO.Scheduler
                                                 async processingInfo =>
                                                 {
                                                     var values = processingInfo.ToList();
-                                                    indexedDocs.Add(values.Count);
+                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
                                                     return await _elasticSearchService.BulkWriteDocumentsAsync(values,
                                                         indexName);
                                                 })
@@ -124,24 +123,24 @@ namespace DocSearchAIO.Scheduler
 
                                         await Task.WhenAll(runnable);
                                         _logger.LogInformation("finished processing word-documents");
-
-                                        sw.Stop();
+                                        _jobEvents.SetJobCompleted(this);
                                         jobStatistic.EndJob = DateTime.Now;
-                                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                        jobStatistic.EntireDocCount = entireDocs.GetCurrent();
-                                        jobStatistic.ProcessingError = missedDocs.GetCurrent();
-                                        jobStatistic.IndexedDocCount = indexedDocs.GetCurrent();
+                                        jobStatistic.ElapsedTimeMillis = _processTimeMeasurement.GetElapsedValueMs;
+                                        jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                        jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
+                                        jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
                                         _statisticUtilities
                                             .AddJobStatisticToDatabase<WordElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                                            sw.ElapsedMilliseconds);
+                                            _processTimeMeasurement.GetElapsedValueMs);
                                     });
                         });
             });
+
         }
 
         private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
-            ConfigurationObject configurationObject, InterlockedCounter entireDocs, InterlockedCounter missedDocs)
+            ConfigurationObject configurationObject)
         {
             try
             {
@@ -149,141 +148,142 @@ namespace DocSearchAIO.Scheduler
                 {
                     var md5 = MD5.Create();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).MaybeValue();
-                    entireDocs.Increment();
+                    _statisticUtilities.AddToEntireDocuments();
                     return await wdOpt.Match(
                         async wd =>
                         {
                             var mainDocumentPartOpt = wd.MainDocumentPart.MaybeValue();
                             return await mainDocumentPartOpt
                                 .Match(
-                                async mainDocumentPart =>
-                                {
-                                    var fInfo = wd.PackageProperties;
-                                    var category = fInfo.Category.MaybeValue().Unwrap("");
-                                    var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                                    var creator = fInfo.Creator.MaybeValue().Unwrap("");
-                                    var description = fInfo.Description.MaybeValue().Unwrap("");
-                                    var identifier = fInfo.Identifier.MaybeValue().Unwrap("");
-                                    var keywords = fInfo.Keywords.MaybeValue().Unwrap("");
-                                    var language = fInfo.Language.MaybeValue().Unwrap("");
-                                    var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                                    var revision = fInfo.Revision.MaybeValue().Unwrap("");
-                                    var subject = fInfo.Subject.MaybeValue().Unwrap("");
-                                    var title = fInfo.Title.MaybeValue().Unwrap("");
-                                    var version = fInfo.Version.MaybeValue().Unwrap("");
-                                    var contentStatus = fInfo.ContentStatus.MaybeValue().Unwrap("");
-                                    const string contentType = "docx";
-                                    var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                                    var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().Unwrap("");
-                                    var uriPath = currentFile
-                                        .Replace(configurationObject.ScanPath,
-                                            _cfg.UriReplacement)
-                                        .Replace(@"\", "/");
+                                    async mainDocumentPart =>
+                                    {
+                                        var fInfo = wd.PackageProperties;
+                                        var category = fInfo.Category.MaybeValue().Unwrap("");
+                                        var created = fInfo.Created ?? new DateTime(1970, 1, 1);
+                                        var creator = fInfo.Creator.MaybeValue().Unwrap("");
+                                        var description = fInfo.Description.MaybeValue().Unwrap("");
+                                        var identifier = fInfo.Identifier.MaybeValue().Unwrap("");
+                                        var keywords = fInfo.Keywords.MaybeValue().Unwrap("");
+                                        var language = fInfo.Language.MaybeValue().Unwrap("");
+                                        var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
+                                        var revision = fInfo.Revision.MaybeValue().Unwrap("");
+                                        var subject = fInfo.Subject.MaybeValue().Unwrap("");
+                                        var title = fInfo.Title.MaybeValue().Unwrap("");
+                                        var version = fInfo.Version.MaybeValue().Unwrap("");
+                                        var contentStatus = fInfo.ContentStatus.MaybeValue().Unwrap("");
+                                        const string contentType = "docx";
+                                        var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
+                                        var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().Unwrap("");
+                                        var uriPath = currentFile
+                                            .Replace(configurationObject.ScanPath,
+                                                _cfg.UriReplacement)
+                                            .Replace(@"\", "/");
 
-                                    var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                                    var id = Convert.ToBase64String(idAsByte);
+                                        var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
+                                        var id = Convert.ToBase64String(idAsByte);
 
-                                    var commentArray = mainDocumentPart
-                                        .WordprocessingCommentsPart
-                                        .MaybeValue()
-                                        .Match(
-                                            comments =>
-                                            {
-                                                
-                                                
-                                                return comments.Comments.Select(comment =>
+                                        var commentArray = mainDocumentPart
+                                            .WordprocessingCommentsPart
+                                            .MaybeValue()
+                                            .Match(
+                                                comments =>
                                                 {
-                                                    var d = (Comment)comment;
-                                                    var retValue = new OfficeDocumentComment();
-                                                    var dat = d.Date != null
-                                                        ? d.Date.Value
-                                                            .MaybeValue()
-                                                            .Unwrap(new DateTime(1970, 1, 1))
-                                                        : new DateTime(1970, 1, 1);
+                                                    return comments.Comments.Select(comment =>
+                                                    {
+                                                        var d = (Comment) comment;
+                                                        var retValue = new OfficeDocumentComment();
+                                                        var dat = d.Date != null
+                                                            ? d.Date.Value
+                                                                .MaybeValue()
+                                                                .Unwrap(new DateTime(1970, 1, 1))
+                                                            : new DateTime(1970, 1, 1);
 
-                                                    retValue.Author = d.Author?.Value;
-                                                    retValue.Comment = d.InnerText;
-                                                    retValue.Date = dat;
-                                                    retValue.Id = d.Id?.Value;
-                                                    retValue.Initials = d.Initials?.Value;
-                                                    return retValue;
-                                                }).ToArray();
-                                            },
-                                            Array.Empty<OfficeDocumentComment>);
+                                                        retValue.Author = d.Author?.Value;
+                                                        retValue.Comment = d.InnerText;
+                                                        retValue.Date = dat;
+                                                        retValue.Id = d.Id?.Value;
+                                                        retValue.Initials = d.Initials?.Value;
+                                                        return retValue;
+                                                    }).ToArray();
+                                                },
+                                                Array.Empty<OfficeDocumentComment>);
 
-                                    var elements = mainDocumentPart
-                                        .Document
-                                        .Body?
-                                        .ChildElements;
+                                        var elements = mainDocumentPart
+                                            .Document
+                                            .Body?
+                                            .ChildElements;
 
-                                    var contentString = GetChildElements(elements);
-                                    var toReplaced = new List<(string, string)>();
+                                        var contentString = GetChildElements(elements);
+                                        var toReplaced = new List<(string, string)>();
 
-                                    ReplaceSpecialStringsTailR(ref contentString, toReplaced);
+                                        ReplaceSpecialStringsTailR(ref contentString, toReplaced);
 
-                                    var keywordsList = keywords.Length == 0
-                                        ? Array.Empty<string>()
-                                        : keywords.Split(",");
+                                        var keywordsList = keywords.Length == 0
+                                            ? Array.Empty<string>()
+                                            : keywords.Split(",");
 
-                                    var commentsString = commentArray.Select(l => l.Comment.Split(" ")).Distinct()
-                                        .ToList();
+                                        var commentsString = commentArray.Select(l => l.Comment.Split(" ")).Distinct()
+                                            .ToList();
 
-                                    var listElementsToHash = new List<string>
+                                        var listElementsToHash = new List<string>
+                                        {
+                                            category, created.ToString(CultureInfo.CurrentCulture), contentString,
+                                            creator,
+                                            description,
+                                            identifier,
+                                            string.Join("", keywords), language,
+                                            modified.ToString(CultureInfo.CurrentCulture),
+                                            revision,
+                                            subject, title, version,
+                                            contentStatus, contentType,
+                                            lastPrinted.ToString(CultureInfo.CurrentCulture),
+                                            lastModifiedBy
+                                        };
+
+                                        var res = listElementsToHash.Concat(
+                                            commentsString.SelectMany(k => k).Distinct());
+
+                                        var contentHashString = await _schedulerUtilities.CreateHashString(res);
+
+                                        var commString = string.Join(" ", commentArray.Select(d => d.Comment));
+                                        var suggestedText =
+                                            Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
+
+
+                                        var searchAsYouTypeContent = suggestedText
+                                            .ToLower()
+                                            .Split(" ")
+                                            .Distinct()
+                                            .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+                                            .Where(d => d.Length > 2);
+
+                                        var completionField = new CompletionField {Input = searchAsYouTypeContent};
+
+                                        var returnValue = new WordElasticDocument
+                                        {
+                                            Category = category, CompletionContent = completionField,
+                                            Content = contentString,
+                                            ContentHash = contentHashString, ContentStatus = contentStatus,
+                                            ContentType = contentType,
+                                            Created = created, Creator = creator, Description = description, Id = id,
+                                            Identifier = identifier, Keywords = keywordsList, Language = language,
+                                            Modified = modified,
+                                            Revision = revision, Subject = subject, Title = title, Version = version,
+                                            LastPrinted = lastPrinted, ProcessTime = DateTime.Now,
+                                            LastModifiedBy = lastModifiedBy,
+                                            OriginalFilePath = currentFile, UriFilePath = uriPath,
+                                            Comments = commentArray
+                                        };
+
+                                        return Maybe<WordElasticDocument>.From(returnValue);
+                                    },
+                                    async () =>
                                     {
-                                        category, created.ToString(CultureInfo.CurrentCulture), contentString, creator,
-                                        description,
-                                        identifier,
-                                        string.Join("", keywords), language,
-                                        modified.ToString(CultureInfo.CurrentCulture),
-                                        revision,
-                                        subject, title, version,
-                                        contentStatus, contentType, lastPrinted.ToString(CultureInfo.CurrentCulture),
-                                        lastModifiedBy
-                                    };
-
-                                    var res = listElementsToHash.Concat(commentsString.SelectMany(k => k).Distinct());
-
-                                    var contentHashString = await _schedulerUtilities.CreateHashString(res);
-
-                                    var commString = string.Join(" ", commentArray.Select(d => d.Comment));
-                                    var suggestedText =
-                                        Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
-
-
-                                    var searchAsYouTypeContent = suggestedText
-                                        .ToLower()
-                                        .Split(" ")
-                                        .Distinct()
-                                        .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                                        .Where(d => d.Length > 2);
-
-                                    var completionField = new CompletionField {Input = searchAsYouTypeContent};
-
-                                    var returnValue = new WordElasticDocument
-                                    {
-                                        Category = category, CompletionContent = completionField,
-                                        Content = contentString,
-                                        ContentHash = contentHashString, ContentStatus = contentStatus,
-                                        ContentType = contentType,
-                                        Created = created, Creator = creator, Description = description, Id = id,
-                                        Identifier = identifier, Keywords = keywordsList, Language = language,
-                                        Modified = modified,
-                                        Revision = revision, Subject = subject, Title = title, Version = version,
-                                        LastPrinted = lastPrinted, ProcessTime = DateTime.Now,
-                                        LastModifiedBy = lastModifiedBy,
-                                        OriginalFilePath = currentFile, UriFilePath = uriPath, Comments = commentArray
-                                    };
-                                    
-                                    return Maybe<WordElasticDocument>.From(returnValue);
-                                    
-                                },
-                                async () =>
-                                {
-                                    _logger.LogWarning(
-                                        "cannot process maindocumentpart of file {CurrentFile}, because it is null",
-                                        currentFile);
-                                    return await Task.Run(() => Maybe<WordElasticDocument>.None);
-                                });
+                                        _logger.LogWarning(
+                                            "cannot process maindocumentpart of file {CurrentFile}, because it is null",
+                                            currentFile);
+                                        return await Task.Run(() => Maybe<WordElasticDocument>.None);
+                                    });
                         },
                         async () =>
                         {
@@ -297,7 +297,7 @@ namespace DocSearchAIO.Scheduler
             catch (Exception e)
             {
                 _logger.LogError(e, "an error while creating a indexing object");
-                missedDocs.Increment();
+                _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<WordElasticDocument>.None);
             }
         }

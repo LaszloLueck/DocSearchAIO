@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using LiteDB;

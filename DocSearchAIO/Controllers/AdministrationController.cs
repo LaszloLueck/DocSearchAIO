@@ -97,7 +97,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<string> GetGenericContent()
         {
-            _logger.LogInformation("method called");
+            _logger.LogInformation("method GetGenericContent called");
             return await _administrationService.GetGenericContent();
         }
 
