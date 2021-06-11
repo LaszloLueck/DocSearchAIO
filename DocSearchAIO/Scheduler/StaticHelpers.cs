@@ -71,6 +71,8 @@ namespace DocSearchAIO.Scheduler
         public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource => action.Invoke(source);
 
         public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
+        
+        
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
@@ -79,5 +81,22 @@ namespace DocSearchAIO.Scheduler
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
+
+        public static Source<TSource, TMat> CountEntireDocs<TSource, TMat>(this Source<TSource, TMat> source, StatisticUtilities statisticUtilities)
+        {
+            statisticUtilities.AddToEntireDocuments();
+            return source;
+        }
+
+        public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat>(this Source<IEnumerable<TSource>, TMat> source,
+            StatisticUtilities statisticUtilities)
+        {
+            return source.Select(e =>
+            {
+                var cntArr = e.ToArray();
+                statisticUtilities.AddToChangedDocuments(cntArr.Length);
+                return cntArr.AsEnumerable();
+            });
+        }
     }
 }

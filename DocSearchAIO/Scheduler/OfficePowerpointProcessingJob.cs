@@ -37,7 +37,6 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<PowerpointElasticDocument> _comparers;
-        private readonly JobEvents<OfficePowerpointProcessingJob> _jobEvents;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -50,12 +49,10 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<PowerpointElasticDocument>(liteDatabase);
-            _jobEvents = new JobEvents<OfficePowerpointProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
-            _jobEvents.SetJobStarted(this);
             var schedulerEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
             await Task.Run(() =>
             {
@@ -104,20 +101,18 @@ namespace DocSearchAIO.Scheduler
                                             .Where(file =>
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
+                                            .CountEntireDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 fileName => ProcessPowerpointDocument(fileName, _cfg))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithMaybeFilter()
+                                            .CountFilteredDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 async processingInfo =>
-                                                {
-                                                    var values = processingInfo.ToList();
-                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
-                                                    return await _elasticSearchService.BulkWriteDocumentsAsync(values,
-                                                        indexName);
-                                                })
+                                                    await _elasticSearchService.BulkWriteDocumentsAsync(processingInfo,
+                                                        indexName))
                                             .RunWith(Sink.Ignore<bool>(), materializer);
 
                                         await Task.WhenAll(runnable);
@@ -137,7 +132,6 @@ namespace DocSearchAIO.Scheduler
                                     });
                         });
             });
-            _jobEvents.SetJobCompleted(this);
         }
 
         private async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
@@ -148,7 +142,6 @@ namespace DocSearchAIO.Scheduler
                 return await Task.Run(async () =>
                 {
                     var md5 = MD5.Create();
-                    _statisticUtilities.AddToEntireDocuments();
                     var wdOpt = PresentationDocument
                         .Open(currentFile, false)
                         .MaybeValue();

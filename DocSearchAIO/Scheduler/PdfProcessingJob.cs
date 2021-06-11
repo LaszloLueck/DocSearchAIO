@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -36,9 +37,6 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<PdfElasticDocument> _comparers;
-        private readonly JobEvents<PdfProcessingJob> _jobEvents;
-        private readonly ProcessTimeMeasurement<PdfProcessingJob>
-            _processTimeMeasurement;
         
 public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -51,9 +49,6 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<PdfElasticDocument>(liteDatabase);
-            _jobEvents = new JobEvents<PdfProcessingJob>(loggerFactory);
-            _processTimeMeasurement =
-                new ProcessTimeMeasurement<PdfProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -75,7 +70,6 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                         },
                         async () =>
                         {
-                            _jobEvents.SetJobStarted(this);
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName = _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
@@ -96,40 +90,38 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                         {
                                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                         };
-
+                                        var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
                                             .Where(file =>
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
+                                            .CountEntireDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 file => ProcessPdfDocument(file, _cfg))
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithMaybeFilter()
+                                            .CountFilteredDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 async processingInfo =>
-                                                {
-                                                    var values = processingInfo.ToList();
-                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
-                                                    return await _elasticSearchService.BulkWriteDocumentsAsync(
-                                                        values, indexName);
-                                                })
+                                                    await _elasticSearchService.BulkWriteDocumentsAsync(processingInfo,
+                                                        indexName))
                                             .RunWith(Sink.Ignore<bool>(), materializer);
                                         await Task.WhenAll(runnable);
 
                                         _logger.LogInformation("finished processing pdf documents");
-                                        _jobEvents.SetJobCompleted(this);
+                                        sw.Stop();
                                         jobStatistic.EndJob = DateTime.Now;
-                                        jobStatistic.ElapsedTimeMillis = _processTimeMeasurement.GetElapsedValueMs;
+                                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                         jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
                                         jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
                                         jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
                                         _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                                            _processTimeMeasurement.GetElapsedValueMs);
+                                            sw.ElapsedMilliseconds);
                                     });
                         }
                     );
@@ -144,7 +136,6 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                 try
                 {
                     var md5 = MD5.Create();
-                    _statisticUtilities.AddToEntireDocuments();
                     var pdfReader = new PdfReader(fileName);
                     using var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();

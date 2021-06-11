@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -36,8 +37,6 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<WordElasticDocument> _comparers;
-        private readonly ProcessEvent<OfficeWordProcessingJob> _jobEvents;
-        private readonly ProcessTimeMeasurement<OfficeWordProcessingJob> _processTimeMeasurement;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -51,8 +50,6 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<WordElasticDocument>(liteDatabase);
-            _jobEvents = new JobEvents<OfficeWordProcessingJob>(loggerFactory);
-            _processTimeMeasurement = new ProcessTimeMeasurement<OfficeWordProcessingJob>(loggerFactory);
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -73,7 +70,6 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
-                            _jobEvents.SetJobStarted(this);
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName =
@@ -99,44 +95,42 @@ namespace DocSearchAIO.Scheduler
                                         {
                                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                         };
+                                        var sw = Stopwatch.StartNew();
                                         var runnable = Source
                                             .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
                                                 SearchOption.AllDirectories))
                                             .Where(file =>
                                                 _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
                                                     file))
+                                            .CountEntireDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 fileName => ProcessWordDocument(fileName, _cfg))
                                             .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                 elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
                                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                             .WithMaybeFilter()
+                                            .CountFilteredDocs(_statisticUtilities)
                                             .SelectAsync(schedulerEntry.Parallelism,
                                                 async processingInfo =>
-                                                {
-                                                    var values = processingInfo.ToList();
-                                                    _statisticUtilities.AddToChangedDocuments(values.Count);
-                                                    return await _elasticSearchService.BulkWriteDocumentsAsync(values,
-                                                        indexName);
-                                                })
+                                                    await _elasticSearchService.BulkWriteDocumentsAsync(processingInfo,
+                                                        indexName))
                                             .RunWith(Sink.Ignore<bool>(), materializer);
 
                                         await Task.WhenAll(runnable);
                                         _logger.LogInformation("finished processing word-documents");
-                                        _jobEvents.SetJobCompleted(this);
+                                        sw.Stop();
                                         jobStatistic.EndJob = DateTime.Now;
-                                        jobStatistic.ElapsedTimeMillis = _processTimeMeasurement.GetElapsedValueMs;
+                                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                         jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
                                         jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
                                         jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
                                         _statisticUtilities
                                             .AddJobStatisticToDatabase<WordElasticDocument>(jobStatistic);
                                         _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                                            _processTimeMeasurement.GetElapsedValueMs);
+                                            sw.ElapsedMilliseconds);
                                     });
                         });
             });
-
         }
 
         private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
@@ -148,7 +142,6 @@ namespace DocSearchAIO.Scheduler
                 {
                     var md5 = MD5.Create();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).MaybeValue();
-                    _statisticUtilities.AddToEntireDocuments();
                     return await wdOpt.Match(
                         async wd =>
                         {
