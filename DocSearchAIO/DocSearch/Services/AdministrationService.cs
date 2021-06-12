@@ -274,9 +274,18 @@ namespace DocSearchAIO.DocSearch.Services
                 UriReplacement = _configurationObject.UriReplacement
             };
 
+            _configurationObject
+                .Processing
+                .Select(kv => StaticHelpers.TransformGenericPartial(t =>
+                {
+
+                }));
+
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
             return content;
         }
+
+
 
         public async Task<string> GetSchedulerContent()
         {

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
+using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.TOs;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -36,6 +38,13 @@ namespace DocSearchAIO.Scheduler
             {
                 falseAction.Invoke();
             }
+        }
+        
+        public static TResult TransformGenericPartial<TResult>(
+            this KeyValuePair<string, ConfigurationObject> kv,
+            Func<KeyValuePair<string, ConfigurationObject>, TResult> action)
+        {
+            return action.Invoke(kv);
         }
 
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,

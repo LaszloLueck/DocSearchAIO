@@ -47,13 +47,7 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("indexSuffix")]
         public string IndexSuffix { get; set; }
-        
-        [JsonProperty("comparerFile")]
-        public string ComparerFile { get; set; }
-        
-        [JsonProperty("comparerDirectory")]
-        public string ComparerDirectory { get; set; }
-        
+
         [JsonProperty("jobName")]
         public string JobName { get; set; }
 
