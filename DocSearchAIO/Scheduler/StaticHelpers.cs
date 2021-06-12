@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace DocSearchAIO.Scheduler
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
-        
+
         public static Maybe<TOut> MaybeValue<TOut>(this TOut value)
         {
             return value == null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
@@ -39,13 +40,14 @@ namespace DocSearchAIO.Scheduler
                 falseAction.Invoke();
             }
         }
-        
-        public static TResult TransformGenericPartial<TResult>(
-            this KeyValuePair<string, ConfigurationObject> kv,
-            Func<KeyValuePair<string, ConfigurationObject>, TResult> action)
+
+        public static IEnumerable<TOut> TransformGenericPartial<TOut, TKey, TValue>(
+            this Dictionary<TKey, TValue> dic, Func<KeyValuePair<TKey, TValue>, TOut> action)
         {
-            return action.Invoke(kv);
+            return dic.Select(action.Invoke);
         }
+
+
 
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
             Action<TInputLeft> falseAction,
@@ -79,9 +81,8 @@ namespace DocSearchAIO.Scheduler
 
         public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource => action.Invoke(source);
 
-        public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
-        
-        
+        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
+
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);

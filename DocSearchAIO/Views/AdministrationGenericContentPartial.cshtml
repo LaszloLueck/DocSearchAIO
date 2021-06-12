@@ -1,7 +1,7 @@
 @model DocSearchAIO.DocSearch.TOs.AdministrationGenericModel
 
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelState">Scan-Pfad</span>
         </div>
@@ -11,24 +11,24 @@
 @for (var i = 0; i < Model.ElasticEndpoints.Count; i++)
 {
     <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="elasticNodeContainer">
-        <div class="input-group m-2" id="elasticEndpoint_@i">
+        <div class="input-group input-group-sm m-2" id="elasticEndpoint_@i">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="labelElasticEndpoint_@i">Elastic-Endpunkt @(i + 1)</span>
             </div>
             <input type="text" class="form-control mr-1" id="elastic_endpoint_@i" value="@Model.ElasticEndpoints[i]">
             @if (i + 1 == Model.ElasticEndpoints.Count)
             {
-                <button type="button" class="btn btn-primary" onclick="addNewElasticNode()"><i class="bi bi-plus"></i> Neu</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="addNewElasticNode()"><i class="bi bi-plus"></i> Neu</button>
             }
             else
             {
-                <button type="button" class="btn btn-danger" onclick="removeNodeEntry(@i)"><i class="bi bi-trash"></i> Entfernen</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeNodeEntry(@i)"><i class="bi bi-trash"></i> Entfernen</button>
             }
         </div>
     </div>
 }
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelIndexName">Index-Name (Prefix)</span>
         </div>
@@ -36,7 +36,7 @@
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelSchedulerName">Scheduler-Name</span>
         </div>
@@ -44,7 +44,7 @@
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelSchedulerId">Scheduler-Id</span>
         </div>
@@ -52,7 +52,7 @@
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelActorSystemName">Actorsystem-Name</span>
         </div>
@@ -60,7 +60,7 @@
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelGroupName">Gruppen-Name</span>
         </div>
@@ -68,13 +68,109 @@
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
-    <div class="input-group m-2">
+    <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
             <span class="input-group-text" id="labelUrlReplacement">Url-Ersetzung</span>
         </div>
         <input type="text" class="form-control" id="urlReplacement" value="@Model.UriReplacement">
     </div>
 </div>
+<div class="ml-1 mr-1 mt-2 mb-2 w-100">
+    <div class="row">
+        <div class="col-12">
+            <span class="h6">Jobs Einstellungen</span>
+        </div>
+    </div>
+</div>
+    @foreach (var item in Model.ProcessorConfigurations)
+    {
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelJob")">Job</span>
+                </div>
+                <input disabled type="text" class="form-control" id=@Html.Raw(item.RunsEvery + "_job") value="@item.ProcessorType">
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartEveryPrepend")">Start alle</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_runsEvery") value="@item.RunsEvery">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartEveryAppend")">Sekunden</span>
+                </div>
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartDelayPrepend")">Startverzögerung</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_startDelay") value="@item.StartDelay">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartDelayAppend")">Sekunden</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Startverzögerung</span>
+            </div>
+            <div class="col-9">
+                <span>@item.StartDelay s</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Parallelität der Verarbeitung</span>
+            </div>
+            <div class="col-9">
+                <span>@item.Parallelism Threads</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Dateierweiterung</span>
+            </div>
+            <div class="col-9">
+                <span>@item.FileExtension</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Dateiausschluss-Filter</span>
+            </div>
+            <div class="col-9">
+                <span>@item.ExcludeFilter</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Scheduler-Job-Name</span>
+            </div>
+            <div class="col-9">
+                <span>@item.JobName</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Scheduler-Trigger-Name</span>
+            </div>
+            <div class="col-9">
+                <span>@item.TriggerName</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <span>Index-Suffix</span>
+            </div>
+            <div class="col-9">
+                <span>@item.IndexSuffix</span>
+            </div>
+        </div>
+    }
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
     <div class="input-group m-2 d-flex justify-content-end">
         <button type="button" class="btn btn-primary" onclick="saveAdminContent();">Speichern</button>
@@ -83,12 +179,12 @@
         addNewElasticNode = () => {
             var currentElements = $('#elasticNodeContainer > div').length;
             
-            var element = '<div style="display: none" class="input-group m-2" id="elasticEndpoint_' + (currentElements + 1) + '">';
+            var element = '<div style="display: none" class="input-group input-group-sm m-2" id="elasticEndpoint_' + (currentElements + 1) + '">';
             element += '<div class="input-group-prepend">';
             element += '<span class="input-group-text" id="labelElasticEndpoint_' + (currentElements + 1) + '">Elastic-Endpunkt ' + (currentElements + 1) + '</span>'
             element += '</div>';
             element += '<input type="text" class="form-control mr-1" id="elastic_endpoint_' + (currentElements + 1) + '" placeholder="Elastice-Node als http://Host:Port" value="">';
-            element += '<button type="button" class="btn btn-danger" onclick="removeNodeEntry(' + (currentElements + 1) + ')"><i class="bi bi-trash"></i> Entfernen</button>';
+            element += '<button type="button" class="btn btn-sm btn-danger" onclick="removeNodeEntry(' + (currentElements + 1) + ')"><i class="bi bi-trash"></i> Entfernen</button>';
             element += '</div>';
             
             $('#elasticNodeContainer').append(element);

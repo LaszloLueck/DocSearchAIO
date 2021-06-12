@@ -140,15 +140,14 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.ActorSystemName = model.ActorSystemName;
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
-                _logger.LogInformation("configuration succesfully updated");
+                _logger.LogInformation("configuration successfully updated");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError("an error while updating the configuration occured", ex);
+                _logger.LogError(ex, "an error while updating the configuration occured");
                 return false;
             }
-
         }
 
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
@@ -220,6 +219,7 @@ namespace DocSearchAIO.DocSearch.Services
                                         break;
                                     }
                                 }
+
                                 _logger.LogInformation("3. trigger job for jobname {JobName}",
                                     jobStatusRequest.JobName);
                                 var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
@@ -271,20 +271,27 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
                 GroupName = _configurationObject.GroupName,
-                UriReplacement = _configurationObject.UriReplacement
+                UriReplacement = _configurationObject.UriReplacement,
+                ProcessorConfigurations = _configurationObject
+                    .Processing
+                    .TransformGenericPartial(kv => new AdministrationGenericModel.ProcessorConfiguration()
+                    {
+                        ExcludeFilter = kv.Value.ExcludeFilter,
+                        FileExtension = kv.Value.FileExtension,
+                        IndexSuffix = kv.Value.IndexSuffix,
+                        JobName = kv.Value.JobName,
+                        Parallelism = kv.Value.Parallelism,
+                        ProcessorType = kv.Key,
+                        RunsEvery = kv.Value.RunsEvery,
+                        StartDelay = kv.Value.StartDelay,
+                        TriggerName = kv.Value.TriggerName
+                    })
             };
 
-            _configurationObject
-                .Processing
-                .Select(kv => StaticHelpers.TransformGenericPartial(t =>
-                {
-
-                }));
 
             var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
             return content;
         }
-
 
 
         public async Task<string> GetSchedulerContent()
