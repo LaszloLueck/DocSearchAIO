@@ -138,6 +138,9 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.SchedulerName = model.SchedulerName;
                 _configurationObject.UriReplacement = model.UriReplacement;
                 _configurationObject.ActorSystemName = model.ActorSystemName;
+                
+                _configurationObject.Processing
+                
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 _logger.LogInformation("configuration successfully updated");
@@ -262,6 +265,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetGenericContent()
         {
+            var subTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
             var adminGenModel = new AdministrationGenericModel
             {
                 ScanPath = _configurationObject.ScanPath,
@@ -274,6 +278,7 @@ namespace DocSearchAIO.DocSearch.Services
                 UriReplacement = _configurationObject.UriReplacement,
                 ProcessorConfigurations = _configurationObject
                     .Processing
+                    .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
                     .TransformGenericPartial(kv => new AdministrationGenericModel.ProcessorConfiguration()
                     {
                         ExcludeFilter = kv.Value.ExcludeFilter,

@@ -42,11 +42,20 @@ namespace DocSearchAIO.Scheduler
         }
 
         public static IEnumerable<TOut> TransformGenericPartial<TOut, TKey, TValue>(
-            this Dictionary<TKey, TValue> dic, Func<KeyValuePair<TKey, TValue>, TOut> action)
+            this IEnumerable<KeyValuePair<TKey, TValue>> dic, Func<KeyValuePair<TKey, TValue>, TOut> action)
         {
             return dic.Select(action.Invoke);
         }
+        
+        
 
+        public static IEnumerable<Type> GetSubtypesOfType<TIn>()
+            =>
+                from domainAssembly in AppDomain.CurrentDomain.GetAssemblies()
+                from assemblyType in domainAssembly.GetTypes()
+                where typeof(TIn).IsAssignableFrom(assemblyType)
+                where assemblyType.IsSubclassOf(typeof(TIn))
+                select assemblyType;
 
 
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
@@ -79,7 +88,8 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
         }
 
-        public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource => action.Invoke(source);
+        public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource =>
+            action.Invoke(source);
 
         public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
 
@@ -92,13 +102,15 @@ namespace DocSearchAIO.Scheduler
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
 
-        public static Source<TSource, TMat> CountEntireDocs<TSource, TMat>(this Source<TSource, TMat> source, StatisticUtilities statisticUtilities)
+        public static Source<TSource, TMat> CountEntireDocs<TSource, TMat>(this Source<TSource, TMat> source,
+            StatisticUtilities statisticUtilities)
         {
             statisticUtilities.AddToEntireDocuments();
             return source;
         }
 
-        public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat>(this Source<IEnumerable<TSource>, TMat> source,
+        public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat>(
+            this Source<IEnumerable<TSource>, TMat> source,
             StatisticUtilities statisticUtilities)
         {
             return source.Select(e =>
