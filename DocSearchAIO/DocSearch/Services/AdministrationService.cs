@@ -139,7 +139,9 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.UriReplacement = model.UriReplacement;
                 _configurationObject.ActorSystemName = model.ActorSystemName;
 
-                _configurationObject.Processing = model.ProcessorConfigurations.TransformGenericPartial(kv =>
+                _configurationObject.Processing = model
+                    .ProcessorConfigurations
+                    .TransformGenericPartial(kv =>
                         new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
                         {
                             ExcludeFilter = kv.Value.ExcludeFilter,

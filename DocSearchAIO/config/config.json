@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
+    "scanPath": "c:\\Temp\\Neuer Ordner\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -11,7 +11,7 @@
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern",
     "processing": {
       "PdfElasticDocument": {
-        "active": false,
+        "active": true,
         "parallelism": 2,
         "excludeFilter": "",
         "fileExtension": "*.pdf",
@@ -22,7 +22,7 @@
         "runsEvery": 3600
       },
       "PowerpointElasticDocument": {
-        "active": false,
+        "active": true,
         "parallelism": 2,
         "excludeFilter": "~$",
         "fileExtension": "*.pptx",
@@ -33,7 +33,7 @@
         "runsEvery": 3600
       },
       "WordElasticDocument": {
-        "active": false,
+        "active": true,
         "parallelism": 2,
         "excludeFilter": "~$",
         "fileExtension": "*.docx",

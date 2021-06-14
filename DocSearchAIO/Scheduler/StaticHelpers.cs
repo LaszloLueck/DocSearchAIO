@@ -39,9 +39,9 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        public static IEnumerable<KeyValuePair<TKey, TOut>> TransformGenericPartial<TOut, TKey, TValue>(
-            this IEnumerable<KeyValuePair<TKey, TValue>> dic,
-            Func<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TOut>> action)
+        public static IEnumerable<KeyValuePair<TOutKey, TOut>> TransformGenericPartial<TOut, TOutKey, TInKey, TValue>(
+            this IEnumerable<KeyValuePair<TInKey, TValue>> dic,
+            Func<KeyValuePair<TInKey, TValue>, KeyValuePair<TOutKey, TOut>> action)
         {
             return dic.Select(action.Invoke);
         }

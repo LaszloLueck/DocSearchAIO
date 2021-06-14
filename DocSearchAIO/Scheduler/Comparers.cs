@@ -12,14 +12,14 @@ namespace DocSearchAIO.Scheduler
         
         public Comparers(ILiteDatabase liteDatabase)
         {
-            _col = liteDatabase.GetCollection<ComparerObject>($"cmp_{nameof(T)}");
+            _col = liteDatabase.GetCollection<ComparerObject>($"cmp_{typeof(T).Name}");
             _liteDatabase = liteDatabase;
             _col.EnsureIndex(x => x.PathHash);
         }
 
         public bool RemoveNamedCollection()
         {
-            return _liteDatabase.DropCollection($"cmp_{nameof(T)}");
+            return _liteDatabase.DropCollection($"cmp_{typeof(T).Name}");
         }
         
         public async Task<Maybe<T>> FilterExistingUnchanged(Maybe<T> document)

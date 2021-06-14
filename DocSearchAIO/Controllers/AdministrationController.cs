@@ -33,6 +33,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<bool> SetGenericContent(AdministrationGenericModel model)
         {
+            _logger.LogInformation("method setGenericContent called");
             return await _administrationService.SetAdministrationGenericContent(model);
         }
         
@@ -40,6 +41,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
+            _logger.LogInformation("method getAdministrationModal called");
             return await _administrationService.GetAdministrationModal();
         }
 
@@ -47,6 +49,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<IEnumerable<SchedulerStatistics>> GetSchedulerStatistics()
         {
+            _logger.LogInformation("method getSchedulerStatistics called");
             return await _schedulerStatisticsService.GetSchedulerStatistics();
         }
 
@@ -54,6 +57,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
+            _logger.LogInformation("method pauseTrigger called");
             return await _administrationService.PauseTriggerWithTriggerId(triggerStateRequest);
         }
 
@@ -61,13 +65,15 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
+            _logger.LogInformation("method resumeTrigger called");
             return await _administrationService.ResumeTriggerWithTriggerId(triggerStateRequest);
         }
 
         [Route("instantStartJob")]
         [HttpPost]
-        public async Task<bool> InstandStartJob(JobStatusRequest jobStatusRequest)
+        public async Task<bool> InstantStartJob(JobStatusRequest jobStatusRequest)
         {
+            _logger.LogInformation("method instantStartJob called");
             return await _administrationService.InstantStartJobWithJobId(jobStatusRequest);
         }
 
@@ -75,6 +81,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<bool> ReindexAndStartJob(JobStatusRequest jobStatusRequest)
         {
+            _logger.LogInformation("method reindexAndStartJob called");
             return await _administrationService.DeleteIndexAndStartJob(jobStatusRequest);
         }
         
@@ -82,6 +89,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
+            _logger.LogInformation("method getTriggerStatus called");
             return await _administrationService.GetTriggerStatusById(triggerStateRequest);
         }
 
@@ -89,7 +97,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<OptionDialogResponse> OptionDialog(OptionDialogRequest optionDialogRequest)
         {
-            _logger.LogInformation("method called!");
+            _logger.LogInformation("method getOptionsDialog called!");
             return await _optionDialogService.GetOptionDialog(optionDialogRequest);
         }
 
@@ -97,7 +105,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<string> GetGenericContent()
         {
-            _logger.LogInformation("method GetGenericContent called");
+            _logger.LogInformation("method getGenericContent called");
             return await _administrationService.GetGenericContent();
         }
 
@@ -105,7 +113,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<string> GetSchedulerContent()
         {
-            _logger.LogInformation("method called");
+            _logger.LogInformation("method getSchedulerContent called");
             return await _administrationService.GetSchedulerContent();
         }
 
@@ -113,7 +121,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<string> GetStatisticsContent()
         {
-            _logger.LogInformation("method called");
+            _logger.LogInformation("method getStatisticsContent called");
             return await _administrationService.GetStatisticsContent();
         }
 
@@ -121,7 +129,7 @@ namespace DocSearchAIO.Controllers
         [HttpGet]
         public async Task<string> GetActionContent()
         {
-            _logger.LogInformation("method called");
+            _logger.LogInformation("method getActionContent called");
             return await _administrationService.GetActionContent();
         }
     }

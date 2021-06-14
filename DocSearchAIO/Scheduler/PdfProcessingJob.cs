@@ -37,6 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities _statisticUtilities;
         private readonly Comparers<PdfElasticDocument> _comparers;
+        private readonly JobStatusPersistence<PdfElasticDocument> _jobStatusPersistence;
         
 public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
@@ -49,6 +50,8 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _comparers = new Comparers<PdfElasticDocument>(liteDatabase);
+            _jobStatusPersistence = new JobStatusPersistence<PdfElasticDocument>(loggerFactory, liteDatabase);
+            _jobStatusPersistence.RemoveEntry();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -86,42 +89,56 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                     },
                                     async scanPath =>
                                     {
-                                        var jobStatistic = new ProcessingJobStatistic
+                                        try
                                         {
-                                            Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
-                                        };
-                                        var sw = Stopwatch.StartNew();
-                                        var runnable = Source
-                                            .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
-                                                SearchOption.AllDirectories))
-                                            .Where(file =>
-                                                _schedulerUtilities.UseExcludeFileFilter(schedulerEntry.ExcludeFilter,
-                                                    file))
-                                            .CountEntireDocs(_statisticUtilities)
-                                            .SelectAsync(schedulerEntry.Parallelism,
-                                                file => ProcessPdfDocument(file, _cfg))
-                                            .SelectAsync(schedulerEntry.Parallelism,
-                                                elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
-                                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                            .WithMaybeFilter()
-                                            .CountFilteredDocs(_statisticUtilities)
-                                            .SelectAsync(schedulerEntry.Parallelism,
-                                                async processingInfo =>
-                                                    await _elasticSearchService.BulkWriteDocumentsAsync(processingInfo,
-                                                        indexName))
-                                            .RunWith(Sink.Ignore<bool>(), materializer);
-                                        await Task.WhenAll(runnable);
+                                            _jobStatusPersistence.AddEntry(JobState.Running);
+                                            var jobStatistic = new ProcessingJobStatistic
+                                            {
+                                                Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                                            };
+                                            var sw = Stopwatch.StartNew();
+                                            var runnable = Source
+                                                .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
+                                                    SearchOption.AllDirectories))
+                                                .Where(file =>
+                                                    _schedulerUtilities.UseExcludeFileFilter(
+                                                        schedulerEntry.ExcludeFilter,
+                                                        file))
+                                                .CountEntireDocs(_statisticUtilities)
+                                                .SelectAsync(schedulerEntry.Parallelism,
+                                                    file => ProcessPdfDocument(file, _cfg))
+                                                .SelectAsync(schedulerEntry.Parallelism,
+                                                    elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
+                                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                                .WithMaybeFilter()
+                                                .CountFilteredDocs(_statisticUtilities)
+                                                .SelectAsync(schedulerEntry.Parallelism,
+                                                    async processingInfo =>
+                                                        await _elasticSearchService.BulkWriteDocumentsAsync(
+                                                            processingInfo,
+                                                            indexName))
+                                                .RunWith(Sink.Ignore<bool>(), materializer);
+                                            await Task.WhenAll(runnable);
 
-                                        _logger.LogInformation("finished processing pdf documents");
-                                        sw.Stop();
-                                        jobStatistic.EndJob = DateTime.Now;
-                                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                        jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
-                                        jobStatistic.ProcessingError = _statisticUtilities.GetFailedDocumentsCount();
-                                        jobStatistic.IndexedDocCount = _statisticUtilities.GetChangedDocumentsCount();
-                                        _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(jobStatistic);
-                                        _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                                            sw.ElapsedMilliseconds);
+                                            _logger.LogInformation("finished processing pdf documents");
+                                            sw.Stop();
+                                            jobStatistic.EndJob = DateTime.Now;
+                                            jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                                            jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                            jobStatistic.ProcessingError =
+                                                _statisticUtilities.GetFailedDocumentsCount();
+                                            jobStatistic.IndexedDocCount =
+                                                _statisticUtilities.GetChangedDocumentsCount();
+                                            _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(
+                                                jobStatistic);
+                                            _logger.LogInformation("index documents in {ElapsedMillis} ms",
+                                                sw.ElapsedMilliseconds);
+                                            _jobStatusPersistence.AddEntry(JobState.Stopped);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            _logger.LogError(ex, "An error in processing pipeline occured");
+                                        }
                                     });
                         }
                     );
