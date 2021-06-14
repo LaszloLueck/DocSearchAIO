@@ -93,7 +93,7 @@ namespace DocSearchAIO.Scheduler
                                     {
                                         try
                                         {
-                                            _jobStatusPersistence.AddEntry(JobState.Running);
+                                            await _jobStatusPersistence.AddEntry(JobState.Running);
                                             var jobStatistic = new ProcessingJobStatistic
                                             {
                                                 Id = Guid.NewGuid().ToString(),
@@ -139,7 +139,7 @@ namespace DocSearchAIO.Scheduler
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMilliseconds} ms",
                                                 sw.ElapsedMilliseconds);
-                                            _jobStatusPersistence.AddEntry(JobState.Stopped);
+                                            await _jobStatusPersistence.AddEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
                                         {

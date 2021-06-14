@@ -91,7 +91,7 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                     {
                                         try
                                         {
-                                            _jobStatusPersistence.AddEntry(JobState.Running);
+                                            await _jobStatusPersistence.AddEntry(JobState.Running);
                                             var jobStatistic = new ProcessingJobStatistic
                                             {
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
@@ -133,7 +133,7 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMillis} ms",
                                                 sw.ElapsedMilliseconds);
-                                            _jobStatusPersistence.AddEntry(JobState.Stopped);
+                                            await _jobStatusPersistence.AddEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
                                         {
