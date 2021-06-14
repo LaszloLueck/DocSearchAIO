@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+
 
 namespace DocSearchAIO.DocSearch.TOs
 {
@@ -13,10 +15,9 @@ namespace DocSearchAIO.DocSearch.TOs
         public string GroupName { get; set; }
         public string UriReplacement { get; set; }
 
-        public IEnumerable<ProcessorConfiguration> ProcessorConfigurations { get; set; }
+        public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; }
         public class ProcessorConfiguration
         {
-            public string ProcessorType { get; set; }
             public int Parallelism { get; set; }
             public string ExcludeFilter { get; set; }
             public string FileExtension { get; set; }

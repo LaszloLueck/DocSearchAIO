@@ -84,87 +84,87 @@
 </div>
 @foreach (var item in Model.ProcessorConfigurations)
 {
-    <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="@Html.Raw("processorType_" + item.ProcessorType)">
+    <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="@Html.Raw("processorType_" + item.Key)">
         <div class="input-group input-group-sm m-2">
             <div class="h6 mr-2">
                 <span><strong>Job</strong></span>
             </div>
             <div class="h6">
-                <span>@item.ProcessorType</span>
+                <span>@item.Key</span>
             </div>
         </div>
 
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartEveryPrepend")">Start alle</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelStartEveryPrepend")">Start alle</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_runsEvery") value="@item.RunsEvery">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_runsEvery") value="@item.Value.RunsEvery">
                 <div class="input-group-append">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartEveryAppend")">Sekunden</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelStartEveryAppend")">Sekunden</span>
                 </div>
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartDelayPrepend")">Startverzögerung</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelStartDelayPrepend")">Startverzögerung</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_startDelay") value="@item.StartDelay">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_startDelay") value="@item.Value.StartDelay">
                 <div class="input-group-append">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelStartDelayAppend")">Sekunden</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelStartDelayAppend")">Sekunden</span>
                 </div>
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelParallelismPrepend")">Ausführungs-Parallelität</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelParallelismPrepend")">Ausführungs-Parallelität</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_parallelism") value="@item.Parallelism">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_parallelism") value="@item.Value.Parallelism">
                 <div class="input-group-append">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelParallelismAppend")">Threads</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelParallelismAppend")">Threads</span>
                 </div>
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelFileExtensionPrepend")">Dateierweiterung</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelFileExtensionPrepend")">Dateierweiterung</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_fileExtension") value="@item.FileExtension">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_fileExtension") value="@item.Value.FileExtension">
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelFileFilterPrepend")">Dateifilter Ausschluss</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelFileFilterPrepend")">Dateifilter Ausschluss</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_fileFilter") value="@item.ExcludeFilter">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_fileFilter") value="@item.Value.ExcludeFilter">
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelSchedulerJobNamePrepend")">Scheduler Jobname</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelSchedulerJobNamePrepend")">Scheduler Jobname</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_schedulerJobName") value="@item.JobName">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_schedulerJobName") value="@item.Value.JobName">
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelSchedulerTriggerNamePrepend")">Scheduler Triggername</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelSchedulerTriggerNamePrepend")">Scheduler Triggername</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_schedulerTriggerName") value="@item.TriggerName">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_schedulerTriggerName") value="@item.Value.TriggerName">
             </div>
         </div>
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="@Html.Raw(item.ProcessorType + "_labelIndexSuffixPrepend")">Index Suffix</span>
+                    <span class="input-group-text" id="@Html.Raw(item.Key + "_labelIndexSuffixPrepend")">Index Suffix</span>
                 </div>
-                <input type="text" class="form-control" id=@Html.Raw(item.ProcessorType + "_indexSuffix") value="@item.IndexSuffix">
+                <input type="text" class="form-control" id=@Html.Raw(item.Key + "_indexSuffix") value="@item.Value.IndexSuffix">
             </div>
         </div>
     </div>
@@ -203,7 +203,6 @@
             
             let processors = $('div[id^="processorType_"]').map(function(){
                 let getter = $(this).attr('id').replace('processorType_','');
-              
                 return {
                     processorType: getter,
                     runsEvery: parseInt($('#' + getter + '_runsEvery').val()) || 3600,
@@ -214,10 +213,15 @@
                     jobName: $('#' + getter + '_schedulerJobName').val(),
                     triggerName: $('#' + getter + '_schedulerTriggerName').val(),
                     indexSuffix: $('#' + getter + '_indexSuffix').val()
-                };
-               
+                };              
             })
             .get();
+            
+            let dictionary = Object.assign({}, ...processors.map((element) => {
+                                 let newKey = element.processorType;
+                                 delete(element.processorType)
+                                 return ({[newKey]: element});
+                               }));
             
             let data = {
                 scanPath: $('#scanPath').val(),
@@ -228,7 +232,7 @@
                 schedulerId: $('#schedulerId').val(),
                 elasticEndpoints: elasticNodes,
                 uriReplacement: $('#urlReplacement').val(),
-                processorConfigurations: processors
+                processorConfigurations: dictionary
             };
             
             console.log(JSON.stringify(data));

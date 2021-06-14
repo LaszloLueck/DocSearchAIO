@@ -138,9 +138,21 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.SchedulerName = model.SchedulerName;
                 _configurationObject.UriReplacement = model.UriReplacement;
                 _configurationObject.ActorSystemName = model.ActorSystemName;
-                
-                _configurationObject.Processing
-                
+
+                _configurationObject.Processing = model.ProcessorConfigurations.TransformGenericPartial(kv =>
+                        new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
+                        {
+                            ExcludeFilter = kv.Value.ExcludeFilter,
+                            FileExtension = kv.Value.FileExtension,
+                            IndexSuffix = kv.Value.IndexSuffix,
+                            JobName = kv.Value.JobName,
+                            Parallelism = kv.Value.Parallelism,
+                            RunsEvery = kv.Value.RunsEvery,
+                            StartDelay = kv.Value.StartDelay,
+                            TriggerName = kv.Value.TriggerName
+                        }))
+                    .ToDictionary();
+
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 _logger.LogInformation("configuration successfully updated");
@@ -279,18 +291,20 @@ namespace DocSearchAIO.DocSearch.Services
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
-                    .TransformGenericPartial(kv => new AdministrationGenericModel.ProcessorConfiguration()
-                    {
-                        ExcludeFilter = kv.Value.ExcludeFilter,
-                        FileExtension = kv.Value.FileExtension,
-                        IndexSuffix = kv.Value.IndexSuffix,
-                        JobName = kv.Value.JobName,
-                        Parallelism = kv.Value.Parallelism,
-                        ProcessorType = kv.Key,
-                        RunsEvery = kv.Value.RunsEvery,
-                        StartDelay = kv.Value.StartDelay,
-                        TriggerName = kv.Value.TriggerName
-                    })
+                    .TransformGenericPartial(kv =>
+                        new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
+                            new AdministrationGenericModel.ProcessorConfiguration()
+                            {
+                                ExcludeFilter = kv.Value.ExcludeFilter,
+                                FileExtension = kv.Value.FileExtension,
+                                IndexSuffix = kv.Value.IndexSuffix,
+                                JobName = kv.Value.JobName,
+                                Parallelism = kv.Value.Parallelism,
+                                RunsEvery = kv.Value.RunsEvery,
+                                StartDelay = kv.Value.StartDelay,
+                                TriggerName = kv.Value.TriggerName
+                            }))
+                    .ToDictionary()
             };
 
 

@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.TOs;
+using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -41,13 +39,12 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        public static IEnumerable<TOut> TransformGenericPartial<TOut, TKey, TValue>(
-            this IEnumerable<KeyValuePair<TKey, TValue>> dic, Func<KeyValuePair<TKey, TValue>, TOut> action)
+        public static IEnumerable<KeyValuePair<TKey, TOut>> TransformGenericPartial<TOut, TKey, TValue>(
+            this IEnumerable<KeyValuePair<TKey, TValue>> dic,
+            Func<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TOut>> action)
         {
             return dic.Select(action.Invoke);
         }
-        
-        
 
         public static IEnumerable<Type> GetSubtypesOfType<TIn>()
             =>
@@ -57,6 +54,8 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
+        public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+            this IEnumerable<KeyValuePair<TKey, TValue>> source) => source.ToDictionary(d => d.Key, d => d.Value);
 
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
             Action<TInputLeft> falseAction,
@@ -105,8 +104,11 @@ namespace DocSearchAIO.Scheduler
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat>(this Source<TSource, TMat> source,
             StatisticUtilities statisticUtilities)
         {
-            statisticUtilities.AddToEntireDocuments();
-            return source;
+            return source.Select(t =>
+            {
+                statisticUtilities.AddToEntireDocuments();
+                return t;
+            });
         }
 
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat>(
