@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
+using DocSearchAIO.Classes;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -37,13 +38,6 @@ namespace DocSearchAIO.Scheduler
             {
                 falseAction.Invoke();
             }
-        }
-
-        public static IEnumerable<KeyValuePair<TOutKey, TOut>> TransformGenericPartial<TOut, TOutKey, TInKey, TValue>(
-            this IEnumerable<KeyValuePair<TInKey, TValue>> dic,
-            Func<KeyValuePair<TInKey, TValue>, KeyValuePair<TOutKey, TOut>> action)
-        {
-            return dic.Select(action.Invoke);
         }
 
         public static IEnumerable<Type> GetSubtypesOfType<TIn>()
@@ -101,8 +95,8 @@ namespace DocSearchAIO.Scheduler
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
 
-        public static Source<TSource, TMat> CountEntireDocs<TSource, TMat>(this Source<TSource, TMat> source,
-            StatisticUtilities statisticUtilities)
+        public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
+            StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
         {
             return source.Select(t =>
             {
@@ -111,9 +105,9 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat>(
+        public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
-            StatisticUtilities statisticUtilities)
+            StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
         {
             return source.Select(e =>
             {

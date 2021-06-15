@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
@@ -8,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace DocSearchAIO.Scheduler
 {
-    public class StatisticUtilities
+    public class StatisticUtilities<TModel> : IDisposable where TModel : ElasticDocument
     {
         private readonly ILogger _logger;
         private readonly ILiteDatabase _liteDatabase;
@@ -19,7 +20,7 @@ namespace DocSearchAIO.Scheduler
 
         public StatisticUtilities(ILoggerFactory loggerFactory, ILiteDatabase liteDatabase)
         {
-            _logger = loggerFactory.CreateLogger<StatisticUtilities>();
+            _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
             _liteDatabase = liteDatabase;
             _entireDocuments = new InterlockedCounter();
             _failedDocuments = new InterlockedCounter();
@@ -34,16 +35,16 @@ namespace DocSearchAIO.Scheduler
         public int GetFailedDocumentsCount() => _failedDocuments.GetCurrent();
         public int GetChangedDocumentsCount() => _changedDocuments.GetCurrent();
         
-        public void AddJobStatisticToDatabase<TModel>(ProcessingJobStatistic jobStatistic) where TModel : ElasticDocument
+        public void AddJobStatisticToDatabase(ProcessingJobStatistic jobStatistic)
         {
             var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
             _logger.LogInformation("write statistic for {Type}", typeof(TModel).Name);
             var json = JsonConvert.SerializeObject(jobStatistic, Formatting.Indented);
-            _logger.LogInformation("Write {Object}", json);
+            _logger.LogInformation("write {Object}", json);
             liteCollection.Insert(jobStatistic);
         }
 
-        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel<TModel>() where TModel : ElasticDocument
+        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
         {
             var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
             _logger.LogInformation("get statistic for {Type}", typeof(TModel).Name);
@@ -51,6 +52,11 @@ namespace DocSearchAIO.Scheduler
                 .FindAll()
                 .OrderByDescending(d => d.StartJob)
                 .TryFirst();
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
         }
     }
 }

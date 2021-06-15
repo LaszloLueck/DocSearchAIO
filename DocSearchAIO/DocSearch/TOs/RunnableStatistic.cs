@@ -1,4 +1,6 @@
 ﻿using System;
+using CSharpFunctionalExtensions;
+using DocSearchAIO.Scheduler;
 
 namespace DocSearchAIO.DocSearch.TOs
 {
@@ -11,5 +13,7 @@ namespace DocSearchAIO.DocSearch.TOs
         public DateTime StartJob { get; set; }
         public DateTime EndJob { get; set; }
         public long ElapsedTimeMillis { get; set; }
+
+        public Maybe<CacheEntry> CacheEntry { get; set; }
     }
 }

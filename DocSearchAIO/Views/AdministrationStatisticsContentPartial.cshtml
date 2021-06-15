@@ -1,3 +1,4 @@
+@using CSharpFunctionalExtensions
 @model DocSearchAIO.DocSearch.TOs.IndexStatistic 
 @* IEnumerable<DocSearchAIO.DocSearch.TOs.IndexStatisticModel> *@
 <div class="container mt-2">
@@ -36,43 +37,91 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Id:</span></div>
-            <div class="col-9"><span>@runtimeModel.Value.Id</span></div>
+            <div class="col-3">
+                <span>Id:</span>
+            </div>
+            <div class="col-9">
+                <span>@runtimeModel.Value.Id</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Startzeit:</span></div>
-            <div class="col-9"><span>@($"{runtimeModel.Value.StartJob:dd.MM.yyyy HH:mm:ss}")</span></div>
+            <div class="col-3">
+                <span>Startzeit:</span>
+            </div>
+            <div class="col-9">
+                <span>@($"{runtimeModel.Value.StartJob:dd.MM.yyyy HH:mm:ss}")</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Endezeit:</span></div>
-            <div class="col-9"><span>@($"{runtimeModel.Value.EndJob:dd.MM.yyyy HH:mm:ss}")</span></div>
+            <div class="col-3">
+                <span>Endezeit:</span>
+            </div>
+            <div class="col-9">
+                <span>@($"{runtimeModel.Value.EndJob:dd.MM.yyyy HH:mm:ss}")</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Dokumente verarbeitet:</span></div>
-            <div class="col-9"><span>@runtimeModel.Value.EntireDocCount</span></div>
+            <div class="col-3">
+                <span>Dokumente verarbeitet:</span>
+            </div>
+            <div class="col-9">
+                <span>@runtimeModel.Value.EntireDocCount</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Dokumente mit Fehlern:</span></div>
-            <div class="col-9"><span>@runtimeModel.Value.ProcessingError</span></div>
+            <div class="col-3">
+                <span>Dokumente mit Fehlern:</span>
+            </div>
+            <div class="col-9">
+                <span>@runtimeModel.Value.ProcessingError</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Dokumente indexiert:</span></div>
-            <div class="col-9"><span>@runtimeModel.Value.IndexedDocCount</span></div>
+            <div class="col-3">
+                <span>Dokumente indexiert:</span>
+            </div>
+            <div class="col-9">
+                <span>@runtimeModel.Value.IndexedDocCount</span>
+            </div>
         </div>
         <div class="row">
-            <div class="col-3"><span>Dokumente verarbeitet/s:</span></div>
+            <div class="col-3">
+                <span>Dokumente verarbeitet/s:</span>
+            </div>
             @{
                 if (runtimeModel.Value.ElapsedTimeMillis > 0 && runtimeModel.Value.EntireDocCount > 0 && (runtimeModel.Value.ElapsedTimeMillis / 1000) > 0)
                 {
-                    <div class="col-9"><span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span></div>
+                    <div class="col-9">
+                        <span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span>
+                    </div>
                 }
                 else
                 {
-                    <div class="col-9"><span>0</span></div> 
+                    <div class="col-9">
+                        <span>0</span>
+                    </div>
                 }
             }
-            
         </div>
+        @if (runtimeModel.Value.CacheEntry.HasValue)
+        {
+            <div class="row">
+                <div class="col-3">
+                    <span>In Memory Cache Status</span>
+                </div>
+                <div class="col-9">
+                    <span>@runtimeModel.Value.CacheEntry.Value.JobState.ToString()</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    <span>In Memory Cache Zeit</span>
+                </div>
+                <div class="col-9">
+                    <span>@runtimeModel.Value.CacheEntry.Value.DateTime</span>
+                </div>
+            </div>
+        }
     }
 </div>
 <div class="container mt-2 border rounded border-color-gray">

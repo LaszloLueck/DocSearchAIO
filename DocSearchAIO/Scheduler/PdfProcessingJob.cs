@@ -20,6 +20,7 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using LiteDB;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -35,12 +36,12 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities _statisticUtilities;
+        private readonly StatisticUtilities<PdfElasticDocument> _statisticUtilities;
         private readonly Comparers<PdfElasticDocument> _comparers;
-        private readonly JobStatusPersistence<PdfElasticDocument> _jobStatusPersistence;
+        private readonly JobStateMemoryCache<PdfElasticDocument> _jobStateMemoryCache;
         
 public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-            IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
+            IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -48,10 +49,10 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
+            _statisticUtilities = new StatisticUtilities<PdfElasticDocument>(loggerFactory, liteDatabase);
             _comparers = new Comparers<PdfElasticDocument>(liteDatabase);
-            _jobStatusPersistence = new JobStatusPersistence<PdfElasticDocument>(loggerFactory, liteDatabase);
-            _jobStatusPersistence.RemoveEntry();
+            _jobStateMemoryCache = new JobStateMemoryCache<PdfElasticDocument>(loggerFactory, memoryCache);
+            _jobStateMemoryCache.RemoveCacheEntry();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -91,7 +92,7 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                     {
                                         try
                                         {
-                                            await _jobStatusPersistence.AddEntry(JobState.Running);
+                                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                                             var jobStatistic = new ProcessingJobStatistic
                                             {
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
@@ -129,11 +130,11 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                                 _statisticUtilities.GetFailedDocumentsCount();
                                             jobStatistic.IndexedDocCount =
                                                 _statisticUtilities.GetChangedDocumentsCount();
-                                            _statisticUtilities.AddJobStatisticToDatabase<PdfElasticDocument>(
+                                            _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMillis} ms",
                                                 sw.ElapsedMilliseconds);
-                                            await _jobStatusPersistence.AddEntry(JobState.Stopped);
+                                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
                                         {

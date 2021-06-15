@@ -20,6 +20,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using LiteDB;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -35,12 +36,12 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities _statisticUtilities;
+        private readonly StatisticUtilities<WordElasticDocument> _statisticUtilities;
         private readonly Comparers<WordElasticDocument> _comparers;
-        private readonly JobStatusPersistence<WordElasticDocument> _jobStatusPersistence;
+        private readonly JobStateMemoryCache<WordElasticDocument> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -49,10 +50,10 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
+            _statisticUtilities = new StatisticUtilities<WordElasticDocument>(loggerFactory, liteDatabase);
             _comparers = new Comparers<WordElasticDocument>(liteDatabase);
-            _jobStatusPersistence = new JobStatusPersistence<WordElasticDocument>(loggerFactory, liteDatabase);
-            _jobStatusPersistence.RemoveEntry();
+            _jobStateMemoryCache = new JobStateMemoryCache<WordElasticDocument>(loggerFactory, memoryCache);
+            _jobStateMemoryCache.RemoveCacheEntry();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -97,7 +98,7 @@ namespace DocSearchAIO.Scheduler
                                     {
                                         try
                                         {
-                                            await _jobStatusPersistence.AddEntry(JobState.Running);
+                                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                                             var jobStatistic = new ProcessingJobStatistic
                                             {
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
@@ -136,10 +137,10 @@ namespace DocSearchAIO.Scheduler
                                             jobStatistic.IndexedDocCount =
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities
-                                                .AddJobStatisticToDatabase<WordElasticDocument>(jobStatistic);
+                                                .AddJobStatisticToDatabase(jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
                                                 sw.ElapsedMilliseconds);
-                                            await _jobStatusPersistence.AddEntry(JobState.Stopped);
+                                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
                                         {

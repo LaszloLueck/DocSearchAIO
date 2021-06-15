@@ -28,6 +28,7 @@ namespace DocSearchAIO
             services.AddRazorPages();
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
+            services.AddMemoryCache();
             services.AddLiteDb(Configuration);
             services.AddQuartzScheduler(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
@@ -49,7 +50,7 @@ namespace DocSearchAIO
 
             lifetime.ApplicationStarted.Register(() => app.ApplicationServices.GetService<ActorSystem>());
             lifetime.ApplicationStopping.Register(() =>
-                app.ApplicationServices.GetService<ActorSystem>().Terminate().Wait());
+                app.ApplicationServices.GetService<ActorSystem>()?.Terminate().Wait());
 
             app.UseHttpsRedirection();
             app.UseRouting();

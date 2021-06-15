@@ -10,6 +10,7 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using LiteDB;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -23,12 +24,13 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ConfigurationObject _configurationObject;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
-        private readonly StatisticUtilities _statisticUtilities;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly ILiteDatabase _liteDatabase;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly IMemoryCache _memoryCache;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
-            IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase)
+            IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
             _viewToStringRenderer = viewToStringRenderer;
@@ -37,9 +39,10 @@ namespace DocSearchAIO.DocSearch.Services
             _configurationObject = cfgTmp;
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _statisticUtilities = new StatisticUtilities(loggerFactory, liteDatabase);
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _liteDatabase = liteDatabase;
+            _loggerFactory = loggerFactory;
+            _memoryCache = memoryCache;
         }
 
         public async Task<AdministrationModalResponse> GetAdministrationModal()
@@ -141,7 +144,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = model
                     .ProcessorConfigurations
-                    .TransformGenericPartial(kv =>
+                    .Select(kv =>
                         new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
                         {
                             ExcludeFilter = kv.Value.ExcludeFilter,
@@ -293,7 +296,7 @@ namespace DocSearchAIO.DocSearch.Services
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
-                    .TransformGenericPartial(kv =>
+                    .Select(kv =>
                         new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
                             new AdministrationGenericModel.ProcessorConfiguration()
                             {
@@ -351,9 +354,13 @@ namespace DocSearchAIO.DocSearch.Services
 
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
-
-            _statisticUtilities
-                .GetLatestJobStatisticByModel<WordElasticDocument>()
+            
+            var wordMemoryCache = new JobStateMemoryCache<WordElasticDocument>(_loggerFactory, _memoryCache);
+            var pptMemoryCache = new JobStateMemoryCache<PowerpointElasticDocument>(_loggerFactory, _memoryCache);
+            var pdfMemoryCache = new JobStateMemoryCache<PdfElasticDocument>(_loggerFactory, _memoryCache);
+            
+            using var su1 = new StatisticUtilities<WordElasticDocument>(_loggerFactory, _liteDatabase);
+            su1.GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -364,14 +371,15 @@ namespace DocSearchAIO.DocSearch.Services
                         ProcessingError = doc.ProcessingError,
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount
+                        IndexedDocCount = doc.IndexedDocCount,
+                        CacheEntry = wordMemoryCache.GetCacheEntry()
                     };
                     runtimeStatistic.Add("Word", excModel);
                 });
 
 
-            _statisticUtilities
-                .GetLatestJobStatisticByModel<PowerpointElasticDocument>()
+            using var su2 = new StatisticUtilities<PowerpointElasticDocument>(_loggerFactory, _liteDatabase);
+            su2.GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -382,12 +390,14 @@ namespace DocSearchAIO.DocSearch.Services
                         ProcessingError = doc.ProcessingError,
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount
+                        IndexedDocCount = doc.IndexedDocCount,
+                        CacheEntry = pptMemoryCache.GetCacheEntry()
                     };
                     runtimeStatistic.Add("Powerpoint", excModel);
                 });
-            _statisticUtilities
-                .GetLatestJobStatisticByModel<PdfElasticDocument>()
+
+            using var su3 = new StatisticUtilities<PdfElasticDocument>(_loggerFactory, _liteDatabase);
+            su3.GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -398,7 +408,8 @@ namespace DocSearchAIO.DocSearch.Services
                         ProcessingError = doc.ProcessingError,
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount
+                        IndexedDocCount = doc.IndexedDocCount,
+                        CacheEntry = pdfMemoryCache.GetCacheEntry()
                     };
                     runtimeStatistic.Add("PDF", excModel);
                 });
