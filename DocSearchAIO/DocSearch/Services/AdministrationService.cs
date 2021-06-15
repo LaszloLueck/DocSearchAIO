@@ -195,47 +195,20 @@ namespace DocSearchAIO.DocSearch.Services
                                 {
                                     case nameof(WordElasticDocument):
                                     {
-                                        var comparer = new Comparers<WordElasticDocument>(_liteDatabase);
-                                        comparer
-                                            .RemoveNamedCollection()
-                                            .IfTrueFalse(
-                                                () => _logger.LogWarning(
-                                                    "2. error while removing Collection {Collection}",
-                                                    nameof(WordElasticDocument)),
-                                                () => _logger.LogInformation(
-                                                    "2. collection {Collection} successfully removed",
-                                                    nameof(WordElasticDocument))
-                                            );
+                                        var comparer = new Comparers<WordElasticDocument>(_loggerFactory, _configurationObject);
+                                        comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PdfElasticDocument):
                                     {
-                                        var comparer = new Comparers<PdfElasticDocument>(_liteDatabase);
-                                        comparer
-                                            .RemoveNamedCollection()
-                                            .IfTrueFalse(
-                                                () => _logger.LogWarning(
-                                                    "2. error while removing Collection {Collection}",
-                                                    nameof(PdfElasticDocument)),
-                                                () => _logger.LogInformation(
-                                                    "2. collection {Collection} successfully removed",
-                                                    nameof(PdfElasticDocument))
-                                            );
+                                        var comparer = new Comparers<PdfElasticDocument>(_loggerFactory, _configurationObject);
+                                        comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PowerpointElasticDocument):
                                     {
-                                        var comparer = new Comparers<PowerpointElasticDocument>(_liteDatabase);
-                                        comparer
-                                            .RemoveNamedCollection()
-                                            .IfTrueFalse(
-                                                () => _logger.LogWarning(
-                                                    "2. error while removing Collection {Collection}",
-                                                    nameof(PowerpointElasticDocument)),
-                                                () => _logger.LogInformation(
-                                                    "2. collection {Collection} successfully removed",
-                                                    nameof(PowerpointElasticDocument))
-                                            );
+                                        var comparer = new Comparers<PowerpointElasticDocument>(_loggerFactory, _configurationObject);
+                                        comparer.RemoveComparerFile();
                                         break;
                                     }
                                 }
@@ -355,12 +328,9 @@ namespace DocSearchAIO.DocSearch.Services
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
             
-            var wordMemoryCache = new JobStateMemoryCache<WordElasticDocument>(_loggerFactory, _memoryCache);
-            var pptMemoryCache = new JobStateMemoryCache<PowerpointElasticDocument>(_loggerFactory, _memoryCache);
-            var pdfMemoryCache = new JobStateMemoryCache<PdfElasticDocument>(_loggerFactory, _memoryCache);
-            
-            using var su1 = new StatisticUtilities<WordElasticDocument>(_loggerFactory, _liteDatabase);
-            su1.GetLatestJobStatisticByModel()
+            StatisticUtilitiesProxy
+                .WordStatisticUtility(_loggerFactory, _liteDatabase)
+                .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -372,14 +342,14 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = wordMemoryCache.GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
                     };
                     runtimeStatistic.Add("Word", excModel);
                 });
-
-
-            using var su2 = new StatisticUtilities<PowerpointElasticDocument>(_loggerFactory, _liteDatabase);
-            su2.GetLatestJobStatisticByModel()
+            
+            StatisticUtilitiesProxy
+                .PowerpointStatisticUtility(_loggerFactory, _liteDatabase)
+                .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -391,13 +361,14 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = pptMemoryCache.GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
                     };
                     runtimeStatistic.Add("Powerpoint", excModel);
                 });
-
-            using var su3 = new StatisticUtilities<PdfElasticDocument>(_loggerFactory, _liteDatabase);
-            su3.GetLatestJobStatisticByModel()
+            
+            StatisticUtilitiesProxy
+                .PdfStatisticUtility(_loggerFactory, _liteDatabase)
+                .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
                     var excModel = new RunnableStatistic
@@ -409,7 +380,7 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = pdfMemoryCache.GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
                     };
                     runtimeStatistic.Add("PDF", excModel);
                 });

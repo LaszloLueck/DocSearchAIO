@@ -49,9 +49,10 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = new StatisticUtilities<PowerpointElasticDocument>(loggerFactory, liteDatabase);
-            _comparers = new Comparers<PowerpointElasticDocument>(liteDatabase);
-            _jobStateMemoryCache = new JobStateMemoryCache<PowerpointElasticDocument>(loggerFactory, memoryCache);
+            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory, liteDatabase);
+            _comparers = new Comparers<PowerpointElasticDocument>(loggerFactory, _cfg);
+            _jobStateMemoryCache =
+                JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
 
@@ -140,6 +141,8 @@ namespace DocSearchAIO.Scheduler
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMilliseconds} ms",
                                                 sw.ElapsedMilliseconds);
+                                            _comparers.RemoveComparerFile();
+                                            await _comparers.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)

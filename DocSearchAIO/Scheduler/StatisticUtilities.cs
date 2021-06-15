@@ -9,6 +9,20 @@ using Newtonsoft.Json;
 
 namespace DocSearchAIO.Scheduler
 {
+    public static class StatisticUtilitiesProxy
+    {
+        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<WordElasticDocument>>
+            WordStatisticUtility = (loggerFactory, liteDatabase) =>
+                new StatisticUtilities<WordElasticDocument>(loggerFactory, liteDatabase);
+
+        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<PowerpointElasticDocument>>
+            PowerpointStatisticUtility = (loggerFactory, liteDatabase) =>
+                new StatisticUtilities<PowerpointElasticDocument>(loggerFactory, liteDatabase);
+
+        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<PdfElasticDocument>> PdfStatisticUtility =
+            (loggerFactory, liteDatabase) => new StatisticUtilities<PdfElasticDocument>(loggerFactory, liteDatabase);
+    }
+    
     public class StatisticUtilities<TModel> : IDisposable where TModel : ElasticDocument
     {
         private readonly ILogger _logger;

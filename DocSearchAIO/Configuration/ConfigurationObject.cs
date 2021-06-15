@@ -31,6 +31,9 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("groupName")]
         public string GroupName { get; set; }
+        
+        [JsonProperty("comparerDirectory")]
+        public string ComparerDirectory { get; set; }
     }
 
     public class SchedulerEntry

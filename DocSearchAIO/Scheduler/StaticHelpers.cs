@@ -66,6 +66,13 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
+        public static TOut IfTrueFalse<TOut>(this bool value,
+            Func<TOut> falseAction,
+            Func<TOut> trueAction)
+        {
+            return value ? trueAction.Invoke() : falseAction.Invoke();
+        }
+
         public static TOut DirectoryNotExistsAction<TIn, TOut>(this TIn path, Func<TIn, TOut> action)
             where TOut : GenericSourceString
             where TIn : TOut

@@ -1,66 +1,93 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
-using LiteDB;
+using DocSearchAIO.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Scheduler
 {
-    public class Comparers<T> where T : ElasticDocument
+    public class Comparers<TModel> where TModel : ElasticDocument
     {
-        private readonly ILiteCollection<ComparerObject> _col;
-        private readonly ILiteDatabase _liteDatabase;
-        
-        public Comparers(ILiteDatabase liteDatabase)
+        private readonly ConcurrentDictionary<string, ComparerObject> _comparerDictionary;
+        private readonly ILogger _logger;
+        private readonly string _compareFileDirectory;
+
+        public Comparers(ILoggerFactory loggerFactory, ConfigurationObject configurationObject)
         {
-            _col = liteDatabase.GetCollection<ComparerObject>($"cmp_{typeof(T).Name}");
-            _liteDatabase = liteDatabase;
-            _col.EnsureIndex(x => x.PathHash);
+            _logger = loggerFactory.CreateLogger<Comparers<TModel>>();
+            _compareFileDirectory = $"{configurationObject.ComparerDirectory}/cmp_{typeof(TModel).Name}.cmp";
+            if (!Directory.Exists(configurationObject.ComparerDirectory))
+                Directory.CreateDirectory(configurationObject.ComparerDirectory);
+            if (!File.Exists(_compareFileDirectory))
+                File.Create(_compareFileDirectory).Dispose();
+            
+            _comparerDictionary =
+                new ConcurrentDictionary<string, ComparerObject>(FillConcurrentDictionary(_compareFileDirectory));
         }
 
-        public bool RemoveNamedCollection()
+        private static IEnumerable<KeyValuePair<string, ComparerObject>> FillConcurrentDictionary(string fileName)
         {
-            return _liteDatabase.DropCollection($"cmp_{typeof(T).Name}");
+            return File.ReadAllLines(fileName).Select(str =>
+            {
+                var spl = str.Split(";");
+                var cpo = new ComparerObject {DocumentHash = spl[0], PathHash = spl[1], OriginalPath = spl[2]};
+                return new KeyValuePair<string, ComparerObject>(cpo.PathHash, cpo);
+            });
         }
-        
-        public async Task<Maybe<T>> FilterExistingUnchanged(Maybe<T> document)
+
+        public void RemoveComparerFile() => File.Delete(_compareFileDirectory);
+
+        public async Task WriteAllLinesAsync()
+        {
+            _logger.LogInformation("write new comparer file in {ComparerDirectory}", _compareFileDirectory);
+            await File.WriteAllLinesAsync(_compareFileDirectory,
+                _comparerDictionary.Select(tpl =>
+                    $"{tpl.Value.DocumentHash};{tpl.Value.PathHash};{tpl.Value.OriginalPath}"));
+        }
+
+        public async Task<Maybe<TModel>> FilterExistingUnchanged(Maybe<TModel> document)
         {
             return await Task.Run(() =>
             {
                 var opt = document.Bind(doc =>
                 {
-                    
                     var contentHash = doc.ContentHash;
                     var pathHash = doc.Id;
                     var originalFilePath = doc.OriginalFilePath;
-                    return _col
-                        .FindOne(comp => comp.PathHash == pathHash)
-                        .MaybeValue()
-                        .Match(
-                            innerDoc =>
-                            {
-                                if (innerDoc.DocumentHash == contentHash)
-                                    return Maybe<T>.None;
-
-                                innerDoc.DocumentHash = contentHash;
-                                _col.Update(innerDoc);
-                                return Maybe<T>.From(doc);
-                            },
+                    return _comparerDictionary
+                        .TryGetValue(pathHash, out var comparerObject)
+                        .IfTrueFalse(
                             () =>
                             {
-                                var innerDocument = new ComparerObject
+                                var innerDoc = new ComparerObject
                                 {
                                     DocumentHash = contentHash,
                                     PathHash = pathHash,
                                     OriginalPath = originalFilePath
                                 };
-                                _col.Insert(innerDocument);
-                                return Maybe<T>.From(doc);
+                                _comparerDictionary.AddOrUpdate(pathHash, innerDoc, (_, _) => innerDoc);
+                                return Maybe<TModel>.From(doc);
+                            },
+                            () =>
+                            {
+                                if (comparerObject == null) return Maybe<TModel>.None;
+
+                                if (comparerObject.DocumentHash == contentHash)
+                                    return Maybe<TModel>.None;
+
+
+                                comparerObject.DocumentHash = contentHash;
+                                _comparerDictionary.AddOrUpdate(pathHash, comparerObject, (_, _) => comparerObject);
+                                return Maybe<TModel>.From(doc);
                             });
                 });
                 return opt;
             });
         }
-        
-
     }
 }

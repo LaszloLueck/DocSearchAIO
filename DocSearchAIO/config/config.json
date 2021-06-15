@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "c:\\temp\\Neuer Ordner\\",
+    "scanPath": "d:\\temp\\Neuer Ordner\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -44,6 +44,7 @@
         "runsEvery": 3600
       }
     },
-    "groupName": "docSearch_Processing"
+    "groupName": "docSearch_Processing",
+    "comparerDirectory": "./comparer"
   }
 }

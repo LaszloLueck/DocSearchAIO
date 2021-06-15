@@ -39,8 +39,8 @@ namespace DocSearchAIO.Scheduler
         private readonly StatisticUtilities<PdfElasticDocument> _statisticUtilities;
         private readonly Comparers<PdfElasticDocument> _comparers;
         private readonly JobStateMemoryCache<PdfElasticDocument> _jobStateMemoryCache;
-        
-public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
+
+        public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
@@ -49,15 +49,14 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = new StatisticUtilities<PdfElasticDocument>(loggerFactory, liteDatabase);
-            _comparers = new Comparers<PdfElasticDocument>(liteDatabase);
-            _jobStateMemoryCache = new JobStateMemoryCache<PdfElasticDocument>(loggerFactory, memoryCache);
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, liteDatabase);
+            _comparers = new Comparers<PdfElasticDocument>(loggerFactory, _cfg);
+            _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
-
             var schedulerEntry = _cfg.Processing[nameof(PdfElasticDocument)];
             await Task.Run(() =>
             {
@@ -76,7 +75,8 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                         {
                             var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
-                            var indexName = _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                            var indexName =
+                                _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
 
                             await _schedulerUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
                             _logger.LogInformation("start crunching and indexing some pdf-files");
@@ -134,6 +134,8 @@ public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configurati
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMillis} ms",
                                                 sw.ElapsedMilliseconds);
+                                            _comparers.RemoveComparerFile();
+                                            await _comparers.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)

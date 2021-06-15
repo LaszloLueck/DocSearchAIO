@@ -50,9 +50,9 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = new StatisticUtilities<WordElasticDocument>(loggerFactory, liteDatabase);
-            _comparers = new Comparers<WordElasticDocument>(liteDatabase);
-            _jobStateMemoryCache = new JobStateMemoryCache<WordElasticDocument>(loggerFactory, memoryCache);
+            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, liteDatabase);
+            _comparers = new Comparers<WordElasticDocument>(loggerFactory, _cfg);
+            _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
 
@@ -140,6 +140,8 @@ namespace DocSearchAIO.Scheduler
                                                 .AddJobStatisticToDatabase(jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
                                                 sw.ElapsedMilliseconds);
+                                            _comparers.RemoveComparerFile();
+                                            await _comparers.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
