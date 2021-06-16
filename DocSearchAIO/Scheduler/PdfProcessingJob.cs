@@ -162,18 +162,13 @@ namespace DocSearchAIO.Scheduler
                     var info = document.GetDocumentInfo();
                     var pdfPages = new ConcurrentBag<PdfPageObject>();
 
-                    var toProcess = new ConcurrentBag<PdfPage>();
-                    
-
                     for (var i = 1; i <= document.GetNumberOfPages(); i++)
                     {
                         var pdfPage = document.GetPage(i);
-                        toProcess.Add(pdfPage);
+                        pdfPages.Add(new PdfPageObject(
+                            PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
                     }
                     
-                    toProcess
-                        .ForEach(page => pdfPages.Add(new PdfPageObject(PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
-
                     var uriPath = fileName
                         .Replace(configuration.ScanPath, _cfg.UriReplacement)
                         .Replace(@"\", "/");
