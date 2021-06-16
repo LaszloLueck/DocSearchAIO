@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -37,7 +38,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<PowerpointElasticDocument> _statisticUtilities;
-        private readonly Comparers<PowerpointElasticDocument> _comparers;
+        private readonly ComparersBase<PowerpointElasticDocument> _comparers;
         private readonly JobStateMemoryCache<PowerpointElasticDocument> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
@@ -50,7 +51,7 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory, liteDatabase);
-            _comparers = new Comparers<PowerpointElasticDocument>(loggerFactory, _cfg);
+            _comparers = new ComparersBase<PowerpointElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -191,7 +192,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(@"\", "/");
 
                             var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                            var id = Convert.ToBase64String(idAsByte);
+                            var id = BitConverter.ToString(idAsByte);
                             var slideCount = wd
                                 .PresentationPart
                                 .MaybeValue()
@@ -234,9 +235,13 @@ namespace DocSearchAIO.Scheduler
                                         );
 
 
-                                    var innerString = GetChildElements(slide.ChildElements);
+                                    var sw = new StringBuilder(4096);
+                                    ExtractTextFromElements(slide.ChildElements, sw);
+                                    var innerString = sw.ToString();
+                                    sw.Clear();
+                                    
+                                    
                                     var toReplaced = new List<(string, string)>();
-
                                     ReplaceSpecialStringsTailR(ref innerString, toReplaced);
                                     return new Tuple<string, OfficeDocumentComment[]>(innerString, commentArray);
                                 });
@@ -318,21 +323,28 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        private string GetChildElements(IEnumerable<OpenXmlElement> list)
+        private static void ExtractTextFromElements(IEnumerable<OpenXmlElement> list, StringBuilder sw)
         {
-            var elementString = list.Select(CheckElementAndReturnString);
-            return string.Join("", elementString);
-        }
-
-        private string CheckElementAndReturnString(OpenXmlElement element)
-        {
-            return element.LocalName switch
-            {
-                "t" when !element.ChildElements.Any() => element.InnerText,
-                "p" => GetChildElements(element.ChildElements) + " ",
-                "br" => " ",
-                _ => GetChildElements(element.ChildElements)
-            };
+            list
+                .ForEach(element =>
+                {
+                    switch (element.LocalName)
+                    {
+                        case "t" when !element.ChildElements.Any():
+                            sw.Append(element.InnerText);
+                            break;
+                        case "p":
+                            ExtractTextFromElements(element.ChildElements, sw);
+                            sw.Append(' ');
+                            break;
+                        case "br":
+                            sw.Append(' ');
+                            break;
+                        default:
+                            ExtractTextFromElements(element.ChildElements, sw);
+                            break;
+                    }
+                });
         }
 
         private void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)

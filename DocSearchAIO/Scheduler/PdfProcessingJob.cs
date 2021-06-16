@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -37,7 +38,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<PdfElasticDocument> _statisticUtilities;
-        private readonly Comparers<PdfElasticDocument> _comparers;
+        private readonly ComparersBase<PdfElasticDocument> _comparers;
         private readonly JobStateMemoryCache<PdfElasticDocument> _jobStateMemoryCache;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
@@ -50,7 +51,7 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, liteDatabase);
-            _comparers = new Comparers<PdfElasticDocument>(loggerFactory, _cfg);
+            _comparers = new ComparersBase<PdfElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -159,14 +160,19 @@ namespace DocSearchAIO.Scheduler
                     var pdfReader = new PdfReader(fileName);
                     using var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();
-                    var pdfPages = new ConcurrentBag<PdfPage>();
+                    var pdfPages = new ConcurrentBag<PdfPageObject>();
+
+                    var toProcess = new ConcurrentBag<PdfPage>();
+                    
 
                     for (var i = 1; i <= document.GetNumberOfPages(); i++)
                     {
                         var pdfPage = document.GetPage(i);
-                        pdfPages.Add(
-                            new PdfPage(PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
+                        toProcess.Add(pdfPage);
                     }
+                    
+                    toProcess
+                        .ForEach(page => pdfPages.Add(new PdfPageObject(PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
 
                     var uriPath = fileName
                         .Replace(configuration.ScanPath, _cfg.UriReplacement)
@@ -184,7 +190,7 @@ namespace DocSearchAIO.Scheduler
                         Title = info.GetTitle(),
                         ProcessTime = DateTime.Now,
 
-                        Id = Convert.ToBase64String(
+                        Id = BitConverter.ToString(
                             md5.ComputeHash(Encoding.UTF8.GetBytes(fileName))),
                         UriFilePath = uriPath,
                         ContentType = "pdf"
@@ -221,11 +227,11 @@ namespace DocSearchAIO.Scheduler
         }
     }
 
-    internal class PdfPage
+    internal class PdfPageObject
     {
         public readonly string PageText;
 
-        public PdfPage(string pageText)
+        public PdfPageObject(string pageText)
         {
             PageText = pageText;
         }

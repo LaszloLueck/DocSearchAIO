@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -37,11 +38,12 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<WordElasticDocument> _statisticUtilities;
-        private readonly Comparers<WordElasticDocument> _comparers;
+        private readonly ComparersBase<WordElasticDocument> _comparers;
         private readonly JobStateMemoryCache<WordElasticDocument> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase,
+            IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -51,7 +53,7 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, liteDatabase);
-            _comparers = new Comparers<WordElasticDocument>(loggerFactory, _cfg);
+            _comparers = new ComparersBase<WordElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -193,7 +195,7 @@ namespace DocSearchAIO.Scheduler
                                             .Replace(@"\", "/");
 
                                         var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                                        var id = Convert.ToBase64String(idAsByte);
+                                        var id = BitConverter.ToString(idAsByte);
 
                                         var commentArray = mainDocumentPart
                                             .WordprocessingCommentsPart
@@ -226,7 +228,12 @@ namespace DocSearchAIO.Scheduler
                                             .Body?
                                             .ChildElements;
 
-                                        var contentString = GetChildElements(elements);
+                                        var sw = new StringBuilder(4096);
+                                        ExtractTextFromElements(elements, sw);
+                                        var contentString = sw.ToString();
+                                        sw.Clear();
+
+
                                         var toReplaced = new List<(string, string)>();
 
                                         ReplaceSpecialStringsTailR(ref contentString, toReplaced);
@@ -315,21 +322,29 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        private string GetChildElements(IEnumerable<OpenXmlElement> list)
-        {
-            var elementString = list.Select(CheckElementAndReturnString);
-            return string.Join("", elementString);
-        }
 
-        private string CheckElementAndReturnString(OpenXmlElement element)
+        private static void ExtractTextFromElements(IEnumerable<OpenXmlElement> list, StringBuilder sw)
         {
-            return element.LocalName switch
-            {
-                "t" when !element.ChildElements.Any() => element.InnerText,
-                "p" => GetChildElements(element.ChildElements) + " ",
-                "br" => " ",
-                _ => GetChildElements(element.ChildElements)
-            };
+            list
+                .ForEach(element =>
+                {
+                    switch (element.LocalName)
+                    {
+                        case "t" when !element.ChildElements.Any():
+                            sw.Append(element.InnerText);
+                            break;
+                        case "p":
+                            ExtractTextFromElements(element.ChildElements, sw);
+                            sw.Append(' ');
+                            break;
+                        case "br":
+                            sw.Append(' ');
+                            break;
+                        default:
+                            ExtractTextFromElements(element.ChildElements, sw);
+                            break;
+                    }
+                });
         }
 
         private static void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)

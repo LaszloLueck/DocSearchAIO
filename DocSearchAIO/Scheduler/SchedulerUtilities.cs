@@ -62,7 +62,7 @@ namespace DocSearchAIO.Scheduler
                 using var myReader = new StringReader(string.Join("", elements));
                 var md5 = MD5.Create();
                 var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(myReader.ReadToEnd()));
-                return Convert.ToBase64String(hash);
+                return BitConverter.ToString(hash);
             });
         };
 

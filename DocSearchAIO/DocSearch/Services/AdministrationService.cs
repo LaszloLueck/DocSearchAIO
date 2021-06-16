@@ -195,19 +195,19 @@ namespace DocSearchAIO.DocSearch.Services
                                 {
                                     case nameof(WordElasticDocument):
                                     {
-                                        var comparer = new Comparers<WordElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer = new ComparersBase<WordElasticDocument>(_loggerFactory, _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PdfElasticDocument):
                                     {
-                                        var comparer = new Comparers<PdfElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer = new ComparersBase<PdfElasticDocument>(_loggerFactory, _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PowerpointElasticDocument):
                                     {
-                                        var comparer = new Comparers<PowerpointElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer = new ComparersBase<PowerpointElasticDocument>(_loggerFactory, _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }

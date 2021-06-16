@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "d:\\temp\\Neuer Ordner\\",
+    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -12,7 +12,7 @@
     "processing": {
       "PdfElasticDocument": {
         "active": true,
-        "parallelism": 2,
+        "parallelism": 10,
         "excludeFilter": "",
         "fileExtension": "*.pdf",
         "indexSuffix": "pdf",
@@ -22,8 +22,8 @@
         "runsEvery": 3600
       },
       "PowerpointElasticDocument": {
-        "active": true,
-        "parallelism": 2,
+        "active": false,
+        "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.pptx",
         "indexSuffix": "powerpoint",
@@ -33,8 +33,8 @@
         "runsEvery": 3600
       },
       "WordElasticDocument": {
-        "active": true,
-        "parallelism": 2,
+        "active": false,
+        "parallelism": 10,
         "excludeFilter": "~$",
         "fileExtension": "*.docx",
         "indexSuffix": "word",
