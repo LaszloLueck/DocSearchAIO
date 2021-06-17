@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using DocSearchAIO.Classes;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -14,5 +14,6 @@ namespace DocSearchAIO.Scheduler
     public class GenericSourceString : GenericSource<string>
     {
     }
+
 
 }

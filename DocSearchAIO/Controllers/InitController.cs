@@ -1,12 +1,9 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using System.Web;
+﻿using System.Threading.Tasks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Nest;
 
 namespace DocSearchAIO.Controllers
 {

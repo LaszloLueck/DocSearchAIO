@@ -26,6 +26,42 @@
       <_ContentIncludedByDefault Remove="DocSearch\Views\PaginationPartial.cshtml" />
       <_ContentIncludedByDefault Remove="DocSearch\Views\ResultPageConfigurationModalPartial.cshtml" />
       <_ContentIncludedByDefault Remove="DocSearch\Views\SearchResultsPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="config\config_20210603114349.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210603114428.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210603114637.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210603133539.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210603162125.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210606212812.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210606212813.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210606212814.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609205946.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210002.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210114.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210159.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210201.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210215.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609210940.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609211925.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609211926.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609213555.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210609213605.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210610221751.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210610225241.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210611235426.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210612001311.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210612001312.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210612001313.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613135346.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613135822.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613135931.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613140630.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613140722.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210613162157.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210615201505.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210615201524.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210615234617.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210615234841.json" />
+      <_ContentIncludedByDefault Remove="config\config_20210615234846.json" />
     </ItemGroup>
 
     <ItemGroup>

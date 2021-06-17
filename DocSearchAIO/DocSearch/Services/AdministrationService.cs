@@ -9,6 +9,7 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
+using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -45,7 +46,7 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse { Content = content, ElementName = "#adminModal" };
+            return new AdministrationModalResponse {Content = content, ElementName = "#adminModal"};
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -168,6 +169,21 @@ namespace DocSearchAIO.DocSearch.Services
             }
         }
 
+        private Maybe<ComparersBase<TOut>> GetComparerBaseFromParameter<TOut>(string parameter)
+            where TOut : ElasticDocument
+        {
+            static Maybe<ComparersBase<TOut>> AsMaybe(ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
+            Maybe<ComparersBase<TOut>>.From(new ComparersBase<TOut>(loggerFactory, configurationObject));
+
+            return parameter switch
+            {
+                nameof(WordElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
+                nameof(PowerpointElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
+                nameof(PdfElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
+                _ => Maybe<ComparersBase<TOut>>.None
+            };
+        }
+
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
         {
             var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
@@ -185,38 +201,18 @@ namespace DocSearchAIO.DocSearch.Services
                                 var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
                                     value.IndexSuffix);
 
-
-                                _logger.LogInformation("1. try to remove index {IndexName}", indexName);
+                                _logger.LogInformation("remove index {IndexName}", indexName);
                                 await _elasticSearchService.DeleteIndexAsync(indexName);
 
-                                switch (key)
-                                {
-                                    case nameof(WordElasticDocument):
-                                    {
-                                        var comparer =
-                                            new ComparersBase<WordElasticDocument>(_loggerFactory,
-                                                _configurationObject);
-                                        comparer.RemoveComparerFile();
-                                        break;
-                                    }
-                                    case nameof(PdfElasticDocument):
-                                    {
-                                        var comparer =
-                                            new ComparersBase<PdfElasticDocument>(_loggerFactory, _configurationObject);
-                                        comparer.RemoveComparerFile();
-                                        break;
-                                    }
-                                    case nameof(PowerpointElasticDocument):
-                                    {
-                                        var comparer =
-                                            new ComparersBase<PowerpointElasticDocument>(_loggerFactory,
-                                                _configurationObject);
-                                        comparer.RemoveComparerFile();
-                                        break;
-                                    }
-                                }
+                                _logger.LogInformation("remove comparer file for key {Key}", key);
+                                GetComparerBaseFromParameter<ElasticDocument>(key)
+                                    .Match(
+                                        comparerBase => comparerBase.RemoveComparerFile(),
+                                        () => _logger.LogWarning(
+                                            "cannot determine correct comparer base from key {Key}",
+                                            key));
 
-                                _logger.LogInformation("3. trigger job for jobname {JobName}",
+                                _logger.LogInformation("trigger job for name {JobName}",
                                     jobStatusRequest.JobName);
                                 var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                                 await scheduler.TriggerJob(jobKey);
@@ -332,65 +328,113 @@ namespace DocSearchAIO.DocSearch.Services
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
 
-            StatisticUtilitiesProxy
-                .WordStatisticUtility(_loggerFactory)
-                .GetLatestJobStatisticByModel()
-                .MaybeTrue(doc =>
-                {
-                    var excModel = new RunnableStatistic
-                    {
-                        Id = doc.Id,
-                        EndJob = doc.EndJob,
-                        StartJob = doc.StartJob,
-                        ProcessingError = doc.ProcessingError,
-                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                        EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
-                            .GetCacheEntry()
-                    };
-                    runtimeStatistic.Add("Word", excModel);
-                });
 
+            static RunnableStatistic ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<Maybe<CacheEntry>> fn) =>
+                new()
+                {
+                    Id = doc.Id,
+                    EndJob = doc.EndJob,
+                    StartJob = doc.StartJob,
+                    ProcessingError = doc.ProcessingError,
+                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
+                    EntireDocCount = doc.EntireDocCount,
+                    IndexedDocCount = doc.IndexedDocCount,
+                    CacheEntry = fn.Invoke()
+                };
+            
             StatisticUtilitiesProxy
                 .PowerpointStatisticUtility(_loggerFactory)
                 .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
-                    var excModel = new RunnableStatistic
-                    {
-                        Id = doc.Id,
-                        EndJob = doc.EndJob,
-                        StartJob = doc.StartJob,
-                        ProcessingError = doc.ProcessingError,
-                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                        EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy
-                            .GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
-                    };
+                    var excModel = ConvertToRunnableStatistic(doc,
+                        () => JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache)
+                            .GetCacheEntry());
                     runtimeStatistic.Add("Powerpoint", excModel);
                 });
-
+            
+            StatisticUtilitiesProxy
+                .WordStatisticUtility(_loggerFactory)
+                .GetLatestJobStatisticByModel()
+                .MaybeTrue(doc =>
+                {
+                    var extModel = ConvertToRunnableStatistic(doc,
+                        () => JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
+                            .GetCacheEntry());
+                    runtimeStatistic.Add("Word", extModel);
+                });
+            
             StatisticUtilitiesProxy
                 .PdfStatisticUtility(_loggerFactory)
                 .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
-                    var excModel = new RunnableStatistic
-                    {
-                        Id = doc.Id,
-                        EndJob = doc.EndJob,
-                        StartJob = doc.StartJob,
-                        ProcessingError = doc.ProcessingError,
-                        ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                        EntireDocCount = doc.EntireDocCount,
-                        IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
-                            .GetCacheEntry()
-                    };
-                    runtimeStatistic.Add("PDF", excModel);
+                    var extModel = ConvertToRunnableStatistic(doc,
+                        () => JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
+                            .GetCacheEntry());
+                    runtimeStatistic.Add("Pdf", extModel);
                 });
+
+            // StatisticUtilitiesProxy
+            //     .WordStatisticUtility(_loggerFactory)
+            //     .GetLatestJobStatisticByModel()
+            //     .MaybeTrue(doc =>
+            //     {
+            //         var excModel = new RunnableStatistic
+            //         {
+            //             Id = doc.Id,
+            //             EndJob = doc.EndJob,
+            //             StartJob = doc.StartJob,
+            //             ProcessingError = doc.ProcessingError,
+            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
+            //             EntireDocCount = doc.EntireDocCount,
+            //             IndexedDocCount = doc.IndexedDocCount,
+            //             CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
+            //                 .GetCacheEntry()
+            //         };
+            //         runtimeStatistic.Add("Word", excModel);
+            //     });
+            
+            
+            // StatisticUtilitiesProxy
+            //     .PowerpointStatisticUtility(_loggerFactory)
+            //     .GetLatestJobStatisticByModel()
+            //     .MaybeTrue(doc =>
+            //     {
+            //         var excModel = new RunnableStatistic
+            //         {
+            //             Id = doc.Id,
+            //             EndJob = doc.EndJob,
+            //             StartJob = doc.StartJob,
+            //             ProcessingError = doc.ProcessingError,
+            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
+            //             EntireDocCount = doc.EntireDocCount,
+            //             IndexedDocCount = doc.IndexedDocCount,
+            //             CacheEntry = JobStateMemoryCacheProxy
+            //                 .GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
+            //         };
+            //         runtimeStatistic.Add("Powerpoint", excModel);
+            //     });
+
+            // StatisticUtilitiesProxy
+            //     .PdfStatisticUtility(_loggerFactory)
+            //     .GetLatestJobStatisticByModel()
+            //     .MaybeTrue(doc =>
+            //     {
+            //         var excModel = new RunnableStatistic
+            //         {
+            //             Id = doc.Id,
+            //             EndJob = doc.EndJob,
+            //             StartJob = doc.StartJob,
+            //             ProcessingError = doc.ProcessingError,
+            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
+            //             EntireDocCount = doc.EntireDocCount,
+            //             IndexedDocCount = doc.IndexedDocCount,
+            //             CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
+            //                 .GetCacheEntry()
+            //         };
+            //         runtimeStatistic.Add("PDF", excModel);
+            //     });
 
             responseModel.RuntimeStatistics = runtimeStatistic;
 

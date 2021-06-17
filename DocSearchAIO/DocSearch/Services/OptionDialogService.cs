@@ -5,7 +5,6 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.Extensions.Logging;
-using Nest;
 
 namespace DocSearchAIO.DocSearch.Services
 {

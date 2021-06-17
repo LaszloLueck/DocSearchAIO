@@ -133,7 +133,6 @@ namespace DocSearchAIO.Scheduler
                                     if (comparerObject.DocumentHash == contentHash)
                                         return Maybe<TModel>.None;
 
-
                                     comparerObject.DocumentHash = contentHash;
                                     comparerDictionary.AddOrUpdate(pathHash, comparerObject,
                                         (_, _) => comparerObject);

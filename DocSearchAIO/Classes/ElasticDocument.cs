@@ -4,7 +4,7 @@ using Nest;
 
 namespace DocSearchAIO.Classes
 {
-    public class ElasticDocument
+    public abstract class ElasticDocument
     {
         [Text(Name = "id")] public string Id { get; set; }
         [Text(Name = "contentHash")] public string ContentHash { get; set; }

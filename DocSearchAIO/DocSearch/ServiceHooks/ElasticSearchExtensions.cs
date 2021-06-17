@@ -5,7 +5,6 @@ using DocSearchAIO.Services;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Nest;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CSharpFunctionalExtensions;
@@ -9,6 +11,8 @@ using Newtonsoft.Json;
 
 namespace DocSearchAIO.Scheduler
 {
+
+
     public static class StatisticUtilitiesProxy
     {
         public static readonly Func<ILoggerFactory, StatisticUtilities<WordElasticDocument>>
@@ -23,7 +27,7 @@ namespace DocSearchAIO.Scheduler
             loggerFactory => new StatisticUtilities<PdfElasticDocument>(loggerFactory);
     }
 
-    public class StatisticUtilities<TModel> : IDisposable where TModel : ElasticDocument
+    public class StatisticUtilities<TModel> where TModel : ElasticDocument
     {
         private const string StatisticsDirectory = "./Resources/statistics";
         private const string StatisticsFile = "statistics_{0}.txt";
@@ -88,11 +92,6 @@ namespace DocSearchAIO.Scheduler
                 _logger.LogError(e, "error occured while converting statistic json to model");
                 return Maybe<ProcessingJobStatistic>.None;
             }
-        }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
         }
     }
 }

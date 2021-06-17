@@ -1,7 +1,6 @@
 using Akka.Actor;
 
 using DocSearchAIO.DocSearch.ServiceHooks;
-using DocSearchAIO.Scheduler;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
