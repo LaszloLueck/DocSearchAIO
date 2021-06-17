@@ -15,6 +15,19 @@ namespace DocSearchAIO.Scheduler
 
     public static class StatisticUtilitiesProxy
     {
+        public static IEnumerable<StatisticUtilities<TOut>> AsIEnumerable<TOut>(ILoggerFactory loggerFactory) where TOut : ElasticDocument
+        {
+            var foo = new StatisticUtilities<WordElasticDocument>(loggerFactory);
+            var bar = new StatisticUtilities<PowerpointElasticDocument>(loggerFactory);
+            var baz = new StatisticUtilities<PdfElasticDocument>(loggerFactory);
+            return new StatisticUtilities<TOut>[]
+            {
+                foo as StatisticUtilities<TOut>,
+                bar as StatisticUtilities<TOut>,
+                baz as StatisticUtilities<TOut>
+            };
+        }
+        
         public static readonly Func<ILoggerFactory, StatisticUtilities<WordElasticDocument>>
             WordStatisticUtility = loggerFactory =>
                 new StatisticUtilities<WordElasticDocument>(loggerFactory);

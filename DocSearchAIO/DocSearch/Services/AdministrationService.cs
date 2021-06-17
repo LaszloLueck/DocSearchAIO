@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -352,6 +353,12 @@ namespace DocSearchAIO.DocSearch.Services
                             .GetCacheEntry());
                     runtimeStatistic.Add("Powerpoint", excModel);
                 });
+            
+            StatisticUtilitiesProxy.AsIEnumerable<ElasticDocument>(_loggerFactory).ForEach(util =>
+            {
+                util.GetLatestJobStatisticByModel()
+            });
+            
             
             StatisticUtilitiesProxy
                 .WordStatisticUtility(_loggerFactory)
