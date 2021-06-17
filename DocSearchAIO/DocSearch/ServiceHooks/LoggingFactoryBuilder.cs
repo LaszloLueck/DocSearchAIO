@@ -6,8 +6,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
     
     public static class LoggingFactoryBuilder
     {
-
-        public static ILoggerFactory CreateLoggingFactory()
+        private static ILoggerFactory CreateLoggingFactory()
         {
             return LoggerFactory.Create(builder =>
             {

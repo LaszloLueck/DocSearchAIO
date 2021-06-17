@@ -89,7 +89,7 @@
                 <span>Dokumente verarbeitet/s:</span>
             </div>
             @{
-                if (runtimeModel.Value.ElapsedTimeMillis > 0 && runtimeModel.Value.EntireDocCount > 0 && (runtimeModel.Value.ElapsedTimeMillis / 1000) > 0)
+                if (runtimeModel.Value.ElapsedTimeMillis > 0 && runtimeModel.Value.EntireDocCount > 0 && runtimeModel.Value.ElapsedTimeMillis / 1000 > 0)
                 {
                     <div class="col-9">
                         <span>@(runtimeModel.Value.EntireDocCount / (runtimeModel.Value.ElapsedTimeMillis / 1000))</span>

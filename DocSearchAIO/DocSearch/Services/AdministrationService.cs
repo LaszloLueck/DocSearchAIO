@@ -9,7 +9,6 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
-using LiteDB;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -25,12 +24,11 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly ILiteDatabase _liteDatabase;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IMemoryCache _memoryCache;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
-            IConfiguration configuration, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
+            IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
             _viewToStringRenderer = viewToStringRenderer;
@@ -40,7 +38,6 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _liteDatabase = liteDatabase;
             _loggerFactory = loggerFactory;
             _memoryCache = memoryCache;
         }
@@ -48,7 +45,7 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<AdministrationModalResponse> GetAdministrationModal()
         {
             var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse {Content = content, ElementName = "#adminModal"};
+            return new AdministrationModalResponse { Content = content, ElementName = "#adminModal" };
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -141,6 +138,7 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.SchedulerName = model.SchedulerName;
                 _configurationObject.UriReplacement = model.UriReplacement;
                 _configurationObject.ActorSystemName = model.ActorSystemName;
+                _configurationObject.ComparerDirectory = model.ComparerDirectory;
 
                 _configurationObject.Processing = model
                     .ProcessorConfigurations
@@ -195,19 +193,24 @@ namespace DocSearchAIO.DocSearch.Services
                                 {
                                     case nameof(WordElasticDocument):
                                     {
-                                        var comparer = new ComparersBase<WordElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer =
+                                            new ComparersBase<WordElasticDocument>(_loggerFactory,
+                                                _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PdfElasticDocument):
                                     {
-                                        var comparer = new ComparersBase<PdfElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer =
+                                            new ComparersBase<PdfElasticDocument>(_loggerFactory, _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }
                                     case nameof(PowerpointElasticDocument):
                                     {
-                                        var comparer = new ComparersBase<PowerpointElasticDocument>(_loggerFactory, _configurationObject);
+                                        var comparer =
+                                            new ComparersBase<PowerpointElasticDocument>(_loggerFactory,
+                                                _configurationObject);
                                         comparer.RemoveComparerFile();
                                         break;
                                     }
@@ -266,6 +269,7 @@ namespace DocSearchAIO.DocSearch.Services
                 ActorSystemName = _configurationObject.ActorSystemName,
                 GroupName = _configurationObject.GroupName,
                 UriReplacement = _configurationObject.UriReplacement,
+                ComparerDirectory = _configurationObject.ComparerDirectory,
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
@@ -327,9 +331,9 @@ namespace DocSearchAIO.DocSearch.Services
 
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
-            
+
             StatisticUtilitiesProxy
-                .WordStatisticUtility(_loggerFactory, _liteDatabase)
+                .WordStatisticUtility(_loggerFactory)
                 .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
@@ -342,13 +346,14 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
+                            .GetCacheEntry()
                     };
                     runtimeStatistic.Add("Word", excModel);
                 });
-            
+
             StatisticUtilitiesProxy
-                .PowerpointStatisticUtility(_loggerFactory, _liteDatabase)
+                .PowerpointStatisticUtility(_loggerFactory)
                 .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
@@ -361,13 +366,14 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy
+                            .GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
                     };
                     runtimeStatistic.Add("Powerpoint", excModel);
                 });
-            
+
             StatisticUtilitiesProxy
-                .PdfStatisticUtility(_loggerFactory, _liteDatabase)
+                .PdfStatisticUtility(_loggerFactory)
                 .GetLatestJobStatisticByModel()
                 .MaybeTrue(doc =>
                 {
@@ -380,7 +386,8 @@ namespace DocSearchAIO.DocSearch.Services
                         ElapsedTimeMillis = doc.ElapsedTimeMillis,
                         EntireDocCount = doc.EntireDocCount,
                         IndexedDocCount = doc.IndexedDocCount,
-                        CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
+                        CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
+                            .GetCacheEntry()
                     };
                     runtimeStatistic.Add("PDF", excModel);
                 });

@@ -20,7 +20,6 @@ using DocSearchAIO.Statistics;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using LiteDB;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -42,7 +41,7 @@ namespace DocSearchAIO.Scheduler
         private readonly JobStateMemoryCache<PdfElasticDocument> _jobStateMemoryCache;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-            IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
+            IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -50,7 +49,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, liteDatabase);
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory);
             _comparers = new ComparersBase<PdfElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -124,6 +123,8 @@ namespace DocSearchAIO.Scheduler
 
                                             _logger.LogInformation("finished processing pdf documents");
                                             sw.Stop();
+                                            await _elasticSearchService.FlushIndexAsync(indexName);
+                                            await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                             jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
@@ -156,7 +157,6 @@ namespace DocSearchAIO.Scheduler
             {
                 try
                 {
-                    var md5 = MD5.Create();
                     var pdfReader = new PdfReader(fileName);
                     using var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();
@@ -174,24 +174,32 @@ namespace DocSearchAIO.Scheduler
                     toProcess
                         .ForEach(page => pdfPages.Add(new PdfPageObject(PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
 
+
+                    var creator = info.GetCreator();
+                    var keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
+                        ? Array.Empty<string>()
+                        : info.GetKeywords().Split(" ");
+                    var subject = info.GetSubject();
+                    var title = info.GetTitle();
+                    
+                    document.Close();
+                    
                     var uriPath = fileName
                         .Replace(configuration.ScanPath, _cfg.UriReplacement)
                         .Replace(@"\", "/");
 
+                    var fileNameHash = await StaticHelpers.CreateMd5HashString(fileName);
+                    
                     var elasticDoc = new PdfElasticDocument
                     {
                         OriginalFilePath = fileName,
                         PageCount = pdfPages.Count,
-                        Creator = info.GetCreator(),
-                        Keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
-                            ? Array.Empty<string>()
-                            : info.GetKeywords().Split(" "),
-                        Subject = info.GetSubject(),
-                        Title = info.GetTitle(),
+                        Creator = creator,
+                        Keywords = keywords,
+                        Subject = subject,
+                        Title = title,
                         ProcessTime = DateTime.Now,
-
-                        Id = BitConverter.ToString(
-                            md5.ComputeHash(Encoding.UTF8.GetBytes(fileName))),
+                        Id = fileNameHash,
                         UriFilePath = uriPath,
                         ContentType = "pdf"
                     };
@@ -213,13 +221,13 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = await _schedulerUtilities.CreateHashString(listElementsToHash);
+                    elasticDoc.ContentHash = await StaticHelpers.CreateMd5HashString(listElementsToHash.JoinString(""));
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogInformation(exception, "An error occured");
+                    _logger.LogError(exception, "An error occured");
                     _statisticUtilities.AddToFailedDocuments();
                     return Maybe<PdfElasticDocument>.None;
                 }

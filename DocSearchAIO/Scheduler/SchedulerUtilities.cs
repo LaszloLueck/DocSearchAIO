@@ -52,19 +52,9 @@ namespace DocSearchAIO.Scheduler
         }
 
         public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
-            (excludeFilter == "") || !fileName.Contains(excludeFilter);
+            excludeFilter == "" || !fileName.Contains(excludeFilter);
 
- 
-        public readonly Func<IEnumerable<string>, Task<string>> CreateHashString = async (elements) =>
-        {
-            return await Task.Run(() =>
-            {
-                using var myReader = new StringReader(string.Join("", elements));
-                var md5 = MD5.Create();
-                var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(myReader.ReadToEnd()));
-                return BitConverter.ToString(hash);
-            });
-        };
+
 
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
     }

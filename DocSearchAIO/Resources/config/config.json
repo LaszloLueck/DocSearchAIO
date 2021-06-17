@@ -11,7 +11,7 @@
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern",
     "processing": {
       "PdfElasticDocument": {
-        "active": true,
+        "active": false,
         "parallelism": 10,
         "excludeFilter": "",
         "fileExtension": "*.pdf",
@@ -45,6 +45,6 @@
       }
     },
     "groupName": "docSearch_Processing",
-    "comparerDirectory": "./comparer"
+    "comparerDirectory": "./Resources/comparer"
   }
 }

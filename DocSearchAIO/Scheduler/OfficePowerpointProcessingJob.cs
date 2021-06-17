@@ -11,16 +11,13 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
-using LiteDB;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -42,7 +39,7 @@ namespace DocSearchAIO.Scheduler
         private readonly JobStateMemoryCache<PowerpointElasticDocument> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase, IMemoryCache memoryCache)
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<OfficePowerpointProcessingJob>();
             _cfg = new ConfigurationObject();
@@ -50,7 +47,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory, liteDatabase);
+            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory);
             _comparers = new ComparersBase<PowerpointElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
@@ -131,6 +128,8 @@ namespace DocSearchAIO.Scheduler
                                             _logger.LogInformation("finished processing powerpoint documents");
 
                                             sw.Stop();
+                                            await _elasticSearchService.FlushIndexAsync(indexName);
+                                            await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                             jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
@@ -162,7 +161,6 @@ namespace DocSearchAIO.Scheduler
             {
                 return await Task.Run(async () =>
                 {
-                    var md5 = MD5.Create();
                     var wdOpt = PresentationDocument
                         .Open(currentFile, false)
                         .MaybeValue();
@@ -191,8 +189,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(configurationObject.ScanPath, _cfg.UriReplacement)
                                 .Replace(@"\", "/");
 
-                            var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                            var id = BitConverter.ToString(idAsByte);
+                            var id = await StaticHelpers.CreateMd5HashString(currentFile);
                             var slideCount = wd
                                 .PresentationPart
                                 .MaybeValue()
@@ -215,7 +212,7 @@ namespace DocSearchAIO.Scheduler
                                             {
                                                 return comments.CommentList.Select(comment =>
                                                 {
-                                                    var d = (Comment)comment;
+                                                    var d = (Comment) comment;
 
                                                     var retValue = new OfficeDocumentComment();
                                                     var dat = d.DateTime != null
@@ -236,13 +233,13 @@ namespace DocSearchAIO.Scheduler
 
 
                                     var sw = new StringBuilder(4096);
-                                    ExtractTextFromElements(slide.ChildElements, sw);
+                                    StaticHelpers.ExtractTextFromElement(slide.ChildElements, sw);
                                     var innerString = sw.ToString();
                                     sw.Clear();
-                                    
-                                    
+
+
                                     var toReplaced = new List<(string, string)>();
-                                    ReplaceSpecialStringsTailR(ref innerString, toReplaced);
+                                    innerString = StaticHelpers.ReplaceSpecialStrings(innerString, toReplaced);
                                     return new Tuple<string, OfficeDocumentComment[]>(innerString, commentArray);
                                 });
 
@@ -275,7 +272,7 @@ namespace DocSearchAIO.Scheduler
 
                             var res = listElementsToHash.Concat(commentsOnlyList.SelectMany(k => k).Distinct());
 
-                            var contentHashString = await _schedulerUtilities.CreateHashString(res);
+                            var contentHashString = await StaticHelpers.CreateMd5HashString(res.JoinString(""));
 
                             var commString = string.Join(" ", officeDocumentComments.Select(d => d.Comment));
 
@@ -288,7 +285,7 @@ namespace DocSearchAIO.Scheduler
                                 .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                                 .Where(d => d.Length > 2);
 
-                            var completionField = new CompletionField { Input = searchAsYouTypeContent };
+                            var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
                             var returnValue = new PowerpointElasticDocument
                             {
@@ -320,41 +317,6 @@ namespace DocSearchAIO.Scheduler
                 _logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
                 _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
-            }
-        }
-
-        private static void ExtractTextFromElements(IEnumerable<OpenXmlElement> list, StringBuilder sw)
-        {
-            list
-                .ForEach(element =>
-                {
-                    switch (element.LocalName)
-                    {
-                        case "t" when !element.ChildElements.Any():
-                            sw.Append(element.InnerText);
-                            break;
-                        case "p":
-                            ExtractTextFromElements(element.ChildElements, sw);
-                            sw.Append(' ');
-                            break;
-                        case "br":
-                            sw.Append(' ');
-                            break;
-                        default:
-                            ExtractTextFromElements(element.ChildElements, sw);
-                            break;
-                    }
-                });
-        }
-
-        private void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)
-        {
-            while (true)
-            {
-                if (!replaceList.Any()) return;
-
-                input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
-                replaceList.RemoveAt(0);
             }
         }
     }

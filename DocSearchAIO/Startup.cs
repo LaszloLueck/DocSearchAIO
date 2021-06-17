@@ -29,7 +29,6 @@ namespace DocSearchAIO
             services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
             services.AddMemoryCache();
-            services.AddLiteDb(Configuration);
             services.AddQuartzScheduler(Configuration);
             services.AddSingleton(_ => ActorSystem.Create("DocSearchActorSystem"));
             services.AddSwaggerGen(c =>

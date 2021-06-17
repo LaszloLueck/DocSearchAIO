@@ -1,9 +1,9 @@
 using System;
+using System.IO;
 using System.Linq;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
-using LiteDB;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -11,61 +11,83 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StatisticUtilitiesProxy
     {
-        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<WordElasticDocument>>
-            WordStatisticUtility = (loggerFactory, liteDatabase) =>
-                new StatisticUtilities<WordElasticDocument>(loggerFactory, liteDatabase);
+        public static readonly Func<ILoggerFactory, StatisticUtilities<WordElasticDocument>>
+            WordStatisticUtility = loggerFactory =>
+                new StatisticUtilities<WordElasticDocument>(loggerFactory);
 
-        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<PowerpointElasticDocument>>
-            PowerpointStatisticUtility = (loggerFactory, liteDatabase) =>
-                new StatisticUtilities<PowerpointElasticDocument>(loggerFactory, liteDatabase);
+        public static readonly Func<ILoggerFactory, StatisticUtilities<PowerpointElasticDocument>>
+            PowerpointStatisticUtility = loggerFactory =>
+                new StatisticUtilities<PowerpointElasticDocument>(loggerFactory);
 
-        public static Func<ILoggerFactory, ILiteDatabase, StatisticUtilities<PdfElasticDocument>> PdfStatisticUtility =
-            (loggerFactory, liteDatabase) => new StatisticUtilities<PdfElasticDocument>(loggerFactory, liteDatabase);
+        public static readonly Func<ILoggerFactory, StatisticUtilities<PdfElasticDocument>> PdfStatisticUtility =
+            loggerFactory => new StatisticUtilities<PdfElasticDocument>(loggerFactory);
     }
-    
+
     public class StatisticUtilities<TModel> : IDisposable where TModel : ElasticDocument
     {
+        private const string StatisticsDirectory = "./Resources/statistics";
+        private const string StatisticsFile = "statistics_{0}.txt";
         private readonly ILogger _logger;
-        private readonly ILiteDatabase _liteDatabase;
-
         private readonly InterlockedCounter _entireDocuments;
         private readonly InterlockedCounter _failedDocuments;
         private readonly InterlockedCounter _changedDocuments;
 
-        public StatisticUtilities(ILoggerFactory loggerFactory, ILiteDatabase liteDatabase)
+        public StatisticUtilities(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
-            _liteDatabase = liteDatabase;
             _entireDocuments = new InterlockedCounter();
             _failedDocuments = new InterlockedCounter();
             _changedDocuments = new InterlockedCounter();
+            _checkAndCreateStatisticsDirectory();
+            _checkAndCreateStatisticsFile();
         }
 
-        public void AddToEntireDocuments()  => _entireDocuments.Increment();
+        private readonly Action _checkAndCreateStatisticsDirectory = () =>
+        {
+            if (!Directory.Exists(StatisticsDirectory))
+                Directory.CreateDirectory(StatisticsDirectory);
+        };
+
+        private readonly Action _checkAndCreateStatisticsFile = () =>
+        {
+            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
+            if (!File.Exists(filePath))
+                File
+                    .Create(filePath)
+                    .Dispose();
+        };
+
+        public void AddToEntireDocuments() => _entireDocuments.Increment();
         public void AddToFailedDocuments() => _failedDocuments.Increment();
         public void AddToChangedDocuments(int value) => _changedDocuments.Add(value);
 
         public int GetEntireDocumentsCount() => _entireDocuments.GetCurrent();
         public int GetFailedDocumentsCount() => _failedDocuments.GetCurrent();
         public int GetChangedDocumentsCount() => _changedDocuments.GetCurrent();
-        
+
         public void AddJobStatisticToDatabase(ProcessingJobStatistic jobStatistic)
         {
-            var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
-            _logger.LogInformation("write statistic for {Type}", typeof(TModel).Name);
+            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
             var json = JsonConvert.SerializeObject(jobStatistic, Formatting.Indented);
-            _logger.LogInformation("write {Object}", json);
-            liteCollection.Insert(jobStatistic);
+            File.WriteAllText(filePath, json);
         }
 
         public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
         {
-            var liteCollection = _liteDatabase.GetCollection<ProcessingJobStatistic>(typeof(TModel).Name);
-            _logger.LogInformation("get statistic for {Type}", typeof(TModel).Name);
-            return liteCollection
-                .FindAll()
-                .OrderByDescending(d => d.StartJob)
-                .TryFirst();
+            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
+            var content = File.ReadAllText(filePath);
+            if(!content.Any())
+                return Maybe<ProcessingJobStatistic>.None;
+            try
+            {
+                var model = JsonConvert.DeserializeObject<ProcessingJobStatistic>(content);
+                return Maybe<ProcessingJobStatistic>.From(model);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "error occured while converting statistic json to model");
+                return Maybe<ProcessingJobStatistic>.None;
+            }
         }
 
         public void Dispose()

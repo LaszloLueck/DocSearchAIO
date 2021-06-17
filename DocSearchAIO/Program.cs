@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -34,7 +36,9 @@ namespace DocSearchAIO
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     config.AddInMemoryCollection(arrayDict);
-                    config.AddJsonFile("config/config.json", optional: false, reloadOnChange: true);
+                    config.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                    config.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
                     config.AddCommandLine(args);
                 })
                 .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })

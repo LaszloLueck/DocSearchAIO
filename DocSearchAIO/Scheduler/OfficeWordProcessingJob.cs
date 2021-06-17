@@ -11,16 +11,13 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using LiteDB;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -42,7 +39,7 @@ namespace DocSearchAIO.Scheduler
         private readonly JobStateMemoryCache<WordElasticDocument> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-            ActorSystem actorSystem, IElasticSearchService elasticSearchService, ILiteDatabase liteDatabase,
+            ActorSystem actorSystem, IElasticSearchService elasticSearchService,
             IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
@@ -52,7 +49,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, liteDatabase);
+            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory);
             _comparers = new ComparersBase<WordElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -131,6 +128,8 @@ namespace DocSearchAIO.Scheduler
                                             await Task.WhenAll(runnable);
                                             _logger.LogInformation("finished processing word-documents");
                                             sw.Stop();
+                                            await _elasticSearchService.FlushIndexAsync(indexName);
+                                            await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                             jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
@@ -162,7 +161,6 @@ namespace DocSearchAIO.Scheduler
             {
                 return await Task.Run(async () =>
                 {
-                    var md5 = MD5.Create();
                     var wdOpt = WordprocessingDocument.Open(currentFile, false).MaybeValue();
                     return await wdOpt.Match(
                         async wd =>
@@ -194,8 +192,7 @@ namespace DocSearchAIO.Scheduler
                                                 _cfg.UriReplacement)
                                             .Replace(@"\", "/");
 
-                                        var idAsByte = md5.ComputeHash(Encoding.UTF8.GetBytes(currentFile));
-                                        var id = BitConverter.ToString(idAsByte);
+                                        var id = await StaticHelpers.CreateMd5HashString(currentFile);
 
                                         var commentArray = mainDocumentPart
                                             .WordprocessingCommentsPart
@@ -229,14 +226,14 @@ namespace DocSearchAIO.Scheduler
                                             .ChildElements;
 
                                         var sw = new StringBuilder(4096);
-                                        ExtractTextFromElements(elements, sw);
+                                        StaticHelpers.ExtractTextFromElement(elements, sw);
                                         var contentString = sw.ToString();
                                         sw.Clear();
 
 
                                         var toReplaced = new List<(string, string)>();
 
-                                        ReplaceSpecialStringsTailR(ref contentString, toReplaced);
+                                        contentString = StaticHelpers.ReplaceSpecialStrings(contentString, toReplaced);
 
                                         var keywordsList = keywords.Length == 0
                                             ? Array.Empty<string>()
@@ -263,7 +260,7 @@ namespace DocSearchAIO.Scheduler
                                         var res = listElementsToHash.Concat(
                                             commentsString.SelectMany(k => k).Distinct());
 
-                                        var contentHashString = await _schedulerUtilities.CreateHashString(res);
+                                        var contentHashString = await StaticHelpers.CreateMd5HashString(res.JoinString(""));
 
                                         var commString = string.Join(" ", commentArray.Select(d => d.Comment));
                                         var suggestedText =
@@ -319,42 +316,6 @@ namespace DocSearchAIO.Scheduler
                 _logger.LogError(e, "an error while creating a indexing object");
                 _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<WordElasticDocument>.None);
-            }
-        }
-
-
-        private static void ExtractTextFromElements(IEnumerable<OpenXmlElement> list, StringBuilder sw)
-        {
-            list
-                .ForEach(element =>
-                {
-                    switch (element.LocalName)
-                    {
-                        case "t" when !element.ChildElements.Any():
-                            sw.Append(element.InnerText);
-                            break;
-                        case "p":
-                            ExtractTextFromElements(element.ChildElements, sw);
-                            sw.Append(' ');
-                            break;
-                        case "br":
-                            sw.Append(' ');
-                            break;
-                        default:
-                            ExtractTextFromElements(element.ChildElements, sw);
-                            break;
-                    }
-                });
-        }
-
-        private static void ReplaceSpecialStringsTailR(ref string input, IList<(string, string)> replaceList)
-        {
-            while (true)
-            {
-                if (!replaceList.Any()) return;
-
-                input = Regex.Replace(input, replaceList[0].Item1, replaceList[0].Item2);
-                replaceList.RemoveAt(0);
             }
         }
     }

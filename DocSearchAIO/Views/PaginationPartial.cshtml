@@ -1,8 +1,8 @@
 ﻿@model DocSearchAIO.DocSearch.TOs.DoSearchResult
 
 @{
-    var pagingCount = Model.DocCount <= Model.CurrentPageSize ? 0 : ((Model.DocCount - (Model.DocCount % Model.CurrentPageSize)) / Model.CurrentPageSize) + ((Model.DocCount % Model.CurrentPageSize == 0) ? 0 : 1);
-    var currentPage = ((Model.CurrentPage / Model.CurrentPageSize) + 1);
+    var pagingCount = Model.DocCount <= Model.CurrentPageSize ? 0 : (Model.DocCount - Model.DocCount % Model.CurrentPageSize) / Model.CurrentPageSize + (Model.DocCount % Model.CurrentPageSize == 0 ? 0 : 1);
+    var currentPage = Model.CurrentPage / Model.CurrentPageSize + 1;
 
 
     <nav aria-label="Main-Navigation">

@@ -2,10 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
-using Quartz;
+using DocumentFormat.OpenXml;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -91,7 +96,7 @@ namespace DocSearchAIO.Scheduler
         public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource =>
             action.Invoke(source);
 
-        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
+        public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
 
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
@@ -101,6 +106,21 @@ namespace DocSearchAIO.Scheduler
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
+        
+        public static async Task<string> CreateMd5HashString(string stringValue)
+        {
+            return await Task.Run(async () =>
+            {
+                using var md5 = MD5.Create();
+                await using var ms = new MemoryStream();
+                await using var wt = new StreamWriter(ms);
+                await wt.WriteAsync(stringValue);
+                await wt.FlushAsync();
+                ms.Position = 0;
+                return BitConverter.ToString(await md5.ComputeHashAsync(ms));
+            });
+        }
+        
 
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
@@ -112,6 +132,9 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
+        public static string JoinString(this IEnumerable<string> source, string separator) =>
+            string.Join(separator, source); 
+        
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
@@ -123,5 +146,40 @@ namespace DocSearchAIO.Scheduler
                 return cntArr.AsEnumerable();
             });
         }
+
+        public static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement = (list, sb) =>
+        {
+            list
+                .ForEach(element =>
+                {
+                    switch (element.LocalName)
+                    {
+                        case "t" when !element.ChildElements.Any():
+                            sb.Append(element.InnerText);
+                            break;
+                        case "p":
+                            ExtractTextFromElement(element.ChildElements, sb);
+                            sb.Append(' ');
+                            break;
+                        case "br":
+                            sb.Append(' ');
+                            break;
+                        default:
+                            ExtractTextFromElement(element.ChildElements, sb);
+                            break;
+                    }
+                });
+        };
+
+        public static readonly Func<string, IList<(string, string)>, string> ReplaceSpecialStrings = (input, list) =>
+        {
+            while (true)
+            {
+                if (!list.Any()) return input;
+
+                input = Regex.Replace(input, list[0].Item1, list[0].Item2);
+                list.RemoveAt(0);
+            }
+        };
     }
 }
