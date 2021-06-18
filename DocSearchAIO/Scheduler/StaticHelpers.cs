@@ -22,7 +22,7 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke();
         }
 
-        public static void MaybeTrue<TIn>(this Maybe<TIn> source, Action<TIn> processor)
+        public static void Map<TIn>(this Maybe<TIn> source, Action<TIn> processor)
         {
             if (source.HasValue)
                 processor.Invoke(source.Value);
@@ -123,7 +123,7 @@ namespace DocSearchAIO.Scheduler
         
 
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
-            StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
+            StatisticUtilities<TModel> statisticUtilities) where TModel : IProcessorType
         {
             return source.Select(t =>
             {
@@ -137,7 +137,7 @@ namespace DocSearchAIO.Scheduler
         
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
-            StatisticUtilities<TModel> statisticUtilities) where TModel : ElasticDocument
+            StatisticUtilities<TModel> statisticUtilities) where TModel : IProcessorType
         {
             return source.Select(e =>
             {

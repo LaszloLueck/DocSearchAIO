@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,36 +10,39 @@ using Newtonsoft.Json;
 
 namespace DocSearchAIO.Scheduler
 {
-
-
     public static class StatisticUtilitiesProxy
     {
-        public static IEnumerable<StatisticUtilities<TOut>> AsIEnumerable<TOut>(ILoggerFactory loggerFactory) where TOut : ElasticDocument
-        {
-            var foo = new StatisticUtilities<WordElasticDocument>(loggerFactory);
-            var bar = new StatisticUtilities<PowerpointElasticDocument>(loggerFactory);
-            var baz = new StatisticUtilities<PdfElasticDocument>(loggerFactory);
-            return new StatisticUtilities<TOut>[]
+        public static readonly Func<ILoggerFactory,
+                IEnumerable<KeyValuePair<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>>>
+            AsIEnumerable = (loggerFactory) =>
             {
-                foo as StatisticUtilities<TOut>,
-                bar as StatisticUtilities<TOut>,
-                baz as StatisticUtilities<TOut>
+                return new[]
+                {
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
+                        new ProcessorTypeWord(),
+                        () => WordStatisticUtility(loggerFactory).GetLatestJobStatisticByModel()),
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
+                        new ProcessorTypePowerPoint(),
+                        () => PowerpointStatisticUtility(loggerFactory).GetLatestJobStatisticByModel()),
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
+                        new ProcessorTypePdf(),
+                        () => PdfStatisticUtility(loggerFactory).GetLatestJobStatisticByModel())
+                };
             };
-        }
-        
-        public static readonly Func<ILoggerFactory, StatisticUtilities<WordElasticDocument>>
+
+        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypeWord>>
             WordStatisticUtility = loggerFactory =>
-                new StatisticUtilities<WordElasticDocument>(loggerFactory);
+                new StatisticUtilities<ProcessorTypeWord>(loggerFactory);
 
-        public static readonly Func<ILoggerFactory, StatisticUtilities<PowerpointElasticDocument>>
+        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypePowerPoint>>
             PowerpointStatisticUtility = loggerFactory =>
-                new StatisticUtilities<PowerpointElasticDocument>(loggerFactory);
+                new StatisticUtilities<ProcessorTypePowerPoint>(loggerFactory);
 
-        public static readonly Func<ILoggerFactory, StatisticUtilities<PdfElasticDocument>> PdfStatisticUtility =
-            loggerFactory => new StatisticUtilities<PdfElasticDocument>(loggerFactory);
+        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypePdf>> PdfStatisticUtility =
+            loggerFactory => new StatisticUtilities<ProcessorTypePdf>(loggerFactory);
     }
 
-    public class StatisticUtilities<TModel> where TModel : ElasticDocument
+    public class StatisticUtilities<TModel> where TModel : IProcessorType
     {
         private const string StatisticsDirectory = "./Resources/statistics";
         private const string StatisticsFile = "statistics_{0}.txt";
@@ -55,24 +57,27 @@ namespace DocSearchAIO.Scheduler
             _entireDocuments = new InterlockedCounter();
             _failedDocuments = new InterlockedCounter();
             _changedDocuments = new InterlockedCounter();
+            _logger.LogInformation("initialize StatisticUtilities for type {TModel}", typeof(TModel).Name);
             _checkAndCreateStatisticsDirectory();
             _checkAndCreateStatisticsFile();
         }
 
-        private readonly Action _checkAndCreateStatisticsDirectory = () =>
+        private void _checkAndCreateStatisticsDirectory()
         {
+            _logger.LogInformation("check if directory {Directory} exists", StatisticsDirectory);
             if (!Directory.Exists(StatisticsDirectory))
                 Directory.CreateDirectory(StatisticsDirectory);
-        };
+        }
 
-        private readonly Action _checkAndCreateStatisticsFile = () =>
+        private void _checkAndCreateStatisticsFile()
         {
             var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
+            _logger.LogInformation("check if file {File} exists", filePath);
             if (!File.Exists(filePath))
                 File
                     .Create(filePath)
                     .Dispose();
-        };
+        }
 
         public void AddToEntireDocuments() => _entireDocuments.Increment();
         public void AddToFailedDocuments() => _failedDocuments.Increment();
@@ -92,8 +97,10 @@ namespace DocSearchAIO.Scheduler
         public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
         {
             var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
+            _logger.LogInformation("load statistics information from {FilePath} for model {TModel}", filePath,
+                typeof(TModel).Name);
             var content = File.ReadAllText(filePath);
-            if(!content.Any())
+            if (!content.Any())
                 return Maybe<ProcessingJobStatistic>.None;
             try
             {

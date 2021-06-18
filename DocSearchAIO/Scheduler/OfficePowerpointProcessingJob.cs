@@ -33,9 +33,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<PowerpointElasticDocument> _statisticUtilities;
+        private readonly StatisticUtilities<ProcessorTypePowerPoint> _statisticUtilities;
         private readonly ComparersBase<PowerpointElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<PowerpointElasticDocument> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<ProcessorTypePowerPoint> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)

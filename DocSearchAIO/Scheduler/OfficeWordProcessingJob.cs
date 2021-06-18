@@ -33,9 +33,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<WordElasticDocument> _statisticUtilities;
+        private readonly StatisticUtilities<ProcessorTypeWord> _statisticUtilities;
         private readonly ComparersBase<WordElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<WordElasticDocument> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<ProcessorTypeWord> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,

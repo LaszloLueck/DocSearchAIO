@@ -173,16 +173,32 @@ namespace DocSearchAIO.DocSearch.Services
         private Maybe<ComparersBase<TOut>> GetComparerBaseFromParameter<TOut>(string parameter)
             where TOut : ElasticDocument
         {
-            static Maybe<ComparersBase<TOut>> AsMaybe(ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
-            Maybe<ComparersBase<TOut>>.From(new ComparersBase<TOut>(loggerFactory, configurationObject));
+            static ComparersBase<TC> AsComparerBase<TC>(ILoggerFactory loggerFactory,
+                ConfigurationObject configurationObject) where TC : ElasticDocument =>
+                new(loggerFactory, configurationObject);
 
-            return parameter switch
+            try
             {
-                nameof(WordElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
-                nameof(PowerpointElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
-                nameof(PdfElasticDocument) => AsMaybe(_loggerFactory, _configurationObject),
-                _ => Maybe<ComparersBase<TOut>>.None
-            };
+                var comparerBase = parameter switch
+                {
+                    nameof(WordElasticDocument) =>
+                        AsComparerBase<WordElasticDocument>(_loggerFactory,
+                            _configurationObject) as ComparersBase<TOut>,
+                    nameof(PowerpointElasticDocument) =>
+                        AsComparerBase<PowerpointElasticDocument>(_loggerFactory, _configurationObject) as
+                            ComparersBase<TOut>,
+                    nameof(PdfElasticDocument) =>
+                        AsComparerBase<PdfElasticDocument>(_loggerFactory, _configurationObject) as ComparersBase<TOut>,
+                    _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
+                        $"cannot cast from parameter {parameter}")
+                };
+                return Maybe<ComparersBase<TOut>>.From(comparerBase);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "an error while converting a base parameter occured");
+                return Maybe<ComparersBase<TOut>>.None;
+            }
         }
 
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
@@ -330,7 +346,8 @@ namespace DocSearchAIO.DocSearch.Services
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
 
 
-            static RunnableStatistic ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<Maybe<CacheEntry>> fn) =>
+            static RunnableStatistic
+                ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<Maybe<CacheEntry>> fn) =>
                 new()
                 {
                     Id = doc.Id,
@@ -342,105 +359,84 @@ namespace DocSearchAIO.DocSearch.Services
                     IndexedDocCount = doc.IndexedDocCount,
                     CacheEntry = fn.Invoke()
                 };
-            
-            StatisticUtilitiesProxy
-                .PowerpointStatisticUtility(_loggerFactory)
-                .GetLatestJobStatisticByModel()
-                .MaybeTrue(doc =>
-                {
-                    var excModel = ConvertToRunnableStatistic(doc,
-                        () => JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache)
-                            .GetCacheEntry());
-                    runtimeStatistic.Add("Powerpoint", excModel);
-                });
-            
-            StatisticUtilitiesProxy.AsIEnumerable<ElasticDocument>(_loggerFactory).ForEach(util =>
-            {
-                util.GetLatestJobStatisticByModel()
-            });
-            
-            
-            StatisticUtilitiesProxy
-                .WordStatisticUtility(_loggerFactory)
-                .GetLatestJobStatisticByModel()
-                .MaybeTrue(doc =>
-                {
-                    var extModel = ConvertToRunnableStatistic(doc,
-                        () => JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
-                            .GetCacheEntry());
-                    runtimeStatistic.Add("Word", extModel);
-                });
-            
-            StatisticUtilitiesProxy
-                .PdfStatisticUtility(_loggerFactory)
-                .GetLatestJobStatisticByModel()
-                .MaybeTrue(doc =>
-                {
-                    var extModel = ConvertToRunnableStatistic(doc,
-                        () => JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
-                            .GetCacheEntry());
-                    runtimeStatistic.Add("Pdf", extModel);
-                });
 
-            // StatisticUtilitiesProxy
-            //     .WordStatisticUtility(_loggerFactory)
-            //     .GetLatestJobStatisticByModel()
-            //     .MaybeTrue(doc =>
-            //     {
-            //         var excModel = new RunnableStatistic
+
+            var statisticUtilities = StatisticUtilitiesProxy
+                .AsIEnumerable(_loggerFactory);
+
+            var jobStateMemoryCaches =
+                JobStateMemoryCacheProxy.AsIEnumerable(_loggerFactory, _memoryCache);
+
+
+            statisticUtilities.ForEach(statisticUtility =>
+            {
+                statisticUtility
+                    .Value
+                    .Invoke()
+                    .Map(doc =>
+                    {
+                        jobStateMemoryCaches
+                            .Where(d => d.Key.TypeAsString() == statisticUtility.Key.TypeAsString())
+                            .TryFirst()
+                            .Map(jobState =>
+                            {
+                                var extModel = ConvertToRunnableStatistic(doc,
+                                    () => jobState.Value.Invoke());
+                                runtimeStatistic.Add(statisticUtility.Key.ShortName(), extModel);
+                            });
+                    });
+            });
+
+            // statisticUtilities.ForEach(stat =>
+            // {
+            //     stat
+            //         .Value
+            //         .Invoke()
+            //         .GetLatestJobStatisticByModel()
+            //         .Map(doc =>
             //         {
-            //             Id = doc.Id,
-            //             EndJob = doc.EndJob,
-            //             StartJob = doc.StartJob,
-            //             ProcessingError = doc.ProcessingError,
-            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
-            //             EntireDocCount = doc.EntireDocCount,
-            //             IndexedDocCount = doc.IndexedDocCount,
-            //             CacheEntry = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
-            //                 .GetCacheEntry()
-            //         };
-            //         runtimeStatistic.Add("Word", excModel);
-            //     });
-            
-            
+            //             jobStateMemoryCaches
+            //                 .Where(d => d.Key == stat.Key)
+            //                 .TryFirst()
+            //                 .Map(jobState =>
+            //                 {
+            //                     var extModel = ConvertToRunnableStatistic(doc, () => jobState.Value.Invoke(_loggerFactory, _memoryCache).GetCacheEntry());
+            //                     runtimeStatistic.Add(stat.Key.ShortName(), extModel);
+            //                 });
+            //         });
+            // });
+
             // StatisticUtilitiesProxy
             //     .PowerpointStatisticUtility(_loggerFactory)
             //     .GetLatestJobStatisticByModel()
             //     .MaybeTrue(doc =>
             //     {
-            //         var excModel = new RunnableStatistic
-            //         {
-            //             Id = doc.Id,
-            //             EndJob = doc.EndJob,
-            //             StartJob = doc.StartJob,
-            //             ProcessingError = doc.ProcessingError,
-            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
-            //             EntireDocCount = doc.EntireDocCount,
-            //             IndexedDocCount = doc.IndexedDocCount,
-            //             CacheEntry = JobStateMemoryCacheProxy
-            //                 .GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache).GetCacheEntry()
-            //         };
+            //         var excModel = ConvertToRunnableStatistic(doc,
+            //             () => JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache)
+            //                 .GetCacheEntry());
             //         runtimeStatistic.Add("Powerpoint", excModel);
             //     });
-
+            //
+            // StatisticUtilitiesProxy
+            //     .WordStatisticUtility(_loggerFactory)
+            //     .GetLatestJobStatisticByModel()
+            //     .MaybeTrue(doc =>
+            //     {
+            //         var extModel = ConvertToRunnableStatistic(doc,
+            //             () => JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
+            //                 .GetCacheEntry());
+            //         runtimeStatistic.Add("Word", extModel);
+            //     });
+            //
             // StatisticUtilitiesProxy
             //     .PdfStatisticUtility(_loggerFactory)
             //     .GetLatestJobStatisticByModel()
             //     .MaybeTrue(doc =>
             //     {
-            //         var excModel = new RunnableStatistic
-            //         {
-            //             Id = doc.Id,
-            //             EndJob = doc.EndJob,
-            //             StartJob = doc.StartJob,
-            //             ProcessingError = doc.ProcessingError,
-            //             ElapsedTimeMillis = doc.ElapsedTimeMillis,
-            //             EntireDocCount = doc.EntireDocCount,
-            //             IndexedDocCount = doc.IndexedDocCount,
-            //             CacheEntry = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
-            //                 .GetCacheEntry()
-            //         };
-            //         runtimeStatistic.Add("PDF", excModel);
+            //         var extModel = ConvertToRunnableStatistic(doc,
+            //             () => JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
+            //                 .GetCacheEntry());
+            //         runtimeStatistic.Add("Pdf", extModel);
             //     });
 
             responseModel.RuntimeStatistics = runtimeStatistic;

@@ -34,9 +34,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<PdfElasticDocument> _statisticUtilities;
+        private readonly StatisticUtilities<ProcessorTypePdf> _statisticUtilities;
         private readonly ComparersBase<PdfElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<PdfElasticDocument> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<ProcessorTypePdf> _jobStateMemoryCache;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, IMemoryCache memoryCache)

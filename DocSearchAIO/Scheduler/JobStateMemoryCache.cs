@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,19 +9,38 @@ namespace DocSearchAIO.Scheduler
 {
     public static class JobStateMemoryCacheProxy
     {
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<WordElasticDocument>> GetWordJobStateMemoryCache =
-            (loggerFactory, memoryCache) => new JobStateMemoryCache<WordElasticDocument>(loggerFactory, memoryCache);
+        public static readonly Func<ILoggerFactory, IMemoryCache,
+                IEnumerable<KeyValuePair<IProcessorType, Func<Maybe<CacheEntry>>>>>
+            AsIEnumerable = (loggerFactory, memoryCache) =>
+            {
+                return new[]
+                {
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
+                        new ProcessorTypeWord(),
+                        () => GetWordJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry()),
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
+                        new ProcessorTypePowerPoint(),
+                        () => GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry()),
+                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
+                        new ProcessorTypePdf(),
+                        () => GetPdfJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry())
+                };
+            };
 
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<PowerpointElasticDocument>>
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypeWord>>
+            GetWordJobStateMemoryCache =
+                (loggerFactory, memoryCache) => new JobStateMemoryCache<ProcessorTypeWord>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypePowerPoint>>
             GetPowerpointJobStateMemoryCache = (loggerFactory, memoryCache) =>
-                new JobStateMemoryCache<PowerpointElasticDocument>(loggerFactory, memoryCache);
+                new JobStateMemoryCache<ProcessorTypePowerPoint>(loggerFactory, memoryCache);
 
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<PdfElasticDocument>>
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypePdf>>
             GetPdfJobStateMemoryCache = (loggerFactory, memoryCache) =>
-                new JobStateMemoryCache<PdfElasticDocument>(loggerFactory, memoryCache);
+                new JobStateMemoryCache<ProcessorTypePdf>(loggerFactory, memoryCache);
     }
-    
-    public class JobStateMemoryCache<TModel> where TModel : ElasticDocument
+
+    public class JobStateMemoryCache<TModel> where TModel : IProcessorType
     {
         private readonly ILogger _logger;
         private readonly IMemoryCache _memoryCache;
