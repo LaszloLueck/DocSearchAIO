@@ -21,7 +21,7 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ConfigurationObject _configurationObject;
-        
+
         public DoSearchService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
             ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
         {
@@ -63,7 +63,8 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var io = new[] {new Field("completionContent")};
 
-                var indicesResponse = await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
+                var indicesResponse =
+                    await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 
@@ -95,7 +96,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var sw = Stopwatch.StartNew();
                 var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(request);
                 sw.Stop();
-                _logger.LogInformation($"find {result.Total} documents in {sw.ElapsedMilliseconds} ms");
+                _logger.LogInformation("find {Total} documents in {sw.ElapsedMilliseconds} ms", result.Total);
 
                 var paginationResult = new DoSearchResult
                 {
@@ -111,13 +112,14 @@ namespace DocSearchAIO.DocSearch.Services
                 outResponse.SearchPhrase = searchPhrase;
                 outResponse.Pagination = pagination;
 
-                var statisticsModel = new SearchStatisticsModel {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
+                var statisticsModel = new SearchStatisticsModel
+                    {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
                 var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
                 outResponse.Statistics = statisticResponse;
 
                 var retCol = result.Hits.Select(hit =>
                 {
-                    var iconType = hit.Source.ContentType switch
+                    static string GetIconType(string contentType) => contentType switch
                     {
                         "docx" => "./images/word.svg",
                         "pptx" => "./images/powerpoint.svg",
@@ -158,7 +160,7 @@ namespace DocSearchAIO.DocSearch.Services
                         Relevance = hit.Score ?? 0,
                         SearchBody = grouped,
                         Id = hit.Id,
-                        ProgramIcon = iconType,
+                        ProgramIcon = GetIconType(hit.Source.ContentType),
                         AbsoluteUrl = hit.Source.OriginalFilePath,
                         DocumentType = hit.Source.ContentType
                     };
