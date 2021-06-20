@@ -78,6 +78,11 @@ namespace DocSearchAIO.Scheduler
             return value ? trueAction.Invoke() : falseAction.Invoke();
         }
 
+        public static string GetTypeNameFromProcessorBase<TIn>(this TIn processorBase) where TIn : ProcessorBase
+        {
+            return processorBase.GetDerivedModelName;
+        }
+
         public static TOut DirectoryNotExistsAction<TIn, TOut>(this TIn path, Func<TIn, TOut> action)
             where TOut : GenericSourceString
             where TIn : TOut
@@ -123,7 +128,7 @@ namespace DocSearchAIO.Scheduler
         
 
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
-            StatisticUtilities<TModel> statisticUtilities) where TModel : IProcessorType
+            StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
         {
             return source.Select(t =>
             {
@@ -137,7 +142,7 @@ namespace DocSearchAIO.Scheduler
         
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
-            StatisticUtilities<TModel> statisticUtilities) where TModel : IProcessorType
+            StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
         {
             return source.Select(e =>
             {

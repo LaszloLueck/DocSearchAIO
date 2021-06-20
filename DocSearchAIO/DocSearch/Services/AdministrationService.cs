@@ -360,12 +360,13 @@ namespace DocSearchAIO.DocSearch.Services
                     CacheEntry = fn.Invoke()
                 };
 
-
-            var statisticUtilities = StatisticUtilitiesProxy
-                .AsIEnumerable(_loggerFactory);
+            var statisticUtilities =
+                StatisticUtilitiesProxy
+                    .AsIEnumerable(_loggerFactory, _configurationObject.StatisticsDirectory);
 
             var jobStateMemoryCaches =
-                JobStateMemoryCacheProxy.AsIEnumerable(_loggerFactory, _memoryCache);
+                JobStateMemoryCacheProxy
+                    .AsIEnumerable(_loggerFactory, _memoryCache);
 
 
             statisticUtilities.ForEach(statisticUtility =>
@@ -373,71 +374,20 @@ namespace DocSearchAIO.DocSearch.Services
                 statisticUtility
                     .Value
                     .Invoke()
+                    .GetLatestJobStatisticByModel()
                     .Map(doc =>
                     {
                         jobStateMemoryCaches
-                            .Where(d => d.Key.TypeAsString() == statisticUtility.Key.TypeAsString())
+                            .Where(d => d.Key.GetDerivedModelName == statisticUtility.Key.GetDerivedModelName)
                             .TryFirst()
                             .Map(jobState =>
                             {
                                 var extModel = ConvertToRunnableStatistic(doc,
-                                    () => jobState.Value.Invoke());
-                                runtimeStatistic.Add(statisticUtility.Key.ShortName(), extModel);
+                                    () => jobState.Value.Invoke().GetCacheEntry());
+                                runtimeStatistic.Add(statisticUtility.Key.ShortName, extModel);
                             });
                     });
             });
-
-            // statisticUtilities.ForEach(stat =>
-            // {
-            //     stat
-            //         .Value
-            //         .Invoke()
-            //         .GetLatestJobStatisticByModel()
-            //         .Map(doc =>
-            //         {
-            //             jobStateMemoryCaches
-            //                 .Where(d => d.Key == stat.Key)
-            //                 .TryFirst()
-            //                 .Map(jobState =>
-            //                 {
-            //                     var extModel = ConvertToRunnableStatistic(doc, () => jobState.Value.Invoke(_loggerFactory, _memoryCache).GetCacheEntry());
-            //                     runtimeStatistic.Add(stat.Key.ShortName(), extModel);
-            //                 });
-            //         });
-            // });
-
-            // StatisticUtilitiesProxy
-            //     .PowerpointStatisticUtility(_loggerFactory)
-            //     .GetLatestJobStatisticByModel()
-            //     .MaybeTrue(doc =>
-            //     {
-            //         var excModel = ConvertToRunnableStatistic(doc,
-            //             () => JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_loggerFactory, _memoryCache)
-            //                 .GetCacheEntry());
-            //         runtimeStatistic.Add("Powerpoint", excModel);
-            //     });
-            //
-            // StatisticUtilitiesProxy
-            //     .WordStatisticUtility(_loggerFactory)
-            //     .GetLatestJobStatisticByModel()
-            //     .MaybeTrue(doc =>
-            //     {
-            //         var extModel = ConvertToRunnableStatistic(doc,
-            //             () => JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(_loggerFactory, _memoryCache)
-            //                 .GetCacheEntry());
-            //         runtimeStatistic.Add("Word", extModel);
-            //     });
-            //
-            // StatisticUtilitiesProxy
-            //     .PdfStatisticUtility(_loggerFactory)
-            //     .GetLatestJobStatisticByModel()
-            //     .MaybeTrue(doc =>
-            //     {
-            //         var extModel = ConvertToRunnableStatistic(doc,
-            //             () => JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(_loggerFactory, _memoryCache)
-            //                 .GetCacheEntry());
-            //         runtimeStatistic.Add("Pdf", extModel);
-            //     });
 
             responseModel.RuntimeStatistics = runtimeStatistic;
 

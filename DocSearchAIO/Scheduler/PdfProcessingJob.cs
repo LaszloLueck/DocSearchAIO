@@ -34,9 +34,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<ProcessorTypePdf> _statisticUtilities;
+        private readonly StatisticUtilities<StatisticModelPdf> _statisticUtilities;
         private readonly ComparersBase<PdfElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<ProcessorTypePdf> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -47,7 +47,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory);
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, _cfg.StatisticsDirectory, new StatisticModelPdf().GetStatisticFileName);
             _comparers = new ComparersBase<PdfElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();

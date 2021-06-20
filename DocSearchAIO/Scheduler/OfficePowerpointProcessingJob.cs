@@ -33,9 +33,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<ProcessorTypePowerPoint> _statisticUtilities;
+        private readonly StatisticUtilities<StatisticModelPowerpoint> _statisticUtilities;
         private readonly ComparersBase<PowerpointElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<ProcessorTypePowerPoint> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -46,7 +46,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory);
+            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory, _cfg.StatisticsDirectory, new StatisticModelPowerpoint().GetStatisticFileName);
             _comparers = new ComparersBase<PowerpointElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);

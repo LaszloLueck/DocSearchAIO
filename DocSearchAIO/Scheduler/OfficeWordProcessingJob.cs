@@ -33,9 +33,9 @@ namespace DocSearchAIO.Scheduler
         private readonly ActorSystem _actorSystem;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
-        private readonly StatisticUtilities<ProcessorTypeWord> _statisticUtilities;
+        private readonly StatisticUtilities<StatisticModelWord> _statisticUtilities;
         private readonly ComparersBase<WordElasticDocument> _comparers;
-        private readonly JobStateMemoryCache<ProcessorTypeWord> _jobStateMemoryCache;
+        private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -48,7 +48,7 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory);
+            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, _cfg.StatisticsDirectory, new StatisticModelWord().GetStatisticFileName);
             _comparers = new ComparersBase<WordElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();

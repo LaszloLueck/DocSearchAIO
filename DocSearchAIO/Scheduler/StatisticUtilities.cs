@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
@@ -12,66 +10,67 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StatisticUtilitiesProxy
     {
-        public static readonly Func<ILoggerFactory,
-                IEnumerable<KeyValuePair<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>>>
-            AsIEnumerable = (loggerFactory) =>
+        public static readonly Func<ILoggerFactory, string,
+                IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>>>
+            AsIEnumerable = (loggerFactory, statisticsPath) =>
             {
                 return new[]
                 {
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
-                        new ProcessorTypeWord(),
-                        () => WordStatisticUtility(loggerFactory).GetLatestJobStatisticByModel()),
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
-                        new ProcessorTypePowerPoint(),
-                        () => PowerpointStatisticUtility(loggerFactory).GetLatestJobStatisticByModel()),
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<ProcessingJobStatistic>>>(
-                        new ProcessorTypePdf(),
-                        () => PdfStatisticUtility(loggerFactory).GetLatestJobStatisticByModel())
+                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                        new ProcessorBaseWord(),
+                        () => new StatisticModelWord(loggerFactory, statisticsPath)),
+                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                        new ProcessorBasePowerpoint(),
+                        () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)),
+                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                        new ProcessorBasePdf(),
+                        () => new StatisticModelPdf(loggerFactory, statisticsPath))
                 };
             };
 
-        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypeWord>>
-            WordStatisticUtility = loggerFactory =>
-                new StatisticUtilities<ProcessorTypeWord>(loggerFactory);
+        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelWord>>
+            WordStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
+                new StatisticUtilities<StatisticModelWord>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypePowerPoint>>
-            PowerpointStatisticUtility = loggerFactory =>
-                new StatisticUtilities<ProcessorTypePowerPoint>(loggerFactory);
+        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelPowerpoint>>
+            PowerpointStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
+                new StatisticUtilities<StatisticModelPowerpoint>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, StatisticUtilities<ProcessorTypePdf>> PdfStatisticUtility =
-            loggerFactory => new StatisticUtilities<ProcessorTypePdf>(loggerFactory);
+        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelPdf>>
+            PdfStatisticUtility =
+                (loggerFactory, statisticsDirectory, statisticsFile) =>
+                    new StatisticUtilities<StatisticModelPdf>(loggerFactory, statisticsDirectory, statisticsFile);
     }
 
-    public class StatisticUtilities<TModel> where TModel : IProcessorType
+    public class StatisticUtilities<TModel> where TModel : StatisticModel
     {
-        private const string StatisticsDirectory = "./Resources/statistics";
-        private const string StatisticsFile = "statistics_{0}.txt";
         private readonly ILogger _logger;
         private readonly InterlockedCounter _entireDocuments;
         private readonly InterlockedCounter _failedDocuments;
         private readonly InterlockedCounter _changedDocuments;
+        private readonly string _filePath;
 
-        public StatisticUtilities(ILoggerFactory loggerFactory)
+        public StatisticUtilities(ILoggerFactory loggerFactory, string statisticsDirectory, string statisticsFile)
         {
             _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
             _entireDocuments = new InterlockedCounter();
             _failedDocuments = new InterlockedCounter();
             _changedDocuments = new InterlockedCounter();
+            _filePath = $"{statisticsDirectory}/{statisticsFile}";
             _logger.LogInformation("initialize StatisticUtilities for type {TModel}", typeof(TModel).Name);
-            _checkAndCreateStatisticsDirectory();
-            _checkAndCreateStatisticsFile();
+            _checkAndCreateStatisticsDirectory(statisticsDirectory);
+            _checkAndCreateStatisticsFile(_filePath);
         }
 
-        private void _checkAndCreateStatisticsDirectory()
+        private void _checkAndCreateStatisticsDirectory(string directoryPath)
         {
-            _logger.LogInformation("check if directory {Directory} exists", StatisticsDirectory);
-            if (!Directory.Exists(StatisticsDirectory))
-                Directory.CreateDirectory(StatisticsDirectory);
+            _logger.LogInformation("check if directory {Directory} exists", directoryPath);
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
         }
 
-        private void _checkAndCreateStatisticsFile()
+        private void _checkAndCreateStatisticsFile(string filePath)
         {
-            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
             _logger.LogInformation("check if file {File} exists", filePath);
             if (!File.Exists(filePath))
                 File
@@ -89,29 +88,8 @@ namespace DocSearchAIO.Scheduler
 
         public void AddJobStatisticToDatabase(ProcessingJobStatistic jobStatistic)
         {
-            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
             var json = JsonConvert.SerializeObject(jobStatistic, Formatting.Indented);
-            File.WriteAllText(filePath, json);
-        }
-
-        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
-        {
-            var filePath = $"{StatisticsDirectory}/{string.Format(StatisticsFile, typeof(TModel).Name)}";
-            _logger.LogInformation("load statistics information from {FilePath} for model {TModel}", filePath,
-                typeof(TModel).Name);
-            var content = File.ReadAllText(filePath);
-            if (!content.Any())
-                return Maybe<ProcessingJobStatistic>.None;
-            try
-            {
-                var model = JsonConvert.DeserializeObject<ProcessingJobStatistic>(content);
-                return Maybe<ProcessingJobStatistic>.From(model);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "error occured while converting statistic json to model");
-                return Maybe<ProcessingJobStatistic>.None;
-            }
+            File.WriteAllText(_filePath, json);
         }
     }
 }

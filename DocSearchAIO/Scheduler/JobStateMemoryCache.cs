@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -10,37 +9,37 @@ namespace DocSearchAIO.Scheduler
     public static class JobStateMemoryCacheProxy
     {
         public static readonly Func<ILoggerFactory, IMemoryCache,
-                IEnumerable<KeyValuePair<IProcessorType, Func<Maybe<CacheEntry>>>>>
+            IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>>>
             AsIEnumerable = (loggerFactory, memoryCache) =>
             {
                 return new[]
                 {
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
-                        new ProcessorTypeWord(),
-                        () => GetWordJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry()),
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
-                        new ProcessorTypePowerPoint(),
-                        () => GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry()),
-                    KeyValuePair.Create<IProcessorType, Func<Maybe<CacheEntry>>>(
-                        new ProcessorTypePdf(),
-                        () => GetPdfJobStateMemoryCache(loggerFactory, memoryCache).GetCacheEntry())
+                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                        new ProcessorBaseWord(),
+                        () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
+                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                        new ProcessorBasePowerpoint(),
+                        () => new MemoryCacheModelPowerpoint(loggerFactory, memoryCache)),
+                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                        new ProcessorBasePdf(),
+                        () => new MemoryCacheModelPdf(loggerFactory, memoryCache))
                 };
             };
 
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypeWord>>
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWord>>
             GetWordJobStateMemoryCache =
-                (loggerFactory, memoryCache) => new JobStateMemoryCache<ProcessorTypeWord>(loggerFactory, memoryCache);
+                (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelWord>(loggerFactory, memoryCache);
 
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypePowerPoint>>
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpoint>>
             GetPowerpointJobStateMemoryCache = (loggerFactory, memoryCache) =>
-                new JobStateMemoryCache<ProcessorTypePowerPoint>(loggerFactory, memoryCache);
+                new JobStateMemoryCache<MemoryCacheModelPowerpoint>(loggerFactory, memoryCache);
 
-        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<ProcessorTypePdf>>
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdf>>
             GetPdfJobStateMemoryCache = (loggerFactory, memoryCache) =>
-                new JobStateMemoryCache<ProcessorTypePdf>(loggerFactory, memoryCache);
+                new JobStateMemoryCache<MemoryCacheModelPdf>(loggerFactory, memoryCache);
     }
 
-    public class JobStateMemoryCache<TModel> where TModel : IProcessorType
+    public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
     {
         private readonly ILogger _logger;
         private readonly IMemoryCache _memoryCache;
@@ -50,15 +49,7 @@ namespace DocSearchAIO.Scheduler
             _logger = loggerFactory.CreateLogger<JobStateMemoryCache<TModel>>();
             _memoryCache = memoryCache;
         }
-
-        public Maybe<CacheEntry> GetCacheEntry()
-        {
-            _logger.LogInformation("try to get cache entry");
-            return _memoryCache.TryGetValue(typeof(TModel).Name, out CacheEntry cacheEntry)
-                ? Maybe<CacheEntry>.From(cacheEntry)
-                : Maybe<CacheEntry>.None;
-        }
-
+        
         public void RemoveCacheEntry()
         {
             _logger.LogInformation("remove cache entry");

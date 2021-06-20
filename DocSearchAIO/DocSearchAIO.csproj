@@ -77,6 +77,10 @@
       <None Include="Resources\comparer\measurement_WordElasticDocument_2021-06-16140908.csv" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Resources\statistics" />
+    </ItemGroup>
+
     <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>

@@ -34,6 +34,9 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("comparerDirectory")]
         public string ComparerDirectory { get; set; }
+        
+        [JsonProperty("statisticsDirectory")]
+        public string StatisticsDirectory { get; set; }
     }
 
     public class SchedulerEntry
