@@ -61,7 +61,7 @@ namespace DocSearchAIO.DocSearch.Services
                     Encoder = HighlighterEncoder.Html
                 };
 
-                Field[] io = new[] {new Field("completionContent")};
+                var io = new[] {new Field("completionContent")};
 
                 var indicesResponse = await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);

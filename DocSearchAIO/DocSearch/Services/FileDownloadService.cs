@@ -16,7 +16,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public DownloadFileResponse GetDownloadFileStream(string path, string documentType)
         {
-            var contentType = documentType switch
+            static string GetContentType(string documentType) => documentType switch
             {
                 "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -31,7 +31,7 @@ namespace DocSearchAIO.DocSearch.Services
             {
                 ReturnFileName = returnFileName,
                 DownloadFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096),
-                ContentType = contentType
+                ContentType = GetContentType(documentType)
             };
             return downloadFileResponse;
         }

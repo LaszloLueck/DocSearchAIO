@@ -383,7 +383,11 @@ namespace DocSearchAIO.DocSearch.Services
                             .Map(jobState =>
                             {
                                 var extModel = ConvertToRunnableStatistic(doc,
-                                    () => jobState.Value.Invoke().GetCacheEntry());
+                                    () => jobState
+                                        .Value
+                                        .Invoke()
+                                        .GetCacheEntry()
+                                );
                                 runtimeStatistic.Add(statisticUtility.Key.ShortName, extModel);
                             });
                     });
