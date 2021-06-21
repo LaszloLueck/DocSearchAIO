@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -11,6 +12,8 @@ using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocumentFormat.OpenXml;
+using Org.BouncyCastle.Utilities.IO;
+using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -101,8 +104,28 @@ namespace DocSearchAIO.Scheduler
         public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource =>
             action.Invoke(source);
 
-        public static GenericSourceString AsGenericSourceString(this string value) => new() { Value = value };
+        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
 
+        public static TOut ValueOr<TOut>(this TOut value, TOut alternative)
+        {
+            return value is null ? alternative is null ? default : alternative : value;
+        }
+
+        public class DeconstructKvObject<TKey, TValue>
+        {
+            public readonly TKey Key;
+            public readonly TValue Value;
+
+            public DeconstructKvObject(TKey key, TValue value)
+            {
+                Key = key;
+                Value = value;
+            }
+        }
+
+        public static DeconstructKvObject<TKey, TValue>
+            DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
+            new(kv.Key, kv.Value);
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
@@ -111,7 +134,7 @@ namespace DocSearchAIO.Scheduler
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
-        
+
         public static async Task<string> CreateMd5HashString(string stringValue)
         {
             return await Task.Run(async () =>
@@ -125,7 +148,7 @@ namespace DocSearchAIO.Scheduler
                 return BitConverter.ToString(await md5.ComputeHashAsync(ms));
             });
         }
-        
+
 
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
@@ -138,8 +161,8 @@ namespace DocSearchAIO.Scheduler
         }
 
         public static string JoinString(this IEnumerable<string> source, string separator) =>
-            string.Join(separator, source); 
-        
+            string.Join(separator, source);
+
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel

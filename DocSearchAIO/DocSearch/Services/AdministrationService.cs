@@ -14,7 +14,9 @@ using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Nest;
 using Quartz;
+using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.DocSearch.Services
 {
@@ -318,36 +320,22 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetStatisticsContent()
         {
-            var indicesResponse =
-                await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
-            var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
+            async Task<GetIndexResponse> GetIndicesResponse(string indexName) =>
+                await _elasticSearchService.GetIndicesWithPatternAsync($"{indexName}-*");
+
+            async Task<IEnumerable<string>> GetKnownIndices(string indexName) =>
+                (await GetIndicesResponse(indexName))
+                .Indices
+                .Keys
+                .Select(index => index.Name);
 
             var indexStatsResponses =
-                await Task.WhenAll(knownIndices.Select(async index =>
-                    await _elasticSearchService.GetIndexStatistics(index)));
-
-            var responseModel = new IndexStatistic
-            {
-                IndexStatisticModels = indexStatsResponses.Select(index => new IndexStatisticModel
-                {
-                    IndexName = index.Indices.ToList()[0].Key,
-                    DocCount = index.Stats.Total.Documents.Count,
-                    SizeInBytes = index.Stats.Total.Store.SizeInBytes,
-                    FetchTimeMs = index.Stats.Total.Search.FetchTimeInMilliseconds,
-                    FetchTotal = index.Stats.Total.Search.FetchTotal,
-                    QueryTimeMs = index.Stats.Total.Search.QueryTimeInMilliseconds,
-                    QueryTotal = index.Stats.Total.Search.QueryTotal,
-                    SuggestTimeMs = index.Stats.Total.Search.SuggestTimeInMilliseconds,
-                    SuggestTotal = index.Stats.Total.Search.SuggestTotal
-                })
-            };
-
-
-            var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
-
+                await Task.WhenAll((await GetKnownIndices(_configurationObject.IndexName))
+                    .Select(async index =>
+                        await _elasticSearchService.GetIndexStatistics(index)));
 
             static RunnableStatistic
-                ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<Maybe<CacheEntry>> fn) =>
+                ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn) =>
                 new()
                 {
                     Id = doc.Id,
@@ -357,45 +345,67 @@ namespace DocSearchAIO.DocSearch.Services
                     ElapsedTimeMillis = doc.ElapsedTimeMillis,
                     EntireDocCount = doc.EntireDocCount,
                     IndexedDocCount = doc.IndexedDocCount,
-                    CacheEntry = fn.Invoke()
+                    CacheEntry = fn.Invoke().GetCacheEntry()
                 };
 
-            var statisticUtilities =
+            static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
+                ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
                 StatisticUtilitiesProxy
-                    .AsIEnumerable(_loggerFactory, _configurationObject.StatisticsDirectory);
+                    .AsIEnumerable(loggerFactory, configurationObject.StatisticsDirectory);
 
-            var jobStateMemoryCaches =
+            static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> GetJobStateMemoryCaches(
+                ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
                 JobStateMemoryCacheProxy
-                    .AsIEnumerable(_loggerFactory, _memoryCache);
+                    .AsIEnumerable(loggerFactory, memoryCache);
 
+            var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
+            var jobStateMemoryCaches = GetJobStateMemoryCaches(_loggerFactory, _memoryCache);
 
-            statisticUtilities.ForEach(statisticUtility =>
-            {
-                statisticUtility
-                    .Value
-                    .Invoke()
-                    .GetLatestJobStatisticByModel()
-                    .Map(doc =>
+            StatisticUtilities(_loggerFactory, _configurationObject)
+                .ForEach(statisticUtility =>
+                {
+                    statisticUtility
+                        .DeconstructKv()
+                        .Value
+                        .Invoke()
+                        .GetLatestJobStatisticByModel()
+                        .Map(doc =>
+                        {
+                            jobStateMemoryCaches
+                                .Where(d => d.Key.GetDerivedModelName ==
+                                            statisticUtility.DeconstructKv().Key.GetDerivedModelName)
+                                .TryFirst()
+                                .Map(jobState =>
+                                {
+                                    runtimeStatistic.Add(statisticUtility.Key.ShortName,
+                                        ConvertToRunnableStatistic(doc, jobState.Value));
+                                });
+                        });
+                });
+
+            static IndexStatistic GetResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
+                Dictionary<string, RunnableStatistic> runtimeStatistic) =>
+                new()
+                {
+                    IndexStatisticModels = indexStatsResponses.Select(index => new IndexStatisticModel
                     {
-                        jobStateMemoryCaches
-                            .Where(d => d.Key.GetDerivedModelName == statisticUtility.Key.GetDerivedModelName)
-                            .TryFirst()
-                            .Map(jobState =>
-                            {
-                                var extModel = ConvertToRunnableStatistic(doc,
-                                    () => jobState
-                                        .Value
-                                        .Invoke()
-                                        .GetCacheEntry()
-                                );
-                                runtimeStatistic.Add(statisticUtility.Key.ShortName, extModel);
-                            });
-                    });
-            });
+                        IndexName = index.Indices.First().Key,
+                        DocCount = index.Stats.Total.Documents.Count,
+                        SizeInBytes = index.Stats.Total.Store.SizeInBytes,
+                        FetchTimeMs = index.Stats.Total.Search.FetchTimeInMilliseconds,
+                        FetchTotal = index.Stats.Total.Search.FetchTotal,
+                        QueryTimeMs = index.Stats.Total.Search.QueryTimeInMilliseconds,
+                        QueryTotal = index.Stats.Total.Search.QueryTotal,
+                        SuggestTimeMs = index.Stats.Total.Search.SuggestTimeInMilliseconds,
+                        SuggestTotal = index.Stats.Total.Search.SuggestTotal
+                    }),
+                    RuntimeStatistics = runtimeStatistic
+                };
 
-            responseModel.RuntimeStatistics = runtimeStatistic;
+            var responseModel = GetResponseModel(indexStatsResponses, runtimeStatistic);
 
-            var content = await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", responseModel);
+            var content =
+                await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", responseModel);
             return content;
         }
 
