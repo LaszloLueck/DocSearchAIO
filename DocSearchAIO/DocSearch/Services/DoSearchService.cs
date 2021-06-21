@@ -96,7 +96,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var sw = Stopwatch.StartNew();
                 var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(request);
                 sw.Stop();
-                _logger.LogInformation("find {Total} documents in {sw.ElapsedMilliseconds} ms", result.Total);
+                _logger.LogInformation($"find {result.Total} documents in {sw.ElapsedMilliseconds} ms");
 
                 var paginationResult = new DoSearchResult
                 {

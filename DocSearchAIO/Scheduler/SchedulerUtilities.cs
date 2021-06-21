@@ -29,8 +29,7 @@ namespace DocSearchAIO.Scheduler
                     .IfTrue(async () =>
                     {
                         _logger.LogWarning(
-                            "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
-                            triggerName, scheduler.SchedulerName);
+                            $"Set Trigger for {triggerName} in scheduler {scheduler.SchedulerName} to pause because of user settings");
                         await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
                     });
             };
@@ -40,7 +39,7 @@ namespace DocSearchAIO.Scheduler
             (!await _elasticSearchService.IndexExistsAsync(indexName))
                 .IfTrue(async () =>
                 {
-                    _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
+                    _logger.LogInformation($"Index {indexName} does not exist, lets create them");
                     await _elasticSearchService.CreateIndexAsync<T>(indexName);
                     await _elasticSearchService.RefreshIndexAsync(indexName);
                     await _elasticSearchService.FlushIndexAsync(indexName);

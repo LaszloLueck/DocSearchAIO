@@ -220,19 +220,17 @@ namespace DocSearchAIO.DocSearch.Services
                                 var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
                                     value.IndexSuffix);
 
-                                _logger.LogInformation("remove index {IndexName}", indexName);
+                                _logger.LogInformation($"remove index {indexName}");
                                 await _elasticSearchService.DeleteIndexAsync(indexName);
 
-                                _logger.LogInformation("remove comparer file for key {Key}", key);
+                                _logger.LogInformation($"remove comparer file for key {key}");
                                 GetComparerBaseFromParameter<ElasticDocument>(key)
                                     .Match(
                                         comparerBase => comparerBase.RemoveComparerFile(),
                                         () => _logger.LogWarning(
-                                            "cannot determine correct comparer base from key {Key}",
-                                            key));
+                                            $"cannot determine correct comparer base from key {key}"));
 
-                                _logger.LogInformation("trigger job for name {JobName}",
-                                    jobStatusRequest.JobName);
+                                _logger.LogInformation($"trigger job for name {jobStatusRequest.JobName}");
                                 var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                                 await scheduler.TriggerJob(jobKey);
                                 return await Task.Run(() => true);
@@ -246,8 +244,7 @@ namespace DocSearchAIO.DocSearch.Services
                 },
                 async () =>
                 {
-                    _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                        _configurationObject.SchedulerName);
+                    _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
                     return await Task.Run(() => false);
                 });
             return true;
@@ -265,8 +262,7 @@ namespace DocSearchAIO.DocSearch.Services
                 },
                 async () =>
                 {
-                    _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                        _configurationObject.SchedulerName);
+                    _logger.LogWarning($"Cannot find scheduler with name {_configurationObject.SchedulerName}");
                     return await Task.Run(() => string.Empty);
                 });
         }

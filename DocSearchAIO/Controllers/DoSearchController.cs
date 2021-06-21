@@ -41,7 +41,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<SuggestResult> Post(SuggestRequest request)
         {
-            _logger.LogInformation("Hit SuggestResult with Phrase {SearchPhrase}", request.SearchPhrase);
+            _logger.LogInformation($"hit suggestResult with phrase {request.SearchPhrase}");
             return await _searchSuggestService.GetSuggestions(request.SearchPhrase);
         }
 
@@ -49,7 +49,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<DocumentDetailResponse> GetDocumentDetail(DocumentDetailRequest request)
         {
-            _logger.LogInformation("get document details for {RequestId}", request.Id);
+            _logger.LogInformation($"get document details for {request.Id}");
             return await _documentDetailService.GetDocumentDetail(request);
         }
     }

@@ -139,8 +139,7 @@ namespace DocSearchAIO.Scheduler
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities
                                                 .AddJobStatisticToDatabase(jobStatistic);
-                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                                                sw.ElapsedMilliseconds);
+                                            _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
                                             _comparers.RemoveComparerFile();
                                             await _comparers.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);

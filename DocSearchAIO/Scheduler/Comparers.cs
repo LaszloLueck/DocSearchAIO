@@ -77,7 +77,7 @@ namespace DocSearchAIO.Scheduler
                     finally
                     {
                         sw.Stop();
-                        logger.LogInformation("FillConcurrentDictionary needs {TM} ms", sw.ElapsedMilliseconds);
+                        logger.LogInformation($"FillConcurrentDictionary needs {sw.ElapsedMilliseconds} ms");
                     }
                 };
 
@@ -87,7 +87,7 @@ namespace DocSearchAIO.Scheduler
             WriteAllLinesAsync =
                 async (logger, compareFileDirectory, comparerDictionary) =>
                 {
-                    logger.LogInformation("write new comparer file in {ComparerDirectory}", compareFileDirectory);
+                    logger.LogInformation($"write new comparer file in {compareFileDirectory}");
                     var sw = Stopwatch.StartNew();
                     try
                     {
@@ -98,7 +98,7 @@ namespace DocSearchAIO.Scheduler
                     finally
                     {
                         sw.Stop();
-                        logger.LogInformation("WriteAllLinesAsync needs {TM} ms", sw.ElapsedMilliseconds);
+                        logger.LogInformation($"WriteAllLinesAsync needs {sw.ElapsedMilliseconds} ms");
                     }
                 };
 

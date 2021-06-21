@@ -58,7 +58,7 @@ namespace DocSearchAIO.Scheduler
 
         public void SetCacheEntry(JobState jobState)
         {
-            _logger.LogInformation("set cache entry to {State}", jobState);
+            _logger.LogInformation($"set cache entry to {jobState}");
             var cacheEntry = new CacheEntry()
                 {CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState};
             _memoryCache.Set(cacheEntry.CacheKey, cacheEntry);
