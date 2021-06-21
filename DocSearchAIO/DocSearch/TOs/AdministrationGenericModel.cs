@@ -15,6 +15,8 @@ namespace DocSearchAIO.DocSearch.TOs
         public string UriReplacement { get; set; }
         
         public string ComparerDirectory { get; set; }
+        
+        public string StatisticsDirectory { get; set; }
 
         public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; }
         public class ProcessorConfiguration

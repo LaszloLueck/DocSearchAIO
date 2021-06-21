@@ -281,8 +281,9 @@ namespace DocSearchAIO.DocSearch.Services
                 GroupName = _configurationObject.GroupName,
                 UriReplacement = _configurationObject.UriReplacement,
                 ComparerDirectory = _configurationObject.ComparerDirectory,
+                StatisticsDirectory = _configurationObject.StatisticsDirectory,
                 ProcessorConfigurations = _configurationObject
-                    .Processing
+                .Processing
                     .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
                     .Select(kv =>
                         new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,

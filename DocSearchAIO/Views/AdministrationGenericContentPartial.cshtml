@@ -83,6 +83,14 @@
         <input type="text" class="form-control" id="comparerDirectory" value="@Model.ComparerDirectory">
     </div>
 </div>
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group input-group-sm m-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelStatisticsDirectory">Statistik-Verzeichnis</span>
+        </div>
+        <input type="text" class="form-control" id="statisticsDirectory" value="@Model.StatisticsDirectory">
+    </div>
+</div>
 <div class="ml-1 mr-1 mt-2 mb-2 w-100">
     <div class="row">
         <div class="col-12">
@@ -241,6 +249,7 @@
                 elasticEndpoints: elasticNodes,
                 uriReplacement: $('#urlReplacement').val(),
                 comparerDirectory: $('#comparerDirectory').val(),
+                statisticsDirectory: $('#statisticsDirectory').val(),
                 processorConfigurations: dictionary
             };
             
