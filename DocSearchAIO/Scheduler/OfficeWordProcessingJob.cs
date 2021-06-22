@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
@@ -21,7 +18,6 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nest;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -211,12 +207,8 @@ namespace DocSearchAIO.Scheduler
                                                         {
                                                             var d = (Comment) comment;
                                                             var retValue = new OfficeDocumentComment();
-                                                            var dat = d.Date != null
-                                                                ? d.Date.Value
-                                                                    .MaybeValue()
-                                                                    .Unwrap(new DateTime(1970, 1, 1))
-                                                                : new DateTime(1970, 1, 1);
-
+                                                            var dat = new GenericSourceNullable<DateTime>(d.Date)
+                                                                .ValueOrDefault(new DateTime(1970, 1, 1));
                                                             retValue.Author = d.Author?.Value;
                                                             retValue.Comment = d.InnerText;
                                                             retValue.Date = dat;
@@ -227,112 +219,37 @@ namespace DocSearchAIO.Scheduler
                                                     },
                                                     Array.Empty<OfficeDocumentComment>);
 
-                                        static IEnumerable<OpenXmlElement> GetElements(
-                                            MainDocumentPart mainDocumentPart)
-                                        {
-                                            if (mainDocumentPart.Document.Body == null)
-                                                return Array.Empty<OpenXmlElement>();
-
-                                            return mainDocumentPart
-                                                .Document
-                                                .Body?
-                                                .ChildElements
-                                                .OfType<OpenXmlElement>();
-                                        }
-
-                                        static string GetContentString(IEnumerable<OpenXmlElement> openXmlElementList)
-                                        {
-                                            var sw = new StringBuilder(4096);
-                                            StaticHelpers.ExtractTextFromElement(openXmlElementList, sw);
-                                            var s = sw.ToString();
-                                            return s;
-                                        }
-
-                                        var contentString = GetContentString(GetElements(mainDocumentPart));
+                                        var contentString = wd
+                                            .MainDocumentPart
+                                            .GetElements()
+                                            .GetContentString();
+                                        
                                         var toReplaced = new List<(string, string)>();
 
                                         contentString = StaticHelpers.ReplaceSpecialStrings(contentString, toReplaced);
 
-                                        static IEnumerable<string> GetKeywordsList(string keywords) =>
-                                            keywords.Length == 0
-                                                ? Array.Empty<string>()
-                                                : keywords.Split(",");
-
-                                        static List<string> GetListElementsToHash(string category, DateTime created,
-                                            string contentString, string creator, string description, string identifier,
-                                            string keywords, string language, DateTime modified, string revision,
-                                            string subject, string title, string version, string contentStatus,
-                                            string contentType, DateTime lastPrinted, string lastModifiedBy) =>
-                                            new()
-                                            {
-                                                category,
-                                                created.ToString(CultureInfo.CurrentCulture),
-                                                contentString,
-                                                creator,
-                                                description,
-                                                identifier,
-                                                keywords,
-                                                language,
-                                                modified.ToString(CultureInfo.CurrentCulture),
-                                                revision,
-                                                subject, title, version,
-                                                contentStatus, contentType,
-                                                lastPrinted.ToString(CultureInfo.CurrentCulture),
-                                                lastModifiedBy
-                                            };
-
                                         var commentsArray = GetCommentArray(mainDocumentPart);
 
-                                        static IEnumerable<string[]> GetCommentsString(
-                                            IEnumerable<OfficeDocumentComment> commentsArray) =>
-                                            commentsArray
-                                                .Select(l => l.Comment.Split(" "))
-                                                .Distinct()
-                                                .ToList();
+                                        var elementsHash = await (
+                                            StaticHelpers.GetListElementsToHash(category, created, contentString,
+                                                creator,
+                                                description, identifier, keywords, language, modified, revision,
+                                                subject, title, version, contentStatus, contentType, lastPrinted,
+                                                lastModifiedBy), commentsArray)
+                                            .GetContentHashString();
 
-                                        static IEnumerable<string> BuildHashList(List<string> listElementsToHash,
-                                            OfficeDocumentComment[] commentsArray) =>
-                                            listElementsToHash
-                                                .Concat(
-                                                    GetCommentsString(commentsArray)
-                                                        .SelectMany(k => k).Distinct());
-
-                                        static async Task<string> GetContentHashString(List<string> listElementsToHash,
-                                            OfficeDocumentComment[] commentsArray) =>
-                                            await StaticHelpers.CreateMd5HashString(
-                                                BuildHashList(listElementsToHash, commentsArray).JoinString(""));
-
-                                        static string GetCommString(OfficeDocumentComment[] commentsArray) =>
-                                            string.Join(" ", commentsArray.Select(d => d.Comment));
-
-                                        static string GetSuggestedText(string contentString, string commString) =>
-                                            Regex.Replace(contentString + " " + commString, "[^a-zA-ZäöüßÄÖÜ]", " ");
-
-
-                                        static IEnumerable<string> GetSearchAsYouTypeContent(string suggestedText) =>
-                                            suggestedText
-                                                .ToLower()
-                                                .Split(" ")
-                                                .Distinct()
-                                                .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                                                .Where(d => d.Length > 2);
-
-                                        static CompletionField GetCompletionField(
-                                            IEnumerable<string> searchAsYouTypeContent) =>
-                                            new CompletionField {Input = searchAsYouTypeContent};
+                                        var completionField = commentsArray
+                                            .GetStringFromCommentsArray()
+                                            .GenerateTextToSuggest(contentString)
+                                            .GenerateSearchAsYouTypeArray()
+                                            .WrapCompletionField();
 
                                         var returnValue = new WordElasticDocument
                                         {
                                             Category = category,
-                                            CompletionContent = GetCompletionField(
-                                                GetSearchAsYouTypeContent(GetSuggestedText(contentString,
-                                                    GetCommString(commentsArray)))),
+                                            CompletionContent = completionField,
                                             Content = contentString,
-                                            ContentHash = await GetContentHashString(
-                                                GetListElementsToHash(category, created, contentString, creator,
-                                                    description, identifier, keywords, language, modified, revision,
-                                                    subject, title, version, contentStatus, contentType, lastPrinted,
-                                                    lastModifiedBy), commentsArray),
+                                            ContentHash = elementsHash,
                                             ContentStatus = contentStatus,
                                             ContentType = contentType,
                                             Created = created,
@@ -340,7 +257,7 @@ namespace DocSearchAIO.Scheduler
                                             Description = description,
                                             Id = id,
                                             Identifier = identifier,
-                                            Keywords = GetKeywordsList(keywords),
+                                            Keywords = StaticHelpers.KeywordsList(keywords),
                                             Language = language,
                                             Modified = modified,
                                             Revision = revision,
@@ -382,4 +299,22 @@ namespace DocSearchAIO.Scheduler
             }
         }
     }
+    
+    public static class WordProcessingHelper{
+    
+        public static IEnumerable<OpenXmlElement> GetElements(this 
+            MainDocumentPart mainDocumentPart)
+        {
+            if (mainDocumentPart.Document.Body == null)
+                return Array.Empty<OpenXmlElement>();
+
+            return mainDocumentPart
+                .Document
+                .Body?
+                .ChildElements
+                .OfType<OpenXmlElement>();
+        }
+    
+    }
+    
 }

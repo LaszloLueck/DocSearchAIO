@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -12,8 +13,10 @@ using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocumentFormat.OpenXml;
+using Nest;
 using Org.BouncyCastle.Utilities.IO;
 using Quartz;
+using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -123,8 +126,7 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        public static DeconstructKvObject<TKey, TValue>
-            DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
+        public static DeconstructKvObject<TKey, TValue> DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
             new(kv.Key, kv.Value);
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
@@ -149,6 +151,8 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
+        public static readonly Func<string, string[]> KeywordsList = keywords =>
+            keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
 
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
@@ -174,6 +178,77 @@ namespace DocSearchAIO.Scheduler
                 return cntArr.AsEnumerable();
             });
         }
+        
+        public static string GetStringFromCommentsArray(this OfficeDocumentComment[] commentsArray) =>
+            string.Join(" ", commentsArray.Select(d => d.Comment));
+        
+        public static string GenerateTextToSuggest(this string commentString, string contentString) =>
+            Regex.Replace(contentString + " " + commentString, "[^a-zA-ZäöüßÄÖÜ]", " ");
+
+        public static IEnumerable<string> GenerateSearchAsYouTypeArray(this string suggestedText) =>
+            suggestedText
+                .ToLower()
+                .Split(" ")
+                .Distinct()
+                .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+                .Where(d => d.Length > 2);
+
+        public static string GetContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
+        {
+            var sw = new StringBuilder(4096);
+            ExtractTextFromElement(openXmlElementList, sw);
+            var s = sw.ToString();
+            return s;
+        }
+
+        public static CompletionField WrapCompletionField(this 
+            IEnumerable<string> searchAsYouTypeContent) =>
+            new() {Input = searchAsYouTypeContent};
+
+        static IEnumerable<string[]> GetCommentsString(
+            IEnumerable<OfficeDocumentComment> commentsArray) =>
+            commentsArray
+                .Select(l => l.Comment.Split(" "))
+                .Distinct()
+                .ToList();
+
+        static IEnumerable<string> BuildHashList(List<string> listElementsToHash,
+            IEnumerable<OfficeDocumentComment> commentsArray) =>
+            listElementsToHash
+                .Concat(
+                    GetCommentsString(commentsArray)
+                        .SelectMany(k => k).Distinct());
+
+        public static async Task<string> GetContentHashString(this (List<string> listElementsToHash,
+            IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
+            await StaticHelpers.CreateMd5HashString(
+                BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString(""));
+
+        public static List<string> GetListElementsToHash(string category, DateTime created,
+            string contentString, string creator, string description, string identifier,
+            string keywords, string language, DateTime modified, string revision,
+            string subject, string title, string version, string contentStatus,
+            string contentType, DateTime lastPrinted, string lastModifiedBy) =>
+            new()
+            {
+                category,
+                created.ToString(CultureInfo.CurrentCulture),
+                contentString,
+                creator,
+                description,
+                identifier,
+                keywords,
+                language,
+                modified.ToString(CultureInfo.CurrentCulture),
+                revision,
+                subject,
+                title,
+                version,
+                contentStatus,
+                contentType,
+                lastPrinted.ToString(CultureInfo.CurrentCulture),
+                lastModifiedBy
+            };
 
         public static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement = (list, sb) =>
         {

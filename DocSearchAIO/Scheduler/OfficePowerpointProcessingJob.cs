@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
@@ -15,12 +12,12 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Nest;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -46,7 +43,8 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory, _cfg.StatisticsDirectory, new StatisticModelPowerpoint().GetStatisticFileName);
+            _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
+                _cfg.StatisticsDirectory, new StatisticModelPowerpoint().GetStatisticFileName);
             _comparers = new ComparersBase<PowerpointElasticDocument>(loggerFactory, _cfg);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
@@ -167,22 +165,28 @@ namespace DocSearchAIO.Scheduler
                         async wd =>
                         {
                             var fInfo = wd.PackageProperties;
-                            var category = fInfo.Category.MaybeValue().Unwrap("");
-                            var created = fInfo.Created ?? new DateTime(1970, 1, 1);
-                            var creator = fInfo.Creator.MaybeValue().Unwrap("");
-                            var description = fInfo.Description.MaybeValue().Unwrap("");
-                            var identifier = fInfo.Identifier.MaybeValue().Unwrap("");
-                            var keywords = fInfo.Keywords.MaybeValue().Unwrap("");
-                            var language = fInfo.Language.MaybeValue().Unwrap("");
-                            var modified = fInfo.Modified ?? new DateTime(1970, 1, 1);
-                            var revision = fInfo.Revision.MaybeValue().Unwrap("");
-                            var subject = fInfo.Subject.MaybeValue().Unwrap("");
-                            var title = fInfo.Title.MaybeValue().Unwrap("");
-                            var version = fInfo.Version.MaybeValue().Unwrap("");
-                            var contentStatus = fInfo.ContentStatus.MaybeValue().Unwrap("");
-                            var contentType = "pptx";
-                            var lastPrinted = fInfo.LastPrinted ?? new DateTime(1970, 1, 1);
-                            var lastModifiedBy = fInfo.LastModifiedBy.MaybeValue().Unwrap("");
+                            var category = fInfo.Category.ValueOr("");
+                            var created =
+                                new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(new DateTime(1970, 1,
+                                    1));
+                            var creator = fInfo.Creator.ValueOr("");
+                            var description = fInfo.Description.ValueOr("");
+                            var identifier = fInfo.Identifier.ValueOr("");
+                            var keywords = fInfo.Keywords.ValueOr("");
+                            var language = fInfo.Language.ValueOr("");
+                            var modified =
+                                new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(new DateTime(1970, 1,
+                                    1));
+                            var revision = fInfo.Revision.ValueOr("");
+                            var subject = fInfo.Subject.ValueOr("");
+                            var title = fInfo.Title.ValueOr("");
+                            var version = fInfo.Version.ValueOr("");
+                            var contentStatus = fInfo.ContentStatus.ValueOr("");
+                            const string contentType = "pptx";
+                            var lastPrinted =
+                                new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(new DateTime(1970,
+                                    1, 1));
+                            var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                             var uriPath = currentFile
                                 .Replace(configurationObject.ScanPath, _cfg.UriReplacement)
                                 .Replace(@"\", "/");
@@ -195,108 +199,59 @@ namespace DocSearchAIO.Scheduler
                                     part => part.SlideParts.Count(),
                                     () => 0);
 
-                            var elements = wd
-                                .PresentationPart?
-                                .SlideParts
-                                .Select(p =>
-                                {
-                                    var slide = p.Slide;
+                            static IEnumerable<OfficeDocumentComment>
+                                GetCommentArray(PresentationPart presentationPart) =>
+                                presentationPart?
+                                    .SlideParts
+                                    .GetCommentsFromDocument();
 
-                                    var commentArray = p
-                                        .SlideCommentsPart
-                                        .MaybeValue()
-                                        .Match(
-                                            comments =>
-                                            {
-                                                return comments.CommentList.Select(comment =>
-                                                {
-                                                    var d = (Comment) comment;
+                            var commentsArray = GetCommentArray(wd.PresentationPart).ToArray();
 
-                                                    var retValue = new OfficeDocumentComment();
-                                                    var dat = d.DateTime != null
-                                                        ? d.DateTime
-                                                            .Value
-                                                            .MaybeValue()
-                                                            .Unwrap(new DateTime(1970, 1, 1))
-                                                        : new DateTime(1970, 1, 1);
-
-                                                    retValue.Comment = d.Text?.Text;
-                                                    retValue.Date = dat;
-
-                                                    return retValue;
-                                                }).ToArray();
-                                            },
-                                            Array.Empty<OfficeDocumentComment>
-                                        );
+                            var contentString = wd
+                                .PresentationPart
+                                .GetElements()
+                                .GetContentString();
 
 
-                                    var sw = new StringBuilder(4096);
-                                    StaticHelpers.ExtractTextFromElement(slide.ChildElements, sw);
-                                    var innerString = sw.ToString();
-                                    sw.Clear();
+                            var elementsHash = await (
+                                StaticHelpers.GetListElementsToHash(category, created, contentString, creator,
+                                    description, identifier, keywords, language, modified, revision,
+                                    subject, title, version, contentStatus, contentType, lastPrinted,
+                                    lastModifiedBy), commentsArray).GetContentHashString();
 
-
-                                    var toReplaced = new List<(string, string)>();
-                                    innerString = StaticHelpers.ReplaceSpecialStrings(innerString, toReplaced);
-                                    return new Tuple<string, OfficeDocumentComment[]>(innerString, commentArray);
-                                });
-
-                            var enumerable = elements as Tuple<string, OfficeDocumentComment[]>[] ?? elements
-                                .MaybeValue()
-                                .Match(
-                                    element => element.ToArray(),
-                                    Array.Empty<Tuple<string, OfficeDocumentComment[]>>
-                                );
-                            var contentString = string.Join(" ", enumerable.Select(d => d.Item1));
-                            var commentsArray = enumerable.Select(d => d.Item2).SelectMany(l => l).Distinct();
-
-                            var officeDocumentComments =
-                                commentsArray as OfficeDocumentComment[] ?? commentsArray.ToArray();
-                            var commentsOnlyList = officeDocumentComments.Select(d => d.Comment.Split(" "));
-
-                            var keywordsList = keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
-
-                            var listElementsToHash = new List<string>
-                            {
-                                category, created.ToString(CultureInfo.CurrentCulture), contentString, creator,
-                                description,
-                                identifier,
-                                string.Join("", keywords), language, modified.ToString(CultureInfo.CurrentCulture),
-                                revision,
-                                subject, title, version,
-                                contentStatus, contentType, lastPrinted.ToString(CultureInfo.CurrentCulture),
-                                lastModifiedBy
-                            };
-
-                            var res = listElementsToHash.Concat(commentsOnlyList.SelectMany(k => k).Distinct());
-
-                            var contentHashString = await StaticHelpers.CreateMd5HashString(res.JoinString(""));
-
-                            var commString = string.Join(" ", officeDocumentComments.Select(d => d.Comment));
-
-
-                            var suggestedText = Regex.Replace(contentString + " " + commString, "[^a-zA-Zäöüß]", " ");
-                            var searchAsYouTypeContent = suggestedText
-                                .ToLower()
-                                .Split(" ")
-                                .Distinct()
-                                .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                                .Where(d => d.Length > 2);
-
-                            var completionField = new CompletionField {Input = searchAsYouTypeContent};
+                            var completionField = commentsArray
+                                .GetStringFromCommentsArray()
+                                .GenerateTextToSuggest(contentString)
+                                .GenerateSearchAsYouTypeArray()
+                                .WrapCompletionField();
 
                             var returnValue = new PowerpointElasticDocument
                             {
-                                Category = category, CompletionContent = completionField, Content = contentString,
-                                ContentHash = contentHashString, ContentStatus = contentStatus,
+                                Category = category,
+                                CompletionContent = completionField,
+                                Content = contentString,
+                                ContentHash = elementsHash,
+                                ContentStatus = contentStatus,
                                 ContentType = contentType,
-                                Created = created, Creator = creator, Description = description, Id = id,
-                                Identifier = identifier, Keywords = keywordsList, Language = language,
+                                Created = created,
+                                Creator = creator,
+                                Description = description,
+                                Id = id,
+                                Identifier = identifier,
+                                Keywords = StaticHelpers.KeywordsList(keywords),
+                                Language = language,
                                 Modified = modified,
-                                Revision = revision, Subject = subject, Title = title, Version = version,
-                                LastPrinted = lastPrinted, ProcessTime = DateTime.Now, LastModifiedBy = lastModifiedBy,
-                                OriginalFilePath = currentFile, UriFilePath = uriPath, SlideCount = slideCount,
-                                Comments = officeDocumentComments
+                                Revision = revision,
+                                Subject = subject,
+                                Title = title,
+                                Version = version,
+                                LastPrinted = lastPrinted,
+                                ProcessTime = DateTime.Now,
+                                LastModifiedBy = lastModifiedBy,
+                                OriginalFilePath = currentFile,
+                                UriFilePath = uriPath,
+                                SlideCount = slideCount,
+                                Comments = commentsArray
                             };
 
                             return Maybe<PowerpointElasticDocument>.From(returnValue);
@@ -304,18 +259,49 @@ namespace DocSearchAIO.Scheduler
                         async () =>
                         {
                             _logger.LogWarning(
-                                "cannot process the basedocument of file {CurrentFile}, because it is null",
-                                currentFile);
+                                $"cannot process the base document of file {currentFile}, because it is null");
                             return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
                         });
                 });
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
+                _logger.LogError(e, $"an error while creating a indexing object at <{currentFile}>");
                 _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
             }
         }
     }
+
+    public static class PowerpointProcessingHelper
+    {
+        private static IEnumerable<OfficeDocumentComment> ConvertToOfficeDocumentComment(this CommentList comments) =>
+            comments.Select(comment => GetOfficeDocumentComment((Comment) comment));
+
+        private static OfficeDocumentComment GetOfficeDocumentComment(Comment comment) =>
+            new()
+            {
+                Comment = comment.Text?.Text,
+                Date = new GenericSourceNullable<DateTime>(comment.DateTime).ValueOrDefault(
+                    new DateTime(1970, 1, 1))
+            };
+
+        public static IEnumerable<OfficeDocumentComment>
+            GetCommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
+            slideParts
+                .Select(part => ConvertToOfficeDocumentComment(part.SlideCommentsPart?.CommentList))
+                .SelectMany(m => m);
+
+        public static IEnumerable<OpenXmlElement> GetElements(this PresentationPart presentationPart)
+        {
+            if (presentationPart?.SlideParts is null)
+                return ArraySegment<OpenXmlElement>.Empty;
+
+            return presentationPart
+                .SlideParts.Select(p => p.Slide);
+        }
+        
+        
+    }
+
 }
