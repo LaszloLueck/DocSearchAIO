@@ -31,7 +31,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<StatisticModelWord> _statisticUtilities;
-        private readonly ComparersBase<WordElasticDocument> _comparers;
+        private readonly ComparerModelWord _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
@@ -47,7 +47,7 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
                 new StatisticModelWord().GetStatisticFileName);
-            _comparers = new ComparersBase<WordElasticDocument>(loggerFactory, _cfg);
+            _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -110,7 +110,7 @@ namespace DocSearchAIO.Scheduler
                                                 .SelectAsync(schedulerEntry.Parallelism,
                                                     fileName => ProcessWordDocument(fileName, _cfg))
                                                 .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                    elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
+                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
@@ -136,8 +136,8 @@ namespace DocSearchAIO.Scheduler
                                             _statisticUtilities
                                                 .AddJobStatisticToDatabase(jobStatistic);
                                             _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
-                                            _comparers.RemoveComparerFile();
-                                            await _comparers.WriteAllLinesAsync();
+                                            _comparerModel.RemoveComparerFile();
+                                            await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
@@ -207,7 +207,7 @@ namespace DocSearchAIO.Scheduler
                                                         {
                                                             var d = (Comment) comment;
                                                             var retValue = new OfficeDocumentComment();
-                                                            var dat = new GenericSourceNullable<DateTime>(d.Date)
+                                                            var dat = new GenericSourceNullable<DateTime>(d.Date?.Value)
                                                                 .ValueOrDefault(new DateTime(1970, 1, 1));
                                                             retValue.Author = d.Author?.Value;
                                                             retValue.Comment = d.InnerText;
@@ -219,15 +219,14 @@ namespace DocSearchAIO.Scheduler
                                                     },
                                                     Array.Empty<OfficeDocumentComment>);
 
+                                        var toReplaced = new List<(string, string)>();
+
                                         var contentString = wd
                                             .MainDocumentPart
                                             .GetElements()
-                                            .GetContentString();
+                                            .GetContentString()
+                                            .ReplaceSpecialStrings(toReplaced);
                                         
-                                        var toReplaced = new List<(string, string)>();
-
-                                        contentString = StaticHelpers.ReplaceSpecialStrings(contentString, toReplaced);
-
                                         var commentsArray = GetCommentArray(mainDocumentPart);
 
                                         var elementsHash = await (

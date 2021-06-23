@@ -172,34 +172,27 @@ namespace DocSearchAIO.DocSearch.Services
             }
         }
 
-        private Maybe<ComparersBase<TOut>> GetComparerBaseFromParameter<TOut>(string parameter)
-            where TOut : ElasticDocument
+        private Maybe<ComparerModel> GetComparerBaseFromParameter(string parameter)
         {
-            static ComparersBase<TC> AsComparerBase<TC>(ILoggerFactory loggerFactory,
-                ConfigurationObject configurationObject) where TC : ElasticDocument =>
-                new(loggerFactory, configurationObject);
-
             try
             {
                 var comparerBase = parameter switch
                 {
                     nameof(WordElasticDocument) =>
-                        AsComparerBase<WordElasticDocument>(_loggerFactory,
-                            _configurationObject) as ComparersBase<TOut>,
+                        new ComparerModelWord(_loggerFactory, _configurationObject.ComparerDirectory) as ComparerModel,
                     nameof(PowerpointElasticDocument) =>
-                        AsComparerBase<PowerpointElasticDocument>(_loggerFactory, _configurationObject) as
-                            ComparersBase<TOut>,
+                        new ComparerModelPowerpoint(_loggerFactory, _configurationObject.ComparerDirectory),
                     nameof(PdfElasticDocument) =>
-                        AsComparerBase<PdfElasticDocument>(_loggerFactory, _configurationObject) as ComparersBase<TOut>,
+                        new ComparerModelPdf(_loggerFactory, _configurationObject.ComparerDirectory),
                     _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
                         $"cannot cast from parameter {parameter}")
                 };
-                return Maybe<ComparersBase<TOut>>.From(comparerBase);
+                return Maybe<ComparerModel>.From(comparerBase);
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, "an error while converting a base parameter occured");
-                return Maybe<ComparersBase<TOut>>.None;
+                return Maybe<ComparerModel>.None;
             }
         }
 
@@ -224,9 +217,9 @@ namespace DocSearchAIO.DocSearch.Services
                                 await _elasticSearchService.DeleteIndexAsync(indexName);
 
                                 _logger.LogInformation($"remove comparer file for key {key}");
-                                GetComparerBaseFromParameter<ElasticDocument>(key)
+                                GetComparerBaseFromParameter(key)
                                     .Match(
-                                        comparerBase => comparerBase.RemoveComparerFile(),
+                                        comparerBase => comparerBase.CleanDictionaryAndRemoveComparerFile(),
                                         () => _logger.LogWarning(
                                             $"cannot determine correct comparer base from key {key}"));
 

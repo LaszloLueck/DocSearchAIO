@@ -35,7 +35,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<StatisticModelPdf> _statisticUtilities;
-        private readonly ComparersBase<PdfElasticDocument> _comparers;
+        private readonly ComparerModelPdf _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
@@ -47,8 +47,9 @@ namespace DocSearchAIO.Scheduler
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, _cfg.StatisticsDirectory, new StatisticModelPdf().GetStatisticFileName);
-            _comparers = new ComparersBase<PdfElasticDocument>(loggerFactory, _cfg);
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
+                new StatisticModelPdf().GetStatisticFileName);
+            _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -107,7 +108,7 @@ namespace DocSearchAIO.Scheduler
                                                 .SelectAsync(schedulerEntry.Parallelism,
                                                     file => ProcessPdfDocument(file, _cfg))
                                                 .SelectAsync(schedulerEntry.Parallelism,
-                                                    elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
+                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
@@ -134,8 +135,8 @@ namespace DocSearchAIO.Scheduler
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMillis} ms",
                                                 sw.ElapsedMilliseconds);
-                                            _comparers.RemoveComparerFile();
-                                            await _comparers.WriteAllLinesAsync();
+                                            _comparerModel.RemoveComparerFile();
+                                            await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
@@ -161,16 +162,18 @@ namespace DocSearchAIO.Scheduler
                     var pdfPages = new ConcurrentBag<PdfPageObject>();
 
                     var toProcess = new ConcurrentBag<PdfPage>();
-                    
+
 
                     for (var i = 1; i <= document.GetNumberOfPages(); i++)
                     {
                         var pdfPage = document.GetPage(i);
                         toProcess.Add(pdfPage);
                     }
-                    
+
                     toProcess
-                        .ForEach(page => pdfPages.Add(new PdfPageObject(PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
+                        .ForEach(page =>
+                            pdfPages.Add(new PdfPageObject(
+                                PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
 
                     var creator = info.GetCreator();
                     var keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
@@ -178,15 +181,15 @@ namespace DocSearchAIO.Scheduler
                         : info.GetKeywords().Split(" ");
                     var subject = info.GetSubject();
                     var title = info.GetTitle();
-                    
+
                     document.Close();
-                    
+
                     var uriPath = fileName
                         .Replace(configuration.ScanPath, _cfg.UriReplacement)
                         .Replace(@"\", "/");
 
                     var fileNameHash = await StaticHelpers.CreateMd5HashString(fileName);
-                    
+
                     var elasticDoc = new PdfElasticDocument
                     {
                         OriginalFilePath = fileName,

@@ -31,7 +31,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<StatisticModelPowerpoint> _statisticUtilities;
-        private readonly ComparersBase<PowerpointElasticDocument> _comparers;
+        private readonly ComparerModelPowerpoint _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
@@ -45,7 +45,7 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
                 _cfg.StatisticsDirectory, new StatisticModelPowerpoint().GetStatisticFileName);
-            _comparers = new ComparersBase<PowerpointElasticDocument>(loggerFactory, _cfg);
+            _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -109,7 +109,7 @@ namespace DocSearchAIO.Scheduler
                                                 .SelectAsync(schedulerEntry.Parallelism,
                                                     fileName => ProcessPowerpointDocument(fileName, _cfg))
                                                 .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                    elementOpt => _comparers.FilterExistingUnchanged(elementOpt))
+                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
@@ -137,8 +137,8 @@ namespace DocSearchAIO.Scheduler
                                             _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
                                             _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
-                                            _comparers.RemoveComparerFile();
-                                            await _comparers.WriteAllLinesAsync();
+                                            _comparerModel.RemoveComparerFile();
+                                            await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                                         }
                                         catch (Exception ex)
@@ -207,11 +207,13 @@ namespace DocSearchAIO.Scheduler
 
                             var commentsArray = GetCommentArray(wd.PresentationPart).ToArray();
 
+                            var toReplaced = new List<(string, string)>();
+
                             var contentString = wd
                                 .PresentationPart
                                 .GetElements()
-                                .GetContentString();
-
+                                .GetContentString()
+                                .ReplaceSpecialStrings(toReplaced);
 
                             var elementsHash = await (
                                 StaticHelpers.GetListElementsToHash(category, created, contentString, creator,
@@ -289,8 +291,16 @@ namespace DocSearchAIO.Scheduler
         public static IEnumerable<OfficeDocumentComment>
             GetCommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
             slideParts
-                .Select(part => ConvertToOfficeDocumentComment(part.SlideCommentsPart?.CommentList))
-                .SelectMany(m => m);
+                .Select(part =>
+                {
+                    return part
+                        .SlideCommentsPart
+                        .MaybeValue()
+                        .Match(
+                            values => ConvertToOfficeDocumentComment(values.CommentList),
+                            Array.Empty<OfficeDocumentComment>);
+                })
+                .SelectMany(p => p);
 
         public static IEnumerable<OpenXmlElement> GetElements(this PresentationPart presentationPart)
         {

@@ -70,9 +70,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="Resources\comparer\cmp_PdfElasticDocument.cmp" />
-      <None Include="Resources\comparer\cmp_PowerpointElasticDocument.cmp" />
-      <None Include="Resources\comparer\cmp_WordElasticDocument.cmp" />
       <None Include="Resources\comparer\measurement_WordElasticDocument_2021-06-16140658.csv" />
       <None Include="Resources\comparer\measurement_WordElasticDocument_2021-06-16140908.csv" />
     </ItemGroup>

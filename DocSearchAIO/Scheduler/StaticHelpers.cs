@@ -179,7 +179,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
         
-        public static string GetStringFromCommentsArray(this OfficeDocumentComment[] commentsArray) =>
+        public static string GetStringFromCommentsArray(this IEnumerable<OfficeDocumentComment> commentsArray) =>
             string.Join(" ", commentsArray.Select(d => d.Comment));
         
         public static string GenerateTextToSuggest(this string commentString, string contentString) =>
@@ -205,14 +205,14 @@ namespace DocSearchAIO.Scheduler
             IEnumerable<string> searchAsYouTypeContent) =>
             new() {Input = searchAsYouTypeContent};
 
-        static IEnumerable<string[]> GetCommentsString(
+        private static IEnumerable<string[]> GetCommentsString(
             IEnumerable<OfficeDocumentComment> commentsArray) =>
             commentsArray
                 .Select(l => l.Comment.Split(" "))
                 .Distinct()
                 .ToList();
 
-        static IEnumerable<string> BuildHashList(List<string> listElementsToHash,
+        private static IEnumerable<string> BuildHashList(IEnumerable<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) =>
             listElementsToHash
                 .Concat(
@@ -221,7 +221,7 @@ namespace DocSearchAIO.Scheduler
 
         public static async Task<string> GetContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
-            await StaticHelpers.CreateMd5HashString(
+            await CreateMd5HashString(
                 BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString(""));
 
         public static List<string> GetListElementsToHash(string category, DateTime created,
@@ -250,7 +250,7 @@ namespace DocSearchAIO.Scheduler
                 lastModifiedBy
             };
 
-        public static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement = (list, sb) =>
+        private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement = (list, sb) =>
         {
             list
                 .ForEach(element =>
@@ -274,7 +274,7 @@ namespace DocSearchAIO.Scheduler
                 });
         };
 
-        public static readonly Func<string, IList<(string, string)>, string> ReplaceSpecialStrings = (input, list) =>
+        public static string ReplaceSpecialStrings(this string input, IList<(string, string)> list)
         {
             while (true)
             {
@@ -283,6 +283,6 @@ namespace DocSearchAIO.Scheduler
                 input = Regex.Replace(input, list[0].Item1, list[0].Item2);
                 list.RemoveAt(0);
             }
-        };
+        }
     }
 }
