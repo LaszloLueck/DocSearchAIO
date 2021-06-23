@@ -69,13 +69,14 @@ namespace DocSearchAIO.DocSearch.Services
 
 
                 var selectedIndices = new List<string>();
-                if (knownIndices.Contains("officedocuments-word") && doSearchRequest.FilterWord)
+                var enumerable = knownIndices as string[] ?? knownIndices.ToArray();
+                if (enumerable.Contains("officedocuments-word") && doSearchRequest.FilterWord)
                     selectedIndices.Add("officedocuments-word");
-                if (knownIndices.Contains("officedocuments-excel") && doSearchRequest.FilterExcel)
+                if (enumerable.Contains("officedocuments-excel") && doSearchRequest.FilterExcel)
                     selectedIndices.Add("officedocuments-excel");
-                if (knownIndices.Contains("officedocuments-powerpoint") && doSearchRequest.FilterPowerpoint)
+                if (enumerable.Contains("officedocuments-powerpoint") && doSearchRequest.FilterPowerpoint)
                     selectedIndices.Add("officedocuments-powerpoint");
-                if (knownIndices.Contains("officedocuments-pdf") && doSearchRequest.FilterPdf)
+                if (enumerable.Contains("officedocuments-pdf") && doSearchRequest.FilterPdf)
                     selectedIndices.Add("officedocuments-pdf");
 
                 if (selectedIndices.Count == 4)
@@ -96,7 +97,8 @@ namespace DocSearchAIO.DocSearch.Services
                 var sw = Stopwatch.StartNew();
                 var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(request);
                 sw.Stop();
-                _logger.LogInformation($"find {result.Total} documents in {sw.ElapsedMilliseconds} ms");
+                _logger.LogInformation("find {ResultTotal} documents in {ElapsedTimeMs} ms", result.Total,
+                    sw.ElapsedMilliseconds);
 
                 var paginationResult = new DoSearchResult
                 {

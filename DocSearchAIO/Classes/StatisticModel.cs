@@ -31,7 +31,7 @@ namespace DocSearchAIO.Classes
         {
             var statisticsFile = $"statistics_{DerivedModelName}.txt";
             var filePath = $"{StatisticsDirectory}/{statisticsFile}";
-            _logger.LogInformation($"load statistics information from {filePath} for model {DerivedModelName}");
+            _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath, DerivedModelName);
             var content = File.ReadAllText(filePath);
             if (!content.Any())
                 return Maybe<ProcessingJobStatistic>.None;

@@ -18,7 +18,8 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly IElasticSearchService _elasticSearchService;
 
-        public DocumentDetailService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer)
+        public DocumentDetailService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
+            ViewToStringRenderer viewToStringRenderer)
         {
             _logger = loggerFactory.CreateLogger<DocumentDetailService>();
             _viewToStringRenderer = viewToStringRenderer;
@@ -42,7 +43,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var sw = Stopwatch.StartNew();
                 var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(searchRequest);
                 sw.Stop();
-                _logger.LogInformation($"find documentdetail in {sw.ElapsedMilliseconds} ms");
+                _logger.LogInformation("find document detail in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
 
                 var returnObject = new DocumentDetailModel();
                 if (result.Total >= 1)
@@ -62,7 +63,8 @@ namespace DocSearchAIO.DocSearch.Services
                 var partialContent = await _viewToStringRenderer.Render("DocumentDetailModalPartial", returnObject);
 
 
-                return new DocumentDetailResponse {Content = partialContent, State = "OK", ElementName = "#documentDetailModal"};
+                return new DocumentDetailResponse
+                    {Content = partialContent, State = "OK", ElementName = "#documentDetailModal"};
             }
             catch (Exception exception)
             {

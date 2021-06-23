@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -101,12 +102,14 @@ namespace DocSearchAIO.Scheduler
                                                 .CreateSource(schedulerEntry.FileExtension)
                                                 .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism, ProcessPowerpointDocument)
+                                                .ProcessPowerpointDocumentAsync(schedulerEntry, _cfg,
+                                                    _statisticUtilities, _logger)
                                                 .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
-                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService, indexName)
+                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService,
+                                                    indexName)
                                                 .RunIgnore(_actorSystem.Materializer());
 
                                             _logger.LogInformation("finished processing powerpoint documents");
@@ -123,7 +126,8 @@ namespace DocSearchAIO.Scheduler
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
-                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
+                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                                                sw.ElapsedMilliseconds);
                                             _comparerModel.RemoveComparerFile();
                                             await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -136,8 +140,22 @@ namespace DocSearchAIO.Scheduler
                         });
             });
         }
+    }
 
-        private async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile)
+    public static class PowerpointProcessingHelper
+    {
+        public static Source<Maybe<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
+            this Source<string, NotUsed> source,
+            SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
+            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger)
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism,
+                f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
+        }
+
+        private static async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
+            ConfigurationObject configurationObject, StatisticUtilities<StatisticModelPowerpoint> statisticUtilities,
+            ILogger logger)
         {
             try
             {
@@ -153,7 +171,8 @@ namespace DocSearchAIO.Scheduler
                             var fInfo = wd.PackageProperties;
                             var category = fInfo.Category.ValueOr("");
                             var created =
-                                new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(new DateTime(1970, 1,
+                                new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(new DateTime(1970,
+                                    1,
                                     1));
                             var creator = fInfo.Creator.ValueOr("");
                             var description = fInfo.Description.ValueOr("");
@@ -161,7 +180,8 @@ namespace DocSearchAIO.Scheduler
                             var keywords = fInfo.Keywords.ValueOr("");
                             var language = fInfo.Language.ValueOr("");
                             var modified =
-                                new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(new DateTime(1970, 1,
+                                new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(new DateTime(
+                                    1970, 1,
                                     1));
                             var revision = fInfo.Revision.ValueOr("");
                             var subject = fInfo.Subject.ValueOr("");
@@ -170,11 +190,12 @@ namespace DocSearchAIO.Scheduler
                             var contentStatus = fInfo.ContentStatus.ValueOr("");
                             const string contentType = "pptx";
                             var lastPrinted =
-                                new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(new DateTime(1970,
+                                new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(new DateTime(
+                                    1970,
                                     1, 1));
                             var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                             var uriPath = currentFile
-                                .Replace(_cfg.ScanPath, _cfg.UriReplacement)
+                                .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                 .Replace(@"\", "/");
 
                             var id = await StaticHelpers.CreateMd5HashString(currentFile);
@@ -246,24 +267,24 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
-                            _logger.LogWarning(
-                                "cannot process the base document of file {CurrentFile}, because it is null", currentFile);
+                            logger.LogWarning(
+                                "cannot process the base document of file {CurrentFile}, because it is null",
+                                currentFile);
                             return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
                         });
                 });
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
-                _statisticUtilities.AddToFailedDocuments();
+                logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
+                statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
             }
         }
-    }
 
-    public static class PowerpointProcessingHelper
-    {
-        private static IEnumerable<OfficeDocumentComment> ConvertToOfficeDocumentComment(this CommentList comments) =>
+
+        private static IEnumerable<OfficeDocumentComment>
+            ConvertToOfficeDocumentComment(this CommentList comments) =>
             comments.Select(comment => GetOfficeDocumentComment((Comment) comment));
 
         private static OfficeDocumentComment GetOfficeDocumentComment(Comment comment) =>
@@ -274,7 +295,7 @@ namespace DocSearchAIO.Scheduler
                     new DateTime(1970, 1, 1))
             };
 
-        public static IEnumerable<OfficeDocumentComment>
+        private static IEnumerable<OfficeDocumentComment>
             GetCommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
             slideParts
                 .Select(part =>
@@ -288,7 +309,7 @@ namespace DocSearchAIO.Scheduler
                 })
                 .SelectMany(p => p);
 
-        public static IEnumerable<OpenXmlElement> GetElements(this PresentationPart presentationPart)
+        private static IEnumerable<OpenXmlElement> GetElements(this PresentationPart presentationPart)
         {
             if (presentationPart?.SlideParts is null)
                 return ArraySegment<OpenXmlElement>.Empty;

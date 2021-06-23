@@ -14,13 +14,12 @@ namespace DocSearchAIO.Scheduler
         private static ILogger _logger;
 
         private readonly IElasticSearchService _elasticSearchService;
-        
+
 
         public SchedulerUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtilities>();
             _elasticSearchService = elasticSearchService;
-
         }
 
         public readonly Func<IScheduler, string, string, Task> SetTriggerStateByUserAction =
@@ -31,7 +30,8 @@ namespace DocSearchAIO.Scheduler
                     .IfTrue(async () =>
                     {
                         _logger.LogWarning(
-                            $"Set Trigger for {triggerName} in scheduler {scheduler.SchedulerName} to pause because of user settings");
+                            "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
+                            triggerName, scheduler.SchedulerName);
                         await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
                     });
             };
@@ -41,16 +41,12 @@ namespace DocSearchAIO.Scheduler
             (!await _elasticSearchService.IndexExistsAsync(indexName))
                 .IfTrue(async () =>
                 {
-                    _logger.LogInformation($"Index {indexName} does not exist, lets create them");
+                    _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
                     await _elasticSearchService.CreateIndexAsync<T>(indexName);
                     await _elasticSearchService.RefreshIndexAsync(indexName);
                     await _elasticSearchService.FlushIndexAsync(indexName);
                 });
         }
-
-        // public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
-        //     excludeFilter == "" || !fileName.Contains(excludeFilter);
-        
 
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
     }
@@ -59,7 +55,7 @@ namespace DocSearchAIO.Scheduler
     {
         public string PathHash { get; set; }
         public string DocumentHash { get; set; }
-        
+
         public string OriginalPath { get; set; }
     }
 }

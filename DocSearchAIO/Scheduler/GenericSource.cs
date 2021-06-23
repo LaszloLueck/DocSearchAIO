@@ -12,10 +12,6 @@ namespace DocSearchAIO.Scheduler
         public T Value { get; set; }
     }
 
-    public class GenericSourceString : GenericSource<string>
-    {
-    }
-    
     public class GenericSourceNullable<T> : GenericSource<T> where T : struct
     {
 

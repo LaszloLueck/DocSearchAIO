@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,9 +17,6 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using Nest;
-using Org.BouncyCastle.Utilities.IO;
-using Quartz;
-using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -41,18 +37,6 @@ namespace DocSearchAIO.Scheduler
         public static Maybe<TOut> MaybeValue<TOut>(this TOut value)
         {
             return value == null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
-        }
-
-        public static void IfTrueFalse(this bool value, Action falseAction, Action trueAction)
-        {
-            if (value)
-            {
-                trueAction.Invoke();
-            }
-            else
-            {
-                falseAction.Invoke();
-            }
         }
 
         public static IEnumerable<Type> GetSubtypesOfType<TIn>()
@@ -88,18 +72,6 @@ namespace DocSearchAIO.Scheduler
             return value ? trueAction.Invoke() : falseAction.Invoke();
         }
 
-        public static string GetTypeNameFromProcessorBase<TIn>(this TIn processorBase) where TIn : ProcessorBase
-        {
-            return processorBase.GetDerivedModelName;
-        }
-
-        public static TOut DirectoryNotExistsAction<TIn, TOut>(this TIn path, Func<TIn, TOut> action)
-            where TOut : GenericSourceString
-            where TIn : TOut
-        {
-            return !Directory.Exists(path.Value) ? action.Invoke(path) : path;
-        }
-
         public static void DictionaryKeyExistsAction<TDicKey, TDicValue>(
             this Dictionary<TDicKey, TDicValue> source, TDicKey comparer,
             Action<KeyValuePair<TDicKey, TDicValue>> action)
@@ -107,11 +79,6 @@ namespace DocSearchAIO.Scheduler
             if (source.ContainsKey(comparer))
                 action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
         }
-
-        public static void AndThen<TIn>(this TIn source, Action<TIn> action) where TIn : GenericSource =>
-            action.Invoke(source);
-
-        public static GenericSourceString AsGenericSourceString(this string value) => new() {Value = value};
 
         public static TOut ValueOr<TOut>(this TOut value, TOut alternative)
         {

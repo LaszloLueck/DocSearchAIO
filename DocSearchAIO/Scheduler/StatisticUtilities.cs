@@ -57,21 +57,21 @@ namespace DocSearchAIO.Scheduler
             _failedDocuments = new InterlockedCounter();
             _changedDocuments = new InterlockedCounter();
             _filePath = $"{statisticsDirectory}/{statisticsFile}";
-            _logger.LogInformation($"initialize StatisticUtilities for type {typeof(TModel).Name}");
+            _logger.LogInformation("initialize StatisticUtilities for type {TypeName}", typeof(TModel).Name);
             _checkAndCreateStatisticsDirectory(statisticsDirectory);
             _checkAndCreateStatisticsFile(_filePath);
         }
 
         private void _checkAndCreateStatisticsDirectory(string directoryPath)
         {
-            _logger.LogInformation($"check if directory {directoryPath} exists");
+            _logger.LogInformation("check if directory {DirectoryPath} exists", directoryPath);
             if (!Directory.Exists(directoryPath))
                 Directory.CreateDirectory(directoryPath);
         }
 
         private void _checkAndCreateStatisticsFile(string filePath)
         {
-            _logger.LogInformation($"check if file {filePath} exists");
+            _logger.LogInformation("check if file {FilePath} exists", filePath);
             if (!File.Exists(filePath))
                 File
                     .Create(filePath)
