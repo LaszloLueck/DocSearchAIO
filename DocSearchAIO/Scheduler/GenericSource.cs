@@ -16,7 +16,7 @@ namespace DocSearchAIO.Scheduler
     {
     }
     
-    public class GenericSourceNullable<T> : GenericSource where T : struct
+    public class GenericSourceNullable<T> : GenericSource<T> where T : struct
     {
 
         private readonly T? _value;
@@ -32,6 +32,17 @@ namespace DocSearchAIO.Scheduler
         }
         
     }
+
+    public class GenericSourceFilePath : GenericSource
+    {
+        public readonly string Value;
+
+        public GenericSourceFilePath(string value)
+        {
+            Value = value;
+        }
+    }
+    
 
 
 }

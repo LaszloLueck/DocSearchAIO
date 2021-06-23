@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -97,26 +98,20 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            var runnable = Source
-                                                .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
-                                                    SearchOption.AllDirectories))
-                                                .Where(file =>
-                                                    _schedulerUtilities.UseExcludeFileFilter(
-                                                        schedulerEntry.ExcludeFilter,
-                                                        file))
-                                                .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism, ProcessWordDocument)
-                                                .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
-                                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                                .WithMaybeFilter()
-                                                .CountFilteredDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    async processingInfo =>
-                                                        await _elasticSearchService.BulkWriteDocumentsAsync(
-                                                            processingInfo,
-                                                            indexName))
-                                                .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
+                                            var runnable =
+                                                new GenericSourceFilePath(scanPath)
+                                                    .CreateSource(schedulerEntry.FileExtension)
+                                                    .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
+                                                    .CountEntireDocs(_statisticUtilities)
+                                                    .ProcessWordDocumentAsync(schedulerEntry, _cfg, _statisticUtilities,
+                                                        _logger)
+                                                    .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
+                                                    .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                                    .WithMaybeFilter()
+                                                    .CountFilteredDocs(_statisticUtilities)
+                                                    .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService,
+                                                        indexName)
+                                                    .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
 
                                             await Task.WhenAll(runnable);
                                             _logger.LogInformation("finished processing word-documents");
@@ -132,7 +127,8 @@ namespace DocSearchAIO.Scheduler
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities
                                                 .AddJobStatisticToDatabase(jobStatistic);
-                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
+                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                                                sw.ElapsedMilliseconds);
                                             _comparerModel.RemoveComparerFile();
                                             await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -145,8 +141,37 @@ namespace DocSearchAIO.Scheduler
                         });
             });
         }
+    }
 
-        private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile)
+    public static class WordProcessingHelper
+    {
+        public static Source<bool, NotUsed> WriteDocumentsToIndexAsync(this
+                Source<IEnumerable<WordElasticDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
+            IElasticSearchService elasticSearchService, string indexName)
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism,
+                g => elasticSearchService.BulkWriteDocumentsAsync(g, indexName));
+        }
+
+        public static Source<Maybe<WordElasticDocument>, NotUsed> FilterExistingUnchangedAsync(
+            this Source<Maybe<WordElasticDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
+            ComparerModel comparerModel)
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);
+        }
+
+        public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
+            this Source<string, NotUsed> source,
+            SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
+            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger)
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism,
+                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
+        }
+
+        private static async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
+            ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
+            ILogger logger)
         {
             try
             {
@@ -185,8 +210,7 @@ namespace DocSearchAIO.Scheduler
                                                 new DateTime(1970, 1, 1));
                                         var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                                         var uriPath = currentFile
-                                            .Replace(_cfg.ScanPath,
-                                                _cfg.UriReplacement)
+                                            .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                             .Replace(@"\", "/");
 
                                         var id = await StaticHelpers.CreateMd5HashString(currentFile);
@@ -271,7 +295,7 @@ namespace DocSearchAIO.Scheduler
                                     },
                                     async () =>
                                     {
-                                        _logger.LogWarning(
+                                        logger.LogWarning(
                                             "cannot process main document part of file {CurrentFile}, because it is null",
                                             currentFile);
                                         return await Task.Run(() => Maybe<WordElasticDocument>.None);
@@ -279,7 +303,7 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
-                            _logger.LogWarning(
+                            logger.LogWarning(
                                 "cannot process the base document of file {CurrentFile}, because it is null",
                                 currentFile);
                             return await Task.Run(() => Maybe<WordElasticDocument>.None);
@@ -288,16 +312,14 @@ namespace DocSearchAIO.Scheduler
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "an error while creating a indexing object");
-                _statisticUtilities.AddToFailedDocuments();
+                logger.LogError(e, "an error while creating a indexing object");
+                statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<WordElasticDocument>.None);
             }
         }
-    }
 
-    public static class WordProcessingHelper
-    {
-        public static IEnumerable<OpenXmlElement> GetElements(this
+
+        private static IEnumerable<OpenXmlElement> GetElements(this
             MainDocumentPart mainDocumentPart)
         {
             if (mainDocumentPart.Document.Body == null)

@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
@@ -126,7 +127,8 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        public static DeconstructKvObject<TKey, TValue> DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
+        public static DeconstructKvObject<TKey, TValue>
+            DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
             new(kv.Key, kv.Value);
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
@@ -178,10 +180,10 @@ namespace DocSearchAIO.Scheduler
                 return cntArr.AsEnumerable();
             });
         }
-        
+
         public static string GetStringFromCommentsArray(this IEnumerable<OfficeDocumentComment> commentsArray) =>
             string.Join(" ", commentsArray.Select(d => d.Comment));
-        
+
         public static string GenerateTextToSuggest(this string commentString, string contentString) =>
             Regex.Replace(contentString + " " + commentString, "[^a-zA-ZäöüßÄÖÜ]", " ");
 
@@ -201,7 +203,7 @@ namespace DocSearchAIO.Scheduler
             return s;
         }
 
-        public static CompletionField WrapCompletionField(this 
+        public static CompletionField WrapCompletionField(this
             IEnumerable<string> searchAsYouTypeContent) =>
             new() {Input = searchAsYouTypeContent};
 
@@ -250,29 +252,38 @@ namespace DocSearchAIO.Scheduler
                 lastModifiedBy
             };
 
-        private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement = (list, sb) =>
-        {
-            list
-                .ForEach(element =>
-                {
-                    switch (element.LocalName)
+        private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
+            (list, sb) =>
+            {
+                list
+                    .ForEach(element =>
                     {
-                        case "t" when !element.ChildElements.Any():
-                            sb.Append(element.InnerText);
-                            break;
-                        case "p":
-                            ExtractTextFromElement(element.ChildElements, sb);
-                            sb.Append(' ');
-                            break;
-                        case "br":
-                            sb.Append(' ');
-                            break;
-                        default:
-                            ExtractTextFromElement(element.ChildElements, sb);
-                            break;
-                    }
-                });
-        };
+                        switch (element.LocalName)
+                        {
+                            case "t" when !element.ChildElements.Any():
+                                sb.Append(element.InnerText);
+                                break;
+                            case "p":
+                                ExtractTextFromElement(element.ChildElements, sb);
+                                sb.Append(' ');
+                                break;
+                            case "br":
+                                sb.Append(' ');
+                                break;
+                            default:
+                                ExtractTextFromElement(element.ChildElements, sb);
+                                break;
+                        }
+                    });
+            };
+
+        public static Source<string, NotUsed> UseExcludeFileFilter(this Source<GenericSourceFilePath, NotUsed> source,
+            string excludeFilter)
+        {
+            return source
+                .Select(p => p.Value)
+                .Where(t => excludeFilter == "" || !t.Contains(excludeFilter));
+        }
 
         public static string ReplaceSpecialStrings(this string input, IList<(string, string)> list)
         {
@@ -283,6 +294,14 @@ namespace DocSearchAIO.Scheduler
                 input = Regex.Replace(input, list[0].Item1, list[0].Item2);
                 list.RemoveAt(0);
             }
+        }
+
+        public static Source<GenericSourceFilePath, NotUsed> CreateSource(this GenericSourceFilePath scanPath,
+            string fileExtension)
+        {
+            return Source
+                .From(Directory.GetFiles(scanPath.Value, fileExtension,
+                    SearchOption.AllDirectories).Select(f => new GenericSourceFilePath(f)));
         }
     }
 }

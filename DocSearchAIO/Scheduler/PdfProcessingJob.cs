@@ -97,16 +97,12 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            var runnable = Source
-                                                .From(Directory.GetFiles(scanPath, schedulerEntry.FileExtension,
-                                                    SearchOption.AllDirectories))
-                                                .Where(file =>
-                                                    _schedulerUtilities.UseExcludeFileFilter(
-                                                        schedulerEntry.ExcludeFilter,
-                                                        file))
+                                            var runnable = 
+                                                new GenericSourceFilePath(scanPath)
+                                                .CreateSource(schedulerEntry.FileExtension)
+                                                .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    file => ProcessPdfDocument(file))
+                                                .SelectAsync(schedulerEntry.Parallelism, ProcessPdfDocument)
                                                 .SelectAsync(schedulerEntry.Parallelism,
                                                     elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))

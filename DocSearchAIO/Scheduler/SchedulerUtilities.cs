@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Akka;
+using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
 using Microsoft.Extensions.Logging;
@@ -46,10 +48,9 @@ namespace DocSearchAIO.Scheduler
                 });
         }
 
-        public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
-            excludeFilter == "" || !fileName.Contains(excludeFilter);
-
-
+        // public readonly Func<string, string, bool> UseExcludeFileFilter = (excludeFilter, fileName) =>
+        //     excludeFilter == "" || !fileName.Contains(excludeFilter);
+        
 
         public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
     }
