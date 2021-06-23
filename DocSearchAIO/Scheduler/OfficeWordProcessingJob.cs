@@ -143,7 +143,7 @@ namespace DocSearchAIO.Scheduler
         }
     }
 
-    public static class WordProcessingHelper
+    internal static class WordProcessingHelper
     {
         public static Source<bool, NotUsed> WriteDocumentsToIndexAsync(this
                 Source<IEnumerable<WordElasticDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
