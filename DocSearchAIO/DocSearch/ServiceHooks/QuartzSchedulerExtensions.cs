@@ -82,6 +82,26 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                         );
                     });
                 });
+            
+            cfg
+                .Processing
+                .DictionaryKeyExistsAction(nameof(ExcelElasticDocument), kv =>
+                {
+                    var scheduler = kv.Value;
+                    services.AddQuartz(q =>
+                    {
+                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
+                        q.AddJob<OfficeExcelProcessingJob>(jk,
+                            p => p.WithDescription("job for processing and indexing excel documents"));
+                        q.AddTrigger(t => t
+                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
+                            .ForJob(jk)
+                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
+                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
+                            .WithDescription("trigger for excel-processing and indexing")
+                        );
+                    });
+                });
 
             services.AddQuartzServer(options => options.WaitForJobsToComplete = true);
         }

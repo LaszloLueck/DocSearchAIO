@@ -171,4 +171,12 @@ namespace DocSearchAIO.Classes
         {
         }
     }
+
+    public class ComparerModelExcel : ComparerModel
+    {
+        protected override string DerivedModelName => GetType().Name;
+        public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+        {
+        }
+    }
 }

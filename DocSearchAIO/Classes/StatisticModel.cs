@@ -16,7 +16,7 @@ namespace DocSearchAIO.Classes
         protected abstract string StatisticsDirectory { get; }
 
         public string GetStatisticFileName => $"statistics_{DerivedModelName}.txt";
-        
+
         protected StatisticModel(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<StatisticModel>();
@@ -24,14 +24,14 @@ namespace DocSearchAIO.Classes
 
         protected StatisticModel()
         {
-            
         }
-        
+
         public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
         {
             var statisticsFile = $"statistics_{DerivedModelName}.txt";
             var filePath = $"{StatisticsDirectory}/{statisticsFile}";
-            _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath, DerivedModelName);
+            _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath,
+                DerivedModelName);
             var content = File.ReadAllText(filePath);
             if (!content.Any())
                 return Maybe<ProcessingJobStatistic>.None;
@@ -55,9 +55,8 @@ namespace DocSearchAIO.Classes
 
         public StatisticModelWord()
         {
-            
         }
-        
+
         public StatisticModelWord(ILoggerFactory loggerFactory, string statisticsDirectory) :
             base(loggerFactory)
         {
@@ -69,8 +68,10 @@ namespace DocSearchAIO.Classes
     {
         protected override string DerivedModelName => GetType().Name;
         protected override string StatisticsDirectory { get; }
-        
-        public StatisticModelPowerpoint() {}
+
+        public StatisticModelPowerpoint()
+        {
+        }
 
         public StatisticModelPowerpoint(ILoggerFactory loggerFactory, string statisticsDirectory) : base(loggerFactory)
         {
@@ -83,8 +84,27 @@ namespace DocSearchAIO.Classes
         protected override string DerivedModelName => GetType().Name;
         protected override string StatisticsDirectory { get; }
 
-        public StatisticModelPdf(){}
+        public StatisticModelPdf()
+        {
+        }
+
         public StatisticModelPdf(ILoggerFactory loggerFactory, string statisticsDirectory) :
+            base(loggerFactory)
+        {
+            StatisticsDirectory = statisticsDirectory;
+        }
+    }
+
+    public class StatisticModelExcel : StatisticModel
+    {
+        protected override string DerivedModelName => GetType().Name;
+        protected override string StatisticsDirectory { get; }
+
+        public StatisticModelExcel()
+        {
+        }
+
+        public StatisticModelExcel(ILoggerFactory loggerFactory, string statisticsDirectory) :
             base(loggerFactory)
         {
             StatisticsDirectory = statisticsDirectory;

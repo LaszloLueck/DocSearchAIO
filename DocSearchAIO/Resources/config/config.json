@@ -10,6 +10,17 @@
     "schedulerId": "DocSearchScheduler_001",
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern",
     "processing": {
+      "ExcelElasticDocument": {
+        "active": false,
+        "parallelism": 10,
+        "excludeFilter": "~$",
+        "fileExtension": "*.xlsx",
+        "indexSuffix": "excel",
+        "jobName": "excelProcessingJob",
+        "triggerName": "excelProcessingTrigger",
+        "startDelay": 3,
+        "runsEvery": 3600
+      },
       "PdfElasticDocument": {
         "active": false,
         "parallelism": 10,

@@ -24,4 +24,10 @@ namespace DocSearchAIO.Classes
         public override string GetDerivedModelName => GetType().Name;
         public override string ShortName => "Pdf";
     }
+
+    public class ProcessorBaseExcel : ProcessorBase
+    {
+        public override string GetDerivedModelName => GetType().Name;
+        public override string ShortName => "Excel";
+    }
 }

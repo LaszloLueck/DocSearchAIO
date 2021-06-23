@@ -53,4 +53,12 @@ namespace DocSearchAIO.Classes
 
         protected override string DerivedModelName => GetType().Name;
     }
+
+    public class MemoryCacheModelExcel : MemoryCacheModel
+    {
+        protected override string DerivedModelName => GetType().Name;
+        public MemoryCacheModelExcel(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+        {
+        }
+    }
 }

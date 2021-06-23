@@ -9,7 +9,7 @@ namespace DocSearchAIO.Scheduler
     public static class JobStateMemoryCacheProxy
     {
         public static readonly Func<ILoggerFactory, IMemoryCache,
-            IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>>>
+                IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>>>
             AsIEnumerable = (loggerFactory, memoryCache) =>
             {
                 return new[]
@@ -22,13 +22,16 @@ namespace DocSearchAIO.Scheduler
                         () => new MemoryCacheModelPowerpoint(loggerFactory, memoryCache)),
                     KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
                         new ProcessorBasePdf(),
-                        () => new MemoryCacheModelPdf(loggerFactory, memoryCache))
+                        () => new MemoryCacheModelPdf(loggerFactory, memoryCache)),
+                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseExcel(),
+                        () => new MemoryCacheModelExcel(loggerFactory, memoryCache))
                 };
             };
 
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWord>>
             GetWordJobStateMemoryCache =
-                (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelWord>(loggerFactory, memoryCache);
+                (loggerFactory, memoryCache) =>
+                    new JobStateMemoryCache<MemoryCacheModelWord>(loggerFactory, memoryCache);
 
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpoint>>
             GetPowerpointJobStateMemoryCache = (loggerFactory, memoryCache) =>
@@ -37,6 +40,10 @@ namespace DocSearchAIO.Scheduler
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdf>>
             GetPdfJobStateMemoryCache = (loggerFactory, memoryCache) =>
                 new JobStateMemoryCache<MemoryCacheModelPdf>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcel>>
+            GetExcelJobStateMemoryCache = (loggerFactory, memoryCache) =>
+                new JobStateMemoryCache<MemoryCacheModelExcel>(loggerFactory, memoryCache);
     }
 
     public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
@@ -49,7 +56,7 @@ namespace DocSearchAIO.Scheduler
             _logger = loggerFactory.CreateLogger<JobStateMemoryCache<TModel>>();
             _memoryCache = memoryCache;
         }
-        
+
         public void RemoveCacheEntry()
         {
             _logger.LogInformation("remove cache entry");

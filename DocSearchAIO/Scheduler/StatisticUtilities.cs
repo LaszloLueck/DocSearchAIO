@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Common.Logging;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,9 @@ namespace DocSearchAIO.Scheduler
                         () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)),
                     KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
                         new ProcessorBasePdf(),
-                        () => new StatisticModelPdf(loggerFactory, statisticsPath))
+                        () => new StatisticModelPdf(loggerFactory, statisticsPath)),
+                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(new ProcessorBaseExcel(),
+                        () => new StatisticModelExcel(loggerFactory, statisticsPath))
                 };
             };
 
@@ -40,6 +43,10 @@ namespace DocSearchAIO.Scheduler
             PdfStatisticUtility =
                 (loggerFactory, statisticsDirectory, statisticsFile) =>
                     new StatisticUtilities<StatisticModelPdf>(loggerFactory, statisticsDirectory, statisticsFile);
+
+        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelExcel>>
+            ExcelStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
+                new StatisticUtilities<StatisticModelExcel>(loggerFactory, statisticDirectory, statisticsFile);
     }
 
     public class StatisticUtilities<TModel> where TModel : StatisticModel

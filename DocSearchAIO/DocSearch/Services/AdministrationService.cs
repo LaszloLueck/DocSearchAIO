@@ -184,6 +184,8 @@ namespace DocSearchAIO.DocSearch.Services
                         new ComparerModelPowerpoint(_loggerFactory, _configurationObject.ComparerDirectory),
                     nameof(PdfElasticDocument) =>
                         new ComparerModelPdf(_loggerFactory, _configurationObject.ComparerDirectory),
+                    nameof(ExcelElasticDocument) =>
+                        new ComparerModelExcel(_loggerFactory, _configurationObject.ComparerDirectory),
                     _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
                         $"cannot cast from parameter {parameter}")
                 };
