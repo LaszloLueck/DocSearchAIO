@@ -161,14 +161,6 @@ namespace DocSearchAIO.Classes
         {
             
         }
-
-        public ComparerModelWord(ILoggerFactory loggerFactory) : base(loggerFactory)
-        {
-        }
-
-        public ComparerModelWord()
-        {
-        }
     }
 
     public class ComparerModelPowerpoint : ComparerModel
@@ -178,14 +170,6 @@ namespace DocSearchAIO.Classes
         public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
         {
         }
-
-        public ComparerModelPowerpoint(ILoggerFactory loggerFactory) : base(loggerFactory)
-        {
-        }
-
-        public ComparerModelPowerpoint()
-        {
-        }
     }
 
     public class ComparerModelPdf : ComparerModel
@@ -193,14 +177,6 @@ namespace DocSearchAIO.Classes
         protected override string DerivedModelName => GetType().Name;
 
         public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
-        {
-        }
-
-        public ComparerModelPdf(ILoggerFactory loggerFactory) : base(loggerFactory)
-        {
-        }
-
-        public ComparerModelPdf()
         {
         }
     }
