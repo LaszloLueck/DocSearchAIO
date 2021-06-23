@@ -106,7 +106,7 @@ namespace DocSearchAIO.Scheduler
                                                         file))
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .SelectAsync(schedulerEntry.Parallelism,
-                                                    file => ProcessPdfDocument(file, _cfg))
+                                                    file => ProcessPdfDocument(file))
                                                 .SelectAsync(schedulerEntry.Parallelism,
                                                     elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -149,8 +149,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(string fileName,
-            ConfigurationObject configuration)
+        private async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(string fileName)
         {
             return await Task.Run(async () =>
             {
@@ -185,7 +184,7 @@ namespace DocSearchAIO.Scheduler
                     document.Close();
 
                     var uriPath = fileName
-                        .Replace(configuration.ScanPath, _cfg.UriReplacement)
+                        .Replace(_cfg.ScanPath, _cfg.UriReplacement)
                         .Replace(@"\", "/");
 
                     var fileNameHash = await StaticHelpers.CreateMd5HashString(fileName);

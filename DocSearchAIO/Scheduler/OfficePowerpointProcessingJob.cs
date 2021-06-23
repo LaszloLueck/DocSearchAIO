@@ -69,7 +69,6 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
-                            var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName =
                                 _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
@@ -106,8 +105,7 @@ namespace DocSearchAIO.Scheduler
                                                         schedulerEntry.ExcludeFilter,
                                                         file))
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    fileName => ProcessPowerpointDocument(fileName, _cfg))
+                                                .SelectAsync(schedulerEntry.Parallelism, ProcessPowerpointDocument)
                                                 .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                     elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -118,7 +116,7 @@ namespace DocSearchAIO.Scheduler
                                                         await _elasticSearchService.BulkWriteDocumentsAsync(
                                                             processingInfo,
                                                             indexName))
-                                                .RunWith(Sink.Ignore<bool>(), materializer);
+                                                .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
 
                                             await Task.WhenAll(runnable);
 
@@ -136,7 +134,7 @@ namespace DocSearchAIO.Scheduler
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
-                                            _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
                                             _comparerModel.RemoveComparerFile();
                                             await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -150,8 +148,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
-            ConfigurationObject configurationObject)
+        private async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile)
         {
             try
             {
@@ -188,7 +185,7 @@ namespace DocSearchAIO.Scheduler
                                     1, 1));
                             var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                             var uriPath = currentFile
-                                .Replace(configurationObject.ScanPath, _cfg.UriReplacement)
+                                .Replace(_cfg.ScanPath, _cfg.UriReplacement)
                                 .Replace(@"\", "/");
 
                             var id = await StaticHelpers.CreateMd5HashString(currentFile);
@@ -261,14 +258,14 @@ namespace DocSearchAIO.Scheduler
                         async () =>
                         {
                             _logger.LogWarning(
-                                $"cannot process the base document of file {currentFile}, because it is null");
+                                "cannot process the base document of file {CurrentFile}, because it is null", currentFile);
                             return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
                         });
                 });
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"an error while creating a indexing object at <{currentFile}>");
+                _logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
                 _statisticUtilities.AddToFailedDocuments();
                 return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
             }
@@ -310,8 +307,5 @@ namespace DocSearchAIO.Scheduler
             return presentationPart
                 .SlideParts.Select(p => p.Slide);
         }
-        
-        
     }
-
 }

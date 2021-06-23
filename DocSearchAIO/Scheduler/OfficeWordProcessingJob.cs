@@ -41,7 +41,6 @@ namespace DocSearchAIO.Scheduler
             _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);
-
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
@@ -57,7 +56,6 @@ namespace DocSearchAIO.Scheduler
             await Task.Run(() =>
             {
                 var schedulerEntry = _cfg.Processing[nameof(WordElasticDocument)];
-
                 schedulerEntry
                     .Active
                     .IfTrueFalse(
@@ -107,8 +105,7 @@ namespace DocSearchAIO.Scheduler
                                                         schedulerEntry.ExcludeFilter,
                                                         file))
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    fileName => ProcessWordDocument(fileName, _cfg))
+                                                .SelectAsync(schedulerEntry.Parallelism, ProcessWordDocument)
                                                 .SelectAsync(parallelism: schedulerEntry.Parallelism,
                                                     elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
@@ -135,7 +132,7 @@ namespace DocSearchAIO.Scheduler
                                                 _statisticUtilities.GetChangedDocumentsCount();
                                             _statisticUtilities
                                                 .AddJobStatisticToDatabase(jobStatistic);
-                                            _logger.LogInformation($"index documents in {sw.ElapsedMilliseconds} ms");
+                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
                                             _comparerModel.RemoveComparerFile();
                                             await _comparerModel.WriteAllLinesAsync();
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -149,8 +146,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
-            ConfigurationObject configurationObject)
+        private async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile)
         {
             try
             {
@@ -189,7 +185,7 @@ namespace DocSearchAIO.Scheduler
                                                 new DateTime(1970, 1, 1));
                                         var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                                         var uriPath = currentFile
-                                            .Replace(configurationObject.ScanPath,
+                                            .Replace(_cfg.ScanPath,
                                                 _cfg.UriReplacement)
                                             .Replace(@"\", "/");
 
@@ -226,15 +222,15 @@ namespace DocSearchAIO.Scheduler
                                             .GetElements()
                                             .GetContentString()
                                             .ReplaceSpecialStrings(toReplaced);
-                                        
+
                                         var commentsArray = GetCommentArray(mainDocumentPart);
 
                                         var elementsHash = await (
-                                            StaticHelpers.GetListElementsToHash(category, created, contentString,
-                                                creator,
-                                                description, identifier, keywords, language, modified, revision,
-                                                subject, title, version, contentStatus, contentType, lastPrinted,
-                                                lastModifiedBy), commentsArray)
+                                                StaticHelpers.GetListElementsToHash(category, created, contentString,
+                                                    creator,
+                                                    description, identifier, keywords, language, modified, revision,
+                                                    subject, title, version, contentStatus, contentType, lastPrinted,
+                                                    lastModifiedBy), commentsArray)
                                             .GetContentHashString();
 
                                         var completionField = commentsArray
@@ -284,7 +280,7 @@ namespace DocSearchAIO.Scheduler
                         async () =>
                         {
                             _logger.LogWarning(
-                                "cannot process the basedocument of file {CurrentFile}, because it is null",
+                                "cannot process the base document of file {CurrentFile}, because it is null",
                                 currentFile);
                             return await Task.Run(() => Maybe<WordElasticDocument>.None);
                         });
@@ -298,10 +294,10 @@ namespace DocSearchAIO.Scheduler
             }
         }
     }
-    
-    public static class WordProcessingHelper{
-    
-        public static IEnumerable<OpenXmlElement> GetElements(this 
+
+    public static class WordProcessingHelper
+    {
+        public static IEnumerable<OpenXmlElement> GetElements(this
             MainDocumentPart mainDocumentPart)
         {
             if (mainDocumentPart.Document.Body == null)
@@ -313,7 +309,5 @@ namespace DocSearchAIO.Scheduler
                 .ChildElements
                 .OfType<OpenXmlElement>();
         }
-    
     }
-    
 }
