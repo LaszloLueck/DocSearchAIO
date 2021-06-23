@@ -98,22 +98,20 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            var runnable =
-                                                new GenericSourceFilePath(scanPath)
-                                                    .CreateSource(schedulerEntry.FileExtension)
-                                                    .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
-                                                    .CountEntireDocs(_statisticUtilities)
-                                                    .ProcessWordDocumentAsync(schedulerEntry, _cfg, _statisticUtilities,
-                                                        _logger)
-                                                    .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
-                                                    .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                                    .WithMaybeFilter()
-                                                    .CountFilteredDocs(_statisticUtilities)
-                                                    .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService,
-                                                        indexName)
-                                                    .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
+                                            await new GenericSourceFilePath(scanPath)
+                                                .CreateSource(schedulerEntry.FileExtension)
+                                                .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
+                                                .CountEntireDocs(_statisticUtilities)
+                                                .ProcessWordDocumentAsync(schedulerEntry, _cfg, _statisticUtilities,
+                                                    _logger)
+                                                .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
+                                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                                .WithMaybeFilter()
+                                                .CountFilteredDocs(_statisticUtilities)
+                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService,
+                                                    indexName)
+                                                .RunIgnore(_actorSystem.Materializer());
 
-                                            await Task.WhenAll(runnable);
                                             _logger.LogInformation("finished processing word-documents");
                                             sw.Stop();
                                             await _elasticSearchService.FlushIndexAsync(indexName);
@@ -145,21 +143,6 @@ namespace DocSearchAIO.Scheduler
 
     internal static class WordProcessingHelper
     {
-        public static Source<bool, NotUsed> WriteDocumentsToIndexAsync(this
-                Source<IEnumerable<WordElasticDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
-            IElasticSearchService elasticSearchService, string indexName)
-        {
-            return source.SelectAsync(schedulerEntry.Parallelism,
-                g => elasticSearchService.BulkWriteDocumentsAsync(g, indexName));
-        }
-
-        public static Source<Maybe<WordElasticDocument>, NotUsed> FilterExistingUnchangedAsync(
-            this Source<Maybe<WordElasticDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
-            ComparerModel comparerModel)
-        {
-            return source.SelectAsync(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);
-        }
-
         public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,

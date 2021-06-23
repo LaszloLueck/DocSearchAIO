@@ -97,25 +97,17 @@ namespace DocSearchAIO.Scheduler
                                             };
 
                                             var sw = Stopwatch.StartNew();
-                                            var runnable = 
-                                                new GenericSourceFilePath(scanPath)
+                                            await new GenericSourceFilePath(scanPath)
                                                 .CreateSource(schedulerEntry.FileExtension)
                                                 .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .SelectAsync(schedulerEntry.Parallelism, ProcessPowerpointDocument)
-                                                .SelectAsync(parallelism: schedulerEntry.Parallelism,
-                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
+                                                .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    async processingInfo =>
-                                                        await _elasticSearchService.BulkWriteDocumentsAsync(
-                                                            processingInfo,
-                                                            indexName))
-                                                .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
-
-                                            await Task.WhenAll(runnable);
+                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService, indexName)
+                                                .RunIgnore(_actorSystem.Materializer());
 
                                             _logger.LogInformation("finished processing powerpoint documents");
 

@@ -9,10 +9,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Akka;
+using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
+using DocSearchAIO.Configuration;
+using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
 using Nest;
 using Org.BouncyCastle.Utilities.IO;
@@ -302,6 +305,24 @@ namespace DocSearchAIO.Scheduler
             return Source
                 .From(Directory.GetFiles(scanPath.Value, fileExtension,
                     SearchOption.AllDirectories).Select(f => new GenericSourceFilePath(f)));
+        }
+
+        public static Task RunIgnore(this Source<bool, NotUsed> source, ActorMaterializer actorMaterializer) =>
+            source.RunWith(Sink.Ignore<bool>(), actorMaterializer);
+
+        public static Source<bool, NotUsed> WriteDocumentsToIndexAsync<TDocument>(this
+                Source<IEnumerable<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
+            IElasticSearchService elasticSearchService, string indexName) where TDocument : ElasticDocument
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism,
+                g => elasticSearchService.BulkWriteDocumentsAsync(g, indexName));
+        }
+
+        public static Source<Maybe<TDocument>, NotUsed> FilterExistingUnchangedAsync<TDocument>(
+            this Source<Maybe<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
+            ComparerModel comparerModel) where TDocument : ElasticDocument
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);
         }
     }
 }

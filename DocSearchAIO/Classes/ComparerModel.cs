@@ -24,15 +24,6 @@ namespace DocSearchAIO.Classes
 
         private ConcurrentDictionary<string, ComparerObject> _comparerObjects;
 
-        protected ComparerModel()
-        {
-        }
-
-        protected ComparerModel(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<ComparerModel>();
-        }
-
         protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
         {
             _logger = loggerFactory.CreateLogger<ComparerModel>();
@@ -51,13 +42,13 @@ namespace DocSearchAIO.Classes
 
         public void RemoveComparerFile()
         {
-            _logger.LogInformation($"remove comparer file {GetComparerFilePath} for key {DerivedModelName}");
+            _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}", GetComparerFilePath, DerivedModelName);
             File.Delete(GetComparerFilePath);
         }
 
         public async Task WriteAllLinesAsync()
         {
-            _logger.LogInformation($"write new comparer file in {_comparerDirectory}");
+            _logger.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
             var sw = Stopwatch.StartNew();
             try
             {
@@ -68,23 +59,23 @@ namespace DocSearchAIO.Classes
             finally
             {
                 sw.Stop();
-                _logger.LogInformation($"WriteAllLinesAsync needs {sw.ElapsedMilliseconds} ms");
+                _logger.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
             }
         }
 
         private void CheckAndCreateComparerDirectory()
         {
-            _logger.LogInformation($"check if directory {_comparerDirectory} exists");
+            _logger.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
             if (!Directory.Exists(_comparerDirectory))
                 Directory.CreateDirectory(_comparerDirectory);
-            _logger.LogInformation($"check if comparer file {GetComparerFilePath} exists");
+            _logger.LogInformation("check if comparer file {GetComparerFilePath} exists", GetComparerFilePath);
             if (!File.Exists(GetComparerFilePath))
                 File.Create(GetComparerFilePath).Dispose();
         }
 
         private void FillConcurrentDictionary()
         {
-            _logger.LogInformation($"fill comparer dictionary for key {DerivedModelName}");
+            _logger.LogInformation("fill comparer dictionary for key {DerivedModelName}", DerivedModelName);
             var sw = Stopwatch.StartNew();
             try
             {
@@ -98,7 +89,7 @@ namespace DocSearchAIO.Classes
                         if (spl.Length != 3) return Maybe<KeyValuePair<string, ComparerObject>>.None;
                         var cpo = new ComparerObject
                             {DocumentHash = spl[0], PathHash = spl[1], OriginalPath = spl[2]};
-                        return Maybe<KeyValuePair<string, ComparerObject>>.From(new KeyValuePair<string,ComparerObject>(cpo.PathHash, cpo));
+                        return Maybe<KeyValuePair<string, ComparerObject>>.From(new KeyValuePair<string, ComparerObject>(cpo.PathHash, cpo));
                     })
                     .Values();
                 _comparerObjects = new ConcurrentDictionary<string, ComparerObject>(bulk);
@@ -106,7 +97,8 @@ namespace DocSearchAIO.Classes
             finally
             {
                 sw.Stop();
-                _logger.LogInformation($"FillConcurrentDictionary needs {sw.ElapsedMilliseconds} ms for {_comparerObjects.Count} entries");
+                _logger.LogInformation("FillConcurrentDictionary needs {ElapsedTimeMs} ms for {ComparerObjects} entries", sw.ElapsedMilliseconds,
+                    _comparerObjects.Count);
             }
         }
 
@@ -159,7 +151,6 @@ namespace DocSearchAIO.Classes
         public ComparerModelWord(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
             comparerDirectory)
         {
-            
         }
     }
 

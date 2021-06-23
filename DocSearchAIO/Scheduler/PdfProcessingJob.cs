@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -72,7 +73,6 @@ namespace DocSearchAIO.Scheduler
                         },
                         async () =>
                         {
-                            var materializer = _actorSystem.Materializer();
                             _logger.LogInformation("start job");
                             var indexName =
                                 _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
@@ -97,24 +97,17 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            var runnable = 
-                                                new GenericSourceFilePath(scanPath)
+                                            await new GenericSourceFilePath(scanPath)
                                                 .CreateSource(schedulerEntry.FileExtension)
                                                 .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism, ProcessPdfDocument)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    elementOpt => _comparerModel.FilterExistingUnchanged(elementOpt))
+                                                .ProcessPdfDocumentAsync(schedulerEntry, _cfg, _statisticUtilities, _logger)
+                                                .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
-                                                .SelectAsync(schedulerEntry.Parallelism,
-                                                    async processingInfo =>
-                                                        await _elasticSearchService.BulkWriteDocumentsAsync(
-                                                            processingInfo,
-                                                            indexName))
-                                                .RunWith(Sink.Ignore<bool>(), materializer);
-                                            await Task.WhenAll(runnable);
+                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService, indexName)
+                                                .RunIgnore(_actorSystem.Materializer());
 
                                             _logger.LogInformation("finished processing pdf documents");
                                             sw.Stop();
@@ -144,8 +137,21 @@ namespace DocSearchAIO.Scheduler
                     );
             });
         }
+    }
 
-        private async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(string fileName)
+    internal static class PdfProcessingHelper
+    {
+        public static Source<Maybe<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
+            this Source<string, NotUsed> source,
+            SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
+        {
+            return source.SelectAsync(schedulerEntry.Parallelism,
+                f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger));
+        }
+
+        private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName, ConfigurationObject configurationObject,
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
         {
             return await Task.Run(async () =>
             {
@@ -180,7 +186,7 @@ namespace DocSearchAIO.Scheduler
                     document.Close();
 
                     var uriPath = fileName
-                        .Replace(_cfg.ScanPath, _cfg.UriReplacement)
+                        .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
                     var fileNameHash = await StaticHelpers.CreateMd5HashString(fileName);
@@ -222,8 +228,8 @@ namespace DocSearchAIO.Scheduler
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception, "An error occured");
-                    _statisticUtilities.AddToFailedDocuments();
+                    logger.LogError(exception, "An error occured");
+                    statisticUtilities.AddToFailedDocuments();
                     return Maybe<PdfElasticDocument>.None;
                 }
             });
