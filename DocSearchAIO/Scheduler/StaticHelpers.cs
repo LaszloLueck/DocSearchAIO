@@ -180,6 +180,7 @@ namespace DocSearchAIO.Scheduler
         private static IEnumerable<string[]> GetCommentsString(
             IEnumerable<OfficeDocumentComment> commentsArray) =>
             commentsArray
+                .Where(l => l.Comment is not null)
                 .Select(l => l.Comment.Split(" "))
                 .Distinct()
                 .ToList();
@@ -189,6 +190,7 @@ namespace DocSearchAIO.Scheduler
             listElementsToHash
                 .Concat(
                     GetCommentsString(commentsArray)
+                        .Where(d => d.Any())
                         .SelectMany(k => k).Distinct());
 
         public static async Task<string> GetContentHashString(this (List<string> listElementsToHash,
@@ -231,14 +233,15 @@ namespace DocSearchAIO.Scheduler
                         switch (element.LocalName)
                         {
                             case "t" when !element.ChildElements.Any():
-                                sb.Append(element.InnerText);
+                                if(element.InnerText.Any())
+                                    sb.AppendLine(element.InnerText);
                                 break;
                             case "p":
                                 ExtractTextFromElement(element.ChildElements, sb);
-                                sb.Append(' ');
+                                sb.AppendLine();
                                 break;
                             case "br":
-                                sb.Append(' ');
+                                sb.AppendLine();
                                 break;
                             default:
                                 ExtractTextFromElement(element.ChildElements, sb);

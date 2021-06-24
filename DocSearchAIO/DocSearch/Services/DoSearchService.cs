@@ -125,7 +125,7 @@ namespace DocSearchAIO.DocSearch.Services
                     {
                         "docx" => "./images/word.svg",
                         "pptx" => "./images/powerpoint.svg",
-                        "excel" => "./images/excel.svg",
+                        "xlsx" => "./images/excel.svg",
                         "pdf" => "./images/pdf.svg",
                         _ => "./images/unknown.svg"
                     };

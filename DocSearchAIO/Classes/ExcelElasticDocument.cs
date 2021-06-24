@@ -11,7 +11,6 @@ namespace DocSearchAIO.Classes
         [Text(Name = "identifier")] public string Identifier { get; set; }
         [Text(Name = "language")] public string Language { get; set; }
         [Text(Name = "revision")] public string Revision { get; set; }
-        [Text(Name = "slideCount")] public int SlideCount { get; set; }
         [Text(Name = "version")] public string Version { get; set; }
         [Text(Name = "contentStatus")] public string ContentStatus { get; set; }
         [Text(Name = "lastModifiedBy")] public string LastModifiedBy { get; set; }
