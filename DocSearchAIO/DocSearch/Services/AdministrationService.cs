@@ -65,9 +65,9 @@ namespace DocSearchAIO.DocSearch.Services
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
-                            async currentSelected =>
+                            async (currentSelected, _) =>
                             {
-                                _configurationObject.Processing[currentSelected.Key].Active = false;
+                                _configurationObject.Processing[currentSelected].Active = false;
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
                             },
@@ -95,9 +95,9 @@ namespace DocSearchAIO.DocSearch.Services
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
-                            async currentSelected =>
+                            async (currentSelected, _) =>
                             {
-                                _configurationObject.Processing[currentSelected.Key].Active = true;
+                                _configurationObject.Processing[currentSelected].Active = true;
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
                             },

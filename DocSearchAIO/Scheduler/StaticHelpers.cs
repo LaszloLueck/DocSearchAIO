@@ -68,6 +68,19 @@ namespace DocSearchAIO.Scheduler
         public static TOut Match<TOut, TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> kvOpt,
             Func<TKey, TValue, TOut> some, Func<TOut> none) =>
             kvOpt.HasValue ? some.Invoke(kvOpt.Value.Key, kvOpt.Value.Value) : none.Invoke();
+        
+        public static void Match<TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> maybe, Action<TKey, TValue> Some,
+            Action None)
+        {
+            if (maybe.HasValue)
+            {
+                Some.Invoke(maybe.Value.Key, maybe.Value.Value);
+            }
+            else
+            {
+                None.Invoke();
+            }
+        }
 
         public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
             Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
@@ -87,28 +100,9 @@ namespace DocSearchAIO.Scheduler
                 action.Invoke(new KeyValuePair<TDicKey, TDicValue>(comparer, source[comparer]));
         }
 
-        public static TOut ValueOr<TOut>(this TOut value, TOut alternative)
-        {
-            return value is null ? alternative is null ? default : alternative : value;
-        }
+        public static TOut ValueOr<TOut>(this TOut value, TOut alternative) => value is null ? alternative is null ? default : alternative : value;
 
-        // public class DeconstructKvObject<TKey, TValue>
-        // {
-        //     public readonly TKey Key;
-        //     public readonly TValue Value;
-        //
-        //     public DeconstructKvObject(TKey key, TValue value)
-        //     {
-        //         Key = key;
-        //         Value = value;
-        //     }
-        // }
-        //
-        // public static DeconstructKvObject<TKey, TValue>
-        //     DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
-        //     new(kv.Key, kv.Value);
-
-        public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
+            public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
         public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
