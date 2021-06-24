@@ -69,16 +69,16 @@ namespace DocSearchAIO.Scheduler
             Func<TKey, TValue, TOut> some, Func<TOut> none) =>
             kvOpt.HasValue ? some.Invoke(kvOpt.Value.Key, kvOpt.Value.Value) : none.Invoke();
         
-        public static void Match<TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> maybe, Action<TKey, TValue> Some,
-            Action None)
+        public static void Match<TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> maybe, Action<TKey, TValue> some,
+            Action none)
         {
             if (maybe.HasValue)
             {
-                Some.Invoke(maybe.Value.Key, maybe.Value.Value);
+                some.Invoke(maybe.Value.Key, maybe.Value.Value);
             }
             else
             {
-                None.Invoke();
+                none.Invoke();
             }
         }
 
