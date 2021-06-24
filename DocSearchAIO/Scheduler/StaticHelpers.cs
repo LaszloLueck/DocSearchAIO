@@ -65,6 +65,13 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
+        public static TOut Match<TOut, TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> kvOpt,
+            Func<TKey, TValue, TOut> some, Func<TOut> none) =>
+            kvOpt.HasValue ? some.Invoke(kvOpt.Value.Key, kvOpt.Value.Value) : none.Invoke();
+
+        public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
+            Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
+
         public static TOut IfTrueFalse<TOut>(this bool value,
             Func<TOut> falseAction,
             Func<TOut> trueAction)
@@ -85,21 +92,21 @@ namespace DocSearchAIO.Scheduler
             return value is null ? alternative is null ? default : alternative : value;
         }
 
-        public class DeconstructKvObject<TKey, TValue>
-        {
-            public readonly TKey Key;
-            public readonly TValue Value;
-
-            public DeconstructKvObject(TKey key, TValue value)
-            {
-                Key = key;
-                Value = value;
-            }
-        }
-
-        public static DeconstructKvObject<TKey, TValue>
-            DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
-            new(kv.Key, kv.Value);
+        // public class DeconstructKvObject<TKey, TValue>
+        // {
+        //     public readonly TKey Key;
+        //     public readonly TValue Value;
+        //
+        //     public DeconstructKvObject(TKey key, TValue value)
+        //     {
+        //         Key = key;
+        //         Value = value;
+        //     }
+        // }
+        //
+        // public static DeconstructKvObject<TKey, TValue>
+        //     DeconstructKv<TKey, TValue>(this KeyValuePair<TKey, TValue> kv) =>
+        //     new(kv.Key, kv.Value);
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
@@ -233,7 +240,7 @@ namespace DocSearchAIO.Scheduler
                         switch (element.LocalName)
                         {
                             case "t" when !element.ChildElements.Any():
-                                if(element.InnerText.Any())
+                                if (element.InnerText.Any())
                                     sb.AppendLine(element.InnerText);
                                 break;
                             case "p":

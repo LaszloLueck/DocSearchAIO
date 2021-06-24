@@ -209,9 +209,8 @@ namespace DocSearchAIO.DocSearch.Services
                         .Where(d => d.Value.JobName == jobStatusRequest.JobName)
                         .TryFirst()
                         .Match(
-                            async kv =>
+                            async (key, value) =>
                             {
-                                var (key, value) = kv;
                                 var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
                                     value.IndexSuffix);
 
@@ -245,7 +244,6 @@ namespace DocSearchAIO.DocSearch.Services
                 });
             return true;
         }
-
 
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
@@ -356,22 +354,20 @@ namespace DocSearchAIO.DocSearch.Services
             var jobStateMemoryCaches = GetJobStateMemoryCaches(_loggerFactory, _memoryCache);
 
             StatisticUtilities(_loggerFactory, _configurationObject)
-                .ForEach(statisticUtility =>
+                .ForEach((processorBase, statisticModel) =>
                 {
-                    statisticUtility
-                        .DeconstructKv()
-                        .Value
+                    statisticModel
                         .Invoke()
                         .GetLatestJobStatisticByModel()
                         .Map(doc =>
                         {
                             jobStateMemoryCaches
                                 .Where(d => d.Key.GetDerivedModelName ==
-                                            statisticUtility.DeconstructKv().Key.GetDerivedModelName)
+                                            processorBase.GetDerivedModelName)
                                 .TryFirst()
                                 .Map(jobState =>
                                 {
-                                    runtimeStatistic.Add(statisticUtility.Key.ShortName,
+                                    runtimeStatistic.Add(processorBase.ShortName,
                                         ConvertToRunnableStatistic(doc, jobState.Value));
                                 });
                         });
