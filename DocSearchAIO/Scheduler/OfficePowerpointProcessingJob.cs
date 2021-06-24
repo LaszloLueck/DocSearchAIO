@@ -32,7 +32,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<StatisticModelPowerpoint> _statisticUtilities;
-        private readonly ComparerModelPowerpoint _comparerModel;
+        private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,

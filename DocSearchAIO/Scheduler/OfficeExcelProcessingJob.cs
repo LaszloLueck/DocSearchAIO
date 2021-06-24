@@ -18,7 +18,7 @@ namespace DocSearchAIO.Scheduler
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerUtilities _schedulerUtilities;
         private readonly StatisticUtilities<StatisticModelExcel> _statisticUtilities;
-        private readonly ComparerModelWord _comparerModel;
+        private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
 
         public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
@@ -33,7 +33,7 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
                 new StatisticModelExcel().GetStatisticFileName);
-            _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
+            _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
