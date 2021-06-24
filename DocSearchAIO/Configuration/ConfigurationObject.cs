@@ -29,6 +29,9 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("processing")]
         public Dictionary<string, SchedulerEntry> Processing { get; set; }
         
+        [JsonProperty("cleanup")]
+        public Dictionary<string, CleanUpEntry> Cleanup { get; set; }
+        
         [JsonProperty("groupName")]
         public string GroupName { get; set; }
         
@@ -37,6 +40,27 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("statisticsDirectory")]
         public string StatisticsDirectory { get; set; }
+    }
+
+    public class CleanUpEntry
+    {
+        [JsonProperty("active")]
+        public bool Active { get; set; }
+        
+        [JsonProperty("forComparerName")]
+        public string ForComparer { get; set; }
+        
+        [JsonProperty("forIndexName")]
+        public string ForIndexName { get; set; }
+        
+        [JsonProperty("startDelay")]
+        public int StartDelay { get; set; }
+        
+        [JsonProperty("runsEvery")]
+        public int RunsEvery { get; set; }
+        
+        [JsonProperty("parallelism")]
+        public int Parallelism { get; set; }
     }
 
     public class SchedulerEntry

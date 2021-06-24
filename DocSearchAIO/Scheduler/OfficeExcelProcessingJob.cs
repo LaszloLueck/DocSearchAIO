@@ -23,6 +23,7 @@ using Quartz;
 
 namespace DocSearchAIO.Scheduler
 {
+    [DisallowConcurrentExecution]
     public class OfficeExcelProcessingJob : IJob
     {
         private readonly ILogger _logger;
