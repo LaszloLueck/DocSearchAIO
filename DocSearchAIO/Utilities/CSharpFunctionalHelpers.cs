@@ -46,7 +46,6 @@ namespace DocSearchAIO.Utilities
             Action<TKey, TValue> action)
         {
             if (!source.ContainsKey(comparer)) return;
-            var kv = source[comparer];
             action.Invoke(comparer, source[comparer]);
         }
 
