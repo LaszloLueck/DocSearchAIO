@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocSearchAIO", "DocSearchAIO\DocSearchAIO.csproj", "{4F249499-2226-48F5-930F-85F35C6CFABD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocSearchAIO_Test", "DocSearchAIO_Test\DocSearchAIO_Test.csproj", "{33550CAB-9C0E-4B7C-BFDC-8E8F04B29860}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocSearchAIO_Test", "DocSearchAIO_Test\DocSearchAIO_Test.csproj", "{36F4E787-8D0D-431C-8013-BD8484E0477F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +14,9 @@ Global
 		{4F249499-2226-48F5-930F-85F35C6CFABD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F249499-2226-48F5-930F-85F35C6CFABD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F249499-2226-48F5-930F-85F35C6CFABD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{33550CAB-9C0E-4B7C-BFDC-8E8F04B29860}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{33550CAB-9C0E-4B7C-BFDC-8E8F04B29860}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{33550CAB-9C0E-4B7C-BFDC-8E8F04B29860}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{33550CAB-9C0E-4B7C-BFDC-8E8F04B29860}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36F4E787-8D0D-431C-8013-BD8484E0477F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36F4E787-8D0D-431C-8013-BD8484E0477F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36F4E787-8D0D-431C-8013-BD8484E0477F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36F4E787-8D0D-431C-8013-BD8484E0477F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
