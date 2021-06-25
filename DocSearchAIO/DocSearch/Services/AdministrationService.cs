@@ -137,7 +137,7 @@ namespace DocSearchAIO.DocSearch.Services
             try
             {
                 _configurationObject.ElasticEndpoints = model.ElasticEndpoints;
-                _configurationObject.GroupName = model.GroupName;
+                _configurationObject.SchedulerGroupName = model.GroupName;
                 _configurationObject.IndexName = model.IndexName;
                 _configurationObject.ScanPath = model.ScanPath;
                 _configurationObject.SchedulerId = model.SchedulerId;
@@ -275,7 +275,7 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerName = _configurationObject.SchedulerName,
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
-                GroupName = _configurationObject.GroupName,
+                GroupName = _configurationObject.SchedulerGroupName,
                 UriReplacement = _configurationObject.UriReplacement,
                 ComparerDirectory = _configurationObject.ComparerDirectory,
                 StatisticsDirectory = _configurationObject.StatisticsDirectory,

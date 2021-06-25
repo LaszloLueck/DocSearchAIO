@@ -32,8 +32,11 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("cleanup")]
         public Dictionary<string, CleanUpEntry> Cleanup { get; set; }
         
-        [JsonProperty("groupName")]
-        public string GroupName { get; set; }
+        [JsonProperty("schedulerGroupName")]
+        public string SchedulerGroupName { get; set; }
+        
+        [JsonProperty("cleanupGroupName")]
+        public string CleanupGroupName { get; set; }
         
         [JsonProperty("comparerDirectory")]
         public string ComparerDirectory { get; set; }
@@ -61,6 +64,12 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("parallelism")]
         public int Parallelism { get; set; }
+        
+        [JsonProperty("jobName")]
+        public string JobName { get; set; }
+        
+        [JsonProperty("triggerName")]
+        public string TriggerName { get; set; }
     }
 
     public class SchedulerEntry

@@ -21,12 +21,47 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 q.UseMicrosoftDependencyInjectionJobFactory();
             });
 
+            cfg.Cleanup.ForEach((cleanupKey, cleanupEntry) =>
+            {
+                services.AddQuartz(q =>
+                {
+                    var jk = new JobKey(cleanupEntry.JobName, cfg.CleanupGroupName);
+                    switch (cleanupEntry.JobName)
+                    {
+                        case "OfficeWordCleanupJob":
+                            q.AddJob<OfficeWordCleanupJob>(jk,
+                                p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
+                            break;
+                        case "OfficePowerpointCleanupJob":
+                            q.AddJob<OfficePowerpointCleanupJob>(jk,
+                                p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
+                            break;
+                        case "OfficeExcelCleanupJob":
+                            q.AddJob<OfficeExcelCleanupJob>(jk,
+                                p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
+                            break;
+                        case "PdfCleanupJob":
+                            q.AddJob<PdfCleanupJob>(jk,
+                                p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
+                            break;
+                    }
+
+                    q.AddTrigger(t => t
+                        .ForJob(jk)
+                        .WithIdentity(cleanupEntry.TriggerName, cfg.CleanupGroupName)
+                        .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(cleanupEntry.StartDelay)))
+                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(cleanupEntry.RunsEvery).RepeatForever())
+                        .WithDescription($"trigger for {cleanupKey}-processing and indexing")
+                    );
+                });
+            });
+
 
             cfg.Processing.ForEach((schedulerKey, schedulerEntry) =>
             {
                 services.AddQuartz(q =>
                 {
-                    var jk = new JobKey(schedulerEntry.JobName, cfg.GroupName);
+                    var jk = new JobKey(schedulerEntry.JobName, cfg.SchedulerGroupName);
                     switch (schedulerEntry.JobName)
                     {
                         case "wordProcessingJob":
@@ -49,11 +84,9 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                             throw new ArgumentOutOfRangeException(nameof(schedulerEntry.JobName),
                                 schedulerEntry.JobName, "cannot build quartz job with the given scheduler entry");
                     }
-
-
                     q.AddTrigger(t => t
                         .ForJob(jk)
-                        .WithIdentity(schedulerEntry.TriggerName, cfg.GroupName)
+                        .WithIdentity(schedulerEntry.TriggerName, cfg.SchedulerGroupName)
                         .StartAt(
                             DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(schedulerEntry.StartDelay)))
                         .WithSimpleSchedule(x => x.WithIntervalInSeconds(schedulerEntry.RunsEvery).RepeatForever())

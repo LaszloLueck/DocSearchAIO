@@ -65,7 +65,7 @@ namespace DocSearchAIO.Scheduler
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
-                                _cfg.GroupName, TriggerState.Paused);
+                                _cfg.SchedulerGroupName, TriggerState.Paused);
                             _logger.LogWarning(
                                 "skip processing of word documents because the scheduler is inactive per config");
                         },

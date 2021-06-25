@@ -56,7 +56,8 @@
       }
     },
     "cleanup": null,
-    "groupName": "docSearch_Processing",
+    "schedulerGroupName": "docSearch_Processing",
+    "cleanupGroupName": "docSearch_Cleanup",
     "comparerDirectory": "./Resources/comparer",
     "statisticsDirectory": "./Resources/statistics"
   }
