@@ -42,7 +42,7 @@ namespace DocSearchAIO.Utilities
                 action.Invoke();
         }
 
-        public static void DictionaryKeyExistsAction<TKey, TValue>(this Dictionary<TKey, TValue> source, TKey comparer,
+        public static void DictionaryKeyExistsAction<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey comparer,
             Action<TKey, TValue> action)
         {
             if (!source.ContainsKey(comparer)) return;

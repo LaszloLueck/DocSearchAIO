@@ -63,5 +63,35 @@ namespace DocSearchAIO_Test
                 () => Assert.True(true)
             );
         }
+
+        [Fact]
+        public void Check_if_a_dictionary_contains_key_and_process_the_result()
+        {
+            var kv1 = new KeyValuePair<int, string>(1, "A");
+            var kv2 = new KeyValuePair<int, string>(2, "B");
+            IDictionary<int, string> tDictionary = new Dictionary<int, string>();
+            tDictionary.Add(kv1);
+            tDictionary.Add(kv2);
+
+            tDictionary.DictionaryKeyExistsAction(1, (intKey, stringValue) =>
+            {
+                1.Should().Be(intKey);
+                "A".Should().Be(stringValue);
+            });
+        }
+        
+        [Fact]
+        public void Check_if_a_dictionary_contains_not_a_key_and_do_nothing()
+        {
+            var kv1 = new KeyValuePair<int, string>(1, "A");
+            var kv2 = new KeyValuePair<int, string>(2, "B");
+            IDictionary<int, string> tDictionary = new Dictionary<int, string>();
+            tDictionary.Add(kv1);
+            tDictionary.Add(kv2);
+
+            tDictionary.DictionaryKeyExistsAction(3, (_, _) => throw new FieldAccessException("value should be none"));
+            
+            Assert.True(true);
+        }
     }
 }

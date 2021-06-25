@@ -22,8 +22,6 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StaticHelpers
     {
-
-
         public static IEnumerable<Type> GetSubtypesOfType<TIn>()
             =>
                 from domainAssembly in AppDomain.CurrentDomain.GetAssemblies()
