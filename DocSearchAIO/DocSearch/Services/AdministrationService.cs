@@ -266,7 +266,9 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetGenericContent()
         {
-            var subTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
+            var processSubTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
+            var cleanupSubTypes = StaticHelpers.GetSubtypesOfType<CleanupJob>();
+            
             var adminGenModel = new AdministrationGenericModel
             {
                 ScanPath = _configurationObject.ScanPath,
@@ -281,14 +283,30 @@ namespace DocSearchAIO.DocSearch.Services
                 StatisticsDirectory = _configurationObject.StatisticsDirectory,
                 ProcessorConfigurations = _configurationObject
                     .Processing
-                    .Where(d => subTypes.Select(st => st.Name).Contains(d.Key))
+                    .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
                     .Select(kv =>
                         new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
-                            new AdministrationGenericModel.ProcessorConfiguration()
+                            new AdministrationGenericModel.ProcessorConfiguration
                             {
                                 ExcludeFilter = kv.Value.ExcludeFilter,
                                 FileExtension = kv.Value.FileExtension,
                                 IndexSuffix = kv.Value.IndexSuffix,
+                                JobName = kv.Value.JobName,
+                                Parallelism = kv.Value.Parallelism,
+                                RunsEvery = kv.Value.RunsEvery,
+                                StartDelay = kv.Value.StartDelay,
+                                TriggerName = kv.Value.TriggerName
+                            }))
+                    .ToDictionary(),
+                CleanupConfigurations = _configurationObject
+                    .Cleanup
+                    .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
+                    .Select(kv =>
+                        new KeyValuePair<string,AdministrationGenericModel.CleanupConfiguration>(kv.Key,
+                            new AdministrationGenericModel.CleanupConfiguration
+                            {
+                                ForComparer = kv.Value.ForComparer,
+                                ForIndexSuffix = kv.Value.ForIndexSuffix,
                                 JobName = kv.Value.JobName,
                                 Parallelism = kv.Value.Parallelism,
                                 RunsEvery = kv.Value.RunsEvery,

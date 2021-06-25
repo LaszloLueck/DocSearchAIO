@@ -53,8 +53,8 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("forComparerName")]
         public string ForComparer { get; set; }
         
-        [JsonProperty("forIndexName")]
-        public string ForIndexName { get; set; }
+        [JsonProperty("forIndexSuffix")]
+        public string ForIndexSuffix { get; set; }
         
         [JsonProperty("startDelay")]
         public int StartDelay { get; set; }

@@ -55,7 +55,48 @@
         "runsEvery": 3600
       }
     },
-    "cleanup": null,
+    "cleanup": {
+      "OfficeWordCleanupJob" : {
+        "active": false,
+        "forComparerName": "WordElasticDocument",
+        "forIndexSuffix": "word",
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "wordCleanupJob",
+        "triggerName": "wordCleanupTrigger"
+      },
+      "OfficePowerpointCleanupJob" : {
+        "active": false,
+        "forComparerName": "PowerpointElasticDocument",
+        "forIndexSuffix": "powerpoint",
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "powerpointCleanupJob",
+        "triggerName": "powerpointCleanupTrigger"        
+      },
+      "OfficeExcelCleanupJob" : {
+        "active": false,
+        "forComparerName": "ExcelElasticDocument",
+        "forIndexSuffix": "excel",
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "excelCleanupJob",
+        "triggerName": "excelCleanupTrigger"        
+      },
+      "PdfCleanupJob": {
+        "active": false,
+        "forComparerName": "PdfElasticDocument",
+        "forIndexSuffix": "pdf",
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "pdfCleanupJob",
+        "triggerName": "pdfCleanupTrigger"       
+      }
+    },
     "schedulerGroupName": "docSearch_Processing",
     "cleanupGroupName": "docSearch_Cleanup",
     "comparerDirectory": "./Resources/comparer",

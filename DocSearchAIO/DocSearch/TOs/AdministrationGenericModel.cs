@@ -19,6 +19,8 @@ namespace DocSearchAIO.DocSearch.TOs
         public string StatisticsDirectory { get; set; }
 
         public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; }
+        
+        public Dictionary<string, CleanupConfiguration> CleanupConfigurations { get; set; }
         public class ProcessorConfiguration
         {
             public int Parallelism { get; set; }
@@ -29,6 +31,17 @@ namespace DocSearchAIO.DocSearch.TOs
             public string TriggerName { get; set; }
             public int StartDelay { get; set; }
             public int RunsEvery { get; set; }
+        }
+
+        public class CleanupConfiguration
+        {
+            public string ForComparer { get; set; }
+            public string ForIndexSuffix { get; set; }
+            public int StartDelay { get; set; }
+            public int RunsEvery { get; set; }
+            public int Parallelism { get; set; }
+            public string JobName { get; set; }
+            public string TriggerName { get; set; }
         }
         
     }
