@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -11,6 +10,7 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -59,8 +59,7 @@ namespace DocSearchAIO.DocSearch.Services
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    await scheduler.PauseTrigger(triggerKey);
-                    return await _configurationObject
+                    var result = await _configurationObject
                         .Processing
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
                         .TryFirst()
@@ -73,6 +72,8 @@ namespace DocSearchAIO.DocSearch.Services
                             },
                             async () => await Task.Run(() => false)
                         );
+                    await scheduler.PauseTrigger(triggerKey);
+                    return result;
                 },
                 async () =>
                 {
@@ -89,8 +90,7 @@ namespace DocSearchAIO.DocSearch.Services
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    await scheduler.ResumeTrigger(triggerKey);
-                    return await _configurationObject
+                    var result = await _configurationObject
                         .Processing
                         .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
                         .TryFirst()
@@ -103,6 +103,8 @@ namespace DocSearchAIO.DocSearch.Services
                             },
                             async () => await Task.Run(() => false)
                         );
+                    await scheduler.ResumeTrigger(triggerKey);
+                    return result;
                 },
                 async () =>
                 {

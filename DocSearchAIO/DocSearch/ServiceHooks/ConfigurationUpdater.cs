@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using Newtonsoft.Json;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
@@ -16,7 +17,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             
             var str = JsonConvert.SerializeObject(outer, Formatting.Indented);
             
-            withBackup.IfTrue(() => File.Copy("./Resources/config/config.json", $"./Resources/config/config_{DateTime.Now:yyyyMMddHHmmss}.json"));
+            withBackup.IfTrue(() => File.Copy("./Resources/config/config.json", $"./Resources/config/config_{DateTime.Now:yyyyMMddHHmmssfff}.json"));
             
             await File.WriteAllTextAsync("./Resources/config/config.json", str, Encoding.UTF8);
         }

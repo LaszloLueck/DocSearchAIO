@@ -1,7 +1,7 @@
 ﻿using System;
-using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -21,88 +21,46 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                 q.UseMicrosoftDependencyInjectionJobFactory();
             });
 
-            cfg
-                .Processing
-                .DictionaryKeyExistsAction(nameof(WordElasticDocument), kv =>
+
+            cfg.Processing.ForEach((schedulerKey, schedulerEntry) =>
+            {
+                services.AddQuartz(q =>
                 {
-                    var scheduler = kv.Value;
-                    services.AddQuartz(q =>
+                    var jk = new JobKey(schedulerEntry.JobName, cfg.GroupName);
+                    switch (schedulerEntry.JobName)
                     {
-                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                        q.AddJob<OfficeWordProcessingJob>(jk,
-                            p => p.WithDescription("job for processing and indexing word documents"));
+                        case "wordProcessingJob":
+                            q.AddJob<OfficeWordProcessingJob>(jk,
+                                p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        case "excelProcessingJob":
+                            q.AddJob<OfficeExcelProcessingJob>(jk,
+                                p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        case "powerpointProcessingJob":
+                            q.AddJob<OfficePowerpointProcessingJob>(jk,
+                                p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        case "pdfProcessingJob":
+                            q.AddJob<PdfProcessingJob>(jk,
+                                p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(schedulerEntry.JobName),
+                                schedulerEntry.JobName, "cannot build quartz job with the given scheduler entry");
+                    }
 
-                        q.AddTrigger(t => t
-                            .ForJob(jk)
-                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(scheduler.StartDelay)))
-                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                            .WithDescription("trigger for word-processing and indexing")
-                        );
-                    });
+
+                    q.AddTrigger(t => t
+                        .ForJob(jk)
+                        .WithIdentity(schedulerEntry.TriggerName, cfg.GroupName)
+                        .StartAt(
+                            DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(schedulerEntry.StartDelay)))
+                        .WithSimpleSchedule(x => x.WithIntervalInSeconds(schedulerEntry.RunsEvery).RepeatForever())
+                        .WithDescription($"trigger for {schedulerKey}-processing and indexing")
+                    );
                 });
-
-            cfg
-                .Processing
-                .DictionaryKeyExistsAction(nameof(PowerpointElasticDocument), kv =>
-                {
-                    var scheduler = kv.Value;
-                    services.AddQuartz(q =>
-                    {
-                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                        q.AddJob<OfficePowerpointProcessingJob>(jk,
-                            p => p.WithDescription("job for processing and indexing powerpoint documents"));
-
-                        q.AddTrigger(t => t
-                            .ForJob(jk)
-                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                            .WithDescription("trigger for powerpoint-processing and indexing")
-                        );
-                    });
-                });
-
-            cfg
-                .Processing
-                .DictionaryKeyExistsAction(nameof(PdfElasticDocument), kv =>
-                {
-                    var scheduler = kv.Value;
-                    services.AddQuartz(q =>
-                    {
-                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                        q.AddJob<PdfProcessingJob>(jk,
-                            p => p.WithDescription("job for processing and indexing pdf documents"));
-                        q.AddTrigger(t => t
-                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                            .ForJob(jk)
-                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                            .WithDescription("trigger for pdf-processing and indexing")
-                        );
-                    });
-                });
-            
-            cfg
-                .Processing
-                .DictionaryKeyExistsAction(nameof(ExcelElasticDocument), kv =>
-                {
-                    var scheduler = kv.Value;
-                    services.AddQuartz(q =>
-                    {
-                        var jk = new JobKey(scheduler.JobName, cfg.GroupName);
-                        q.AddJob<OfficeExcelProcessingJob>(jk,
-                            p => p.WithDescription("job for processing and indexing excel documents"));
-                        q.AddTrigger(t => t
-                            .WithIdentity(scheduler.TriggerName, cfg.GroupName)
-                            .ForJob(jk)
-                            .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.Now.AddSeconds(scheduler.StartDelay)))
-                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(scheduler.RunsEvery).RepeatForever())
-                            .WithDescription("trigger for excel-processing and indexing")
-                        );
-                    });
-                });
-
+            });
             services.AddQuartzServer(options => options.WaitForJobsToComplete = true);
         }
     }

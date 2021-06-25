@@ -4,6 +4,7 @@ using Akka;
 using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -22,18 +23,41 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
         }
 
-        public readonly Func<IScheduler, string, string, Task> SetTriggerStateByUserAction =
-            async (scheduler, triggerName, groupName) =>
+        public readonly Func<IScheduler, string, string, TriggerState, Task> SetTriggerStateByUserAction =
+            async (scheduler, triggerName, groupName, triggerState) =>
             {
-                var currentTriggerState = await scheduler.GetTriggerState(new TriggerKey(triggerName, groupName));
-                (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
-                    .IfTrue(async () =>
-                    {
-                        _logger.LogWarning(
-                            "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
-                            triggerName, scheduler.SchedulerName);
-                        await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
-                    });
+                var currentTriggerKey = new TriggerKey(triggerName, groupName);
+                var currentTriggerState = await scheduler.GetTriggerState(currentTriggerKey);
+                _logger.LogInformation("current triggerstate is {Triggerstate}", currentTriggerState);
+                _logger.LogInformation($"set triggerstate for trigger {triggerName} to {triggerState}");
+                switch (triggerState)
+                {
+                    case TriggerState.Paused: 
+                        await scheduler.PauseTrigger(currentTriggerKey);
+                        break;
+                    case TriggerState.Normal: 
+                        await scheduler.ResumeTrigger(currentTriggerKey);
+                        break;
+                    case TriggerState.Complete:
+                        break;
+                    case TriggerState.Error:
+                        break;
+                    case TriggerState.Blocked:
+                        break;
+                    case TriggerState.None:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(triggerState), triggerState, "cannot process with that trigger state");
+                }
+
+                // (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
+                //     .IfTrue(async () =>
+                //     {
+                //         _logger.LogWarning(
+                //             "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
+                //             triggerName, scheduler.SchedulerName);
+                //         await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
+                //     });
             };
 
         public async Task CheckAndCreateElasticIndex<T>(string indexName) where T : ElasticDocument

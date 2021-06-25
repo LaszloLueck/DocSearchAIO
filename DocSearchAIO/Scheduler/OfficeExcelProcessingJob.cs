@@ -13,6 +13,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
+using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -64,7 +65,7 @@ namespace DocSearchAIO.Scheduler
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
-                                _cfg.GroupName);
+                                _cfg.GroupName, TriggerState.Paused);
                             _logger.LogWarning(
                                 "skip processing of word documents because the scheduler is inactive per config");
                         },

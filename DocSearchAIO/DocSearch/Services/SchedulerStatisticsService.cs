@@ -6,6 +6,7 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;

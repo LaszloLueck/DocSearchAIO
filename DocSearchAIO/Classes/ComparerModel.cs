@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes

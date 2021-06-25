@@ -16,6 +16,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
+using DocSearchAIO.Utilities;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
@@ -67,7 +68,7 @@ namespace DocSearchAIO.Scheduler
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
-                                _cfg.GroupName);
+                                _cfg.GroupName, TriggerState.Paused);
                             _logger.LogWarning(
                                 "skip Processing of PDF documents because the scheduler is inactive per config");
                         },

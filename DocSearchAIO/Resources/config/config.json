@@ -55,6 +55,7 @@
         "runsEvery": 3600
       }
     },
+    "cleanup": null,
     "groupName": "docSearch_Processing",
     "comparerDirectory": "./Resources/comparer",
     "statisticsDirectory": "./Resources/statistics"

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using Quartz;
 using Quartz.Impl;
 

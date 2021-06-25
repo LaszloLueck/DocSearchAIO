@@ -10,6 +10,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
+using DocSearchAIO.Utilities;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
@@ -64,7 +65,7 @@ namespace DocSearchAIO.Scheduler
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                                 schedulerEntry.TriggerName,
-                                _cfg.GroupName);
+                                _cfg.GroupName, TriggerState.Paused);
                             _logger.LogWarning(
                                 "skip processing of powerpoint documents because the scheduler is inactive per config");
                         },
