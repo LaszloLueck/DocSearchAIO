@@ -11,13 +11,11 @@ namespace DocSearchAIO.DocSearch.TOs
         public string SchedulerName { get; set; }
         public string SchedulerId { get; set; }
         public string ActorSystemName { get; set; }
-        public string GroupName { get; set; }
+        public string ProcessorGroupName { get; set; }
+        public string CleanupGroupName { get; set; }
         public string UriReplacement { get; set; }
-        
         public string ComparerDirectory { get; set; }
-        
         public string StatisticsDirectory { get; set; }
-
         public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; }
         
         public Dictionary<string, CleanupConfiguration> CleanupConfigurations { get; set; }

@@ -62,9 +62,17 @@
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
     <div class="input-group input-group-sm m-2">
         <div class="input-group-prepend">
-            <span class="input-group-text" id="labelGroupName">Gruppen-Name</span>
+            <span class="input-group-text" id="labelGroupName">Schedulerprozess Gruppen-Name</span>
         </div>
-        <input type="text" class="form-control" id="groupName" value="@Model.GroupName">
+        <input type="text" class="form-control" id="groupName" value="@Model.ProcessorGroupName">
+    </div>
+</div>
+<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+    <div class="input-group input-group-sm m-2">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="labelCleanupGroupName">Cleanup Gruppen-Name</span>
+        </div>
+        <input type="text" class="form-control" id="cleanupGroupName" value="@Model.CleanupGroupName">
     </div>
 </div>
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
@@ -103,13 +111,14 @@
     <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="@Html.Raw("processorType_" + item.Key)">
         <div class="input-group input-group-sm m-2">
             <div class="h6 mr-2">
-                <span><strong>Job</strong></span>
+                <span>
+                    <strong>Job</strong>
+                </span>
             </div>
             <div class="h6">
                 <span>@item.Key</span>
             </div>
         </div>
-
         <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
             <div class="input-group input-group-sm m-2">
                 <div class="input-group-prepend">
@@ -194,7 +203,83 @@
 </div>
 @foreach (var cleanupItem in Model.CleanupConfigurations)
 {
-    
+    <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="@Html.Raw("cleanupType_" + cleanupItem.Key)">
+        <div class="input-group input-group-sm m-2">
+            <div class="h6 mr-2">
+                <span>
+                    <strong>Job</strong>
+                </span>
+            </div>
+            <div class="h6">
+                <span>@cleanupItem.Key</span>
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartEveryPrepend")">Start alle</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_runsEvery") value="@cleanupItem.Value.RunsEvery">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartEveryAppend")">Sekunden</span>
+                </div>
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartDelayPrepend")">Startverzögerung</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_startDelay") value="@cleanupItem.Value.StartDelay">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartDelayAppend")">Sekunden</span>
+                </div>
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartEveryPrepend")">Ausführungs-Parallelität</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_parallelism") value="@cleanupItem.Value.Parallelism">
+                <div class="input-group-append">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelStartEveryAppend")">Threads</span>
+                </div>
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelCleanupJobNamePrepend")">Cleanup-Jobname</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_cleanupJobName") value="@cleanupItem.Value.JobName">
+            </div>
+        </div>      
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelCleanupTriggerNamePrepend")">Cleanup-Triggername</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_cleanupTriggerName") value="@cleanupItem.Value.TriggerName">
+            </div>
+        </div>          
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelCleanupForComparerPrepend")">Prozess-Comparer-Dateiname</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_cleanupForComparerName") value="@cleanupItem.Value.ForComparer">
+            </div>
+        </div>
+        <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
+            <div class="input-group input-group-sm m-2">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="@Html.Raw(cleanupItem.Key + "_labelCleanupForIndexSuffixPrepend")">Prozess-Indexname</span>
+                </div>
+                <input type="text" class="form-control" id=@Html.Raw(cleanupItem.Key + "_cleanupForIndexSuffix") value="@cleanupItem.Value.ForIndexSuffix">
+            </div>
+        </div>          
+    </div>
 }
 
 <div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">
@@ -245,24 +330,47 @@
             })
             .get();
             
+            let cleanups = $('div[id^="cleanupType_"]').map(function(){
+                let getter = $(this).attr('id').replace('cleanupType_','');
+                return {
+                    cleanupType: getter,
+                    runsEvery: parseInt($('#' + getter + '_runsEvery').val()) || 3600,
+                    startDelay: parseInt($('#' + getter + '_startDelay').val()) || 10,
+                    parallelism: parseInt($('#' + getter + '_parallelism').val()) || 1,
+                    jobName: $('#' + getter + '_cleanupJobName').val(),
+                    triggerName: $('#' + getter + '_cleanupTriggerName').val(),
+                    forComparer: $('#' + getter + '_cleanupForComparerName').val(),
+                    forIndexSuffix: $('#' + getter + '_cleanupForIndexSuffix').val()                  
+                }
+            })
+            .get();
+            
             let dictionary = Object.assign({}, ...processors.map((element) => {
                                  let newKey = element.processorType;
-                                 delete(element.processorType)
+                                 delete(element.processorType);
                                  return ({[newKey]: element});
                                }));
+            
+            let cleanupDictionary = Object.assign({}, ...cleanups.map((element) => {
+                let newKey = element.cleanupType;
+                delete(element.cleanupType);
+                return({[newKey]: element});
+            }));
             
             let data = {
                 scanPath: $('#scanPath').val(),
                 indexName: $('#indexName').val(),
                 schedulerName: $('#schedulerName').val(),
                 actorSystemName: $('#actorSystemName').val(),
-                groupName: $('#groupName').val(),
+                processorGroupName: $('#groupName').val(),
+                cleanupGroupName: $('#cleanupGroupName').val(),
                 schedulerId: $('#schedulerId').val(),
                 elasticEndpoints: elasticNodes,
                 uriReplacement: $('#urlReplacement').val(),
                 comparerDirectory: $('#comparerDirectory').val(),
                 statisticsDirectory: $('#statisticsDirectory').val(),
-                processorConfigurations: dictionary
+                processorConfigurations: dictionary,
+                cleanupConfigurations: cleanupDictionary
             };
             
             console.log(JSON.stringify(data));

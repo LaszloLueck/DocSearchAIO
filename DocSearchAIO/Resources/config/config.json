@@ -56,9 +56,9 @@
       }
     },
     "cleanup": {
-      "OfficeWordCleanupJob" : {
+      "WordCleanupJob" : {
         "active": false,
-        "forComparerName": "WordElasticDocument",
+        "forComparerName": "ComparerModelWord",
         "forIndexSuffix": "word",
         "startDelay": 15,
         "runsEvery": 1800,
@@ -66,9 +66,9 @@
         "jobName": "wordCleanupJob",
         "triggerName": "wordCleanupTrigger"
       },
-      "OfficePowerpointCleanupJob" : {
+      "PowerpointCleanupJob" : {
         "active": false,
-        "forComparerName": "PowerpointElasticDocument",
+        "forComparerName": "ComparerModelPowerpoint",
         "forIndexSuffix": "powerpoint",
         "startDelay": 15,
         "runsEvery": 1800,
@@ -76,9 +76,9 @@
         "jobName": "powerpointCleanupJob",
         "triggerName": "powerpointCleanupTrigger"        
       },
-      "OfficeExcelCleanupJob" : {
+      "ExcelCleanupJob" : {
         "active": false,
-        "forComparerName": "ExcelElasticDocument",
+        "forComparerName": "ComparerModelExcel",
         "forIndexSuffix": "excel",
         "startDelay": 15,
         "runsEvery": 1800,
@@ -88,7 +88,7 @@
       },
       "PdfCleanupJob": {
         "active": false,
-        "forComparerName": "PdfElasticDocument",
+        "forComparerName": "ComparerModelPdf",
         "forIndexSuffix": "pdf",
         "startDelay": 15,
         "runsEvery": 1800,

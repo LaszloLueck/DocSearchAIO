@@ -28,22 +28,25 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                     var jk = new JobKey(cleanupEntry.JobName, cfg.CleanupGroupName);
                     switch (cleanupEntry.JobName)
                     {
-                        case "OfficeWordCleanupJob":
+                        case "wordCleanupJob":
                             q.AddJob<OfficeWordCleanupJob>(jk,
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
-                        case "OfficePowerpointCleanupJob":
+                        case "powerpointCleanupJob":
                             q.AddJob<OfficePowerpointCleanupJob>(jk,
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
-                        case "OfficeExcelCleanupJob":
+                        case "excelCleanupJob":
                             q.AddJob<OfficeExcelCleanupJob>(jk,
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
-                        case "PdfCleanupJob":
+                        case "pdfCleanupJob":
                             q.AddJob<PdfCleanupJob>(jk,
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(cleanupEntry.JobName),
+                                cleanupEntry.JobName, "cannot build quartz job with the given scheduler entry");
                     }
 
                     q.AddTrigger(t => t

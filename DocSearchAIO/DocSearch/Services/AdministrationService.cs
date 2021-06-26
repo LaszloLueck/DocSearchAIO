@@ -137,7 +137,7 @@ namespace DocSearchAIO.DocSearch.Services
             try
             {
                 _configurationObject.ElasticEndpoints = model.ElasticEndpoints;
-                _configurationObject.SchedulerGroupName = model.GroupName;
+                _configurationObject.SchedulerGroupName = model.ProcessorGroupName;
                 _configurationObject.IndexName = model.IndexName;
                 _configurationObject.ScanPath = model.ScanPath;
                 _configurationObject.SchedulerId = model.SchedulerId;
@@ -145,6 +145,7 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.UriReplacement = model.UriReplacement;
                 _configurationObject.ActorSystemName = model.ActorSystemName;
                 _configurationObject.ComparerDirectory = model.ComparerDirectory;
+                _configurationObject.CleanupGroupName = model.CleanupGroupName;
 
                 _configurationObject.Processing = model
                     .ProcessorConfigurations
@@ -162,6 +163,20 @@ namespace DocSearchAIO.DocSearch.Services
                         }))
                     .ToDictionary();
 
+                _configurationObject.Cleanup = model
+                    .CleanupConfigurations
+                    .Select(kv =>
+                        new KeyValuePair<string, CleanUpEntry>(kv.Key, new CleanUpEntry()
+                        {
+                            ForComparerName = kv.Value.ForComparer,
+                            ForIndexSuffix = kv.Value.ForIndexSuffix,
+                            JobName = kv.Value.JobName,
+                            Parallelism = kv.Value.Parallelism,
+                            RunsEvery = kv.Value.RunsEvery,
+                            StartDelay = kv.Value.StartDelay,
+                            TriggerName = kv.Value.TriggerName
+                        }))
+                    .ToDictionary();
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                 _logger.LogInformation("configuration successfully updated");
@@ -277,7 +292,8 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerName = _configurationObject.SchedulerName,
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
-                GroupName = _configurationObject.SchedulerGroupName,
+                ProcessorGroupName = _configurationObject.SchedulerGroupName,
+                CleanupGroupName = _configurationObject.CleanupGroupName,
                 UriReplacement = _configurationObject.UriReplacement,
                 ComparerDirectory = _configurationObject.ComparerDirectory,
                 StatisticsDirectory = _configurationObject.StatisticsDirectory,
@@ -305,7 +321,7 @@ namespace DocSearchAIO.DocSearch.Services
                         new KeyValuePair<string,AdministrationGenericModel.CleanupConfiguration>(kv.Key,
                             new AdministrationGenericModel.CleanupConfiguration
                             {
-                                ForComparer = kv.Value.ForComparer,
+                                ForComparer = kv.Value.ForComparerName,
                                 ForIndexSuffix = kv.Value.ForIndexSuffix,
                                 JobName = kv.Value.JobName,
                                 Parallelism = kv.Value.Parallelism,

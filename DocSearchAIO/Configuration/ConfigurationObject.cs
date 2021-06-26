@@ -51,7 +51,7 @@ namespace DocSearchAIO.Configuration
         public bool Active { get; set; }
         
         [JsonProperty("forComparerName")]
-        public string ForComparer { get; set; }
+        public string ForComparerName { get; set; }
         
         [JsonProperty("forIndexSuffix")]
         public string ForIndexSuffix { get; set; }
