@@ -437,30 +437,37 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetActionContent()
         {
-            var schedulerStatistics = await _schedulerStatisticsService.GetSchedulerStatistics();
-            var schedulerModels = schedulerStatistics.Select(scheduler =>
-            {
-                var schedulerModel = new AdministrationActionSchedulerModel
+            var groupedSchedulerModels = (await _schedulerStatisticsService.GetSchedulerStatistics())
+                .Select(kv =>
                 {
-                    SchedulerName = scheduler.SchedulerName,
-                    Triggers = scheduler.TriggerElements.Select(trigger =>
+                    var groupName = kv.Key;
+                    var models = kv.Value.Select(scheduler =>
                     {
-                        var triggerModel = new AdministrationActionTriggerModel
+                        var schedulerModel = new AdministrationActionSchedulerModel
                         {
-                            TriggerName = trigger.TriggerName,
-                            GroupName = trigger.GroupName,
-                            JobName = trigger.JobName,
-                            CurrentState = trigger.TriggerState
+                            SchedulerName = scheduler.SchedulerName,
+                            Triggers = scheduler.TriggerElements.Select(trigger =>
+                            {
+                                var triggerModel = new AdministrationActionTriggerModel
+                                {
+                                    TriggerName = trigger.TriggerName,
+                                    GroupName = trigger.GroupName,
+                                    JobName = trigger.JobName,
+                                    CurrentState = trigger.TriggerState
+                                };
+                                return triggerModel;
+                            })
                         };
-                        return triggerModel;
-                    })
-                };
-                return schedulerModel;
-            });
+                        return schedulerModel;
+                    });
+                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName, models);
+                })
+                .ToDictionary();
 
 
-            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", schedulerModels);
+            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
             return content;
         }
     }
+
 }

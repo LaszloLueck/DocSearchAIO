@@ -28,6 +28,16 @@ namespace DocSearchAIO.Scheduler
         }
         
     }
+    
+    public class GenericSourceGroupName : GenericSource
+    {
+        public readonly string Value;
+
+        public GenericSourceGroupName(string value)
+        {
+            Value = value;
+        }
+    }
 
     public class GenericSourceFilePath : GenericSource
     {

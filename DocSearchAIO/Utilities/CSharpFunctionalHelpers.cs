@@ -48,7 +48,7 @@ namespace DocSearchAIO.Utilities
             if (!source.ContainsKey(comparer)) return;
             action.Invoke(comparer, source[comparer]);
         }
-
+        
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
             Action<TInputLeft> falseAction,
             Action<TInputRight> trueAction)
