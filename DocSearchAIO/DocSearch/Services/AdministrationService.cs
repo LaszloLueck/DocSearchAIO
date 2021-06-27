@@ -58,16 +58,8 @@ namespace DocSearchAIO.DocSearch.Services
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
-                    var processingTuples =
-                        _configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
-                    var cleanupTuples =
-                        _configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
-
-                    var tuples = processingTuples.Concat(cleanupTuples);
-
-
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await tuples
+                    var result = await GetConfigurationTuple(_configurationObject)
                         .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
@@ -100,28 +92,31 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
+        private static Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> GetConfigurationTuple =
+            configurationObject =>
+            {
+                var processingTuples =
+                    configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
+                var cleanupTuples =
+                    configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
+                return processingTuples.Concat(cleanupTuples);
+            };
+
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var processingTuples =
-                _configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
-            var cleanupTuples =
-                _configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
-
-            var tuples = processingTuples.Concat(cleanupTuples);
-            
             var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await tuples
+                    var result = await GetConfigurationTuple(_configurationObject)
                         .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
                             async currentSelected =>
                             {
                                 _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}", currentSelected.Key, triggerKey.Name);
-                                switch (currentSelected.Item3)
+                                switch (currentSelected.SchedulerType)
                                 {
                                     case "processing":
                                         _configurationObject.Processing[currentSelected.Key].Active = true;
