@@ -35,6 +35,7 @@ namespace DocSearchAIO.Scheduler
         private readonly StatisticUtilities<StatisticModelWord> _statisticUtilities;
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
+        private readonly ElasticUtilities _elasticUtilities;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -45,7 +46,8 @@ namespace DocSearchAIO.Scheduler
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory);
+            _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
                 new StatisticModelWord().GetStatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
@@ -57,14 +59,14 @@ namespace DocSearchAIO.Scheduler
         {
             await Task.Run(() =>
             {
-                var schedulerEntry = _cfg.Processing[nameof(WordElasticDocument)];
-                schedulerEntry
+                var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
+                configEntry
                     .Active
                     .IfTrueFalse(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                                schedulerEntry.TriggerName,
+                                configEntry.TriggerName,
                                 _cfg.SchedulerGroupName, TriggerState.Paused);
                             _logger.LogWarning(
                                 "skip processing of word documents because the scheduler is inactive per config");
@@ -73,9 +75,9 @@ namespace DocSearchAIO.Scheduler
                         {
                             _logger.LogInformation("start job");
                             var indexName =
-                                _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
 
-                            await _schedulerUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
+                            await _elasticUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
 
                             _logger.LogInformation("start crunching and indexing some word-documents");
 
@@ -100,16 +102,16 @@ namespace DocSearchAIO.Scheduler
                                             };
                                             var sw = Stopwatch.StartNew();
                                             await new GenericSourceFilePath(scanPath)
-                                                .CreateSource(schedulerEntry.FileExtension)
-                                                .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
+                                                .CreateSource(configEntry.FileExtension)
+                                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .ProcessWordDocumentAsync(schedulerEntry, _cfg, _statisticUtilities,
+                                                .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities,
                                                     _logger)
-                                                .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
+                                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
-                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService,
+                                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                                                     indexName)
                                                 .RunIgnore(_actorSystem.Materializer());
 

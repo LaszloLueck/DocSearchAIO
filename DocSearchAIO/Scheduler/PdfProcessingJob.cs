@@ -39,6 +39,7 @@ namespace DocSearchAIO.Scheduler
         private readonly StatisticUtilities<StatisticModelPdf> _statisticUtilities;
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
+        private readonly ElasticUtilities _elasticUtilities;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -48,7 +49,8 @@ namespace DocSearchAIO.Scheduler
             configuration.GetSection("configurationObject").Bind(_cfg);
             _actorSystem = actorSystem;
             _elasticSearchService = elasticSearchService;
-            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
+            _schedulerUtilities = new SchedulerUtilities(loggerFactory);
+            _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
                 new StatisticModelPdf().GetStatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
@@ -58,27 +60,27 @@ namespace DocSearchAIO.Scheduler
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var schedulerEntry = _cfg.Processing[nameof(PdfElasticDocument)];
+            var configEntry = _cfg.Processing[nameof(PdfElasticDocument)];
             await Task.Run(() =>
             {
-                schedulerEntry
+                configEntry
                     .Active
                     .IfTrueFalse(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                                schedulerEntry.TriggerName,
+                                configEntry.TriggerName,
                                 _cfg.SchedulerGroupName, TriggerState.Paused);
                             _logger.LogWarning(
-                                "skip Processing of PDF documents because the scheduler is inactive per config");
+                                "skip cleanup of PDF documents because the scheduler is inactive per config");
                         },
                         async () =>
                         {
                             _logger.LogInformation("start job");
                             var indexName =
-                                _schedulerUtilities.CreateIndexName(_cfg.IndexName, schedulerEntry.IndexSuffix);
+                                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
 
-                            await _schedulerUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
+                            await _elasticUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
                             _logger.LogInformation("start crunching and indexing some pdf-files");
                             Directory
                                 .Exists(_cfg.ScanPath)
@@ -99,15 +101,15 @@ namespace DocSearchAIO.Scheduler
                                             };
                                             var sw = Stopwatch.StartNew();
                                             await new GenericSourceFilePath(scanPath)
-                                                .CreateSource(schedulerEntry.FileExtension)
-                                                .UseExcludeFileFilter(schedulerEntry.ExcludeFilter)
+                                                .CreateSource(configEntry.FileExtension)
+                                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .ProcessPdfDocumentAsync(schedulerEntry, _cfg, _statisticUtilities, _logger)
-                                                .FilterExistingUnchangedAsync(schedulerEntry, _comparerModel)
+                                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
+                                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
                                                 .CountFilteredDocs(_statisticUtilities)
-                                                .WriteDocumentsToIndexAsync(schedulerEntry, _elasticSearchService, indexName)
+                                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService, indexName)
                                                 .RunIgnore(_actorSystem.Materializer());
 
                                             _logger.LogInformation("finished processing pdf documents");

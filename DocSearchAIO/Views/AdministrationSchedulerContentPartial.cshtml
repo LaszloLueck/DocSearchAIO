@@ -1,4 +1,4 @@
-@model IEnumerable<DocSearchAIO.DocSearch.TOs.SchedulerStatistics>
+@model Dictionary<string, DocSearchAIO.DocSearch.TOs.SchedulerStatistics[]>
 
 <div class="container mt-2 border rounded border-color-gray">
     <div class="row">
@@ -8,31 +8,40 @@
     </div>
     @foreach (var element in Model)
     {
-        var badge = element.State.ToLower() switch {
-            "gestartet" => $"<span class=\"badge badge-success\">{element.State}</span>",
-            "gestoppt" => $"<span class=\"badge badge-danger\">{element.State}</span>",
-            "pausiert" => $"<span class=\"badge badge-warning\">{element.State}</span>",
-            "unbekannt" => $"<span class=\"badge badge-secondary\">{element.State}</span>",
-            _ => "<span class=\"badge badge-secondary\">Unknown state</span>"
-            };
-        <div class="row">
-            <div class="col-3">
-                <span class="h6">@element.SchedulerName</span>
+        var values = element.Value;
+        <div class="container mt-2 border rounded border-color-gray">
+            <div class="row">
+                <div class="col-12">
+                    <span class="h5">Gruppe @element.Key</span>
+                </div>
             </div>
-            <div class="col-9">@Html.Raw(badge)</div>
-        </div>
-        <div class="row mb-2">
-            <div class="col-3">Instance-Id</div>
-            <div class="col-9">@element.SchedulerInstanceId</div>
-        </div>
-        <div class="row">
-            <div class="col-12">
-                <span class="h5">Trigger</span>
-            </div>
-        </div>
-        @foreach (var trigger in element.TriggerElements)
-        {
-            /*
+            @foreach (var schedulerStatistic in values)
+            {
+                var badge = schedulerStatistic.State.ToLower() switch {
+                    "gestartet" => $"<span class=\"badge badge-success\">{schedulerStatistic.State}</span>",
+                    "gestoppt" => $"<span class=\"badge badge-danger\">{schedulerStatistic.State}</span>",
+                    "pausiert" => $"<span class=\"badge badge-warning\">{schedulerStatistic.State}</span>",
+                    "unbekannt" => $"<span class=\"badge badge-secondary\">{schedulerStatistic.State}</span>",
+                    _ => "<span class=\"badge badge-secondary\">Unknown state</span>"
+                    };
+                <div class="row">
+                    <div class="col-3">
+                        <span class="h6">@schedulerStatistic.SchedulerName</span>
+                    </div>
+                    <div class="col-9">@Html.Raw(badge)</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-3">Instance-Id</div>
+                    <div class="col-9">@schedulerStatistic.SchedulerInstanceId</div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <span class="h5">Trigger</span>
+                    </div>
+                </div>
+                @foreach (var trigger in schedulerStatistic.TriggerElements)
+                {
+                    /*
                         blocked
 			            complete
 			            error
@@ -40,57 +49,59 @@
 			            normal
 			            paused
                      */
-            var triggerBatch = trigger.TriggerState.ToLower() switch{
-                "blocked" => "<span class=\"badge badge-warning\">Blockiert</span>",
-                "complete" => "<span class=\"badge badge-secondary\">Komplett</span>",
-                "error" => "<span class=\"badge badge-danger\">Fehler</span>",
-                "none" => "<span class=\"badge badge-info\">Kein Status</span>",
-                "normal" => "<span class=\"badge badge-success\">Normal</span>",
-                "paused" => "<span class=\"badge badge-primary\">Pausiert</span>",
-                _ => "span class=\"badge badge-secondary\">Unbekannt</span>"
-                };
+                    var triggerBatch = trigger.TriggerState.ToLower() switch{
+                        "blocked" => "<span class=\"badge badge-warning\">Blockiert</span>",
+                        "complete" => "<span class=\"badge badge-secondary\">Komplett</span>",
+                        "error" => "<span class=\"badge badge-danger\">Fehler</span>",
+                        "none" => "<span class=\"badge badge-info\">Kein Status</span>",
+                        "normal" => "<span class=\"badge badge-success\">Normal</span>",
+                        "paused" => "<span class=\"badge badge-primary\">Pausiert</span>",
+                        _ => "span class=\"badge badge-secondary\">Unbekannt</span>"
+                        };
 
-            <div class="row border-top border-color-gray">
-                <div class="col-1">
-                    &nbsp;
-                </div>
-                <div class="col-3">
-                    <span class="h6">@trigger.TriggerName</span>
-                </div>
-                <div class="col-8">
-                    @Html.Raw(triggerBatch)
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Jobname</div>
-                <div class="col-8">@trigger.JobName</div>
-            </div>            
-            <div class="row">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Beschreibung</div>
-                <div class="col-8">@trigger.Description</div>
-            </div>
-            <div class="row">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Gruppe</div>
-                <div class="col-8">@trigger.GroupName</div>
-            </div>
-            <div class="row">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Startzeit</div>
-                <div class="col-8">@trigger.StartTime</div>
-            </div>
-            <div class="row">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Letzte Ausführung</div>
-                <div class="col-8">@trigger.LastFireTime</div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-1">&nbsp;</div>
-                <div class="col-3">Nächster Start</div>
-                <div class="col-8">@trigger.NextFireTime</div>
-            </div>
-        }
+                    <div class="row border-top border-color-gray">
+                        <div class="col-1">
+                            &nbsp;
+                        </div>
+                        <div class="col-3">
+                            <span class="h6">@trigger.TriggerName</span>
+                        </div>
+                        <div class="col-8">
+                            @Html.Raw(triggerBatch)
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Jobname</div>
+                        <div class="col-8">@trigger.JobName</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Beschreibung</div>
+                        <div class="col-8">@trigger.Description</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Gruppe</div>
+                        <div class="col-8">@trigger.GroupName</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Startzeit</div>
+                        <div class="col-8">@trigger.StartTime</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Letzte Ausführung</div>
+                        <div class="col-8">@trigger.LastFireTime</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-1">&nbsp;</div>
+                        <div class="col-3">Nächster Start</div>
+                        <div class="col-8">@trigger.NextFireTime</div>
+                    </div>
+                }
+            }
+        </div>
     }
 </div>

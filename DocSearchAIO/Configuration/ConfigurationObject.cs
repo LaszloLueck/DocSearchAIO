@@ -45,17 +45,12 @@ namespace DocSearchAIO.Configuration
         public string StatisticsDirectory { get; set; }
     }
 
+
     public class CleanUpEntry
     {
         [JsonProperty("active")]
         public bool Active { get; set; }
-        
-        [JsonProperty("forComparerName")]
-        public string ForComparerName { get; set; }
-        
-        [JsonProperty("forIndexSuffix")]
-        public string ForIndexSuffix { get; set; }
-        
+                
         [JsonProperty("startDelay")]
         public int StartDelay { get; set; }
         
@@ -70,14 +65,34 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("triggerName")]
         public string TriggerName { get; set; }
+        
+        [JsonProperty("forComparerName")]
+        public string ForComparerName { get; set; }
+        
+        [JsonProperty("forIndexSuffix")]
+        public string ForIndexSuffix { get; set; }
     }
 
     public class SchedulerEntry
     {
         [JsonProperty("active")]
         public bool Active { get; set; }
+                
+        [JsonProperty("startDelay")]
+        public int StartDelay { get; set; }
+        
+        [JsonProperty("runsEvery")]
+        public int RunsEvery { get; set; }
+        
         [JsonProperty("parallelism")]
         public int Parallelism { get; set; }
+        
+        [JsonProperty("jobName")]
+        public string JobName { get; set; }
+        
+        [JsonProperty("triggerName")]
+        public string TriggerName { get; set; }
+        
         [JsonProperty("excludeFilter")]
         public string ExcludeFilter { get; set; }
         
@@ -86,18 +101,7 @@ namespace DocSearchAIO.Configuration
         
         [JsonProperty("indexSuffix")]
         public string IndexSuffix { get; set; }
-
-        [JsonProperty("jobName")]
-        public string JobName { get; set; }
-
-        [JsonProperty("triggerName")]
-        public string TriggerName { get; set; }
         
-        [JsonProperty("startDelay")]
-        public int StartDelay { get; set; }
-        
-        [JsonProperty("runsEvery")]
-        public int RunsEvery { get; set; }
     }
     
 }

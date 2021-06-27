@@ -27,9 +27,9 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ConfigurationObject _configurationObject;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
-        private readonly SchedulerUtilities _schedulerUtilities;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IMemoryCache _memoryCache;
+        private readonly ElasticUtilities _elasticUtilities;
 
         public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
             IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -41,7 +41,7 @@ namespace DocSearchAIO.DocSearch.Services
             _configurationObject = cfgTmp;
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _schedulerUtilities = new SchedulerUtilities(loggerFactory, elasticSearchService);
+            _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _loggerFactory = loggerFactory;
             _memoryCache = memoryCache;
         }
@@ -58,15 +58,32 @@ namespace DocSearchAIO.DocSearch.Services
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
+                    var processingTuples =
+                        _configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
+                    var cleanupTuples =
+                        _configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
+
+                    var tuples = processingTuples.Concat(cleanupTuples);
+
+
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await _configurationObject
-                        .Processing
-                        .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
+                    var result = await tuples
+                        .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
-                            async (currentSelected, _) =>
+                            async currentSelected =>
                             {
-                                _configurationObject.Processing[currentSelected].Active = false;
+                                _logger.LogInformation("pause trigger for {TriggerName} :: {TriggerKey}", currentSelected.Key, triggerKey.Name);
+                                switch (currentSelected.Item3)
+                                {
+                                    case "processing":
+                                        _configurationObject.Processing[currentSelected.Key].Active = false;
+                                        break;
+                                    case "cleanup":
+                                        _configurationObject.Cleanup[currentSelected.Key].Active = false;
+                                        break;
+                                } 
+
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
                             },
@@ -85,19 +102,34 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
+            var processingTuples =
+                _configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
+            var cleanupTuples =
+                _configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
+
+            var tuples = processingTuples.Concat(cleanupTuples);
+            
             var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await _configurationObject
-                        .Processing
-                        .Where(tpl => tpl.Value.TriggerName == triggerKey.Name)
+                    var result = await tuples
+                        .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
-                            async (currentSelected, _) =>
+                            async currentSelected =>
                             {
-                                _configurationObject.Processing[currentSelected].Active = true;
+                                _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}", currentSelected.Key, triggerKey.Name);
+                                switch (currentSelected.Item3)
+                                {
+                                    case "processing":
+                                        _configurationObject.Processing[currentSelected.Key].Active = true;
+                                        break;
+                                    case "cleanup":
+                                        _configurationObject.Cleanup[currentSelected.Key].Active = true;
+                                        break;
+                                } 
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
                             },
@@ -120,6 +152,8 @@ namespace DocSearchAIO.DocSearch.Services
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
+                    _logger.LogInformation("start job for job {Job} in group {Group}", jobStatusRequest.JobName,
+                        jobStatusRequest.GroupId);
                     var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
                     await scheduler.TriggerJob(jobKey);
                     return true;
@@ -149,18 +183,17 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = model
                     .ProcessorConfigurations
-                    .Select(kv =>
-                        new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
-                        {
-                            ExcludeFilter = kv.Value.ExcludeFilter,
-                            FileExtension = kv.Value.FileExtension,
-                            IndexSuffix = kv.Value.IndexSuffix,
-                            JobName = kv.Value.JobName,
-                            Parallelism = kv.Value.Parallelism,
-                            RunsEvery = kv.Value.RunsEvery,
-                            StartDelay = kv.Value.StartDelay,
-                            TriggerName = kv.Value.TriggerName
-                        }))
+                    .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
+                    {
+                        ExcludeFilter = kv.Value.ExcludeFilter,
+                        FileExtension = kv.Value.FileExtension,
+                        IndexSuffix = kv.Value.IndexSuffix,
+                        JobName = kv.Value.JobName,
+                        Parallelism = kv.Value.Parallelism,
+                        RunsEvery = kv.Value.RunsEvery,
+                        StartDelay = kv.Value.StartDelay,
+                        TriggerName = kv.Value.TriggerName
+                    }))
                     .ToDictionary();
 
                 _configurationObject.Cleanup = model
@@ -221,14 +254,14 @@ namespace DocSearchAIO.DocSearch.Services
             await schedulerOpt.Match(
                 async scheduler =>
                 {
-                    var t = await _configurationObject
+                    var boolReturn = await _configurationObject
                         .Processing
                         .Where(d => d.Value.JobName == jobStatusRequest.JobName)
                         .TryFirst()
                         .Match(
                             async (key, value) =>
                             {
-                                var indexName = _schedulerUtilities.CreateIndexName(_configurationObject.IndexName,
+                                var indexName = _elasticUtilities.CreateIndexName(_configurationObject.IndexName,
                                     value.IndexSuffix);
 
                                 _logger.LogInformation("remove index {IndexName}", indexName);
@@ -251,7 +284,7 @@ namespace DocSearchAIO.DocSearch.Services
                                 _logger.LogWarning("cannot remove elastic index");
                                 return await Task.Run(() => false);
                             });
-                    return t;
+                    return boolReturn;
                 },
                 async () =>
                 {
@@ -282,8 +315,8 @@ namespace DocSearchAIO.DocSearch.Services
         public async Task<string> GetGenericContent()
         {
             var processSubTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
-            var cleanupSubTypes = StaticHelpers.GetSubtypesOfType<CleanupJob>();
-            
+            var cleanupSubTypes = StaticHelpers.GetSubtypesOfType<CleanupDocument>();
+
             var adminGenModel = new AdministrationGenericModel
             {
                 ScanPath = _configurationObject.ScanPath,
@@ -300,35 +333,33 @@ namespace DocSearchAIO.DocSearch.Services
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv =>
-                        new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
-                            new AdministrationGenericModel.ProcessorConfiguration
-                            {
-                                ExcludeFilter = kv.Value.ExcludeFilter,
-                                FileExtension = kv.Value.FileExtension,
-                                IndexSuffix = kv.Value.IndexSuffix,
-                                JobName = kv.Value.JobName,
-                                Parallelism = kv.Value.Parallelism,
-                                RunsEvery = kv.Value.RunsEvery,
-                                StartDelay = kv.Value.StartDelay,
-                                TriggerName = kv.Value.TriggerName
-                            }))
+                    .Select(kv => new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
+                        new AdministrationGenericModel.ProcessorConfiguration
+                        {
+                            ExcludeFilter = kv.Value.ExcludeFilter,
+                            FileExtension = kv.Value.FileExtension,
+                            IndexSuffix = kv.Value.IndexSuffix,
+                            JobName = kv.Value.JobName,
+                            Parallelism = kv.Value.Parallelism,
+                            RunsEvery = kv.Value.RunsEvery,
+                            StartDelay = kv.Value.StartDelay,
+                            TriggerName = kv.Value.TriggerName
+                        }))
                     .ToDictionary(),
                 CleanupConfigurations = _configurationObject
                     .Cleanup
                     .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv =>
-                        new KeyValuePair<string,AdministrationGenericModel.CleanupConfiguration>(kv.Key,
-                            new AdministrationGenericModel.CleanupConfiguration
-                            {
-                                ForComparer = kv.Value.ForComparerName,
-                                ForIndexSuffix = kv.Value.ForIndexSuffix,
-                                JobName = kv.Value.JobName,
-                                Parallelism = kv.Value.Parallelism,
-                                RunsEvery = kv.Value.RunsEvery,
-                                StartDelay = kv.Value.StartDelay,
-                                TriggerName = kv.Value.TriggerName
-                            }))
+                    .Select(kv => new KeyValuePair<string, AdministrationGenericModel.CleanupConfiguration>(kv.Key,
+                        new AdministrationGenericModel.CleanupConfiguration
+                        {
+                            ForComparer = kv.Value.ForComparerName,
+                            ForIndexSuffix = kv.Value.ForIndexSuffix,
+                            JobName = kv.Value.JobName,
+                            Parallelism = kv.Value.Parallelism,
+                            RunsEvery = kv.Value.RunsEvery,
+                            StartDelay = kv.Value.StartDelay,
+                            TriggerName = kv.Value.TriggerName
+                        }))
                     .ToDictionary()
             };
 
@@ -440,8 +471,8 @@ namespace DocSearchAIO.DocSearch.Services
             var groupedSchedulerModels = (await _schedulerStatisticsService.GetSchedulerStatistics())
                 .Select(kv =>
                 {
-                    var groupName = kv.Key;
-                    var models = kv.Value.Select(scheduler =>
+                    var (groupName, schedulerStatisticsArray) = kv;
+                    var models = schedulerStatisticsArray.Select(scheduler =>
                     {
                         var schedulerModel = new AdministrationActionSchedulerModel
                         {
@@ -465,9 +496,9 @@ namespace DocSearchAIO.DocSearch.Services
                 .ToDictionary();
 
 
-            var content = await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
+            var content =
+                await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
             return content;
         }
     }
-
 }

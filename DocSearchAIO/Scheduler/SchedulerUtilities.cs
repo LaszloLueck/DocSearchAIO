@@ -13,14 +13,9 @@ namespace DocSearchAIO.Scheduler
     public class SchedulerUtilities
     {
         private static ILogger _logger;
-
-        private readonly IElasticSearchService _elasticSearchService;
-
-
-        public SchedulerUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
+        public SchedulerUtilities(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<SchedulerUtilities>();
-            _elasticSearchService = elasticSearchService;
         }
 
         public readonly Func<IScheduler, string, string, TriggerState, Task> SetTriggerStateByUserAction =
@@ -49,30 +44,8 @@ namespace DocSearchAIO.Scheduler
                     default:
                         throw new ArgumentOutOfRangeException(nameof(triggerState), triggerState, "cannot process with that trigger state");
                 }
-
-                // (currentTriggerState is TriggerState.Blocked or TriggerState.Normal)
-                //     .IfTrue(async () =>
-                //     {
-                //         _logger.LogWarning(
-                //             "Set Trigger for {TriggerName} in scheduler {SchedulerName} to pause because of user settings",
-                //             triggerName, scheduler.SchedulerName);
-                //         await scheduler.PauseTrigger(new TriggerKey(triggerName, groupName));
-                //     });
             };
-
-        public async Task CheckAndCreateElasticIndex<T>(string indexName) where T : ElasticDocument
-        {
-            (!await _elasticSearchService.IndexExistsAsync(indexName))
-                .IfTrue(async () =>
-                {
-                    _logger.LogInformation("Index {IndexName} does not exist, lets create them", indexName);
-                    await _elasticSearchService.CreateIndexAsync<T>(indexName);
-                    await _elasticSearchService.RefreshIndexAsync(indexName);
-                    await _elasticSearchService.FlushIndexAsync(indexName);
-                });
-        }
-
-        public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
+        
     }
 
     public class ComparerObject

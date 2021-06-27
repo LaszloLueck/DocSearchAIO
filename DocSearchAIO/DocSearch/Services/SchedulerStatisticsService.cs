@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
@@ -29,20 +30,25 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<Dictionary<string, SchedulerStatistics[]>> GetSchedulerStatistics()
         {
-            var source = new[]
+            var source = new List<GenericSourceGroupName>()
             {
-                new GenericSourceGroupName(_configurationObject.SchedulerGroupName),
-                new GenericSourceGroupName(_configurationObject.CleanupGroupName)
+                new(_configurationObject.SchedulerGroupName),
+                new(_configurationObject.CleanupGroupName)
             };
+
+            var tuples = _configurationObject.Cleanup
+                .Select(d => (d.Value.TriggerName, d.Value.Active)).Concat(
+                    _configurationObject.Processing.Select(d =>
+                        (d.Value.TriggerName, d.Value.Active)));
             
             var resultTasks = source
                 .Select(async groupNameSource =>
                 {
-                    var groupName = groupNameSource.Value;
-                    var schedulerStatisticTasks = (await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName))
+                    var schedulerStatisticTasks =
+                        (await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName))
                         .Unwrap(async scheduler =>
                         {
-                            var schedulerStatistics = new SchedulerStatistics
+                            var statistics = new SchedulerStatistics
                             {
                                 SchedulerName = scheduler.SchedulerName,
                                 SchedulerInstanceId = scheduler.SchedulerInstanceId,
@@ -51,22 +57,24 @@ namespace DocSearchAIO.DocSearch.Services
                                     scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
                             };
                             var triggerKeys =
-                                await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName));
-
+                                await scheduler.GetTriggerKeys(
+                                    GroupMatcher<TriggerKey>.GroupEquals(groupNameSource.Value));
 
                             var innerResultTasks = triggerKeys.Select(async trigger =>
                             {
-                                var result = new SchedulerTriggerStatisticElement
+                                static SchedulerTriggerStatisticElement GetSchedulerTriggerStatisticElement(IEnumerable<(string TriggerName, bool Active)> tuples, TriggerKey trigger)
                                 {
-                                    ProcessingState = _configurationObject
-                                        .Processing
-                                        .Where(r => r.Value.TriggerName == trigger.Name)
-                                        .Select(d => d.Value.Active)
-                                        .First(),
-                                    TriggerName = trigger.Name,
-                                    GroupName = trigger.Group,
-                                };
-
+                                    return new()
+                                    {
+                                        ProcessingState = tuples
+                                            .Where(r => r.TriggerName == trigger.Name)
+                                            .Select(d => d.Active)
+                                            .TryFirst()
+                                            .Unwrap(),
+                                        TriggerName = trigger.Name,
+                                        GroupName = trigger.Group,
+                                    };
+                                }
 
                                 var trg = await scheduler.GetTrigger(trigger);
                                 /*
@@ -77,101 +85,43 @@ namespace DocSearchAIO.DocSearch.Services
                                     normal
                                     paused
                                  */
-                                result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
+                                var triggerState = await scheduler.GetTriggerState(trigger);
+                                var triggerStateElement = GetSchedulerTriggerStatisticElement(tuples, trigger);
+                                triggerStateElement.TriggerState = triggerState.ToString();
+                                
+                                _logger.LogInformation(
+                                    "TriggerState: {TriggerState} : {TriggerName} : {TriggerGroup}",
+                                    triggerStateElement.TriggerState, trigger.Name, trigger.Group);
 
                                 trg
                                     .MaybeValue()
                                     .Match(
                                         trgOpt =>
                                         {
-                                            result.NextFireTime =
+                                            triggerStateElement.NextFireTime =
                                                 trgOpt.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                                            result.Description = trgOpt.Description;
-                                            result.StartTime = trgOpt.StartTimeUtc.LocalDateTime;
-                                            result.LastFireTime = trgOpt.GetPreviousFireTimeUtc()?.UtcDateTime
+                                            triggerStateElement.Description = trgOpt.Description;
+                                            triggerStateElement.StartTime = trgOpt.StartTimeUtc.LocalDateTime;
+                                            triggerStateElement.LastFireTime = trgOpt.GetPreviousFireTimeUtc()?.UtcDateTime
                                                 .ToLocalTime();
-                                            result.JobName = trgOpt.JobKey.Name;
-                                            return result;
+                                            triggerStateElement.JobName = trgOpt.JobKey.Name;
+                                            return triggerStateElement;
                                         },
-                                        () => result
+                                        () => triggerStateElement
                                     );
-                                return result;
+                                return triggerStateElement;
                             });
                             var results = await Task.WhenAll(innerResultTasks);
-                            schedulerStatistics.TriggerElements = results;
-                            return schedulerStatistics;
+                            statistics.TriggerElements = results;
+                            return statistics;
                         });
 
-                    var schedulerStatistics =  await Task.WhenAll(schedulerStatisticTasks);
-                    return new KeyValuePair<string, SchedulerStatistics[]>(groupName, schedulerStatistics);
+                    var schedulerStatistics = await Task.WhenAll(schedulerStatisticTasks);
+                    return new KeyValuePair<string, SchedulerStatistics[]>(groupNameSource.Value, schedulerStatistics);
                 });
 
-            var l = await Task.WhenAll(resultTasks);
-            return l.ToDictionary();
-            // var resultTasks = (await SchedulerUtils.GetAllScheduler()).Select(async scheduler =>
-            // {
-            //     var schedulerStatistics = new SchedulerStatistics
-            //     {
-            //         SchedulerName = scheduler.SchedulerName,
-            //         SchedulerInstanceId = scheduler.SchedulerInstanceId,
-            //         State = scheduler.IsStarted ? "Gestartet" :
-            //             scheduler.IsShutdown ? "Heruntergefahren" :
-            //             scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
-            //     };
-            //
-            //     var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(_configurationObject.SchedulerGroupName));
-            //
-            //     
-            //     
-            //     var innerResultTasks = triggerKeys.Select(async trigger =>
-            //     {
-            //         var result = new SchedulerTriggerStatisticElement
-            //         {
-            //             ProcessingState = _configurationObject
-            //                 .Processing
-            //                 .Where(r => r.Value.TriggerName == trigger.Name)
-            //                 .Select(d => d.Value.Active)
-            //                 .First(),
-            //             TriggerName = trigger.Name,
-            //             GroupName = trigger.Group,
-            //             
-            //         };
-            //
-            //
-            //         var trg = await scheduler.GetTrigger(trigger);
-            //         /*
-            //             blocked
-            //    complete
-            //    error
-            //    none
-            //    normal
-            //    paused
-            //          */
-            //         result.TriggerState = (await scheduler.GetTriggerState(trigger)).ToString();
-            //
-            //         trg
-            //             .MaybeValue()
-            //             .Match(
-            //                 trgOpt =>
-            //                 {
-            //                     result.NextFireTime = trgOpt.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
-            //                     result.Description = trgOpt.Description;
-            //                     result.StartTime = trgOpt.StartTimeUtc.LocalDateTime;
-            //                     result.LastFireTime = trgOpt.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime();
-            //                     result.JobName = trgOpt.JobKey.Name;
-            //                     return result;
-            //                 },
-            //                 () => result
-            //             );
-            //         return result;
-            //     });
-            //
-            //     var results = await Task.WhenAll(innerResultTasks);
-            //     schedulerStatistics.TriggerElements = results;
-            //     return schedulerStatistics;
-            // });
-            //
-            // return await Task.WhenAll(resultTasks);
+             return (await Task.WhenAll(resultTasks)).ToDictionary();
+
         }
     }
 }
