@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -21,17 +20,21 @@ namespace DocSearchAIO.Classes
 
         private string GetComparerFileName => $"cmp_{DerivedModelName}.cmp";
 
-        private string GetComparerFilePath => $"{_comparerDirectory}/{GetComparerFileName}";
+        public string GetComparerFilePath => $"{_comparerDirectory}/{GetComparerFileName}";
 
-        private ConcurrentDictionary<string, ComparerObject> _comparerObjects;
+        private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects;
 
         protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
         {
             _logger = loggerFactory.CreateLogger<ComparerModel>();
             _comparerDirectory = comparerDirectory;
-            _comparerObjects = new ConcurrentDictionary<string, ComparerObject>();
+            _comparerObjects = ComparerHelper.FillConcurrentDictionary(GetComparerFilePath);
             CheckAndCreateComparerDirectory();
-            FillConcurrentDictionary();
+        }
+
+        protected ComparerModel(string comparerDirectory)
+        {
+            _comparerDirectory = comparerDirectory;
         }
 
         public void CleanDictionaryAndRemoveComparerFile()
@@ -43,7 +46,8 @@ namespace DocSearchAIO.Classes
 
         public void RemoveComparerFile()
         {
-            _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}", GetComparerFilePath, DerivedModelName);
+            _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
+                GetComparerFilePath, DerivedModelName);
             File.Delete(GetComparerFilePath);
         }
 
@@ -74,36 +78,8 @@ namespace DocSearchAIO.Classes
                 File.Create(GetComparerFilePath).Dispose();
         }
 
-        private void FillConcurrentDictionary()
-        {
-            _logger.LogInformation("fill comparer dictionary for key {DerivedModelName}", DerivedModelName);
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                var bulk = File
-                    .ReadAllLines(GetComparerFilePath)
-                    .AsParallel()
-                    .WithDegreeOfParallelism(10)
-                    .Select(line =>
-                    {
-                        var spl = line.Split(";");
-                        if (spl.Length != 3) return Maybe<KeyValuePair<string, ComparerObject>>.None;
-                        var cpo = new ComparerObject
-                            {DocumentHash = spl[0], PathHash = spl[1], OriginalPath = spl[2]};
-                        return Maybe<KeyValuePair<string, ComparerObject>>.From(new KeyValuePair<string, ComparerObject>(cpo.PathHash, cpo));
-                    })
-                    .Values();
-                _comparerObjects = new ConcurrentDictionary<string, ComparerObject>(bulk);
-            }
-            finally
-            {
-                sw.Stop();
-                _logger.LogInformation("FillConcurrentDictionary needs {ElapsedTimeMs} ms for {ComparerObjects} entries", sw.ElapsedMilliseconds,
-                    _comparerObjects.Count);
-            }
-        }
-
-        public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document) where TModel : ElasticDocument
+        public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)
+            where TModel : ElasticDocument
         {
             return await Task.Run(() =>
             {
@@ -148,6 +124,9 @@ namespace DocSearchAIO.Classes
     {
         protected override string DerivedModelName => GetType().Name;
 
+        public ComparerModelWord(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
 
         public ComparerModelWord(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
             comparerDirectory)
@@ -159,7 +138,12 @@ namespace DocSearchAIO.Classes
     {
         protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+        public ComparerModelPowerpoint(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
+
+        public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+            comparerDirectory)
         {
         }
     }
@@ -168,7 +152,12 @@ namespace DocSearchAIO.Classes
     {
         protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+        public ComparerModelPdf(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
+
+        public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+            comparerDirectory)
         {
         }
     }
@@ -176,7 +165,13 @@ namespace DocSearchAIO.Classes
     public class ComparerModelExcel : ComparerModel
     {
         protected override string DerivedModelName => GetType().Name;
-        public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+
+        public ComparerModelExcel(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
+
+        public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+            comparerDirectory)
         {
         }
     }
