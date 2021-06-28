@@ -47,7 +47,7 @@ namespace DocSearchAIO.Controllers
 
         [Route("getSchedulerStatistics")]
         [HttpGet]
-        public async Task<Dictionary<string, SchedulerStatistics[]>> GetSchedulerStatistics()
+        public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerStatistics()
         {
             _logger.LogInformation("method getSchedulerStatistics called");
             return await _schedulerStatisticsService.GetSchedulerStatistics();

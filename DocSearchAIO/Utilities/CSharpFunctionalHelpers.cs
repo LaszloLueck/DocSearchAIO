@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
@@ -9,20 +10,17 @@ namespace DocSearchAIO.Utilities
 {
     public static class CSharpFunctionalHelpers
     {
-        public static TOut Match<TOut, TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> kvOpt,
-            Func<TKey, TValue, TOut> some, Func<TOut> none) =>
-            kvOpt.HasValue ? some.Invoke(kvOpt.Value.Key, kvOpt.Value.Value) : none.Invoke();
-
-        public static void Match<TKey, TValue>(this Maybe<KeyValuePair<TKey, TValue>> maybe, Action<TKey, TValue> some,
-            Action none)
+        
+        public static async Task<IEnumerable<TResult>> WhenAll<TResult>(this IEnumerable<Task<TResult>> source)
         {
-            if (maybe.HasValue)
+            return await Task.WhenAll(source);
+        }
+
+        public static void ForEach<TIn>(this IEnumerable<TIn> source, Action<TIn> action)
+        {
+            foreach (var value in source)
             {
-                some.Invoke(maybe.Value.Key, maybe.Value.Value);
-            }
-            else
-            {
-                none.Invoke();
+                action.Invoke(value);
             }
         }
 

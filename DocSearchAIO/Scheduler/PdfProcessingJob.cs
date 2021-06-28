@@ -10,7 +10,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -61,6 +60,7 @@ namespace DocSearchAIO.Scheduler
         public async Task Execute(IJobExecutionContext context)
         {
             var configEntry = _cfg.Processing[nameof(PdfElasticDocument)];
+
             await Task.Run(() =>
             {
                 configEntry

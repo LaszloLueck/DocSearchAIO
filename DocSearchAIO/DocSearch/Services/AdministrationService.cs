@@ -54,7 +54,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -104,7 +104,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -143,7 +143,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
         {
-            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -245,7 +245,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
         {
-            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
             await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -292,7 +292,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtils.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -384,9 +384,10 @@ namespace DocSearchAIO.DocSearch.Services
                 .Select(index => index.Name);
 
             var indexStatsResponses =
-                await Task.WhenAll((await GetKnownIndices(_configurationObject.IndexName))
-                    .Select(async index =>
-                        await _elasticSearchService.GetIndexStatistics(index)));
+                await (await GetKnownIndices(_configurationObject.IndexName))
+                .Select(async index =>
+                    await _elasticSearchService.GetIndexStatistics(index))
+                .WhenAll();
 
             static RunnableStatistic
                 ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn) =>
@@ -461,32 +462,34 @@ namespace DocSearchAIO.DocSearch.Services
             return content;
         }
 
+        private static readonly Func<SchedulerStatistics, AdministrationActionSchedulerModel> ConvertToActionModel =
+            scheduler =>
+            {
+                return new AdministrationActionSchedulerModel
+                {
+                    SchedulerName = scheduler.SchedulerName,
+                    Triggers = scheduler.TriggerElements.Select(trigger =>
+                    {
+                        var triggerModel = new AdministrationActionTriggerModel
+                        {
+                            TriggerName = trigger.TriggerName,
+                            GroupName = trigger.GroupName,
+                            JobName = trigger.JobName,
+                            CurrentState = trigger.TriggerState
+                        };
+                        return triggerModel;
+                    })
+                };
+            };
+        
         public async Task<string> GetActionContent()
         {
             var groupedSchedulerModels = (await _schedulerStatisticsService.GetSchedulerStatistics())
                 .Select(kv =>
                 {
                     var (groupName, schedulerStatisticsArray) = kv;
-                    var models = schedulerStatisticsArray.Select(scheduler =>
-                    {
-                        var schedulerModel = new AdministrationActionSchedulerModel
-                        {
-                            SchedulerName = scheduler.SchedulerName,
-                            Triggers = scheduler.TriggerElements.Select(trigger =>
-                            {
-                                var triggerModel = new AdministrationActionTriggerModel
-                                {
-                                    TriggerName = trigger.TriggerName,
-                                    GroupName = trigger.GroupName,
-                                    JobName = trigger.JobName,
-                                    CurrentState = trigger.TriggerState
-                                };
-                                return triggerModel;
-                            })
-                        };
-                        return schedulerModel;
-                    });
-                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName, models);
+                    var model = ConvertToActionModel(schedulerStatisticsArray);
+                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName, new []{model});
                 })
                 .ToDictionary();
 

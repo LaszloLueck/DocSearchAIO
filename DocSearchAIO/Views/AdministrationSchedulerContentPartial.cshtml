@@ -1,4 +1,4 @@
-@model Dictionary<string, DocSearchAIO.DocSearch.TOs.SchedulerStatistics[]>
+@model Dictionary<string, DocSearchAIO.DocSearch.TOs.SchedulerStatistics>
 
 <div class="container mt-2 border rounded border-color-gray">
     <div class="row">
@@ -6,40 +6,38 @@
             <span class="h5">Scheduler</span>
         </div>
     </div>
-    @foreach (var element in Model)
+    @foreach (var (key, schedulerStatistics) in Model)
     {
-        var values = element.Value;
         <div class="container mt-2 border rounded border-color-gray">
             <div class="row">
                 <div class="col-12">
-                    <span class="h5">Gruppe @element.Key</span>
+                    <span class="h5">Gruppe @key</span>
                 </div>
             </div>
-            @foreach (var schedulerStatistic in values)
-            {
-                var badge = schedulerStatistic.State.ToLower() switch {
-                    "gestartet" => $"<span class=\"badge badge-success\">{schedulerStatistic.State}</span>",
-                    "gestoppt" => $"<span class=\"badge badge-danger\">{schedulerStatistic.State}</span>",
-                    "pausiert" => $"<span class=\"badge badge-warning\">{schedulerStatistic.State}</span>",
-                    "unbekannt" => $"<span class=\"badge badge-secondary\">{schedulerStatistic.State}</span>",
+            @{
+                var badge = schedulerStatistics.State.ToLower() switch {
+                    "gestartet" => $"<span class=\"badge badge-success\">{schedulerStatistics.State}</span>",
+                    "gestoppt" => $"<span class=\"badge badge-danger\">{schedulerStatistics.State}</span>",
+                    "pausiert" => $"<span class=\"badge badge-warning\">{schedulerStatistics.State}</span>",
+                    "unbekannt" => $"<span class=\"badge badge-secondary\">{schedulerStatistics.State}</span>",
                     _ => "<span class=\"badge badge-secondary\">Unknown state</span>"
                     };
                 <div class="row">
                     <div class="col-3">
-                        <span class="h6">@schedulerStatistic.SchedulerName</span>
+                        <span class="h6">@schedulerStatistics.SchedulerName</span>
                     </div>
                     <div class="col-9">@Html.Raw(badge)</div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-3">Instance-Id</div>
-                    <div class="col-9">@schedulerStatistic.SchedulerInstanceId</div>
+                    <div class="col-9">@schedulerStatistics.SchedulerInstanceId</div>
                 </div>
                 <div class="row">
                     <div class="col-12">
                         <span class="h5">Trigger</span>
                     </div>
                 </div>
-                @foreach (var trigger in schedulerStatistic.TriggerElements)
+                @foreach (var trigger in schedulerStatistics.TriggerElements)
                 {
                     /*
                         blocked
