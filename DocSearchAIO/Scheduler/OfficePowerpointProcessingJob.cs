@@ -60,6 +60,14 @@ namespace DocSearchAIO.Scheduler
             var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
             await Task.Run(() =>
             {
+                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelWordCleanup());
+                if (!cacheEntryOpt.HasNoValue &&
+                    (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+                {
+                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    return;
+                }
+                
                 configEntry
                     .Active
                     .IfTrueFalse(

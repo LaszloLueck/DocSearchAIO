@@ -21,6 +21,7 @@ namespace DocSearchAIO.Services
         Task<bool> RefreshIndexAsync(string indexName);
         Task<bool> FlushIndexAsync(string indexName);
         Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true);
+        Task<bool> RemoveItemById(string indexName, string id);
         Task<bool> IndexExistsAsync(string indexName);
         Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true) where T: ElasticDocument;
     }
@@ -41,6 +42,12 @@ namespace DocSearchAIO.Services
             var result = await _elasticClient.Indices.StatsAsync(indexName);
             ProcessResponse(result);
             return result;
+        }
+
+        public async Task<bool> RemoveItemById(string indexName, string id)
+        {
+            var result = await _elasticClient.DeleteAsync<ElasticDocument>(id, f => f.Index(indexName));
+            return ProcessResponse(result);
         }
 
         public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
@@ -124,6 +131,11 @@ namespace DocSearchAIO.Services
         {
             switch (response)
             {
+                case DeleteResponse deleteResponse:
+                    if (deleteResponse.IsValid) return deleteResponse.IsValid;
+                    _logger.LogWarning(deleteResponse.DebugInformation);
+                    _logger.LogError(deleteResponse.OriginalException, deleteResponse.ServerError.Error.Reason);
+                    return deleteResponse.IsValid;
                 case IndicesStatsResponse indicesStatsResponse:
                     if (indicesStatsResponse.IsValid) return indicesStatsResponse.IsValid;
                     _logger.LogWarning(indicesStatsResponse.DebugInformation);

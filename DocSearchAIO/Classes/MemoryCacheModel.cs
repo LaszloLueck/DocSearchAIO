@@ -17,6 +17,8 @@ namespace DocSearchAIO.Classes
             _logger = loggerFactory.CreateLogger<MemoryCacheModel>();
             _memoryCache = memoryCache;
         }
+        
+        protected MemoryCacheModel(){}
 
         public Maybe<CacheEntry> GetCacheEntry()
         {
@@ -25,6 +27,7 @@ namespace DocSearchAIO.Classes
                 ? Maybe<CacheEntry>.From(cacheEntry)
                 : Maybe<CacheEntry>.None;
         }
+
     }
 
     public class MemoryCacheModelWord : MemoryCacheModel
@@ -32,7 +35,8 @@ namespace DocSearchAIO.Classes
         public MemoryCacheModelWord(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
         {
         }
-
+        
+        public MemoryCacheModelWord(){}
         protected override string DerivedModelName => GetType().Name;
     }
 
@@ -41,6 +45,8 @@ namespace DocSearchAIO.Classes
         public MemoryCacheModelPowerpoint(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
         {
         }
+        
+        public MemoryCacheModelPowerpoint(){}
 
         protected override string DerivedModelName => GetType().Name;
     }
@@ -50,6 +56,8 @@ namespace DocSearchAIO.Classes
         public MemoryCacheModelPdf(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
         {
         }
+        
+        public MemoryCacheModelPdf(){}
 
         protected override string DerivedModelName => GetType().Name;
     }
@@ -60,5 +68,54 @@ namespace DocSearchAIO.Classes
         public MemoryCacheModelExcel(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
         {
         }
+        
+        public MemoryCacheModelExcel(){}
+        
     }
+
+    public class MemoryCacheModelExcelCleanup : MemoryCacheModel
+    {
+        public MemoryCacheModelExcelCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+        {
+        }
+
+        public MemoryCacheModelExcelCleanup(){}
+        
+        protected override string DerivedModelName => GetType().Name;
+    }
+
+    public class MemoryCacheModelWordCleanup : MemoryCacheModel
+    {
+        public MemoryCacheModelWordCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+        {
+        }
+        
+        public MemoryCacheModelWordCleanup(){}
+
+        protected override string DerivedModelName => GetType().Name;
+    }
+
+    public class MemoryCacheModelPowerpointCleanup : MemoryCacheModel
+    {
+        public MemoryCacheModelPowerpointCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+        {
+        }
+        
+        public MemoryCacheModelPowerpointCleanup(){}
+
+        protected override string DerivedModelName => GetType().Name;
+    }
+
+    public class MemoryCacheModelPdfCleanup : MemoryCacheModel
+    {
+        public MemoryCacheModelPdfCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+        {
+        }
+
+        public MemoryCacheModelPdfCleanup(){}
+        
+        protected override string DerivedModelName => GetType().Name;
+    }
+    
+    
 }

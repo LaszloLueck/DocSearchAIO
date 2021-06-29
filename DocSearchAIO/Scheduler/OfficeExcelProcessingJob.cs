@@ -58,9 +58,18 @@ namespace DocSearchAIO.Scheduler
 
         public async Task Execute(IJobExecutionContext context)
         {
+            var configEntry = _cfg.Processing[nameof(ExcelElasticDocument)];
             await Task.Run(() =>
             {
-                var configEntry = _cfg.Processing[nameof(ExcelElasticDocument)];
+                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelExcelCleanup());
+                if (!cacheEntryOpt.HasNoValue &&
+                    (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+                {
+                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    return;
+                }
+                
+                
                 configEntry
                     .Active
                     .IfTrueFalse(async () =>

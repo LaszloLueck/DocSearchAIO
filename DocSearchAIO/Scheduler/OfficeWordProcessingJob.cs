@@ -59,6 +59,14 @@ namespace DocSearchAIO.Scheduler
         {
             await Task.Run(() =>
             {
+                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelWordCleanup());
+                if (!cacheEntryOpt.HasNoValue &&
+                    (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+                {
+                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    return;
+                }
+                
                 var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
                 configEntry
                     .Active
@@ -121,7 +129,8 @@ namespace DocSearchAIO.Scheduler
                                             await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                            jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                            jobStatistic.EntireDocCount =
+                                                _statisticUtilities.GetEntireDocumentsCount();
                                             jobStatistic.ProcessingError =
                                                 _statisticUtilities.GetFailedDocumentsCount();
                                             jobStatistic.IndexedDocCount =
@@ -228,7 +237,7 @@ namespace DocSearchAIO.Scheduler
                                         var toReplaced = new List<(string, string)>();
 
                                         var contentString = wd
-                                            .MainDocumentPart
+                                            .MainDocumentPart?
                                             .GetElements()
                                             .GetContentString()
                                             .ReplaceSpecialStrings(toReplaced);

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
@@ -48,7 +47,7 @@ namespace DocSearchAIO.Classes
         {
             _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
                 GetComparerFilePath, DerivedModelName);
-            File.Delete(GetComparerFilePath);
+            ComparerHelper.RemoveComparerFile(GetComparerFilePath);
         }
 
         public async Task WriteAllLinesAsync()
@@ -57,9 +56,7 @@ namespace DocSearchAIO.Classes
             var sw = Stopwatch.StartNew();
             try
             {
-                await File.WriteAllLinesAsync(GetComparerFilePath,
-                    _comparerObjects.Select(tpl =>
-                        $"{tpl.Value.DocumentHash};{tpl.Value.PathHash};{tpl.Value.OriginalPath}"));
+                await ComparerHelper.WriteAllLinesAsync(_comparerObjects, GetComparerFilePath);
             }
             finally
             {

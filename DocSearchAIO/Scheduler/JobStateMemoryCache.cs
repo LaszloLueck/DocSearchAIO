@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,23 @@ namespace DocSearchAIO.Scheduler
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcel>>
             GetExcelJobStateMemoryCache = (loggerFactory, memoryCache) =>
                 new JobStateMemoryCache<MemoryCacheModelExcel>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcelCleanup>>
+            GetExcelCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+                new JobStateMemoryCache<MemoryCacheModelExcelCleanup>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdfCleanup>>
+            GetPdfCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+                new JobStateMemoryCache<MemoryCacheModelPdfCleanup>(loggerFactory, memoryCache);
+
+        public static readonly
+            Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>>
+            GetPowerpointCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+                new JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWordCleanup>>
+            GetWordCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+                new JobStateMemoryCache<MemoryCacheModelWordCleanup>(loggerFactory, memoryCache);
     }
 
     public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
@@ -56,6 +74,16 @@ namespace DocSearchAIO.Scheduler
             _logger = loggerFactory.CreateLogger<JobStateMemoryCache<TModel>>();
             _memoryCache = memoryCache;
         }
+       
+        
+        public Maybe<CacheEntry> GetCacheEntry<CacheModel>(CacheModel model) where CacheModel : MemoryCacheModel
+        {
+            _logger.LogInformation("try to get cache entry for model {ModelName}", model.GetType().Name);
+            return _memoryCache.TryGetValue(model, out CacheEntry cacheEntry)
+                ? Maybe<CacheEntry>.From(cacheEntry)
+                : Maybe<CacheEntry>.None;
+        }
+        
 
         public void RemoveCacheEntry()
         {
