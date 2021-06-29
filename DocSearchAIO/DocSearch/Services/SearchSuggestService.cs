@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
@@ -27,7 +29,7 @@ namespace DocSearchAIO.DocSearch.Services
             var suggestBucket = new SuggestBucket();
             var completionSuggester = new CompletionSuggester();
             suggestBucket.Prefix = searchPhrase;
-            completionSuggester.Analyzer = "simple";
+            completionSuggester.Analyzer = "keyword";
             completionSuggester.Size = 10;
             completionSuggester.Field = new Field("completionContent");
             completionSuggester.SkipDuplicates = true;

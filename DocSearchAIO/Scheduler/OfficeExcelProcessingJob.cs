@@ -157,7 +157,7 @@ namespace DocSearchAIO.Scheduler
             this Source<string, NotUsed> source, SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
             StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger)
         {
-            return source.SelectAsync(schedulerEntry.Parallelism,
+            return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
                 f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
         }
 

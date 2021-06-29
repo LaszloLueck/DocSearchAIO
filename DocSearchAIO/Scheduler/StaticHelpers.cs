@@ -207,7 +207,7 @@ namespace DocSearchAIO.Scheduler
                 Source<IEnumerable<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
             IElasticSearchService elasticSearchService, string indexName) where TDocument : ElasticDocument
         {
-            return source.SelectAsync(schedulerEntry.Parallelism,
+            return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
                 g => elasticSearchService.BulkWriteDocumentsAsync(g, indexName));
         }
 
@@ -215,7 +215,7 @@ namespace DocSearchAIO.Scheduler
             this Source<Maybe<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
             ComparerModel comparerModel) where TDocument : ElasticDocument
         {
-            return source.SelectAsync(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);
+            return source.SelectAsyncUnordered(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);
         }
     }
 }

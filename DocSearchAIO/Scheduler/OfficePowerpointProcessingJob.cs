@@ -160,7 +160,7 @@ namespace DocSearchAIO.Scheduler
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
             StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger)
         {
-            return source.SelectAsync(schedulerEntry.Parallelism,
+            return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
                 f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
         }
 

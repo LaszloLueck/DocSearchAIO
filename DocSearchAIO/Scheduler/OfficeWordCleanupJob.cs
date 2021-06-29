@@ -41,7 +41,7 @@ namespace DocSearchAIO.Scheduler
         {
             await Task.Run(() =>
             {
-                
+                _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                 _cleanUpEntry
                     .Active
                     .IfTrueFalse(
@@ -74,6 +74,7 @@ namespace DocSearchAIO.Scheduler
                             });
                         }
                     );
+                _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
             });
         }
     }

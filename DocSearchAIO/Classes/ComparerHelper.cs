@@ -49,17 +49,18 @@ namespace DocSearchAIO.Classes
                     .ToDictionary();
                 return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
             };
-        
+
         public static void RemoveComparerFile(string fileName)
         {
             File.Delete(fileName);
         }
 
-        public static async Task WriteAllLinesAsync(ConcurrentDictionary<string, ComparerObject> cacheObject, string fileName)
+        public static async Task WriteAllLinesAsync(ConcurrentDictionary<string, ComparerObject> cacheObject,
+            string fileName)
         {
-                await File.WriteAllLinesAsync(fileName,
-                    cacheObject.Select(tpl =>
-                        $"{tpl.Value.DocumentHash};{tpl.Value.PathHash};{tpl.Value.OriginalPath}"));
+            await File.WriteAllLinesAsync(fileName,
+                cacheObject.Select(tpl =>
+                    $"{tpl.Value.DocumentHash};{tpl.Value.PathHash};{tpl.Value.OriginalPath}"));
         }
     }
 }
