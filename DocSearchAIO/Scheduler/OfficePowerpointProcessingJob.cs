@@ -60,7 +60,7 @@ namespace DocSearchAIO.Scheduler
             var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
             await Task.Run(() =>
             {
-                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelWordCleanup());
+                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelPowerpointCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {

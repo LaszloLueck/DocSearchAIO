@@ -74,16 +74,16 @@ namespace DocSearchAIO.Scheduler
             _logger = loggerFactory.CreateLogger<JobStateMemoryCache<TModel>>();
             _memoryCache = memoryCache;
         }
-       
-        
-        public Maybe<CacheEntry> GetCacheEntry<CacheModel>(CacheModel model) where CacheModel : MemoryCacheModel
+
+
+        public Maybe<CacheEntry> GetCacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
         {
             _logger.LogInformation("try to get cache entry for model {ModelName}", model.GetType().Name);
             return _memoryCache.TryGetValue(model, out CacheEntry cacheEntry)
                 ? Maybe<CacheEntry>.From(cacheEntry)
                 : Maybe<CacheEntry>.None;
         }
-        
+
 
         public void RemoveCacheEntry()
         {
@@ -93,7 +93,7 @@ namespace DocSearchAIO.Scheduler
 
         public void SetCacheEntry(JobState jobState)
         {
-            _logger.LogInformation($"set cache entry to {jobState}");
+            _logger.LogInformation("set cache entry to {JobState}", jobState);
             var cacheEntry = new CacheEntry()
                 {CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState};
             _memoryCache.Set(cacheEntry.CacheKey, cacheEntry);
