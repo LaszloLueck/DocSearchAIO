@@ -61,6 +61,7 @@ namespace DocSearchAIO.Classes
                     {
                         _logger.LogInformation("switch comparer file, there are elements removed");
                         ComparerHelper.RemoveComparerFile(_comparerFile);
+                        ComparerHelper.CreateComparerFile(_comparerFile);
                         await ComparerHelper.WriteAllLinesAsync(cache, _comparerFile);
                     }
                     else

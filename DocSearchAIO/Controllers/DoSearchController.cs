@@ -24,7 +24,7 @@ namespace DocSearchAIO.Controllers
             _logger = loggerFactory.CreateLogger<DoSearchController>();
             _doSearchService =
                 new DoSearchService(elasticSearchService, loggerFactory, viewToStringRenderer, configuration);
-            _searchSuggestService = new SearchSuggestService(elasticSearchService, loggerFactory);
+            _searchSuggestService = new SearchSuggestService(elasticSearchService, loggerFactory, configuration);
             _documentDetailService =
                 new DocumentDetailService(elasticSearchService, loggerFactory, viewToStringRenderer);
         }

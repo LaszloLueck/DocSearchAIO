@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Nest;
+using Newtonsoft.Json;
 
 namespace DocSearchAIO.Classes
 {
@@ -14,7 +15,7 @@ namespace DocSearchAIO.Classes
         [Text(Name = "version")] public string Version { get; set; }
         [Text(Name = "contentStatus")] public string ContentStatus { get; set; }
         [Text(Name = "lastModifiedBy")] public string LastModifiedBy { get; set; }
-        [Object(Name = "comments")] public IEnumerable<OfficeDocumentComment> Comments { get; set; }
+        [Object(Name = "comments")] public OfficeDocumentComment[] Comments { get; set; }
         [Date(Name = "lastModified")] public DateTime Modified { get; set; }
         [Date(Name = "lastPrinted")] public DateTime LastPrinted { get; set; }
         [Date(Name = "created")] public DateTime Created { get; set; }

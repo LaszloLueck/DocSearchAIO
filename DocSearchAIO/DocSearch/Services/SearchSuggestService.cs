@@ -4,8 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
+using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
@@ -16,11 +18,15 @@ namespace DocSearchAIO.DocSearch.Services
     {
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ILogger<SearchSuggestService> _logger;
+        private readonly ConfigurationObject _configurationObject;
 
-        public SearchSuggestService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory)
+        public SearchSuggestService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<SearchSuggestService>();
             _elasticSearchService = elasticSearchService;
+            var cfgTmp = new ConfigurationObject();
+            configuration.GetSection("configurationObject").Bind(cfgTmp);
+            _configurationObject = cfgTmp;
         }
 
         public async Task<SuggestResult> GetSuggestions(string searchPhrase)
@@ -38,13 +44,13 @@ namespace DocSearchAIO.DocSearch.Services
             suggestQuery.Add("searchfieldsuggest", suggestBucket);
 
 
-            _logger.LogInformation($"Build SuggestQuery. Raw query is:");
+            _logger.LogInformation("Build SuggestQuery. Raw query is:");
 
             var f = new SourceFilter {Excludes = "*"};
 
-            var request = new SearchRequest("officedocuments-*") {Suggest = suggestQuery, Source = f};
+            var request = new SearchRequest($"{_configurationObject.IndexName}-*") {Suggest = suggestQuery, Source = f};
             var sw = Stopwatch.StartNew();
-            var result = await _elasticSearchService.SearchIndexAsync<WordElasticDocument>(request);
+            var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
             sw.Stop();
             var suggestsEntries = result.Suggest["searchfieldsuggest"];
             var suggestResult = suggestsEntries.First();

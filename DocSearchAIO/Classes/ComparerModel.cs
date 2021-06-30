@@ -27,8 +27,8 @@ namespace DocSearchAIO.Classes
         {
             _logger = loggerFactory.CreateLogger<ComparerModel>();
             _comparerDirectory = comparerDirectory;
-            _comparerObjects = ComparerHelper.FillConcurrentDictionary(GetComparerFilePath);
             CheckAndCreateComparerDirectory();
+            _comparerObjects = ComparerHelper.FillConcurrentDictionary(GetComparerFilePath);
         }
 
         protected ComparerModel(string comparerDirectory)
@@ -41,6 +41,7 @@ namespace DocSearchAIO.Classes
             _logger.LogInformation("cleanup comparer dictionary before removing the file");
             _comparerObjects?.Clear();
             RemoveComparerFile();
+            CheckAndCreateComparerDirectory();
         }
 
         public void RemoveComparerFile()
@@ -68,11 +69,11 @@ namespace DocSearchAIO.Classes
         private void CheckAndCreateComparerDirectory()
         {
             _logger.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
-            if (!Directory.Exists(_comparerDirectory))
-                Directory.CreateDirectory(_comparerDirectory);
+            if (!ComparerHelper.CheckIfDirectoryExists(_comparerDirectory))
+                ComparerHelper.CreateDirectory(_comparerDirectory);
             _logger.LogInformation("check if comparer file {GetComparerFilePath} exists", GetComparerFilePath);
-            if (!File.Exists(GetComparerFilePath))
-                File.Create(GetComparerFilePath).Dispose();
+            if (!ComparerHelper.CheckIfFileExists(GetComparerFilePath))
+                ComparerHelper.CreateComparerFile(GetComparerFilePath);
         }
 
         public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)

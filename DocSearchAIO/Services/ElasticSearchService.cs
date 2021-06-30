@@ -23,7 +23,9 @@ namespace DocSearchAIO.Services
         Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true);
         Task<bool> RemoveItemById(string indexName, string id);
         Task<bool> IndexExistsAsync(string indexName);
-        Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true) where T: ElasticDocument;
+
+        Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true)
+            where T : ElasticDocument;
     }
 
     public class ElasticSearchService : IElasticSearchService
@@ -55,19 +57,21 @@ namespace DocSearchAIO.Services
         {
             if (!documents.Any())
                 return await Task.Run(() => false);
+
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
             return ProcessResponse(result);
         }
 
         public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument
         {
-            var result = await _elasticClient.Indices.CreateAsync(indexName, index =>
-                index
-                    .Map<T>(typedMapping =>
-                        typedMapping
-                            .AutoMap()
-                    )
-            );
+            var ci = new CreateIndexDescriptor(indexName).Map<ElasticDocument>(t => t.AutoMap());
+            var mapString =
+                _elasticClient.RequestResponseSerializer.SerializeToString(ci, SerializationFormatting.Indented);
+            _logger.LogInformation("define mapping for index {IndexName}:", indexName);
+            _logger.LogInformation("Mapping: {Mapping}", mapString);
+
+
+            var result = await _elasticClient.Indices.CreateAsync(indexName, index => index.Map<T>(t => t.AutoMap()));
 
             return ProcessResponse(result);
         }
@@ -89,7 +93,7 @@ namespace DocSearchAIO.Services
             var result = await _elasticClient.Indices.FlushAsync(indexName);
             return ProcessResponse(result);
         }
-        
+
         public async Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true)
         {
             var getIndexRequest = pattern switch
@@ -103,6 +107,7 @@ namespace DocSearchAIO.Services
                     SerializationFormatting.Indented);
                 _logger.LogInformation(log);
             }
+
             var result = await _elasticClient.Indices.GetAsync(getIndexRequest);
             ProcessResponse(result);
             return result;
@@ -114,7 +119,8 @@ namespace DocSearchAIO.Services
             return result.Exists;
         }
 
-        public async Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true) where T: ElasticDocument
+        public async Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true)
+            where T : ElasticDocument
         {
             if (logToConsole)
             {
@@ -122,6 +128,7 @@ namespace DocSearchAIO.Services
                     SerializationFormatting.Indented);
                 _logger.LogInformation(log);
             }
+
             var searchResponse = await _elasticClient.SearchAsync<T>(searchRequest);
             ProcessResponse(searchResponse);
             return searchResponse;
@@ -139,7 +146,8 @@ namespace DocSearchAIO.Services
                 case IndicesStatsResponse indicesStatsResponse:
                     if (indicesStatsResponse.IsValid) return indicesStatsResponse.IsValid;
                     _logger.LogWarning(indicesStatsResponse.DebugInformation);
-                    _logger.LogError(indicesStatsResponse.OriginalException, indicesStatsResponse.ServerError.Error.Reason);
+                    _logger.LogError(indicesStatsResponse.OriginalException,
+                        indicesStatsResponse.ServerError.Error.Reason);
                     return indicesStatsResponse.IsValid;
                 case ISearchResponse<WordElasticDocument> searchResponse:
                     if (searchResponse.IsValid) return searchResponse.IsValid;
@@ -194,6 +202,11 @@ namespace DocSearchAIO.Services
                     _logger.LogWarning(existsResponse.DebugInformation);
                     _logger.LogError(existsResponse.OriginalException, existsResponse.ServerError.Error.Reason);
                     return existsResponse.IsValid;
+                case SearchResponse<ElasticDocument> searchResponse:
+                    if (searchResponse.IsValid) return searchResponse.IsValid;
+                    _logger.LogWarning(searchResponse.DebugInformation);
+                    _logger.LogError(searchResponse.OriginalException, searchResponse.ServerError.Error.Reason);
+                    return searchResponse.IsValid;
                 default:
                     _logger.LogWarning($"Cannot find Conversion for type <{response.GetType().Name}>");
                     return false;

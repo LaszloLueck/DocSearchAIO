@@ -85,7 +85,7 @@ namespace DocSearchAIO.Scheduler
                             var indexName =
                                 _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
 
-                            await _elasticUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
+                            await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
 
                             _logger.LogInformation("start crunching and indexing some powerpoint documents");
 

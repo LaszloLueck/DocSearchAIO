@@ -9,6 +9,7 @@ using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DocSearchAIO.Classes
 {
@@ -53,6 +54,26 @@ namespace DocSearchAIO.Classes
         public static void RemoveComparerFile(string fileName)
         {
             File.Delete(fileName);
+        }
+
+        public static void CreateComparerFile(string fileName)
+        {
+            File.Create(fileName).Dispose();
+        }
+
+        public static bool CheckIfFileExists(string fileName)
+        {
+            return File.Exists(fileName);
+        }
+
+        public static bool CheckIfDirectoryExists(string directoryName)
+        {
+            return Directory.Exists(directoryName);
+        }
+
+        public static void CreateDirectory(string directoryName)
+        {
+            Directory.CreateDirectory(directoryName);
         }
 
         public static async Task WriteAllLinesAsync(ConcurrentDictionary<string, ComparerObject> cacheObject,
