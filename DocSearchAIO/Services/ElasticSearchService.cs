@@ -22,6 +22,8 @@ namespace DocSearchAIO.Services
         Task<bool> FlushIndexAsync(string indexName);
         Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true);
         Task<bool> RemoveItemById(string indexName, string id);
+
+        Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove);
         Task<bool> IndexExistsAsync(string indexName);
 
         Task<ISearchResponse<T>> SearchIndexAsync<T>(SearchRequest searchRequest, bool logToConsole = true)
@@ -48,8 +50,16 @@ namespace DocSearchAIO.Services
 
         public async Task<bool> RemoveItemById(string indexName, string id)
         {
-            var result = await _elasticClient.DeleteAsync<ElasticDocument>(id, f => f.Index(indexName));
+            var result = await _elasticClient.DeleteAsync<ElasticDocument>(new DocumentPath<ElasticDocument>(new ElasticDocument { Id = id }),
+                f => f.Index(indexName));
             return ProcessResponse(result);
+        }
+
+        public async Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove)
+        {
+            var result = await _elasticClient.DeleteManyAsync<ElasticDocument>(toRemove.Select(id => new ElasticDocument { Id = id }), indexName);
+            ProcessResponse(result);
+            return result.Items.Count;
         }
 
         public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
@@ -185,7 +195,7 @@ namespace DocSearchAIO.Services
                     if (bulkResponse.IsValid)
                     {
                         _logger.LogInformation(
-                            $"Successfully written {bulkResponse.Items.Count} documents to elastic");
+                            $"Successfully processed {bulkResponse.Items.Count} documents to elastic");
                         return bulkResponse.IsValid;
                     }
 

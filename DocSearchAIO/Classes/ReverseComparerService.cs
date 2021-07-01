@@ -1,16 +1,55 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Common.Logging;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
 {
+    internal static class ReverseComparerServiceHelper
+    {
+        public static async Task<Maybe<ComparerObject>> CheckCacheEntry(this ComparerObject compObj, InterlockedCounter allFileCount)
+        {
+            return await Task.Run(() =>
+            {
+                allFileCount.Increment();
+                return File.Exists(compObj.OriginalPath) ? Maybe<ComparerObject>.None : Maybe<ComparerObject>.From(compObj);
+
+                //if (File.Exists(compObj.OriginalPath)) return false;
+                //removedFileCount.Increment();
+                //logger.LogInformation("remove obsolete file <{ObsoleteFile}>", compObj.OriginalPath);
+                //cache.TryRemove(new KeyValuePair<string, ComparerObject>(compObj.PathHash, compObj));
+                //return await elasticSearchService.RemoveItemById(indexName, compObj.PathHash);
+            });
+        }
+
+        public static async Task<IEnumerable<ComparerObject>> RemoveFromIndexById(this IEnumerable<ComparerObject> group, InterlockedCounter removedFileCount,
+            IElasticSearchService elasticSearchService, ILogger logger, string indexName)
+        {
+            var p = group.ToArray();
+            var resultCount = await elasticSearchService.RemoveItemsById(indexName, p.Select(item => item.PathHash));
+            removedFileCount.Add(resultCount);
+            return p;
+        }
+
+
+    }
+
+    
+    //, InterlockedCounter removedFileCount, ILogger logger, IElasticSearchService elasticSearchService,ConcurrentDictionary<string, ComparerObject> cache, string indexName
+    
     public class ReverseComparerService<T> where T : ComparerModel
     {
         private readonly ILogger _logger;
@@ -19,6 +58,7 @@ namespace DocSearchAIO.Classes
         private readonly ActorSystem _actorSystem;
         private readonly InterlockedCounter _allFileCount;
         private readonly InterlockedCounter _removedFileCount;
+        private Lazy<ConcurrentDictionary<string, ComparerObject>> _lazyCache;
 
         public ReverseComparerService(ILoggerFactory loggerFactory, T model, IElasticSearchService elasticSearchService,
             ActorSystem actorSystem)
@@ -29,6 +69,7 @@ namespace DocSearchAIO.Classes
             _actorSystem = actorSystem;
             _allFileCount = new InterlockedCounter();
             _removedFileCount = new InterlockedCounter();
+            _lazyCache = new Lazy<ConcurrentDictionary<string, ComparerObject>>(() => ComparerHelper.FillConcurrentDictionary(_comparerFile));
         }
 
         public async Task Process(string indexName)
@@ -44,18 +85,14 @@ namespace DocSearchAIO.Classes
                     await ComparerHelper
                         .GetComparerObjectSource(_comparerFile)
                         .SelectAsyncUnordered(10, async compObj =>
+                            await compObj
+                                .CheckCacheEntry(_allFileCount))
+                        .GroupedWithin(1000, TimeSpan.FromSeconds(10))
+                        .Select(group => group.Values())
+                        .Select(values =>
                         {
-                            return await Task.Run(async () =>
-                            {
-                                _allFileCount.Increment();
-                                if (File.Exists(compObj.OriginalPath)) return false;
-                                _removedFileCount.Increment();
-                                _logger.LogInformation("remove obsolete file <{ObsoleteFile}>", compObj.OriginalPath);
-                                cache.TryRemove(new KeyValuePair<string, ComparerObject>(compObj.PathHash, compObj));
-                                return await _elasticSearchService.RemoveItemById(indexName, compObj.PathHash);
-
-                            });
-                        })
+                            
+                        });
                         .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
                     if (_removedFileCount.GetCurrent() > 0)
                     {
