@@ -40,6 +40,16 @@ namespace DocSearchAIO.Classes
             //return await elasticSearchService.RemoveItemById(indexName, compObj.PathHash);
         }
 
+        public static Source<bool, NotUsed> RemoveFromCache(this Source<IEnumerable<ComparerObject>, NotUsed> source,
+            ConcurrentDictionary<string, ComparerObject> cache)
+        {
+            source.ConcatMaterialized((v,a,s) =>
+            {
+                
+                
+            });
+        }
+
         public static Source<IEnumerable<ComparerObject>, NotUsed> RemoveFromIndexById(
             this Source<IEnumerable<ComparerObject>, NotUsed> source, InterlockedCounter removedFileCount,
             IElasticSearchService elasticSearchService, ILogger logger, string indexName)
@@ -79,7 +89,10 @@ namespace DocSearchAIO.Classes
             _removedFileCount = new InterlockedCounter();
             _lazyCache =
                 new Lazy<ConcurrentDictionary<string, ComparerObject>>(() =>
-                    ComparerHelper.FillConcurrentDictionary(_comparerFile));
+                {
+                    _logger.LogInformation("lazy loading cache for comparer");
+                    return ComparerHelper.FillConcurrentDictionary(_comparerFile);
+                });
         }
 
         public async Task Process(string indexName)
@@ -91,7 +104,15 @@ namespace DocSearchAIO.Classes
                 var sw = Stopwatch.StartNew();
                 try
                 {
-                    
+                    await ComparerHelper
+                        .GetComparerObjectSource(_comparerFile)
+                        .CheckCacheEntry(_allFileCount)
+                        .GroupedWithin(1000, TimeSpan.FromSeconds(2))
+                        .Select(group => group.Values())
+                        .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName)
+                        .RemoveFromCache(_lazyCache.Value)
+                        .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
+
                     //var cache = ComparerHelper.FillConcurrentDictionary(_comparerFile);
                     // await ComparerHelper
                     //         .GetComparerObjectSource(_comparerFile)
