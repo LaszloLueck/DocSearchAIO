@@ -1,6 +1,6 @@
 init = () => {
     
-    var data = {
+    let data = {
         filterExcel: localStorage.getItem("filterExcel") === 'true',
         filterWord: localStorage.getItem("filterWord") === 'true',
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === 'true',
@@ -26,7 +26,7 @@ init = () => {
             localStorage.setItem("powerpointFilterActive", result.powerpointFilterActive);
             localStorage.setItem("pdfFilterActive", result.pdfFilterActive);
         })
-        .fail(function (xhr, status, error) {
+        .fail(function () {
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
         });
 
@@ -46,8 +46,8 @@ setAutoCompleteWithCondition = () => {
             noResultsText: 'Keine Ergebnisse',
             events: {
                 search: function (qry, callback) {
-                    var lastElement = $("#searchField").val().split(" ");
-                    var currentStep = lastElement[lastElement.length - 1];
+                    let lastElement = $("#searchField").val().split(" ");
+                    let currentStep = lastElement[lastElement.length - 1];
                     $.ajax({
                         url: "/api/search/doSuggest",
                         dataType: "json",
@@ -60,11 +60,11 @@ setAutoCompleteWithCondition = () => {
                         .done(function (result) {
                             callback(result.suggests);
                         })
-                        .fail(function (xhr, status, error) {
+                        .fail(function () {
                             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
                         });
                 },
-                searchPost: function (rsf, orig) {
+                searchPost: function (rsf) {
                     return rsf.map(function (k) {
                         return k.label
                     });
@@ -80,19 +80,21 @@ getAdministrationModal = () => {
         "method" : "GET",
     })
         .done(function(result){
-            $('body').append(result.content);
-            $(result.elementName).on('hidden.bs.modal', function (e) {
-                $(result.elementName).remove();
+            $('body').append(result);
+            const element = $('#adminModal');
+            $(element).on('hidden.bs.modal', function (e) {
+                $(element).remove();
             });
-            $(result.elementName).modal('show');
+            $(element).modal('show');
+            switchAdminContent($('#generalSettings'));
         })
-        .fail(function(xhr, status, error){
+        .fail(function(){
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
         });
 }
 
 showAlert = (alertText, alertType) => {
-    $('body').append('<div style="display: none; position: fixed; top: 0px; left: 0px; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText + 
+    $('body').append('<div style="display: none; position: fixed; top: 0; left: 0; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText + 
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
         '<span aria-hidden="true">&times;</span>\n' +
         '</button>' +
@@ -117,7 +119,6 @@ $(document).ready(function () {
                 showAlert('Kein Suchindex in den Optionen ausgewählt oder kein Suchindex vorhanden.', 'alert-warning');
             }
         }
-
         e.preventDefault();
     });
 

@@ -39,10 +39,13 @@ namespace DocSearchAIO.Controllers
         
         [Route("getAdministrationModal")]
         [HttpGet]
-        public async Task<AdministrationModalResponse> GetAdministrationModal()
+        public IActionResult GetAdministrationModal()
         {
             _logger.LogInformation("method getAdministrationModal called");
-            return await _administrationService.GetAdministrationModal();
+            return new PartialViewResult()
+            {
+                ViewName = "AdministrationModalPartial"
+            };
         }
 
         [Route("getSchedulerStatistics")]

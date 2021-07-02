@@ -1,5 +1,5 @@
 doSearch = (searchText, from) => {
-    var data = {
+    let data = {
         searchPhrase: unescape(searchText),
         from: from,
         size: localStorage.getItem("itemsPerPage"),
@@ -8,6 +8,7 @@ doSearch = (searchText, from) => {
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === "true",
         filterPdf: localStorage.getItem("filterPdf") === "true"
     };
+    
     $.ajax({
         method: "POST",
         dataType: "json",
@@ -17,25 +18,27 @@ doSearch = (searchText, from) => {
     })
         .done(function (result) {
             $('#searchField').val(result.searchPhrase);
-            if(result.docCount == 0){
+            if(result.docCount === 0){
                 showAlert("Keine Dokumente mit dem Suchbegriff " + result.searchPhrase + " gefunden!", "alert-warning")
             }
-            
-            $("#searchResults").empty();
-            var inner = result.searchResults.replaceAll("[#OO#]", "<b style='color:orange'>").replaceAll("[#CO#]", "</b>");
+            let searchResults = $('#searchResults');
+            $(searchResults).empty();
+            let inner = result.searchResults.replaceAll("[#OO#]", "<b style='color:orange'>").replaceAll("[#CO#]", "</b>");
 
-            $("#searchResults").html(inner);
+            $(searchResults).html(inner);
 
             document.title = result.title;
 
-            $("#pagination").empty();
-            $("#pagination").append(result.pagination);
+            $("#pagination")
+                .empty()
+                .append(result.pagination);
             
-            $("#statsContainer").empty();
-            $("#statsContainer").append(result.statistics);
+            $("#statsContainer")
+                .empty()
+                .append(result.statistics);
 
         })
-        .fail(function(xhr, status, error){
+        .fail(function(){
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
         });
 }

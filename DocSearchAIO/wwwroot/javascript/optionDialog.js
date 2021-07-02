@@ -1,5 +1,5 @@
 openOptionDialog = () => {
-    var data = {
+    let data = {
         filterWord: localStorage.getItem("filterWord") === "true",
         filterExcel: localStorage.getItem("filterExcel") === "true",
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === "true",
@@ -22,7 +22,7 @@ openOptionDialog = () => {
             $(result.elementName).modal('show');
 
         })
-        .fail(function (xhr, status, error) {
+        .fail(function () {
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
         });
 

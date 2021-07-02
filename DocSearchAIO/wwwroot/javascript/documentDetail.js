@@ -1,5 +1,5 @@
 openDocumentDetailDialog = (id) => {
-    var data = {id: id};
+    let data = {id: id};
     $.ajax({
         method: "POST",
         dataType: "json",
@@ -9,12 +9,13 @@ openDocumentDetailDialog = (id) => {
     })
         .done(function (result) {
             $("body").append(result.content);
-            $(result.elementName).on('hidden.bs.modal', function (e) {
-                $(result.elementName).remove();
+            let element = $(result.elementName);
+            $(element).on('hidden.bs.modal', function () {
+                $(element).remove();
             });
-            $(result.elementName).modal('show');
+            $(element).modal('show');
         })
-        .fail(function (xhr, status, error) {
+        .fail(function () {
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
         });
 }

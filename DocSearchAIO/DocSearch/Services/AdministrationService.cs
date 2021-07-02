@@ -11,6 +11,7 @@ using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -44,12 +45,6 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _loggerFactory = loggerFactory;
             _memoryCache = memoryCache;
-        }
-
-        public async Task<AdministrationModalResponse> GetAdministrationModal()
-        {
-            var content = await _viewToStringRenderer.Render("AdministrationModalPartial", new { });
-            return new AdministrationModalResponse {Content = content, ElementName = "#adminModal"};
         }
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
@@ -92,7 +87,7 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        private static Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> GetConfigurationTuple =
+        private static readonly Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> GetConfigurationTuple =
             configurationObject =>
             {
                 var processingTuples =
