@@ -9,12 +9,10 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Common.Logging;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
@@ -30,25 +28,23 @@ namespace DocSearchAIO.Classes
                 allFileCount.Increment();
                 return File.Exists(compObj.OriginalPath)
                     ? Maybe<ComparerObject>.None
-                    : Maybe<ComparerObject>.From(compObj);
+                    : compObj;
             });
-
-            //if (File.Exists(compObj.OriginalPath)) return false;
-            //removedFileCount.Increment();
-            //logger.LogInformation("remove obsolete file <{ObsoleteFile}>", compObj.OriginalPath);
-            //cache.TryRemove(new KeyValuePair<string, ComparerObject>(compObj.PathHash, compObj));
-            //return await elasticSearchService.RemoveItemById(indexName, compObj.PathHash);
         }
 
-        public static Source<bool, NotUsed> RemoveFromCache(this Source<IEnumerable<ComparerObject>, NotUsed> source,
-            ConcurrentDictionary<string, ComparerObject> cache)
+        public static Source<IEnumerable<bool>, NotUsed> RemoveFromCache(
+            this Source<IEnumerable<ComparerObject>, NotUsed> source,
+            ConcurrentDictionary<string, ComparerObject> lazyCache)
         {
-            source.ConcatMaterialized((v,a,s) =>
+            return source.Select(group =>
             {
-                
-                
+                var grpArray = group.ToArray();
+                return grpArray.Length > 0
+                    ? grpArray.Select(cmpObject => lazyCache.Remove(cmpObject.PathHash, out cmpObject))
+                    : Array.Empty<bool>().Select(t => t);
             });
         }
+
 
         public static Source<IEnumerable<ComparerObject>, NotUsed> RemoveFromIndexById(
             this Source<IEnumerable<ComparerObject>, NotUsed> source, InterlockedCounter removedFileCount,
@@ -56,17 +52,18 @@ namespace DocSearchAIO.Classes
         {
             return source.SelectAsyncUnordered(10, async items =>
             {
-                var asArray = items.ToArray();
+                var itemsArray = items.ToArray();
+
+                if (itemsArray.Length <= 0) return itemsArray.Select(t => t);
+                logger.LogInformation("try to remove {Elements} from elastic index", itemsArray.Length);
                 var resultCount =
-                    await elasticSearchService.RemoveItemsById(indexName, asArray.Select(item => item.PathHash));
+                    await elasticSearchService.RemoveItemsById(indexName, itemsArray.Select(item => item.PathHash));
                 removedFileCount.Add(resultCount);
-                return asArray.Select(p => p);
+
+                return itemsArray.Select(t => t);
             });
         }
     }
-
-
-    //, InterlockedCounter removedFileCount, ILogger logger, IElasticSearchService elasticSearchService,ConcurrentDictionary<string, ComparerObject> cache, string indexName
 
     public class ReverseComparerService<T> where T : ComparerModel
     {
@@ -76,7 +73,7 @@ namespace DocSearchAIO.Classes
         private readonly ActorSystem _actorSystem;
         private readonly InterlockedCounter _allFileCount;
         private readonly InterlockedCounter _removedFileCount;
-        private Lazy<ConcurrentDictionary<string, ComparerObject>> _lazyCache;
+        private readonly Lazy<ConcurrentDictionary<string, ComparerObject>> _lazyCache;
 
         public ReverseComparerService(ILoggerFactory loggerFactory, T model, IElasticSearchService elasticSearchService,
             ActorSystem actorSystem)
@@ -97,53 +94,42 @@ namespace DocSearchAIO.Classes
 
         public async Task Process(string indexName)
         {
-            await Task.Run(async () =>
+            _logger.LogInformation("process comparer file {ComparerFile}", _comparerFile);
+            _logger.LogInformation("process elastic index {IndexName}", indexName);
+            var sw = Stopwatch.StartNew();
+            try
             {
-                _logger.LogInformation("process comparer file {ComparerFile}", _comparerFile);
-                _logger.LogInformation("process elastic index {IndexName}", indexName);
-                var sw = Stopwatch.StartNew();
-                try
-                {
-                    await ComparerHelper
-                        .GetComparerObjectSource(_comparerFile)
-                        .CheckCacheEntry(_allFileCount)
-                        .GroupedWithin(1000, TimeSpan.FromSeconds(2))
-                        .Select(group => group.Values())
-                        .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName)
-                        .RemoveFromCache(_lazyCache.Value)
-                        .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
+                await ComparerHelper
+                    .GetComparerObjectSource(_comparerFile)
+                    .CheckCacheEntry(_allFileCount)
+                    .GroupedWithin(200, TimeSpan.FromSeconds(2))
+                    .WithMaybeFilter()
+                    .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName)
+                    .RemoveFromCache(_lazyCache.Value)
+                    .RunIgnore(_actorSystem.Materializer());
 
-                    //var cache = ComparerHelper.FillConcurrentDictionary(_comparerFile);
-                    // await ComparerHelper
-                    //         .GetComparerObjectSource(_comparerFile)
-                    //         .SelectAsyncUnordered(10, async compObj =>
-                    //             await compObj
-                    //                 .CheckCacheEntry(_allFileCount))
-                    //         .GroupedWithin(1000, TimeSpan.FromSeconds(10))
-                    //         .Select(group => group.Values())
-                    //         .Select(values => { });
-                    //     .RunWith(Sink.Ignore<bool>(), _actorSystem.Materializer());
-                    // if (_removedFileCount.GetCurrent() > 0)
-                    // {
-                    //     _logger.LogInformation("switch comparer file, there are elements removed");
-                    //     ComparerHelper.RemoveComparerFile(_comparerFile);
-                    //     ComparerHelper.CreateComparerFile(_comparerFile);
-                    //     await ComparerHelper.WriteAllLinesAsync(cache, _comparerFile);
-                    // }
-                    // else
-                    // {
-                    //     _logger.LogInformation("nothing to do, no elements found which are removed while cleanup");
-                    // }
-                }
-                finally
+
+                if (_removedFileCount.GetCurrent() > 0)
                 {
-                    sw.Stop();
-                    _logger.LogInformation(
-                        "cleanup done {ElapsedTime} ms, process {AllCount} files, remove {RemovedCount} entries",
-                        sw.ElapsedMilliseconds, _allFileCount.GetCurrent(), _removedFileCount.GetCurrent());
-                    _logger.LogInformation("finished processing cleanup job");
+                    _logger.LogInformation("switch comparer file, there are elements removed");
+                    _logger.LogInformation("try to remove comparer file {ComparerFile}", _comparerFile);
+                    ComparerHelper.RemoveComparerFile(_comparerFile);
+                    _logger.LogInformation("create new comparer file {ComparerFile}", _comparerFile);
+                    ComparerHelper.CreateComparerFile(_comparerFile);
+                    _logger.LogInformation("write all new entries from cache to comparer file {ComparerFile}",
+                        _comparerFile);
+                    _logger.LogInformation("cache have {CacheSize} entries", _lazyCache.Value.Count);
+                    await ComparerHelper.WriteAllLinesAsync(_lazyCache.Value, _comparerFile);
                 }
-            });
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.LogInformation(
+                    "cleanup done {ElapsedTime} ms, process {AllCount} files, remove {RemovedCount} entries",
+                    sw.ElapsedMilliseconds, _allFileCount.GetCurrent(), _removedFileCount.GetCurrent());
+                _logger.LogInformation("finished processing cleanup job");
+            }
         }
     }
 }

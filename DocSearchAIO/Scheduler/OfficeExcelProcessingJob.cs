@@ -97,7 +97,7 @@ namespace DocSearchAIO.Scheduler
                                             "directory to scan <{ScanPath}> does not exists. skip working",
                                             scanPath);
                                     },
-                                    async scanPath =>
+                                        async scanPath =>
                                     {
                                         try
                                         {
@@ -206,18 +206,18 @@ namespace DocSearchAIO.Scheduler
                                     var id = await StaticHelpers.CreateMd5HashString(currentFile);
                                     
                                     static IEnumerable<OfficeDocumentComment>
-                                        GetCommentArray(WorkbookPart workbookPart) =>
+                                        CommentArray(WorkbookPart workbookPart) =>
                                         workbookPart?
                                             .WorksheetParts
-                                            .GetCommentsFromDocument();
+                                            .CommentsFromDocument();
 
-                                    var commentsArray = GetCommentArray(mainWorkbookPart).ToArray();
+                                    var commentsArray = CommentArray(mainWorkbookPart).ToArray();
 
                                     var toReplaced = new List<(string, string)>();
 
                                     var contentString = mainWorkbookPart
                                         .SharedStringTablePart
-                                        .GetElements()
+                                        .Elements()
                                         .GetContentString()
                                         .ReplaceSpecialStrings(toReplaced);
 
@@ -291,17 +291,17 @@ namespace DocSearchAIO.Scheduler
         private static IEnumerable<OfficeDocumentComment>
             ConvertToOfficeDocumentComment(this CommentList comments)
         {
-            return comments.ChildElements.Select(comment => GetOfficeDocumentComment((Comment)comment));
+            return comments.ChildElements.Select(comment => OfficeDocumentComment((Comment)comment));
         }
 
-        private static OfficeDocumentComment GetOfficeDocumentComment(Comment comment) =>
+        private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()
             {
                 Comment = comment.CommentText?.InnerText
             };
 
         private static IEnumerable<OfficeDocumentComment>
-            GetCommentsFromDocument(this IEnumerable<WorksheetPart> worksheets) =>
+            CommentsFromDocument(this IEnumerable<WorksheetPart> worksheets) =>
             worksheets
                 .Select(part =>
                 {
@@ -325,7 +325,7 @@ namespace DocSearchAIO.Scheduler
                 })
                 .SelectMany(p => p);
 
-        private static IEnumerable<OpenXmlElement> GetElements(this SharedStringTablePart sharedStringTablePart)
+        private static IEnumerable<OpenXmlElement> Elements(this SharedStringTablePart sharedStringTablePart)
         {
             if (sharedStringTablePart?.SharedStringTable is null)
                 return ArraySegment<OpenXmlElement>.Empty;

@@ -9,7 +9,6 @@ using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
-using Microsoft.AspNetCore.Mvc;
 
 namespace DocSearchAIO.Classes
 {

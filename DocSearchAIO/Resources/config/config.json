@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "d:\\temp\\00-Gesamtprojekt\\",
+    "scanPath": "c:\\Temp\\Neuer Ordner\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",

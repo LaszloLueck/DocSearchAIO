@@ -200,8 +200,8 @@ namespace DocSearchAIO.Scheduler
                     SearchOption.AllDirectories).Select(f => new GenericSourceFilePath(f)));
         }
 
-        public static Task RunIgnore(this Source<bool, NotUsed> source, ActorMaterializer actorMaterializer) =>
-            source.RunWith(Sink.Ignore<bool>(), actorMaterializer);
+        public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>
+            source.RunWith(Sink.Ignore<T>(), actorMaterializer);
 
         public static Source<bool, NotUsed> WriteDocumentsToIndexAsync<TDocument>(this
                 Source<IEnumerable<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
