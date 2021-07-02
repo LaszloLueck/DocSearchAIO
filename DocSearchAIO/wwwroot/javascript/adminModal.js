@@ -27,6 +27,7 @@ switchAdminContent = (element) => {
 loadGenericContent = () => {
     $.ajax({
         url: "/api/administration/getGenericContent",
+        dataType: "html",
         method: "GET",
     })
         .done(function (result) {
@@ -42,6 +43,7 @@ loadGenericContent = () => {
 loadSchedulerContent = () => {
     $.ajax({
         url: "/api/administration/getSchedulerContent",
+        dataType: "html",
         method: "GET",
     })
         .done(function (result) {
@@ -57,6 +59,7 @@ loadSchedulerContent = () => {
 loadStatisticContent = () => {
     $.ajax({
         url: "/api/administration/getStatisticsContent",
+        dataType: "html",
         method: "GET",
     })
         .done(function (result) {
@@ -72,6 +75,7 @@ loadStatisticContent = () => {
 loadActionContent = () => {
     $.ajax({
         url: "/api/administration/getActionContent",
+        dataType: "html",
         method: "GET",
     })
         .done(function (result) {

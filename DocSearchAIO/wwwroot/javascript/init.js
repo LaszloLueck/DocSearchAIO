@@ -80,7 +80,7 @@ getAdministrationModal = () => {
         "method" : "GET",
     })
         .done(function(result){
-            $('body').append(result);
+            $('#modalContainer').append(result);
             const element = $('#adminModal');
             $(element).on('hidden.bs.modal', function (e) {
                 $(element).remove();

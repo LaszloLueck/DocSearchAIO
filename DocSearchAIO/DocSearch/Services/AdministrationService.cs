@@ -11,7 +11,6 @@ using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -24,7 +23,6 @@ namespace DocSearchAIO.DocSearch.Services
     public class AdministrationService
     {
         private readonly ILogger _logger;
-        private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly ConfigurationObject _configurationObject;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
@@ -32,11 +30,10 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly IMemoryCache _memoryCache;
         private readonly ElasticUtilities _elasticUtilities;
 
-        public AdministrationService(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
+        public AdministrationService(ILoggerFactory loggerFactory,
             IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<AdministrationService>();
-            _viewToStringRenderer = viewToStringRenderer;
             var cfgTmp = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(cfgTmp);
             _configurationObject = cfgTmp;
@@ -173,7 +170,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = model
                     .ProcessorConfigurations
-                    .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry()
+                    .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry
                     {
                         ExcludeFilter = kv.Value.ExcludeFilter,
                         FileExtension = kv.Value.FileExtension,
@@ -189,7 +186,7 @@ namespace DocSearchAIO.DocSearch.Services
                 _configurationObject.Cleanup = model
                     .CleanupConfigurations
                     .Select(kv =>
-                        new KeyValuePair<string, CleanUpEntry>(kv.Key, new CleanUpEntry()
+                        new KeyValuePair<string, CleanUpEntry>(kv.Key, new CleanUpEntry
                         {
                             ForComparerName = kv.Value.ForComparer,
                             ForIndexSuffix = kv.Value.ForIndexSuffix,
@@ -302,7 +299,7 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        public async Task<string> GetGenericContent()
+        public AdministrationGenericModel GetGenericContent()
         {
             var processSubTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
             var cleanupSubTypes = StaticHelpers.GetSubtypesOfType<CleanupDocument>();
@@ -353,21 +350,15 @@ namespace DocSearchAIO.DocSearch.Services
                     .ToDictionary()
             };
 
-
-            var content = await _viewToStringRenderer.Render("AdministrationGenericContentPartial", adminGenModel);
-            return content;
+            return adminGenModel;
         }
 
-
-        public async Task<string> GetSchedulerContent()
+        public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerContent()
         {
-            var schedulerStatistics = await _schedulerStatisticsService.GetSchedulerStatistics();
-            var content =
-                await _viewToStringRenderer.Render("AdministrationSchedulerContentPartial", schedulerStatistics);
-            return content;
+            return await _schedulerStatisticsService.GetSchedulerStatistics();
         }
 
-        public async Task<string> GetStatisticsContent()
+        public async Task<IndexStatistic> GetStatisticsContent()
         {
             async Task<GetIndexResponse> GetIndicesResponse(string indexName) =>
                 await _elasticSearchService.GetIndicesWithPatternAsync($"{indexName}-*");
@@ -449,12 +440,7 @@ namespace DocSearchAIO.DocSearch.Services
                     }),
                     RuntimeStatistics = runtimeStatistic
                 };
-
-            var responseModel = GetResponseModel(indexStatsResponses, runtimeStatistic);
-
-            var content =
-                await _viewToStringRenderer.Render("AdministrationStatisticsContentPartial", responseModel);
-            return content;
+            return GetResponseModel(indexStatsResponses, runtimeStatistic);
         }
 
         private static readonly Func<SchedulerStatistics, AdministrationActionSchedulerModel> ConvertToActionModel =
@@ -477,7 +463,7 @@ namespace DocSearchAIO.DocSearch.Services
                 };
             };
         
-        public async Task<string> GetActionContent()
+        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> GetActionContent()
         {
             var groupedSchedulerModels = (await _schedulerStatisticsService.GetSchedulerStatistics())
                 .Select(kv =>
@@ -488,10 +474,10 @@ namespace DocSearchAIO.DocSearch.Services
                 })
                 .ToDictionary();
 
-
-            var content =
-                await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
-            return content;
+            return groupedSchedulerModels;
+            // var content =
+            //     await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
+            // return content;
         }
     }
 }

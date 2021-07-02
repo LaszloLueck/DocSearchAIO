@@ -54,7 +54,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var triggerState = await scheduler.GetTriggerState(trigger);
                 var trg = await scheduler.GetTrigger(trigger);
 
-                var tResult = new SchedulerTriggerStatisticElement()
+                var tResult = new SchedulerTriggerStatisticElement
                 {
                     ProcessingState = tuples
                         .Where(r => r.TriggerName == trigger.Name)
@@ -121,10 +121,9 @@ namespace DocSearchAIO.DocSearch.Services
                     return await t;
                 };
 
-
         public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerStatistics()
         {
-            var source = new List<GenericSourceGroupName>()
+            var source = new List<GenericSourceGroupName>
             {
                 new(_configurationObject.SchedulerGroupName),
                 new(_configurationObject.CleanupGroupName)

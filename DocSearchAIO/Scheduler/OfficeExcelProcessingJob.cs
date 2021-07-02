@@ -102,7 +102,7 @@ namespace DocSearchAIO.Scheduler
                                         try
                                         {
                                             _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                                            var jobStatistic = new ProcessingJobStatistic()
+                                            var jobStatistic = new ProcessingJobStatistic
                                             {
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };

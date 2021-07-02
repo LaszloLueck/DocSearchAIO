@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Threading.Tasks;
-using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
@@ -20,13 +20,14 @@ namespace DocSearchAIO.Controllers
         private readonly SchedulerStatisticsService _schedulerStatisticsService;
         private readonly OptionDialogService _optionDialogService;
 
-        public AdministrationController(ILoggerFactory loggerFactory, ViewToStringRenderer viewToStringRenderer,
+        public AdministrationController(ILoggerFactory loggerFactory,
             IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
         {
             _logger = loggerFactory.CreateLogger<AdministrationController>();
-            _administrationService = new AdministrationService(loggerFactory, viewToStringRenderer, configuration, elasticSearchService, memoryCache);
+            _administrationService =
+                new AdministrationService(loggerFactory, configuration, elasticSearchService, memoryCache);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _optionDialogService = new OptionDialogService(loggerFactory, viewToStringRenderer, elasticSearchService);
+            _optionDialogService = new OptionDialogService(loggerFactory, elasticSearchService);
         }
 
         [Route("setGenericContent")]
@@ -36,13 +37,13 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method setGenericContent called");
             return await _administrationService.SetAdministrationGenericContent(model);
         }
-        
+
         [Route("getAdministrationModal")]
         [HttpGet]
-        public IActionResult GetAdministrationModal()
+        public PartialViewResult GetAdministrationModal()
         {
             _logger.LogInformation("method getAdministrationModal called");
-            return new PartialViewResult()
+            return new PartialViewResult
             {
                 ViewName = "AdministrationModalPartial"
             };
@@ -87,7 +88,7 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method reindexAndStartJob called");
             return await _administrationService.DeleteIndexAndStartJob(jobStatusRequest);
         }
-        
+
         [Route("getTriggerStatus")]
         [HttpPost]
         public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
@@ -97,43 +98,76 @@ namespace DocSearchAIO.Controllers
         }
 
         [Route("getOptionsDialog")]
+        [Consumes(MediaTypeNames.Application.Json)]
         [HttpPost]
-        public async Task<OptionDialogResponse> OptionDialog(OptionDialogRequest optionDialogRequest)
+        public async Task<PartialViewResult> OptionDialog(OptionDialogRequest optionDialogRequest)
         {
             _logger.LogInformation("method getOptionsDialog called!");
-            return await _optionDialogService.GetOptionDialog(optionDialogRequest);
+            var dialogResponse = await _optionDialogService.GetOptionDialog(optionDialogRequest);
+            var responseModel = new TypedPartialViewResponse<OptionDialogRequest>(dialogResponse);
+            return new PartialViewResult
+            {
+                ViewName = "ResultPageConfigurationModalPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
 
         [Route("getGenericContent")]
         [HttpGet]
-        public async Task<string> GetGenericContent()
+        public PartialViewResult GetGenericContent()
         {
             _logger.LogInformation("method getGenericContent called");
-            return await _administrationService.GetGenericContent();
+            var genericContent = _administrationService.GetGenericContent();
+            var responseModel = new TypedPartialViewResponse<AdministrationGenericModel>(genericContent);
+            return new PartialViewResult
+            {
+                ViewName = "AdministrationGenericContentPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
 
         [Route("getSchedulerContent")]
         [HttpGet]
-        public async Task<string> GetSchedulerContent()
+        public async Task<PartialViewResult> GetSchedulerContent()
         {
             _logger.LogInformation("method getSchedulerContent called");
-            return await _administrationService.GetSchedulerContent();
+            var schedulerContent = await _administrationService.GetSchedulerContent();
+            var responseModel = new TypedPartialViewResponse<Dictionary<string, SchedulerStatistics>>(schedulerContent);
+            return new PartialViewResult
+            {
+                ViewName = "AdministrationSchedulerContentPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
 
         [Route("getStatisticsContent")]
         [HttpGet]
-        public async Task<string> GetStatisticsContent()
+        public async Task<PartialViewResult> GetStatisticsContent()
         {
             _logger.LogInformation("method getStatisticsContent called");
-            return await _administrationService.GetStatisticsContent();
+            var statisticContent = await _administrationService.GetStatisticsContent();
+            var responseModel = new TypedPartialViewResponse<IndexStatistic>(statisticContent);
+            return new PartialViewResult
+            {
+                ViewName = "AdministrationStatisticsContentPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
 
         [Route("getActionContent")]
         [HttpGet]
-        public async Task<string> GetActionContent()
+        public async Task<PartialViewResult> GetActionContent()
         {
             _logger.LogInformation("method getActionContent called");
-            return await _administrationService.GetActionContent();
+            var actionContent = await _administrationService.GetActionContent();
+            var responseModel =
+                new TypedPartialViewResponse<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>>(
+                    actionContent);
+            return new PartialViewResult
+            {
+                ViewName = "AdministrationActionContentPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
     }
 }
