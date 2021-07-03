@@ -26,7 +26,7 @@ namespace DocSearchAIO.Controllers
                 new DoSearchService(elasticSearchService, loggerFactory, viewToStringRenderer, configuration);
             _searchSuggestService = new SearchSuggestService(elasticSearchService, loggerFactory, configuration);
             _documentDetailService =
-                new DocumentDetailService(elasticSearchService, loggerFactory, viewToStringRenderer);
+                new DocumentDetailService(elasticSearchService, loggerFactory);
         }
 
         [Route("doSearch")]
@@ -47,10 +47,16 @@ namespace DocSearchAIO.Controllers
 
         [Route("documentDetail")]
         [HttpPost]
-        public async Task<DocumentDetailResponse> GetDocumentDetail(DocumentDetailRequest request)
+        public async Task<PartialViewResult> GetDocumentDetail(DocumentDetailRequest request)
         {
-            _logger.LogInformation($"get document details for {request.Id}");
-            return await _documentDetailService.GetDocumentDetail(request);
+            _logger.LogInformation("get document details for {RequestId}",request.Id);
+            var documentDetail = await _documentDetailService.GetDocumentDetail(request);
+            var responseModel = new TypedPartialViewResponse<DocumentDetailModel>(documentDetail);
+            return new PartialViewResult
+            {
+                ViewName = "DocumentDetailModalPartial",
+                ViewData = responseModel.GetPartialViewResponseModel()
+            };
         }
     }
 }

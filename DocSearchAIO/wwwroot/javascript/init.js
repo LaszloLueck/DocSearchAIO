@@ -77,6 +77,7 @@ setAutoCompleteWithCondition = () => {
 getAdministrationModal = () => {
     $.ajax({
         url: "/api/administration/getAdministrationModal",
+        dataType: "html",
         "method" : "GET",
     })
         .done(function(result){
