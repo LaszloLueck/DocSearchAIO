@@ -392,7 +392,7 @@ namespace DocSearchAIO.DocSearch.Services
             static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
                 ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
                 StatisticUtilitiesProxy
-                    .AsIEnumerable(loggerFactory, configurationObject.StatisticsDirectory);
+                    .AsIEnumerable(loggerFactory, new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
 
             static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> GetJobStateMemoryCaches(
                 ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -32,18 +33,18 @@ namespace DocSearchAIO.Scheduler
 
 
 
-        public static async Task<string> CreateMd5HashString(string stringValue)
+        public static async Task<TypedMd5String> CreateMd5HashString(TypedMd5InputString stringValue)
         {
             return await Task.Run(async () =>
             {
                 using var md5 = MD5.Create();
                 await using var ms = new MemoryStream();
                 await using var wt = new StreamWriter(ms);
-                await wt.WriteAsync(stringValue);
+                await wt.WriteAsync(stringValue.Value);
                 await wt.FlushAsync();
                 ms.Position = 0;
-                return BitConverter.ToString(await md5.ComputeHashAsync(ms));
-            });
+                return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
+            }); 
         }
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
@@ -74,14 +75,15 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public static string GetStringFromCommentsArray(this IEnumerable<OfficeDocumentComment> commentsArray) =>
-            string.Join(" ", commentsArray.Select(d => d.Comment));
+        public static TypedCommentString GetStringFromCommentsArray(this IEnumerable<OfficeDocumentComment> commentsArray) =>
+            new(string.Join(" ", commentsArray.Select(d => d.Comment)));
 
-        public static string GenerateTextToSuggest(this string commentString, string contentString) =>
-            Regex.Replace(contentString + " " + commentString, "[^a-zA-ZäöüßÄÖÜ]", " ");
+        public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString, TypedContentString contentString) =>
+            new (Regex.Replace(contentString.Value + " " + commentString.Value, "[^a-zA-ZäöüßÄÖÜ]", " "));
 
-        public static IEnumerable<string> GenerateSearchAsYouTypeArray(this string suggestedText) =>
+        public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
             suggestedText
+                .Value
                 .ToLower()
                 .Split(" ")
                 .Distinct()
@@ -116,10 +118,10 @@ namespace DocSearchAIO.Scheduler
                         .Where(d => d.Any())
                         .SelectMany(k => k).Distinct());
 
-        public static async Task<string> GetContentHashString(this (List<string> listElementsToHash,
+        public static async Task<TypedMd5String> GetContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
             await CreateMd5HashString(
-                BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString(""));
+                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString("")));
 
         public static List<string> GetListElementsToHash(string category, DateTime created,
             string contentString, string creator, string description, string identifier,
@@ -173,12 +175,12 @@ namespace DocSearchAIO.Scheduler
                     });
             };
 
-        public static Source<string, NotUsed> UseExcludeFileFilter(this Source<GenericSourceFilePath, NotUsed> source,
+        public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,
             string excludeFilter)
         {
             return source
-                .Select(p => p.Value)
-                .Where(t => excludeFilter == "" || !t.Contains(excludeFilter));
+                .Where(t => excludeFilter == "" || !t.Value.Contains(excludeFilter))
+                .Select(x => x.Value);
         }
 
         public static string ReplaceSpecialStrings(this string input, IList<(string, string)> list)
@@ -192,12 +194,13 @@ namespace DocSearchAIO.Scheduler
             }
         }
 
-        public static Source<GenericSourceFilePath, NotUsed> CreateSource(this GenericSourceFilePath scanPath,
+        [Pure]
+        public static Source<TypedFilePathString, NotUsed> CreateSource(this TypedFilePathString scanPath,
             string fileExtension)
         {
             return Source
                 .From(Directory.GetFiles(scanPath.Value, fileExtension,
-                    SearchOption.AllDirectories).Select(f => new GenericSourceFilePath(f)));
+                    SearchOption.AllDirectories).Select(f => new TypedFilePathString(f)));
         }
 
         public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>

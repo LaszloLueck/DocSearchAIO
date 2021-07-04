@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Common.Logging;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,7 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StatisticUtilitiesProxy
     {
-        public static readonly Func<ILoggerFactory, string,
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
                 IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>>>
             AsIEnumerable = (loggerFactory, statisticsPath) =>
             {
@@ -31,20 +30,20 @@ namespace DocSearchAIO.Scheduler
                 };
             };
 
-        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelWord>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelWord>>
             WordStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelWord>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelPowerpoint>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelPowerpoint>>
             PowerpointStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelPowerpoint>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelPdf>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelPdf>>
             PdfStatisticUtility =
                 (loggerFactory, statisticsDirectory, statisticsFile) =>
                     new StatisticUtilities<StatisticModelPdf>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, string, string, StatisticUtilities<StatisticModelExcel>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelExcel>>
             ExcelStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelExcel>(loggerFactory, statisticDirectory, statisticsFile);
     }
@@ -57,23 +56,23 @@ namespace DocSearchAIO.Scheduler
         private readonly InterlockedCounter _changedDocuments;
         private readonly string _filePath;
 
-        public StatisticUtilities(ILoggerFactory loggerFactory, string statisticsDirectory, string statisticsFile)
+        public StatisticUtilities(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory, TypedFileNameString statisticsFile)
         {
             _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
             _entireDocuments = new InterlockedCounter();
             _failedDocuments = new InterlockedCounter();
             _changedDocuments = new InterlockedCounter();
-            _filePath = $"{statisticsDirectory}/{statisticsFile}";
+            _filePath = $"{statisticsDirectory.Value}/{statisticsFile.Value}";
             _logger.LogInformation("initialize StatisticUtilities for type {TypeName}", typeof(TModel).Name);
             _checkAndCreateStatisticsDirectory(statisticsDirectory);
             _checkAndCreateStatisticsFile(_filePath);
         }
 
-        private void _checkAndCreateStatisticsDirectory(string directoryPath)
+        private void _checkAndCreateStatisticsDirectory(TypedDirectoryPathString directoryPath)
         {
             _logger.LogInformation("check if directory {DirectoryPath} exists", directoryPath);
-            if (!Directory.Exists(directoryPath))
-                Directory.CreateDirectory(directoryPath);
+            if (!Directory.Exists(directoryPath.Value))
+                Directory.CreateDirectory(directoryPath.Value);
         }
 
         private void _checkAndCreateStatisticsFile(string filePath)

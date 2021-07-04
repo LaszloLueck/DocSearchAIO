@@ -1,25 +1,22 @@
-using Microsoft.AspNetCore.Mvc;
+using DocSearchAIO.Scheduler;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace DocSearchAIO.Controllers
 {
-
-    public class TypedPartialViewResponse<T>
+    public class TypedPartialViewResponse<T> : GenericSource<T>
     {
-        public readonly T PartialViewResponseValue;
-
-        public TypedPartialViewResponse(T partialViewResponseValue)
+        public TypedPartialViewResponse(T partialViewResponseValue) : base(partialViewResponseValue)
         {
-            PartialViewResponseValue = partialViewResponseValue;
         }
     }
-    
+
     public static class PartialViewHelper
     {
         public static ViewDataDictionary GetPartialViewResponseModel<T>(this TypedPartialViewResponse<T> source)
         {
-            return new(new EmptyModelMetadataProvider(), new ModelStateDictionary()){Model = source.PartialViewResponseValue};
+            return new(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+                {Model = source.Value};
         }
     }
 }

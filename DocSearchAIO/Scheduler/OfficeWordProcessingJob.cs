@@ -48,7 +48,7 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
+            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelWord().GetStatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
@@ -109,7 +109,7 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            await new GenericSourceFilePath(scanPath)
+                                            await new TypedFilePathString(scanPath)
                                                 .CreateSource(configEntry.FileExtension)
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
@@ -208,7 +208,7 @@ namespace DocSearchAIO.Scheduler
                                             .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                             .Replace(@"\", "/");
 
-                                        var id = await StaticHelpers.CreateMd5HashString(currentFile);
+                                        var id = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(currentFile));
 
                                         static OfficeDocumentComment[] GetCommentArray(
                                             MainDocumentPart mainDocumentPart) =>
@@ -254,7 +254,7 @@ namespace DocSearchAIO.Scheduler
 
                                         var completionField = commentsArray
                                             .GetStringFromCommentsArray()
-                                            .GenerateTextToSuggest(contentString)
+                                            .GenerateTextToSuggest(new TypedContentString(contentString))
                                             .GenerateSearchAsYouTypeArray()
                                             .WrapCompletionField();
 
@@ -263,13 +263,13 @@ namespace DocSearchAIO.Scheduler
                                             Category = category,
                                             CompletionContent = completionField,
                                             Content = contentString,
-                                            ContentHash = elementsHash,
+                                            ContentHash = elementsHash.Value,
                                             ContentStatus = contentStatus,
                                             ContentType = contentType,
                                             Created = created,
                                             Creator = creator,
                                             Description = description,
-                                            Id = id,
+                                            Id = id.Value,
                                             Identifier = identifier,
                                             Keywords = StaticHelpers.KeywordsList(keywords),
                                             Language = language,

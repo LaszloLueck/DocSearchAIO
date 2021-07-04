@@ -86,12 +86,12 @@ namespace DocSearchAIO.DocSearch.Services
                 return tResult;
             };
 
-        private static readonly Func<IScheduler, GenericSourceGroupName, Task<IReadOnlyCollection<TriggerKey>>>
+        private static readonly Func<IScheduler, TypedGroupNameString, Task<IReadOnlyCollection<TriggerKey>>>
             GetTriggerKeys = async (scheduler, groupName) =>
                 await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName.Value));
 
 
-        private static readonly Func<ConfigurationObject, GenericSourceGroupName, ILogger, Task<SchedulerStatistics>>
+        private static readonly Func<ConfigurationObject, TypedGroupNameString, ILogger, Task<SchedulerStatistics>>
             GetSchedulerStatistic =
                 async (configurationObject, groupName, logger) =>
                 {
@@ -123,7 +123,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerStatistics()
         {
-            var source = new List<GenericSourceGroupName>
+            var source = new List<TypedGroupNameString>
             {
                 new(_configurationObject.SchedulerGroupName),
                 new(_configurationObject.CleanupGroupName)

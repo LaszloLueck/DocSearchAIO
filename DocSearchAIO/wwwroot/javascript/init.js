@@ -21,10 +21,10 @@ init = () => {
             localStorage.setItem("filterExcel", result.filterExcel);
             localStorage.setItem("filterPowerpoint", result.filterPowerpoint);
             localStorage.setItem("filterPdf", result.filterPdf);
-            localStorage.setItem("wordFilterActive", result.wordFilterActive);
-            localStorage.setItem("excelFilterActive", result.excelFilterActive);
-            localStorage.setItem("powerpointFilterActive", result.powerpointFilterActive);
-            localStorage.setItem("pdfFilterActive", result.pdfFilterActive);
+            localStorage.setItem("wordFilterActive", result["wordFilterActive"]);
+            localStorage.setItem("excelFilterActive", result["excelFilterActive"]);
+            localStorage.setItem("powerpointFilterActive", result["powerpointFilterActive"]);
+            localStorage.setItem("pdfFilterActive", result["pdfFilterActive"]);
         })
         .fail(function () {
             showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
@@ -83,7 +83,7 @@ getAdministrationModal = () => {
         .done(function(result){
             $('#modalContainer').append(result);
             const element = $('#adminModal');
-            $(element).on('hidden.bs.modal', function (e) {
+            $(element).on('hidden.bs.modal', function () {
                 $(element).remove();
             });
             $(element).modal('show');

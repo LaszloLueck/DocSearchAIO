@@ -50,7 +50,7 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, _cfg.StatisticsDirectory,
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPdf().GetStatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
@@ -108,7 +108,7 @@ namespace DocSearchAIO.Scheduler
                                                 Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                                             };
                                             var sw = Stopwatch.StartNew();
-                                            await new GenericSourceFilePath(scanPath)
+                                            await new TypedFilePathString(scanPath)
                                                 .CreateSource(configEntry.FileExtension)
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
@@ -200,7 +200,7 @@ namespace DocSearchAIO.Scheduler
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var fileNameHash = await StaticHelpers.CreateMd5HashString(fileName);
+                    var fileNameHash = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(fileName));
 
                     var elasticDoc = new PdfElasticDocument
                     {
@@ -211,7 +211,7 @@ namespace DocSearchAIO.Scheduler
                         Subject = subject,
                         Title = title,
                         ProcessTime = DateTime.Now,
-                        Id = fileNameHash,
+                        Id = fileNameHash.Value,
                         UriFilePath = uriPath,
                         ContentType = "pdf"
                     };
@@ -233,7 +233,7 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = await StaticHelpers.CreateMd5HashString(listElementsToHash.JoinString(""));
+                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.JoinString("")))).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }
