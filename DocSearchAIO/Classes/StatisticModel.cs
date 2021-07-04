@@ -29,7 +29,7 @@ namespace DocSearchAIO.Classes
 
         public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
         {
-            var filePath = $"{StatisticsDirectory.Value}/{GetStatisticFileName.Value}";
+            var filePath = $"{StatisticsDirectory}/{GetStatisticFileName}";
             _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath,
                 DerivedModelName);
             var content = File.ReadAllText(filePath);

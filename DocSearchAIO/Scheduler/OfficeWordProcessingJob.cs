@@ -48,7 +48,8 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory,
+                new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelWord().GetStatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
@@ -63,10 +64,11 @@ namespace DocSearchAIO.Scheduler
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
-                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    _logger.LogInformation(
+                        "cannot execute scanning and processing documents, opponent job cleanup running");
                     return;
                 }
-                
+
                 var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
                 configEntry
                     .Active
@@ -208,7 +210,8 @@ namespace DocSearchAIO.Scheduler
                                             .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                             .Replace(@"\", "/");
 
-                                        var id = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(currentFile));
+                                        var id = await StaticHelpers.CreateMd5HashString(
+                                            new TypedMd5InputString(currentFile));
 
                                         static OfficeDocumentComment[] GetCommentArray(
                                             MainDocumentPart mainDocumentPart) =>
@@ -234,12 +237,31 @@ namespace DocSearchAIO.Scheduler
                                                     },
                                                     Array.Empty<OfficeDocumentComment>);
 
-                                        var toReplaced = new List<(string, string)>();
+                                        var toReplaced = new List<(string, string)>()
+                                        {
+                                            (@"_Toc[0-9]{6,}", ""),
+                                            (@"\\h", ""),
+                                            (@"\\l", ""),
+                                            (@"\\o", ""),
+                                            (@"\\z", ""),
+                                            (@"\\u",  ""),
+                                            ("HYPERLINK",""),
+                                            ("PAGEREF", ""),
+                                            (@"[\""]{2}", ""),
+                                            ("FORMCHECKBOX", "")
+                                        };
 
+                                        // var contentString = wd
+                                        //     .MainDocumentPart?
+                                        //     .GetElements()
+                                        //     .GetContentString()
                                         var contentString = wd
                                             .MainDocumentPart?
-                                            .GetElements()
-                                            .GetContentString()
+                                            .Document
+                                            .Descendants()
+                                            .Where(element => element is Paragraph && element.InnerText.Length > 0)
+                                            .Select(item => item.InnerText)
+                                            .JoinString(" ")
                                             .ReplaceSpecialStrings(toReplaced);
 
                                         var commentsArray = GetCommentArray(mainDocumentPart);

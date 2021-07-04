@@ -11,12 +11,13 @@ using System.Threading.Tasks;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Nest;
 
 namespace DocSearchAIO.Scheduler
@@ -32,7 +33,6 @@ namespace DocSearchAIO.Scheduler
                 select assemblyType;
 
 
-
         public static async Task<TypedMd5String> CreateMd5HashString(TypedMd5InputString stringValue)
         {
             return await Task.Run(async () =>
@@ -44,7 +44,7 @@ namespace DocSearchAIO.Scheduler
                 await wt.FlushAsync();
                 ms.Position = 0;
                 return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
-            }); 
+            });
         }
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
@@ -75,11 +75,13 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public static TypedCommentString GetStringFromCommentsArray(this IEnumerable<OfficeDocumentComment> commentsArray) =>
+        public static TypedCommentString GetStringFromCommentsArray(
+            this IEnumerable<OfficeDocumentComment> commentsArray) =>
             new(string.Join(" ", commentsArray.Select(d => d.Comment)));
 
-        public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString, TypedContentString contentString) =>
-            new (Regex.Replace(contentString.Value + " " + commentString.Value, "[^a-zA-ZäöüßÄÖÜ]", " "));
+        public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
+            TypedContentString contentString) =>
+            new(Regex.Replace(contentString.Value + " " + commentString.Value, "[^a-zA-ZäöüßÄÖÜ]", " "));
 
         public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
             suggestedText
@@ -152,27 +154,56 @@ namespace DocSearchAIO.Scheduler
         private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
             (list, sb) =>
             {
-                list
-                    .ForEach(element =>
+                list.ForEach(element =>
+                {
+                    switch (element)
                     {
-                        switch (element.LocalName)
-                        {
-                            case "t" when !element.ChildElements.Any():
-                                if (element.InnerText.Any())
-                                    sb.AppendLine(element.InnerText);
-                                break;
-                            case "p":
-                                ExtractTextFromElement(element.ChildElements, sb);
-                                sb.AppendLine();
-                                break;
-                            case "br":
-                                sb.AppendLine();
-                                break;
-                            default:
-                                ExtractTextFromElement(element.ChildElements, sb);
-                                break;
-                        }
-                    });
+                        // case InsertedRun insertedRun when insertedRun.InnerText.Any():
+                        //     var author = insertedRun.Author is not null && insertedRun.Author.HasValue
+                        //         ? insertedRun.Author.Value
+                        //         : "";
+                        //     var date = insertedRun.Date is not null && insertedRun.Date.HasValue
+                        //         ? insertedRun.Date.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                        //         : "";
+                            //sb.AppendLine(author + " : " + date + " : " + insertedRun.InnerText);
+                            // break;
+                        case Paragraph paragraph when paragraph.InnerText.Any():
+                            sb.AppendLine(paragraph.InnerText + " ");
+                            break;
+                        default:
+                            sb.Append(' ');
+                            break;
+                    }
+                });
+
+
+                // Extensions.ForEach(list, element =>
+                //     {
+                //         switch (element.LocalName)
+                //         {
+                //             case "t" when !element.ChildElements.Any():
+                //                 if (element.InnerText.Any())
+                //                     sb.Append(element.InnerText + " ");
+                //                 break;
+                //             case "ins":
+                //                 if (element is InsertedRun tmp && tmp.InnerText.Any())
+                //                     sb.Append(tmp.Author??"" + ": " + tmp.InnerText);
+                //                 break;
+                //             case "p":
+                //                 ExtractTextFromElement(element.ChildElements, sb);
+                //                 break;
+                //             case "r":
+                //                 if (!element.ChildElements.Any())
+                //                     sb.Append(element.InnerText);
+                //                 break;
+                //             case "br":
+                //                 sb.Append(' ');
+                //                 break;
+                //             default:
+                //                 ExtractTextFromElement(element.ChildElements, sb);
+                //                 break;
+                //         }
+                //     });
             };
 
         public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,
