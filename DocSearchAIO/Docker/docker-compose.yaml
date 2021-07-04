@@ -1,0 +1,46 @@
+version: "3.7"
+
+services:
+  elasticsearch:
+    container_name: elastic1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.0
+    environment:
+      - node.name=es01
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx8192m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - .elasticData:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      app_net:
+        ipv4_address: 192.168.19.4
+    restart: always  
+  docsearchaio:
+    container_name: docsearchaio
+    image: docsearchaio/docsearchaio:latest
+    networks:
+      app_net:
+        ipv4_address: 192.168.19.3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10k"
+        max-file: "20"
+    ports:
+      - 5000:5000
+    volumes:
+      - .comparer:/app/Resources/comparer
+      - .config:/app/Resources/config
+      - .statistics:/app/Resources/statistic
+    restart: always
+networks:
+  app_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "192.168.19.0/24"
