@@ -32,20 +32,20 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
-
-        public static async Task<TypedMd5String> CreateMd5HashString(TypedMd5InputString stringValue)
-        {
-            return await Task.Run(async () =>
+        public static readonly Func<TypedMd5InputString, Task<TypedMd5String>> CreateMd5HashString =
+            async stringValue =>
             {
-                using var md5 = MD5.Create();
-                await using var ms = new MemoryStream();
-                await using var wt = new StreamWriter(ms);
-                await wt.WriteAsync(stringValue.Value);
-                await wt.FlushAsync();
-                ms.Position = 0;
-                return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
-            });
-        }
+                return await Task.Run(async () =>
+                {
+                    using var md5 = MD5.Create();
+                    await using var ms = new MemoryStream();
+                    await using var wt = new StreamWriter(ms);
+                    await wt.WriteAsync(stringValue.Value);
+                    await wt.FlushAsync();
+                    ms.Position = 0;
+                    return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
+                });
+            };
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
             keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
@@ -97,21 +97,27 @@ namespace DocSearchAIO.Scheduler
             IEnumerable<string> searchAsYouTypeContent) =>
             new() {Input = searchAsYouTypeContent};
 
-        private static IEnumerable<string[]> CommentsString(
-            IEnumerable<OfficeDocumentComment> commentsArray) =>
-            commentsArray
-                .Where(l => l.Comment is not null)
-                .Select(l => l.Comment.Split(" "))
-                .Distinct()
-                .ToList();
+        private static readonly Func<IEnumerable<OfficeDocumentComment>, IEnumerable<string[]>> CommentsString =
+            commentsArray =>
+            {
+                return commentsArray
+                    .Where(l => l.Comment is not null)
+                    .Select(l => l.Comment.Split(" "))
+                    .Distinct()
+                    .ToList();
+            };
 
-        private static IEnumerable<string> BuildHashList(IEnumerable<string> listElementsToHash,
-            IEnumerable<OfficeDocumentComment> commentsArray) =>
-            listElementsToHash
-                .Concat(
-                    CommentsString(commentsArray)
-                        .Where(d => d.Any())
-                        .SelectMany(k => k).Distinct());
+        private static readonly Func<IEnumerable<string>, IEnumerable<OfficeDocumentComment>, IEnumerable<string>>
+            BuildHashList =
+                (listElementsToHash, commentsArray) =>
+                {
+                    return listElementsToHash
+                        .Concat(
+                            CommentsString(commentsArray)
+                                .Where(d => d.Any())
+                                .SelectMany(k => k).Distinct()
+                        );
+                };
 
         public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
