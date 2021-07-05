@@ -20,7 +20,7 @@ namespace DocSearchAIO.Classes
         
         protected MemoryCacheModel(){}
 
-        public Maybe<CacheEntry> GetCacheEntry()
+        public Maybe<CacheEntry> CacheEntry()
         {
             _logger.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
             return _memoryCache.TryGetValue(DerivedModelName, out CacheEntry cacheEntry)

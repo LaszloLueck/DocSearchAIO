@@ -46,12 +46,12 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await GetConfigurationTuple(_configurationObject)
+                    var result = await ConfigurationTuple(_configurationObject)
                         .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
@@ -84,7 +84,7 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        private static readonly Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> GetConfigurationTuple =
+        private static readonly Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> ConfigurationTuple =
             configurationObject =>
             {
                 var processingTuples =
@@ -96,12 +96,12 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
                     var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
-                    var result = await GetConfigurationTuple(_configurationObject)
+                    var result = await ConfigurationTuple(_configurationObject)
                         .Where(tpl => tpl.TriggerName == triggerKey.Name)
                         .TryFirst()
                         .Match(
@@ -135,7 +135,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
         {
-            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -209,7 +209,7 @@ namespace DocSearchAIO.DocSearch.Services
             }
         }
 
-        private Maybe<ComparerModel> GetComparerBaseFromParameter(string parameter)
+        private Maybe<ComparerModel> ComparerBaseFromParameter(string parameter)
         {
             try
             {
@@ -237,7 +237,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
         {
-            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
             await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -255,7 +255,7 @@ namespace DocSearchAIO.DocSearch.Services
                                 await _elasticSearchService.DeleteIndexAsync(indexName);
 
                                 _logger.LogInformation("remove comparer file for key {Key}", key);
-                                GetComparerBaseFromParameter(key)
+                                ComparerBaseFromParameter(key)
                                     .Match(
                                         comparerBase => comparerBase.CleanDictionaryAndRemoveComparerFile(),
                                         () => _logger.LogWarning(
@@ -282,9 +282,9 @@ namespace DocSearchAIO.DocSearch.Services
             return true;
         }
 
-        public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
+        public async Task<string> TriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
-            var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(_configurationObject.SchedulerName);
+            var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
             return await schedulerOpt.Match(
                 async scheduler =>
                 {
@@ -299,10 +299,10 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        public AdministrationGenericModel GetGenericContent()
+        public AdministrationGenericModel GenericContent()
         {
-            var processSubTypes = StaticHelpers.GetSubtypesOfType<ElasticDocument>();
-            var cleanupSubTypes = StaticHelpers.GetSubtypesOfType<CleanupDocument>();
+            var processSubTypes = StaticHelpers.SubtypesOfType<ElasticDocument>();
+            var cleanupSubTypes = StaticHelpers.SubtypesOfType<CleanupDocument>();
 
             var adminGenModel = new AdministrationGenericModel
             {
@@ -353,26 +353,26 @@ namespace DocSearchAIO.DocSearch.Services
             return adminGenModel;
         }
 
-        public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerContent()
+        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerContent()
         {
-            return await _schedulerStatisticsService.GetSchedulerStatistics();
+            return await _schedulerStatisticsService.SchedulerStatistics();
         }
 
-        public async Task<IndexStatistic> GetStatisticsContent()
+        public async Task<IndexStatistic> StatisticsContent()
         {
-            async Task<GetIndexResponse> GetIndicesResponse(string indexName) =>
-                await _elasticSearchService.GetIndicesWithPatternAsync($"{indexName}-*");
+            async Task<GetIndexResponse> IndicesResponse(string indexName) =>
+                await _elasticSearchService.IndicesWithPatternAsync($"{indexName}-*");
 
-            async Task<IEnumerable<string>> GetKnownIndices(string indexName) =>
-                (await GetIndicesResponse(indexName))
+            async Task<IEnumerable<string>> KnownIndices(string indexName) =>
+                (await IndicesResponse(indexName))
                 .Indices
                 .Keys
                 .Select(index => index.Name);
 
             var indexStatsResponses =
-                await (await GetKnownIndices(_configurationObject.IndexName))
+                await (await KnownIndices(_configurationObject.IndexName))
                 .Select(async index =>
-                    await _elasticSearchService.GetIndexStatistics(index))
+                    await _elasticSearchService.IndexStatistics(index))
                 .WhenAll();
 
             static RunnableStatistic
@@ -386,7 +386,7 @@ namespace DocSearchAIO.DocSearch.Services
                     ElapsedTimeMillis = doc.ElapsedTimeMillis,
                     EntireDocCount = doc.EntireDocCount,
                     IndexedDocCount = doc.IndexedDocCount,
-                    CacheEntry = fn.Invoke().GetCacheEntry()
+                    CacheEntry = fn.Invoke().CacheEntry()
                 };
 
             static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
@@ -394,25 +394,25 @@ namespace DocSearchAIO.DocSearch.Services
                 StatisticUtilitiesProxy
                     .AsIEnumerable(loggerFactory, new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
 
-            static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> GetJobStateMemoryCaches(
+            static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> JobStateMemoryCaches(
                 ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
                 JobStateMemoryCacheProxy
                     .AsIEnumerable(loggerFactory, memoryCache);
 
             var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
-            var jobStateMemoryCaches = GetJobStateMemoryCaches(_loggerFactory, _memoryCache);
+            var jobStateMemoryCaches = JobStateMemoryCaches(_loggerFactory, _memoryCache);
 
             StatisticUtilities(_loggerFactory, _configurationObject)
                 .ForEach((processorBase, statisticModel) =>
                 {
                     statisticModel
                         .Invoke()
-                        .GetLatestJobStatisticByModel()
+                        .LatestJobStatisticByModel()
                         .Map(doc =>
                         {
                             jobStateMemoryCaches
-                                .Where(d => d.Key.GetDerivedModelName ==
-                                            processorBase.GetDerivedModelName)
+                                .Where(d => d.Key.DerivedModelName ==
+                                            processorBase.DerivedModelName)
                                 .TryFirst()
                                 .Map(jobState =>
                                 {
@@ -422,7 +422,7 @@ namespace DocSearchAIO.DocSearch.Services
                         });
                 });
 
-            static IndexStatistic GetResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
+            static IndexStatistic ResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
                 Dictionary<string, RunnableStatistic> runtimeStatistic) =>
                 new()
                 {
@@ -440,7 +440,7 @@ namespace DocSearchAIO.DocSearch.Services
                     }),
                     RuntimeStatistics = runtimeStatistic
                 };
-            return GetResponseModel(indexStatsResponses, runtimeStatistic);
+            return ResponseModel(indexStatsResponses, runtimeStatistic);
         }
 
         private static readonly Func<SchedulerStatistics, AdministrationActionSchedulerModel> ConvertToActionModel =
@@ -463,9 +463,9 @@ namespace DocSearchAIO.DocSearch.Services
                 };
             };
         
-        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> GetActionContent()
+        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
         {
-            var groupedSchedulerModels = (await _schedulerStatisticsService.GetSchedulerStatistics())
+            var groupedSchedulerModels = (await _schedulerStatisticsService.SchedulerStatistics())
                 .Select(kv =>
                 {
                     var (groupName, schedulerStatisticsArray) = kv;

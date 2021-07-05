@@ -58,7 +58,7 @@ namespace DocSearchAIO.Scheduler
                             await Task.Run(async () =>
                             {
                                 var cacheEntryOpt =
-                                    _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelPowerpoint());
+                                    _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpoint());
                                 if (!cacheEntryOpt.HasNoValue &&
                                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                                 {

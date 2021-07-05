@@ -27,7 +27,7 @@ namespace DocSearchAIO.DocSearch.Services
             _configurationObject = tmpConfig;
         }
 
-        private static readonly Func<IScheduler, SchedulerStatistics> GetStatisticsObject = scheduler =>
+        private static readonly Func<IScheduler, SchedulerStatistics> StatisticsObject = scheduler =>
             new SchedulerStatistics
             {
                 SchedulerName = scheduler.SchedulerName,
@@ -37,7 +37,7 @@ namespace DocSearchAIO.DocSearch.Services
                     scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
             };
 
-        private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> GetTuples =
+        private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
             configurationObject =>
             {
                 var processing = configurationObject.Processing.Select(d => (d.Value.TriggerName, d.Value.Active));
@@ -49,7 +49,7 @@ namespace DocSearchAIO.DocSearch.Services
         private static readonly
             Func<IEnumerable<(string TriggerName, bool Active)>, TriggerKey, IScheduler,
                 Task<SchedulerTriggerStatisticElement>>
-            GetSchedulerTriggerStatisticElement = async (tuples, trigger, scheduler) =>
+            SchedulerTriggerStatisticElement = async (tuples, trigger, scheduler) =>
             {
                 var triggerState = await scheduler.GetTriggerState(trigger);
                 var trg = await scheduler.GetTrigger(trigger);
@@ -87,22 +87,22 @@ namespace DocSearchAIO.DocSearch.Services
             };
 
         private static readonly Func<IScheduler, TypedGroupNameString, Task<IReadOnlyCollection<TriggerKey>>>
-            GetTriggerKeys = async (scheduler, groupName) =>
+            TriggerKeys = async (scheduler, groupName) =>
                 await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName.Value));
 
 
         private static readonly Func<ConfigurationObject, TypedGroupNameString, ILogger, Task<SchedulerStatistics>>
-            GetSchedulerStatistic =
+            SchedulerStatistic =
                 async (configurationObject, groupName, logger) =>
                 {
-                    var schedulerOpt = await SchedulerUtilities.GetStdSchedulerByName(configurationObject.SchedulerName);
+                    var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(configurationObject.SchedulerName);
                     var t = schedulerOpt
                         .Unwrap(async scheduler =>
                         {
-                            var statistics = GetStatisticsObject(scheduler);
-                            var innerResultTasks = (await GetTriggerKeys(scheduler, groupName))
+                            var statistics = StatisticsObject(scheduler);
+                            var innerResultTasks = (await TriggerKeys(scheduler, groupName))
                                 .Select(async trigger =>
-                                    await GetSchedulerTriggerStatisticElement(GetTuples(configurationObject), trigger,
+                                    await SchedulerTriggerStatisticElement(Tuples(configurationObject), trigger,
                                         scheduler));
 
                             var results = (await innerResultTasks.WhenAll()).ToArray();
@@ -121,7 +121,7 @@ namespace DocSearchAIO.DocSearch.Services
                     return await t;
                 };
 
-        public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerStatistics()
+        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerStatistics()
         {
             var source = new List<TypedGroupNameString>
             {
@@ -133,7 +133,7 @@ namespace DocSearchAIO.DocSearch.Services
                 .Select(async groupNameSource =>
                 {
                     var schedulerStatistic =
-                        await GetSchedulerStatistic(_configurationObject, groupNameSource, _logger);
+                        await SchedulerStatistic(_configurationObject, groupNameSource, _logger);
                     return new KeyValuePair<string, SchedulerStatistics>(groupNameSource.Value, schedulerStatistic);
                 });
 

@@ -2,7 +2,7 @@ namespace DocSearchAIO.DocSearch.TOs
 {
     public class SuggestEntry
     {
-        public string id { get; set; }
-        public string label { get; set; }
+        public string Id { get; set; }
+        public string Label { get; set; }
     }
 }

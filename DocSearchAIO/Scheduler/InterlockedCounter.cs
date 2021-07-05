@@ -16,7 +16,7 @@ namespace DocSearchAIO.Scheduler
             Interlocked.Add(ref _current, value);
         }
 
-        public int GetCurrent()
+        public int Current()
         {
             return _current;
         }

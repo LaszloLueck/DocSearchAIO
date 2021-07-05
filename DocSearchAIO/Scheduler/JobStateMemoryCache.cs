@@ -76,7 +76,7 @@ namespace DocSearchAIO.Scheduler
         }
 
 
-        public Maybe<CacheEntry> GetCacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
+        public Maybe<CacheEntry> CacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
         {
             _logger.LogInformation("try to get cache entry for model {ModelName}", model.GetType().Name);
             return _memoryCache.TryGetValue(model, out CacheEntry cacheEntry)

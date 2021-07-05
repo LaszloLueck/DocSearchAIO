@@ -9,7 +9,7 @@ namespace DocSearchAIO
 {
     public class Program
     {
-        public static Dictionary<string, string> arrayDict =
+        public static Dictionary<string, string> ArrayDict =
             new Dictionary<string, string>
             {
                 {"array:entries:0", "value0"},
@@ -28,7 +28,7 @@ namespace DocSearchAIO
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
-                    config.AddInMemoryCollection(arrayDict);
+                    config.AddInMemoryCollection(ArrayDict);
                     config.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);

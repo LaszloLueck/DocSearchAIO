@@ -64,7 +64,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var io = new[] {new Field("completionContent")};
 
                 var indicesResponse =
-                    await _elasticSearchService.GetIndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
+                    await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 
@@ -121,7 +121,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var retCol = result.Hits.Select(hit =>
                 {
-                    static string GetIconType(string contentType) => contentType switch
+                    static string IconType(string contentType) => contentType switch
                     {
                         "docx" => "./images/word.svg",
                         "pptx" => "./images/powerpoint.svg",
@@ -162,7 +162,7 @@ namespace DocSearchAIO.DocSearch.Services
                         Relevance = hit.Score ?? 0,
                         SearchBody = grouped,
                         Id = hit.Id,
-                        ProgramIcon = GetIconType(hit.Source.ContentType),
+                        ProgramIcon = IconType(hit.Source.ContentType),
                         AbsoluteUrl = hit.Source.OriginalFilePath,
                         DocumentType = hit.Source.ContentType
                     };

@@ -17,9 +17,9 @@ namespace DocSearchAIO.Classes
 
         private readonly string _comparerDirectory;
 
-        private string GetComparerFileName => $"cmp_{DerivedModelName}.cmp";
+        private string ComparerFileName => $"cmp_{DerivedModelName}.cmp";
 
-        public string GetComparerFilePath => $"{_comparerDirectory}/{GetComparerFileName}";
+        public string ComparerFilePath => $"{_comparerDirectory}/{ComparerFileName}";
 
         private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects;
 
@@ -28,7 +28,7 @@ namespace DocSearchAIO.Classes
             _logger = loggerFactory.CreateLogger<ComparerModel>();
             _comparerDirectory = comparerDirectory;
             CheckAndCreateComparerDirectory();
-            _comparerObjects = ComparerHelper.FillConcurrentDictionary(GetComparerFilePath);
+            _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath);
         }
 
         protected ComparerModel(string comparerDirectory)
@@ -47,8 +47,8 @@ namespace DocSearchAIO.Classes
         public void RemoveComparerFile()
         {
             _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
-                GetComparerFilePath, DerivedModelName);
-            ComparerHelper.RemoveComparerFile(GetComparerFilePath);
+                ComparerFilePath, DerivedModelName);
+            ComparerHelper.RemoveComparerFile(ComparerFilePath);
         }
 
         public async Task WriteAllLinesAsync()
@@ -57,7 +57,7 @@ namespace DocSearchAIO.Classes
             var sw = Stopwatch.StartNew();
             try
             {
-                await ComparerHelper.WriteAllLinesAsync(_comparerObjects, GetComparerFilePath);
+                await ComparerHelper.WriteAllLinesAsync(_comparerObjects, ComparerFilePath);
             }
             finally
             {
@@ -71,9 +71,9 @@ namespace DocSearchAIO.Classes
             _logger.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
             if (!ComparerHelper.CheckIfDirectoryExists(_comparerDirectory))
                 ComparerHelper.CreateDirectory(_comparerDirectory);
-            _logger.LogInformation("check if comparer file {GetComparerFilePath} exists", GetComparerFilePath);
-            if (!ComparerHelper.CheckIfFileExists(GetComparerFilePath))
-                ComparerHelper.CreateComparerFile(GetComparerFilePath);
+            _logger.LogInformation("check if comparer file {GetComparerFilePath} exists", ComparerFilePath);
+            if (!ComparerHelper.CheckIfFileExists(ComparerFilePath))
+                ComparerHelper.CreateComparerFile(ComparerFilePath);
         }
 
         public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)

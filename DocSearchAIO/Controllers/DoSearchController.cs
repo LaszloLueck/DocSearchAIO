@@ -42,20 +42,20 @@ namespace DocSearchAIO.Controllers
         public async Task<SuggestResult> Post(SuggestRequest request)
         {
             _logger.LogInformation($"hit suggestResult with phrase {request.SearchPhrase}");
-            return await _searchSuggestService.GetSuggestions(request.SearchPhrase);
+            return await _searchSuggestService.Suggestions(request.SearchPhrase);
         }
 
         [Route("documentDetail")]
         [HttpPost]
-        public async Task<PartialViewResult> GetDocumentDetail(DocumentDetailRequest request)
+        public async Task<PartialViewResult> DocumentDetail(DocumentDetailRequest request)
         {
             _logger.LogInformation("get document details for {RequestId}",request.Id);
-            var documentDetail = await _documentDetailService.GetDocumentDetail(request);
+            var documentDetail = await _documentDetailService.DocumentDetail(request);
             var responseModel = new TypedPartialViewResponse<DocumentDetailModel>(documentDetail);
             return new PartialViewResult
             {
                 ViewName = "DocumentDetailModalPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
     }

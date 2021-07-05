@@ -40,7 +40,7 @@ namespace DocSearchAIO.Controllers
 
         [Route("getAdministrationModal")]
         [HttpGet]
-        public PartialViewResult GetAdministrationModal()
+        public PartialViewResult AdministrationModal()
         {
             _logger.LogInformation("method getAdministrationModal called");
             return new PartialViewResult
@@ -51,10 +51,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("getSchedulerStatistics")]
         [HttpGet]
-        public async Task<Dictionary<string, SchedulerStatistics>> GetSchedulerStatistics()
+        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerStatistics()
         {
             _logger.LogInformation("method getSchedulerStatistics called");
-            return await _schedulerStatisticsService.GetSchedulerStatistics();
+            return await _schedulerStatisticsService.SchedulerStatistics();
         }
 
         [Route("pauseTrigger")]
@@ -91,10 +91,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("getTriggerStatus")]
         [HttpPost]
-        public async Task<string> GetTriggerStatusById(TriggerStateRequest triggerStateRequest)
+        public async Task<string> TriggerStatusById(TriggerStateRequest triggerStateRequest)
         {
             _logger.LogInformation("method getTriggerStatus called");
-            return await _administrationService.GetTriggerStatusById(triggerStateRequest);
+            return await _administrationService.TriggerStatusById(triggerStateRequest);
         }
 
         [Route("getOptionsDialog")]
@@ -103,70 +103,70 @@ namespace DocSearchAIO.Controllers
         public async Task<PartialViewResult> OptionDialog(OptionDialogRequest optionDialogRequest)
         {
             _logger.LogInformation("method getOptionsDialog called!");
-            var dialogResponse = await _optionDialogService.GetOptionDialog(optionDialogRequest);
+            var dialogResponse = await _optionDialogService.OptionDialog(optionDialogRequest);
             var responseModel = new TypedPartialViewResponse<OptionDialogRequest>(dialogResponse);
             return new PartialViewResult
             {
                 ViewName = "ResultPageConfigurationModalPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
 
         [Route("getGenericContent")]
         [HttpGet]
-        public PartialViewResult GetGenericContent()
+        public PartialViewResult GenericContent()
         {
             _logger.LogInformation("method getGenericContent called");
-            var genericContent = _administrationService.GetGenericContent();
+            var genericContent = _administrationService.GenericContent();
             var responseModel = new TypedPartialViewResponse<AdministrationGenericModel>(genericContent);
             return new PartialViewResult
             {
                 ViewName = "AdministrationGenericContentPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
 
         [Route("getSchedulerContent")]
         [HttpGet]
-        public async Task<PartialViewResult> GetSchedulerContent()
+        public async Task<PartialViewResult> SchedulerContent()
         {
             _logger.LogInformation("method getSchedulerContent called");
-            var schedulerContent = await _administrationService.GetSchedulerContent();
+            var schedulerContent = await _administrationService.SchedulerContent();
             var responseModel = new TypedPartialViewResponse<Dictionary<string, SchedulerStatistics>>(schedulerContent);
             return new PartialViewResult
             {
                 ViewName = "AdministrationSchedulerContentPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
 
         [Route("getStatisticsContent")]
         [HttpGet]
-        public async Task<PartialViewResult> GetStatisticsContent()
+        public async Task<PartialViewResult> StatisticsContent()
         {
             _logger.LogInformation("method getStatisticsContent called");
-            var statisticContent = await _administrationService.GetStatisticsContent();
+            var statisticContent = await _administrationService.StatisticsContent();
             var responseModel = new TypedPartialViewResponse<IndexStatistic>(statisticContent);
             return new PartialViewResult
             {
                 ViewName = "AdministrationStatisticsContentPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
 
         [Route("getActionContent")]
         [HttpGet]
-        public async Task<PartialViewResult> GetActionContent()
+        public async Task<PartialViewResult> ActionContent()
         {
             _logger.LogInformation("method getActionContent called");
-            var actionContent = await _administrationService.GetActionContent();
+            var actionContent = await _administrationService.ActionContent();
             var responseModel =
                 new TypedPartialViewResponse<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>>(
                     actionContent);
             return new PartialViewResult
             {
                 ViewName = "AdministrationActionContentPartial",
-                ViewData = responseModel.GetPartialViewResponseModel()
+                ViewData = responseModel.PartialViewResponseModel()
             };
         }
     }

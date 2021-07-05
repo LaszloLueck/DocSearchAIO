@@ -29,7 +29,7 @@ namespace DocSearchAIO.DocSearch.Services
             _configurationObject = cfgTmp;
         }
 
-        public async Task<SuggestResult> GetSuggestions(string searchPhrase)
+        public async Task<SuggestResult> Suggestions(string searchPhrase)
         {
             var suggestQuery = new SuggestContainer();
             var suggestBucket = new SuggestBucket();
@@ -56,12 +56,12 @@ namespace DocSearchAIO.DocSearch.Services
             var suggestResult = suggestsEntries.First();
             _logger.LogInformation("found {SuggestResultCount} suggests in {ElapsedTimeMs} ms",
                 suggestResult.Options.Count, sw.ElapsedMilliseconds);
-            var suggests = suggestResult.Options.Select(d => new SuggestEntry {id = d.Id, label = d.Text});
+            var suggests = suggestResult.Options.Select(d => new SuggestEntry {Id = d.Id, Label = d.Text});
 
             return new SuggestResult
             {
                 SearchPhrase = searchPhrase,
-                suggests = suggests
+                Suggests = suggests
             };
         }
     }

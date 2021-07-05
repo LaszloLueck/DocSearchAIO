@@ -24,7 +24,7 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StaticHelpers
     {
-        public static IEnumerable<Type> GetSubtypesOfType<TIn>()
+        public static IEnumerable<Type> SubtypesOfType<TIn>()
             =>
                 from domainAssembly in AppDomain.CurrentDomain.GetAssemblies()
                 from assemblyType in domainAssembly.GetTypes()
@@ -75,7 +75,7 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public static TypedCommentString GetStringFromCommentsArray(
+        public static TypedCommentString StringFromCommentsArray(
             this IEnumerable<OfficeDocumentComment> commentsArray) =>
             new(string.Join(" ", commentsArray.Select(d => d.Comment)));
 
@@ -97,7 +97,7 @@ namespace DocSearchAIO.Scheduler
             IEnumerable<string> searchAsYouTypeContent) =>
             new() {Input = searchAsYouTypeContent};
 
-        private static IEnumerable<string[]> GetCommentsString(
+        private static IEnumerable<string[]> CommentsString(
             IEnumerable<OfficeDocumentComment> commentsArray) =>
             commentsArray
                 .Where(l => l.Comment is not null)
@@ -109,16 +109,16 @@ namespace DocSearchAIO.Scheduler
             IEnumerable<OfficeDocumentComment> commentsArray) =>
             listElementsToHash
                 .Concat(
-                    GetCommentsString(commentsArray)
+                    CommentsString(commentsArray)
                         .Where(d => d.Any())
                         .SelectMany(k => k).Distinct());
 
-        public static async Task<TypedMd5String> GetContentHashString(this (List<string> listElementsToHash,
+        public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
             await CreateMd5HashString(
                 new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString("")));
 
-        public static List<string> GetListElementsToHash(string category, DateTime created,
+        public static List<string> ListElementsToHash(string category, DateTime created,
             string contentString, string creator, string description, string identifier,
             string keywords, string language, DateTime modified, string revision,
             string subject, string title, string version, string contentStatus,
@@ -144,14 +144,14 @@ namespace DocSearchAIO.Scheduler
                 lastModifiedBy
             };
 
-        public static string GetContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
+        public static string ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
         {
             return openXmlElementList
-                .Select(GetTextFromParagraph)
+                .Select(TextFromParagraph)
                 .JoinString(" ");
         }
 
-        private static string GetTextFromParagraph(this OpenXmlElement paragraph)
+        private static string TextFromParagraph(this OpenXmlElement paragraph)
         {
             var sb = new StringBuilder();
             ExtractTextFromElement(paragraph.ChildElements, sb);
@@ -165,18 +165,19 @@ namespace DocSearchAIO.Scheduler
                 {
                     switch (element)
                     {
-                        case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} eText:
-                            if (eText.Text.Length > 0)
-                                sb.Append(eText.Text);
+                        case Paragraph p when p.InnerText.Any():
+                            sb.Append(' ');
+                            ExtractTextFromElement(element.ChildElements, sb);
+                            sb.Append(' ');
                             break;
                         case Text {HasChildren: false} wText:
                             if (wText.Text.Length > 0)
                                 sb.Append(wText.Text);
                             break;
-                        case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText: 
+                        case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
                             if (dText.Text.Length > 0)
                                 sb.Append(dText.Text + " ");
-                            break;                            
+                            break;
                         case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
                             if (pText.Text.Length > 0)
                                 sb.Append(pText.Text);

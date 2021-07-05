@@ -14,13 +14,13 @@ namespace DocSearchAIO.Services
         Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument;
 
-        Task<IndicesStatsResponse> GetIndexStatistics(string indexName);
+        Task<IndicesStatsResponse> IndexStatistics(string indexName);
 
         Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
         Task<bool> DeleteIndexAsync(string indexName);
         Task<bool> RefreshIndexAsync(string indexName);
         Task<bool> FlushIndexAsync(string indexName);
-        Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true);
+        Task<GetIndexResponse> IndicesWithPatternAsync(string pattern, bool logToConsole = true);
         Task<bool> RemoveItemById(string indexName, string id);
 
         Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove);
@@ -41,7 +41,7 @@ namespace DocSearchAIO.Services
             _elasticClient = elasticClient;
         }
 
-        public async Task<IndicesStatsResponse> GetIndexStatistics(string indexName)
+        public async Task<IndicesStatsResponse> IndexStatistics(string indexName)
         {
             var result = await _elasticClient.Indices.StatsAsync(indexName);
             ProcessResponse(result);
@@ -104,7 +104,7 @@ namespace DocSearchAIO.Services
             return ProcessResponse(result);
         }
 
-        public async Task<GetIndexResponse> GetIndicesWithPatternAsync(string pattern, bool logToConsole = true)
+        public async Task<GetIndexResponse> IndicesWithPatternAsync(string pattern, bool logToConsole = true)
         {
             var getIndexRequest = pattern switch
             {

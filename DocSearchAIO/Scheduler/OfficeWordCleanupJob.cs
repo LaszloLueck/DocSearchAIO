@@ -57,7 +57,7 @@ namespace DocSearchAIO.Scheduler
                         {
                             await Task.Run(async () =>
                             {
-                                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelWord());
+                                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelWord());
                                 if (!cacheEntryOpt.HasNoValue &&
                                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                                 {

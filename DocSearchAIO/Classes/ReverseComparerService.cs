@@ -79,7 +79,7 @@ namespace DocSearchAIO.Classes
             ActorSystem actorSystem)
         {
             _logger = loggerFactory.CreateLogger<ReverseComparerService<T>>();
-            _comparerFile = model.GetComparerFilePath;
+            _comparerFile = model.ComparerFilePath;
             _elasticSearchService = elasticSearchService;
             _actorSystem = actorSystem;
             _allFileCount = new InterlockedCounter();
@@ -109,7 +109,7 @@ namespace DocSearchAIO.Classes
                     .RunIgnore(_actorSystem.Materializer());
 
 
-                if (_removedFileCount.GetCurrent() > 0)
+                if (_removedFileCount.Current() > 0)
                 {
                     _logger.LogInformation("switch comparer file, there are elements removed");
                     _logger.LogInformation("try to remove comparer file {ComparerFile}", _comparerFile);
@@ -127,7 +127,7 @@ namespace DocSearchAIO.Classes
                 sw.Stop();
                 _logger.LogInformation(
                     "cleanup done {ElapsedTime} ms, process {AllCount} files, remove {RemovedCount} entries",
-                    sw.ElapsedMilliseconds, _allFileCount.GetCurrent(), _removedFileCount.GetCurrent());
+                    sw.ElapsedMilliseconds, _allFileCount.Current(), _removedFileCount.Current());
                 _logger.LogInformation("finished processing cleanup job");
             }
         }

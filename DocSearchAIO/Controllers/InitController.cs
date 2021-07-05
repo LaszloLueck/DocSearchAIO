@@ -33,9 +33,9 @@ namespace DocSearchAIO.Controllers
         
         [Route("download")]
         [HttpGet]
-        public async Task GetFileFromAbsolutePath(string path, string documentType)
+        public async Task FileFromAbsolutePath(string path, string documentType)
         {
-            var returnValue = _fileDownloadService.GetDownloadFileStream(path, documentType);
+            var returnValue = _fileDownloadService.DownloadFileStream(path, documentType);
             Response.Headers.Add("Content-Disposition", $"inline; filename=\"{returnValue.ReturnFileName}\"");
             Response.ContentType = returnValue.ContentType;
             await using var fs = returnValue.DownloadFileStream;

@@ -13,7 +13,7 @@ namespace DocSearchAIO.Controllers
 
     public static class PartialViewHelper
     {
-        public static ViewDataDictionary GetPartialViewResponseModel<T>(this TypedPartialViewResponse<T> source)
+        public static ViewDataDictionary PartialViewResponseModel<T>(this TypedPartialViewResponse<T> source)
         {
             return new(new EmptyModelMetadataProvider(), new ModelStateDictionary())
                 {Model = source.Value};

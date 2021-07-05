@@ -51,7 +51,7 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
-                new StatisticModelPdf().GetStatisticFileName);
+                new StatisticModelPdf().StatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -63,7 +63,7 @@ namespace DocSearchAIO.Scheduler
 
             await Task.Run(() =>
             {
-                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelPdfCleanup());
+                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdfCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
@@ -126,11 +126,11 @@ namespace DocSearchAIO.Scheduler
                                             await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                            jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
                                             jobStatistic.ProcessingError =
-                                                _statisticUtilities.GetFailedDocumentsCount();
+                                                _statisticUtilities.FailedDocumentsCount();
                                             jobStatistic.IndexedDocCount =
-                                                _statisticUtilities.GetChangedDocumentsCount();
+                                                _statisticUtilities.ChangedDocumentsCount();
                                             _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedMillis} ms",

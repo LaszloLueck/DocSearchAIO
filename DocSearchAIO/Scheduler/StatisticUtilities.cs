@@ -88,9 +88,9 @@ namespace DocSearchAIO.Scheduler
         public void AddToFailedDocuments() => _failedDocuments.Increment();
         public void AddToChangedDocuments(int value) => _changedDocuments.Add(value);
 
-        public int GetEntireDocumentsCount() => _entireDocuments.GetCurrent();
-        public int GetFailedDocumentsCount() => _failedDocuments.GetCurrent();
-        public int GetChangedDocumentsCount() => _changedDocuments.GetCurrent();
+        public int EntireDocumentsCount() => _entireDocuments.Current();
+        public int FailedDocumentsCount() => _failedDocuments.Current();
+        public int ChangedDocumentsCount() => _changedDocuments.Current();
 
         public void AddJobStatisticToDatabase(ProcessingJobStatistic jobStatistic)
         {

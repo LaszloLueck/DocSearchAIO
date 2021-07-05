@@ -23,7 +23,7 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
         }
 
-        public async Task<DocumentDetailModel> GetDocumentDetail(
+        public async Task<DocumentDetailModel> DocumentDetail(
             DocumentDetailRequest request)
         {
             try

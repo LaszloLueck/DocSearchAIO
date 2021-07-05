@@ -5,22 +5,22 @@ namespace DocSearchAIO.Classes
         
     }
 
-    public class WordCleanupDocument : CleanupDocument
+    public abstract class WordCleanupDocument : CleanupDocument
     {
         
     }
 
-    public class PowerpointCleanupDocument : CleanupDocument
+    public abstract class PowerpointCleanupDocument : CleanupDocument
     {
         
     }
 
-    public class ExcelCleanupDocument : CleanupDocument
+    public abstract class ExcelCleanupDocument : CleanupDocument
     {
         
     }
 
-    public class PdfCleanupDocument : CleanupDocument
+    public abstract class PdfCleanupDocument : CleanupDocument
     {
         
     }

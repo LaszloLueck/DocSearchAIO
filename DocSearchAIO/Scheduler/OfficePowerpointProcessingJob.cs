@@ -48,7 +48,7 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
-                new TypedDirectoryPathString(_cfg.StatisticsDirectory), new StatisticModelPowerpoint().GetStatisticFileName);
+                new TypedDirectoryPathString(_cfg.StatisticsDirectory), new StatisticModelPowerpoint().StatisticFileName);
             _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
@@ -60,7 +60,7 @@ namespace DocSearchAIO.Scheduler
             var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
             await Task.Run(() =>
             {
-                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelPowerpointCleanup());
+                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
@@ -130,11 +130,11 @@ namespace DocSearchAIO.Scheduler
                                             await _elasticSearchService.RefreshIndexAsync(indexName);
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                            jobStatistic.EntireDocCount = _statisticUtilities.GetEntireDocumentsCount();
+                                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
                                             jobStatistic.ProcessingError =
-                                                _statisticUtilities.GetFailedDocumentsCount();
+                                                _statisticUtilities.FailedDocumentsCount();
                                             jobStatistic.IndexedDocCount =
-                                                _statisticUtilities.GetChangedDocumentsCount();
+                                                _statisticUtilities.ChangedDocumentsCount();
                                             _statisticUtilities.AddJobStatisticToDatabase(
                                                 jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
@@ -218,29 +218,29 @@ namespace DocSearchAIO.Scheduler
                                     () => 0);
 
                             static IEnumerable<OfficeDocumentComment>
-                                GetCommentArray(PresentationPart presentationPart) =>
+                                CommentArray(PresentationPart presentationPart) =>
                                 presentationPart?
                                     .SlideParts
-                                    .GetCommentsFromDocument();
+                                    .CommentsFromDocument();
 
-                            var commentsArray = GetCommentArray(wd.PresentationPart).ToArray();
+                            var commentsArray = CommentArray(wd.PresentationPart).ToArray();
 
                             var toReplaced = new List<(string, string)>();
 
                             var contentString = wd
                                 .PresentationPart
-                                .GetElements()
-                                .GetContentString()
+                                .Elements()
+                                .ContentString()
                                 .ReplaceSpecialStrings(toReplaced);
 
                             var elementsHash = await (
-                                StaticHelpers.GetListElementsToHash(category, created, contentString, creator,
+                                StaticHelpers.ListElementsToHash(category, created, contentString, creator,
                                     description, identifier, keywords, language, modified, revision,
                                     subject, title, version, contentStatus, contentType, lastPrinted,
-                                    lastModifiedBy), commentsArray).GetContentHashString();
+                                    lastModifiedBy), commentsArray).ContentHashString();
 
                             var completionField = commentsArray
-                                .GetStringFromCommentsArray()
+                                .StringFromCommentsArray()
                                 .GenerateTextToSuggest(new TypedContentString(contentString))
                                 .GenerateSearchAsYouTypeArray()
                                 .WrapCompletionField();
@@ -296,9 +296,9 @@ namespace DocSearchAIO.Scheduler
 
         private static IEnumerable<OfficeDocumentComment>
             ConvertToOfficeDocumentComment(this CommentList comments) =>
-            comments.Select(comment => GetOfficeDocumentComment((Comment) comment));
+            comments.Select(comment => OfficeDocumentComment((Comment) comment));
 
-        private static OfficeDocumentComment GetOfficeDocumentComment(Comment comment) =>
+        private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()
             {
                 Comment = comment.Text?.Text,
@@ -307,7 +307,7 @@ namespace DocSearchAIO.Scheduler
             };
 
         private static IEnumerable<OfficeDocumentComment>
-            GetCommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
+            CommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
             slideParts
                 .Select(part =>
                 {
@@ -320,7 +320,7 @@ namespace DocSearchAIO.Scheduler
                 })
                 .SelectMany(p => p);
 
-        private static IEnumerable<OpenXmlElement> GetElements(this PresentationPart presentationPart)
+        private static IEnumerable<OpenXmlElement> Elements(this PresentationPart presentationPart)
         {
             if (presentationPart?.SlideParts is null)
                 return ArraySegment<OpenXmlElement>.Empty;

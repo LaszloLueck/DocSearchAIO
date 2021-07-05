@@ -16,7 +16,7 @@ namespace DocSearchAIO.Classes
         protected abstract string DerivedModelName { get; }
         protected abstract TypedDirectoryPathString StatisticsDirectory { get; }
 
-        public TypedFileNameString GetStatisticFileName => new($"statistics_{DerivedModelName}.txt");
+        public TypedFileNameString StatisticFileName => new($"statistics_{DerivedModelName}.txt");
 
         protected StatisticModel(ILoggerFactory loggerFactory)
         {
@@ -27,9 +27,9 @@ namespace DocSearchAIO.Classes
         {
         }
 
-        public Maybe<ProcessingJobStatistic> GetLatestJobStatisticByModel()
+        public Maybe<ProcessingJobStatistic> LatestJobStatisticByModel()
         {
-            var filePath = $"{StatisticsDirectory}/{GetStatisticFileName}";
+            var filePath = $"{StatisticsDirectory}/{StatisticFileName}";
             _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath,
                 DerivedModelName);
             var content = File.ReadAllText(filePath);

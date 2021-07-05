@@ -30,7 +30,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
         public async Task<string> Render<TModel>(string name, TModel model)
         {
-            var actionContext = GetActionContext();
+            var actionContext = ActionContext();
 
             var viewEngineResult = _viewEngine.FindView(actionContext, name, false);
 
@@ -62,7 +62,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             return output.ToString();
         }
 
-        private ActionContext GetActionContext()
+        private ActionContext ActionContext()
         {
             var httpContext = new DefaultHttpContext {RequestServices = _serviceProvider};
             return new ActionContext(httpContext, new RouteData(), new ActionDescriptor());

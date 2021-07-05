@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -51,7 +50,7 @@ namespace DocSearchAIO.Scheduler
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory,
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
-                new StatisticModelWord().GetStatisticFileName);
+                new StatisticModelWord().StatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -61,7 +60,7 @@ namespace DocSearchAIO.Scheduler
         {
             await Task.Run(() =>
             {
-                var cacheEntryOpt = _jobStateMemoryCache.GetCacheEntry(new MemoryCacheModelWordCleanup());
+                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelWordCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
@@ -133,11 +132,11 @@ namespace DocSearchAIO.Scheduler
                                             jobStatistic.EndJob = DateTime.Now;
                                             jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
                                             jobStatistic.EntireDocCount =
-                                                _statisticUtilities.GetEntireDocumentsCount();
+                                                _statisticUtilities.EntireDocumentsCount();
                                             jobStatistic.ProcessingError =
-                                                _statisticUtilities.GetFailedDocumentsCount();
+                                                _statisticUtilities.FailedDocumentsCount();
                                             jobStatistic.IndexedDocCount =
-                                                _statisticUtilities.GetChangedDocumentsCount();
+                                                _statisticUtilities.ChangedDocumentsCount();
                                             _statisticUtilities
                                                 .AddJobStatisticToDatabase(jobStatistic);
                                             _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
@@ -214,7 +213,7 @@ namespace DocSearchAIO.Scheduler
                                         var id = await StaticHelpers.CreateMd5HashString(
                                             new TypedMd5InputString(currentFile));
 
-                                        static OfficeDocumentComment[] GetCommentArray(
+                                        static OfficeDocumentComment[] CommentArray(
                                             MainDocumentPart mainDocumentPart) =>
                                             mainDocumentPart
                                                 .WordprocessingCommentsPart
@@ -243,22 +242,22 @@ namespace DocSearchAIO.Scheduler
 
                                         var contentString = wd
                                             .MainDocumentPart?
-                                            .GetElements()
-                                            .GetContentString()
+                                            .Elements()
+                                            .ContentString()
                                             .ReplaceSpecialStrings(toReplaced);
 
-                                        var commentsArray = GetCommentArray(mainDocumentPart);
+                                        var commentsArray = CommentArray(mainDocumentPart);
 
                                         var elementsHash = await (
-                                                StaticHelpers.GetListElementsToHash(category, created, contentString,
+                                                StaticHelpers.ListElementsToHash(category, created, contentString,
                                                     creator,
                                                     description, identifier, keywords, language, modified, revision,
                                                     subject, title, version, contentStatus, contentType, lastPrinted,
                                                     lastModifiedBy), commentsArray)
-                                            .GetContentHashString();
+                                            .ContentHashString();
 
                                         var completionField = commentsArray
-                                            .GetStringFromCommentsArray()
+                                            .StringFromCommentsArray()
                                             .GenerateTextToSuggest(new TypedContentString(contentString))
                                             .GenerateSearchAsYouTypeArray()
                                             .WrapCompletionField();
@@ -319,7 +318,7 @@ namespace DocSearchAIO.Scheduler
         }
 
 
-        private static IEnumerable<OpenXmlElement> GetElements(this
+        private static IEnumerable<OpenXmlElement> Elements(this
             MainDocumentPart mainDocumentPart)
         {
             if (mainDocumentPart.Document.Body == null)

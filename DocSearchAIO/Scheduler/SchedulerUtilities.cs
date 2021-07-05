@@ -48,14 +48,14 @@ namespace DocSearchAIO.Scheduler
                 }
             };
 
-        public static async Task<Maybe<IScheduler>> GetStdSchedulerByName(string schedulerName)
+        public static async Task<Maybe<IScheduler>> StdSchedulerByName(string schedulerName)
         {
             var schedulerFactory = new StdSchedulerFactory();
             var scheduler = await schedulerFactory.GetScheduler(schedulerName);
             return scheduler.MaybeValue();
         }
 
-        public static async Task<IEnumerable<IScheduler>> GetAllScheduler()
+        public static async Task<IEnumerable<IScheduler>> AllScheduler()
         {
             return await new StdSchedulerFactory().GetAllSchedulers();
         }

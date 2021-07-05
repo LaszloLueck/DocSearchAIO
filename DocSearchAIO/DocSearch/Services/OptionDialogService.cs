@@ -17,10 +17,10 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
         }
 
-        public async Task<OptionDialogRequest> GetOptionDialog(
+        public async Task<OptionDialogRequest> OptionDialog(
             OptionDialogRequest optionDialogRequest)
         {
-            var indexResponse = await _elasticSearchService.GetIndicesWithPatternAsync("officedocuments-*");
+            var indexResponse = await _elasticSearchService.IndicesWithPatternAsync("officedocuments-*");
             var knownIndices = indexResponse.Indices.Keys.Select(key => key.Name);
 
             optionDialogRequest.WordIndexExists = knownIndices.Contains("officedocuments-word");

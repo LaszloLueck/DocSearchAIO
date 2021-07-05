@@ -14,9 +14,9 @@ namespace DocSearchAIO.DocSearch.Services
             _logger = loggerFactory.CreateLogger<FileDownloadService>();
         }
 
-        public DownloadFileResponse GetDownloadFileStream(string path, string documentType)
+        public DownloadFileResponse DownloadFileStream(string path, string documentType)
         {
-            static string GetContentType(string documentType) => documentType switch
+            static string ContentType(string documentType) => documentType switch
             {
                 "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -31,7 +31,7 @@ namespace DocSearchAIO.DocSearch.Services
             {
                 ReturnFileName = returnFileName,
                 DownloadFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096),
-                ContentType = GetContentType(documentType)
+                ContentType = ContentType(documentType)
             };
             return downloadFileResponse;
         }

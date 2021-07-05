@@ -19,7 +19,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         public async Task<InitResponseObject> Init(InitRequestObject initRequestObject)
         {
-            var indicesResponse = await _elasticSearchService.GetIndicesWithPatternAsync("officedocuments-*");
+            var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync("officedocuments-*");
             var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
 
             var returnValue = new InitResponseObject();
