@@ -92,13 +92,6 @@ namespace DocSearchAIO.Scheduler
                 .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                 .Where(d => d.Length > 2);
 
-        public static string GetContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
-        {
-            var sw = new StringBuilder(4096);
-            ExtractTextFromElement(openXmlElementList, sw);
-            var s = sw.ToString();
-            return s;
-        }
 
         public static CompletionField WrapCompletionField(this
             IEnumerable<string> searchAsYouTypeContent) =>
@@ -151,6 +144,20 @@ namespace DocSearchAIO.Scheduler
                 lastModifiedBy
             };
 
+        public static string GetContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
+        {
+            return openXmlElementList
+                .Select(GetTextFromParagraph)
+                .JoinString(" ");
+        }
+
+        private static string GetTextFromParagraph(this OpenXmlElement paragraph)
+        {
+            var sb = new StringBuilder();
+            ExtractTextFromElement(paragraph.ChildElements, sb);
+            return sb.ToString();
+        }
+
         private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
             (list, sb) =>
             {
@@ -158,52 +165,33 @@ namespace DocSearchAIO.Scheduler
                 {
                     switch (element)
                     {
-                        // case InsertedRun insertedRun when insertedRun.InnerText.Any():
-                        //     var author = insertedRun.Author is not null && insertedRun.Author.HasValue
-                        //         ? insertedRun.Author.Value
-                        //         : "";
-                        //     var date = insertedRun.Date is not null && insertedRun.Date.HasValue
-                        //         ? insertedRun.Date.Value.ToString("yyyy-MM-dd HH:mm:ss")
-                        //         : "";
-                            //sb.AppendLine(author + " : " + date + " : " + insertedRun.InnerText);
-                            // break;
-                        case Paragraph paragraph when paragraph.InnerText.Any():
-                            sb.AppendLine(paragraph.InnerText + " ");
+                        case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} eText:
+                            if (eText.Text.Length > 0)
+                                sb.Append(eText.Text);
+                            break;
+                        case Text {HasChildren: false} wText:
+                            if (wText.Text.Length > 0)
+                                sb.Append(wText.Text);
+                            break;
+                        case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText: 
+                            if (dText.Text.Length > 0)
+                                sb.Append(dText.Text + " ");
+                            break;                            
+                        case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
+                            if (pText.Text.Length > 0)
+                                sb.Append(pText.Text);
+                            break;
+                        case FieldChar {FieldCharType: {Value: FieldCharValues.Separate}}:
+                            sb.Append(' ');
+                            break;
+                        case Break:
+                            sb.Append(Environment.NewLine);
                             break;
                         default:
-                            sb.Append(' ');
+                            ExtractTextFromElement(element.ChildElements, sb);
                             break;
                     }
                 });
-
-
-                // Extensions.ForEach(list, element =>
-                //     {
-                //         switch (element.LocalName)
-                //         {
-                //             case "t" when !element.ChildElements.Any():
-                //                 if (element.InnerText.Any())
-                //                     sb.Append(element.InnerText + " ");
-                //                 break;
-                //             case "ins":
-                //                 if (element is InsertedRun tmp && tmp.InnerText.Any())
-                //                     sb.Append(tmp.Author??"" + ": " + tmp.InnerText);
-                //                 break;
-                //             case "p":
-                //                 ExtractTextFromElement(element.ChildElements, sb);
-                //                 break;
-                //             case "r":
-                //                 if (!element.ChildElements.Any())
-                //                     sb.Append(element.InnerText);
-                //                 break;
-                //             case "br":
-                //                 sb.Append(' ');
-                //                 break;
-                //             default:
-                //                 ExtractTextFromElement(element.ChildElements, sb);
-                //                 break;
-                //         }
-                //     });
             };
 
         public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,

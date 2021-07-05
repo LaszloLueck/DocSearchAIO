@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -237,31 +238,13 @@ namespace DocSearchAIO.Scheduler
                                                     },
                                                     Array.Empty<OfficeDocumentComment>);
 
-                                        var toReplaced = new List<(string, string)>()
-                                        {
-                                            (@"_Toc[0-9]{6,}", ""),
-                                            (@"\\h", ""),
-                                            (@"\\l", ""),
-                                            (@"\\o", ""),
-                                            (@"\\z", ""),
-                                            (@"\\u",  ""),
-                                            ("HYPERLINK",""),
-                                            ("PAGEREF", ""),
-                                            (@"[\""]{2}", ""),
-                                            ("FORMCHECKBOX", "")
-                                        };
+                                        var toReplaced = new List<(string, string)>();
+                                        
 
-                                        // var contentString = wd
-                                        //     .MainDocumentPart?
-                                        //     .GetElements()
-                                        //     .GetContentString()
                                         var contentString = wd
                                             .MainDocumentPart?
-                                            .Document
-                                            .Descendants()
-                                            .Where(element => element is Paragraph && element.InnerText.Length > 0)
-                                            .Select(item => item.InnerText)
-                                            .JoinString(" ")
+                                            .GetElements()
+                                            .GetContentString()
                                             .ReplaceSpecialStrings(toReplaced);
 
                                         var commentsArray = GetCommentArray(mainDocumentPart);

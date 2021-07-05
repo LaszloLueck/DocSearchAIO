@@ -3,7 +3,7 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "d:\\Temp\\Neuer Ordner\\",
+    "scanPath": "c:\\Users\\lueckl\\Projekte\\BVA\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -44,7 +44,7 @@
         "indexSuffix": "powerpoint"
       },
       "WordElasticDocument": {
-        "active": true,
+        "active": false,
         "startDelay": 1,
         "runsEvery": 3600,
         "parallelism": 10,

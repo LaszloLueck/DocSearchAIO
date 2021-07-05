@@ -22,6 +22,11 @@
         {
             Value = value;
         }
+        
+        public override string ToString()
+        {
+            return Value;
+        }
     }
 
     public class GenericSourceNullable<T> : GenericSource where T : struct
@@ -53,22 +58,12 @@
         public TypedDirectoryPathString(string value) : base(value)
         {
         }
-
-        public override string ToString()
-        {
-            return Value;
-        }
     }
 
     public class TypedFileNameString : GenericSourceString
     {
         public TypedFileNameString(string value) : base(value)
         {
-        }
-
-        public override string ToString()
-        {
-            return Value;
         }
     }
 
