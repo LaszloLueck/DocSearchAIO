@@ -44,8 +44,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var cleanup = configurationObject.Cleanup.Select(d => (d.Value.TriggerName, d.Value.Active));
                 return processing.Concat(cleanup);
             };
-
-
+        
         private static readonly
             Func<IEnumerable<(string TriggerName, bool Active)>, TriggerKey, IScheduler,
                 Task<SchedulerTriggerStatisticElement>>

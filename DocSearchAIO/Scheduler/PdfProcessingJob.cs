@@ -216,7 +216,7 @@ namespace DocSearchAIO.Scheduler
                         ContentType = "pdf"
                     };
 
-                    var contentString = string.Join(" ", pdfPages.Select(p => p.PageText));
+                    var contentString = pdfPages.Select(p => p.PageText).Join(" ");
                     var suggestedText = Regex.Replace(contentString, "[^a-zA-Zäöüß]", " ");
                     var searchAsYouTypeContent = suggestedText
                         .ToLower()
@@ -229,11 +229,11 @@ namespace DocSearchAIO.Scheduler
 
                     var listElementsToHash = new List<string>
                     {
-                        contentString, elasticDoc.Creator, string.Join("", elasticDoc.Keywords),
+                        contentString, elasticDoc.Creator, elasticDoc.Keywords.Join(""),
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.JoinString("")))).Value;
+                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.Join("")))).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }

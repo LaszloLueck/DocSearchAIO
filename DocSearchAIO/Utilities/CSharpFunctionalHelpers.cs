@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using CSharpFunctionalExtensions;
 
 namespace DocSearchAIO.Utilities

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Akka;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
 
 namespace DocSearchAIO.Classes

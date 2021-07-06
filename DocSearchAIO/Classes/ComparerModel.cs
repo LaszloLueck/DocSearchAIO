@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 

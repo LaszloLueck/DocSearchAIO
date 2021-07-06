@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
@@ -23,6 +24,7 @@ namespace DocSearchAIO.Scheduler
 {
     public static class StaticHelpers
     {
+        [Pure]
         public static IEnumerable<Type> SubtypesOfType<TIn>()
             =>
                 from domainAssembly in AppDomain.CurrentDomain.GetAssemblies()
@@ -49,6 +51,7 @@ namespace DocSearchAIO.Scheduler
         public static readonly Func<string, string[]> KeywordsList = keywords =>
             keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
 
+        [Pure]
         public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
         {
@@ -59,9 +62,11 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
-        public static string JoinString(this IEnumerable<string> source, string separator) =>
+        [Pure]
+        public static string Join([NotNull] this IEnumerable<string> source, [NotNull] string separator) =>
             string.Join(separator, source);
 
+        [Pure]
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
@@ -74,14 +79,17 @@ namespace DocSearchAIO.Scheduler
             });
         }
 
+        [Pure]
         public static TypedCommentString StringFromCommentsArray(
             this IEnumerable<OfficeDocumentComment> commentsArray) =>
-            new(string.Join(" ", commentsArray.Select(d => d.Comment)));
+            new(commentsArray.Select(d => d.Comment).Join(" "));
 
+        [Pure]
         public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
             TypedContentString contentString) =>
             new(Regex.Replace(contentString.Value + " " + commentString.Value, "[^a-zA-ZäöüßÄÖÜ]", " "));
 
+        [Pure]
         public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
             suggestedText
                 .Value
@@ -92,6 +100,7 @@ namespace DocSearchAIO.Scheduler
                 .Where(d => d.Length > 2);
 
 
+        [Pure]
         public static CompletionField WrapCompletionField(this
             IEnumerable<string> searchAsYouTypeContent) =>
             new() {Input = searchAsYouTypeContent};
@@ -118,11 +127,13 @@ namespace DocSearchAIO.Scheduler
                         );
                 };
 
+        [Pure]
         public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
             await CreateMd5HashString(
-                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).JoinString("")));
+                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Join("")));
 
+        [Pure]
         public static List<string> ListElementsToHash(string category, DateTime created,
             string contentString, string creator, string description, string identifier,
             string keywords, string language, DateTime modified, string revision,
@@ -149,13 +160,15 @@ namespace DocSearchAIO.Scheduler
                 lastModifiedBy
             };
 
+        [Pure]
         public static string ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
         {
             return openXmlElementList
                 .Select(TextFromParagraph)
-                .JoinString(" ");
+                .Join(" ");
         }
 
+        [Pure]
         private static string TextFromParagraph(this OpenXmlElement paragraph)
         {
             var sb = new StringBuilder();
@@ -163,7 +176,7 @@ namespace DocSearchAIO.Scheduler
             return sb.ToString();
         }
 
-private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
+        private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
             (list, sb) =>
             {
                 list.ForEach(element =>
@@ -200,20 +213,22 @@ private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> Extra
                             if (pText.Text.Any())
                                 sb.Append(pText.Text);
                             break;
-                        case DocumentFormat.OpenXml.Wordprocessing.FieldChar {FieldCharType: {Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate}}:
+                        case DocumentFormat.OpenXml.Wordprocessing.FieldChar
+                            {FieldCharType: {Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate}}:
                             sb.Append(' ');
                             break;
                         case DocumentFormat.OpenXml.Wordprocessing.Break:
                             sb.Append(Environment.NewLine);
                             break;
                         default:
-                            if(element.InnerText.Any())
+                            if (element.InnerText.Any())
                                 ExtractTextFromElement(element.ChildElements, sb);
                             break;
                     }
                 });
             };
 
+        [Pure]
         public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,
             string excludeFilter)
         {
@@ -222,6 +237,7 @@ private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> Extra
                 .Select(x => x.Value);
         }
 
+        [Pure]
         public static string ReplaceSpecialStrings(this string input, IList<(string, string)> list)
         {
             while (true)
@@ -242,9 +258,11 @@ private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> Extra
                     SearchOption.AllDirectories).Select(f => new TypedFilePathString(f)));
         }
 
+        [Pure]
         public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>
             source.RunWith(Sink.Ignore<T>(), actorMaterializer);
 
+        [Pure]
         public static Source<bool, NotUsed> WriteDocumentsToIndexAsync<TDocument>(this
                 Source<IEnumerable<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
             IElasticSearchService elasticSearchService, string indexName) where TDocument : ElasticDocument
@@ -253,6 +271,7 @@ private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> Extra
                 g => elasticSearchService.BulkWriteDocumentsAsync(g, indexName));
         }
 
+        [Pure]
         public static Source<Maybe<TDocument>, NotUsed> FilterExistingUnchangedAsync<TDocument>(
             this Source<Maybe<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
             ComparerModel comparerModel) where TDocument : ElasticDocument
