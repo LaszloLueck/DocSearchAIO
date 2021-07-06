@@ -178,7 +178,8 @@ namespace DocSearchAIO.Scheduler
                     return await wdOpt.Match(
                         async wd =>
                         {
-                            var mainDocumentPartOpt = wd.MainDocumentPart.MaybeValue();
+                            
+                            Maybe<MainDocumentPart> mainDocumentPartOpt = wd.MainDocumentPart!;
                             return await mainDocumentPartOpt
                                 .Match(
                                     async mainDocumentPart =>
@@ -207,41 +208,39 @@ namespace DocSearchAIO.Scheduler
                                                 new DateTime(1970, 1, 1));
                                         var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
                                         var uriPath = currentFile
-                                            .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
+                                            .Replace(configurationObject.ScanPath,
+                                                configurationObject.UriReplacement)
                                             .Replace(@"\", "/");
 
                                         var id = await StaticHelpers.CreateMd5HashString(
                                             new TypedMd5InputString(currentFile));
-
-                                        static OfficeDocumentComment[] CommentArray(
-                                            MainDocumentPart mainDocumentPart) =>
-                                            mainDocumentPart
-                                                .WordprocessingCommentsPart
-                                                .MaybeValue()
-                                                .Match(
-                                                    comments =>
-                                                    {
-                                                        return comments.Comments.Select(comment =>
-                                                        {
-                                                            var d = (Comment) comment;
-                                                            var retValue = new OfficeDocumentComment();
-                                                            var dat = new GenericSourceNullable<DateTime>(d.Date?.Value)
-                                                                .ValueOrDefault(new DateTime(1970, 1, 1));
-                                                            retValue.Author = d.Author?.Value;
-                                                            retValue.Comment = d.InnerText;
-                                                            retValue.Date = dat;
-                                                            retValue.Id = d.Id?.Value;
-                                                            retValue.Initials = d.Initials?.Value;
-                                                            return retValue;
-                                                        }).ToArray();
-                                                    },
-                                                    Array.Empty<OfficeDocumentComment>);
-
-                                        var toReplaced = new List<(string, string)>();
                                         
 
-                                        var contentString = wd
-                                            .MainDocumentPart?
+                                        static OfficeDocumentComment[] CommentArray(
+                                            MainDocumentPart mainDocumentPart){
+                                            var comments = mainDocumentPart
+                                                .WordprocessingCommentsPart?
+                                                .Comments ?? new Comments();
+
+                                            return comments.Select(comment =>
+                                            {
+                                                var d = (Comment) comment;
+                                                var retValue = new OfficeDocumentComment();
+                                                var dat = new GenericSourceNullable<DateTime>(d.Date?.Value)
+                                                    .ValueOrDefault(new DateTime(1970, 1, 1));
+                                                retValue.Author = d.Author?.Value ?? "";
+                                                retValue.Comment = d.InnerText;
+                                                retValue.Date = dat;
+                                                retValue.Id = d.Id?.Value ?? "";
+                                                retValue.Initials = d.Initials?.Value ?? "";
+                                                return retValue;
+                                            }).ToArray();
+                                        }
+
+                                        var toReplaced = new List<(string, string)>();
+
+
+                                        var contentString = mainDocumentPart
                                             .Elements()
                                             .ContentString()
                                             .ReplaceSpecialStrings(toReplaced);
@@ -323,10 +322,9 @@ namespace DocSearchAIO.Scheduler
         {
             if (mainDocumentPart.Document.Body == null)
                 return Array.Empty<OpenXmlElement>();
-
             return mainDocumentPart
                 .Document
-                .Body?
+                .Body
                 .ChildElements
                 .OfType<OpenXmlElement>();
         }

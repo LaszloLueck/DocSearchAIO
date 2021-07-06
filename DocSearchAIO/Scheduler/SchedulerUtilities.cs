@@ -11,7 +11,7 @@ namespace DocSearchAIO.Scheduler
 {
     public class SchedulerUtilities
     {
-        private static ILogger _logger;
+        private static ILogger? _logger;
 
         public SchedulerUtilities(ILoggerFactory loggerFactory)
         {

@@ -57,7 +57,8 @@ namespace DocSearchAIO.DocSearch.Services
                         .Match(
                             async currentSelected =>
                             {
-                                _logger.LogInformation("pause trigger for {TriggerName} :: {TriggerKey}", currentSelected.Key, triggerKey.Name);
+                                _logger.LogInformation("pause trigger for {TriggerName} :: {TriggerKey}",
+                                    currentSelected.Key, triggerKey.Name);
                                 switch (currentSelected.Item3)
                                 {
                                     case "processing":
@@ -66,7 +67,7 @@ namespace DocSearchAIO.DocSearch.Services
                                     case "cleanup":
                                         _configurationObject.Cleanup[currentSelected.Key].Active = false;
                                         break;
-                                } 
+                                }
 
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
@@ -84,15 +85,17 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        private static readonly Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>> ConfigurationTuple =
-            configurationObject =>
-            {
-                var processingTuples =
-                    configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
-                var cleanupTuples =
-                    configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
-                return processingTuples.Concat(cleanupTuples);
-            };
+        private static readonly
+            Func<ConfigurationObject, IEnumerable<(string Key, string TriggerName, string SchedulerType)>>
+            ConfigurationTuple =
+                configurationObject =>
+                {
+                    var processingTuples =
+                        configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
+                    var cleanupTuples =
+                        configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
+                    return processingTuples.Concat(cleanupTuples);
+                };
 
         public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
         {
@@ -107,7 +110,8 @@ namespace DocSearchAIO.DocSearch.Services
                         .Match(
                             async currentSelected =>
                             {
-                                _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}", currentSelected.Key, triggerKey.Name);
+                                _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}",
+                                    currentSelected.Key, triggerKey.Name);
                                 switch (currentSelected.SchedulerType)
                                 {
                                     case "processing":
@@ -116,7 +120,8 @@ namespace DocSearchAIO.DocSearch.Services
                                     case "cleanup":
                                         _configurationObject.Cleanup[currentSelected.Key].Active = true;
                                         break;
-                                } 
+                                }
+
                                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                                 return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
                             },
@@ -313,15 +318,15 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
                 ProcessorGroupName = _configurationObject.SchedulerGroupName,
-                CleanupGroupName = _configurationObject.CleanupGroupName,
-                UriReplacement = _configurationObject.UriReplacement,
+                CleanupGroupName = _configurationObject.CleanupGroupName, 
+                UriReplacement = _configurationObject.UriReplacement, 
                 ComparerDirectory = _configurationObject.ComparerDirectory,
                 StatisticsDirectory = _configurationObject.StatisticsDirectory,
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv => new KeyValuePair<string, AdministrationGenericModel.ProcessorConfiguration>(kv.Key,
-                        new AdministrationGenericModel.ProcessorConfiguration
+                    .Select(kv => new KeyValuePair<string, ProcessorConfiguration>(kv.Key,
+                        new ProcessorConfiguration
                         {
                             ExcludeFilter = kv.Value.ExcludeFilter,
                             FileExtension = kv.Value.FileExtension,
@@ -336,8 +341,8 @@ namespace DocSearchAIO.DocSearch.Services
                 CleanupConfigurations = _configurationObject
                     .Cleanup
                     .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv => new KeyValuePair<string, AdministrationGenericModel.CleanupConfiguration>(kv.Key,
-                        new AdministrationGenericModel.CleanupConfiguration
+                    .Select(kv => new KeyValuePair<string, CleanupConfiguration>(kv.Key,
+                        new CleanupConfiguration
                         {
                             ForComparer = kv.Value.ForComparerName,
                             ForIndexSuffix = kv.Value.ForIndexSuffix,
@@ -371,9 +376,9 @@ namespace DocSearchAIO.DocSearch.Services
 
             var indexStatsResponses =
                 await (await KnownIndices(_configurationObject.IndexName))
-                .Select(async index =>
-                    await _elasticSearchService.IndexStatistics(index))
-                .WhenAll();
+                    .Select(async index =>
+                        await _elasticSearchService.IndexStatistics(index))
+                    .WhenAll();
 
             static RunnableStatistic
                 ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn) =>
@@ -392,7 +397,8 @@ namespace DocSearchAIO.DocSearch.Services
             static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
                 ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
                 StatisticUtilitiesProxy
-                    .AsIEnumerable(loggerFactory, new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
+                    .AsIEnumerable(loggerFactory,
+                        new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
 
             static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> JobStateMemoryCaches(
                 ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
@@ -440,6 +446,7 @@ namespace DocSearchAIO.DocSearch.Services
                     }),
                     RuntimeStatistics = runtimeStatistic
                 };
+
             return ResponseModel(indexStatsResponses, runtimeStatistic);
         }
 
@@ -462,7 +469,7 @@ namespace DocSearchAIO.DocSearch.Services
                     })
                 };
             };
-        
+
         public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
         {
             var groupedSchedulerModels = (await _schedulerStatisticsService.SchedulerStatistics())
@@ -470,14 +477,12 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     var (groupName, schedulerStatisticsArray) = kv;
                     var model = ConvertToActionModel(schedulerStatisticsArray);
-                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName, new []{model});
+                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName,
+                        new[] {model});
                 })
                 .ToDictionary();
 
             return groupedSchedulerModels;
-            // var content =
-            //     await _viewToStringRenderer.Render("AdministrationActionContentPartial", groupedSchedulerModels);
-            // return content;
         }
     }
 }

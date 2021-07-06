@@ -2,7 +2,7 @@
 {
     public class IndexStatisticModel
     {
-        public string IndexName { get; set; }
+        public string IndexName { get; set; } = string.Empty;
         public long DocCount { get; set; }
         public double SizeInBytes { get; set; }
         

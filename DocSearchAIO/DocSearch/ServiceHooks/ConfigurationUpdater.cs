@@ -23,8 +23,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
         private class OuterConfigurationObject
         {
-            [JsonProperty("configurationObject")]
-            public ConfigurationObject ConfigurationObject { get; set; }
+            [JsonProperty("configurationObject")] public ConfigurationObject ConfigurationObject { get; set; } = new();
         }
     }
 }

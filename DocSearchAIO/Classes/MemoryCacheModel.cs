@@ -7,8 +7,8 @@ namespace DocSearchAIO.Classes
 {
     public abstract class MemoryCacheModel
     {
-        private readonly ILogger _logger;
-        private readonly IMemoryCache _memoryCache;
+        private readonly ILogger? _logger;
+        private readonly IMemoryCache? _memoryCache;
 
         protected abstract string DerivedModelName { get; }
 

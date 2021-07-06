@@ -2,9 +2,8 @@ namespace DocSearchAIO.Classes
 {
     public class ComparerObject
     {
-        public string PathHash { get; set; }
-        public string DocumentHash { get; set; }
-
-        public string OriginalPath { get; set; }
+        public string PathHash { get; set; } = string.Empty;
+        public string DocumentHash { get; set; } = string.Empty;
+        public string OriginalPath { get; set; } = string.Empty;
     }
 }

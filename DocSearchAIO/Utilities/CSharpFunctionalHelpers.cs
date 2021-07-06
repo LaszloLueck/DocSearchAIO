@@ -9,7 +9,6 @@ namespace DocSearchAIO.Utilities
 {
     public static class CSharpFunctionalHelpers
     {
-        
         public static async Task<IEnumerable<TResult>> WhenAll<TResult>(this IEnumerable<Task<TResult>> source)
         {
             return await Task.WhenAll(source);
@@ -45,7 +44,7 @@ namespace DocSearchAIO.Utilities
             if (!source.ContainsKey(comparer)) return;
             action.Invoke(comparer, source[comparer]);
         }
-        
+
         public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
             Action<TInputLeft> falseAction,
             Action<TInputRight> trueAction)
@@ -73,11 +72,13 @@ namespace DocSearchAIO.Utilities
         }
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
-            this IEnumerable<KeyValuePair<TKey, TValue>> source) => source.ToDictionary(d => d.Key, d => d.Value);
-        
-        
+            this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
+            source.ToDictionary(d => d.Key, d => d.Value);
+
+
         public static TOut ValueOr<TOut>(this TOut value, TOut alternative) =>
-            value is null ? alternative is null ? default : alternative : value;
+            (value is null ? alternative is null ? default : alternative : value) ??
+            throw new ArgumentNullException(nameof(TOut), "value should not be null");
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);

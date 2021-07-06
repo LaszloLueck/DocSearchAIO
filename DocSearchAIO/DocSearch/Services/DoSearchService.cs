@@ -38,8 +38,8 @@ namespace DocSearchAIO.DocSearch.Services
         {
             try
             {
-                var from = doSearchRequest.From ?? 0;
-                var size = doSearchRequest.Size ?? 10;
+                var from = doSearchRequest.From;
+                var size = doSearchRequest.Size;
                 var searchPhrase = doSearchRequest.SearchPhrase == "" ? "*" : doSearchRequest.SearchPhrase;
                 var query = new SimpleQueryStringQuery();
                 var include = new[] {new Field("comments.comment"), new Field("content")};
@@ -154,7 +154,11 @@ namespace DocSearchAIO.DocSearch.Services
                     }
 
                     var grouped = highlightContent.Concat(highlightComments).GroupBy(item => item.Item1).Select(o =>
-                        new ContentTypeAndValues {ContentType = o.Key, ContentValues = o.Select(s => s.Item2)});
+                        new ContentTypeAndValues
+                        {
+                            ContentType = o.Key,
+                            ContentValues = o.Select(s => s.Item2)
+                        });
 
                     return new DoSearchResultContainer
                     {

@@ -11,7 +11,7 @@ namespace DocSearchAIO.Classes
 {
     public abstract class StatisticModel
     {
-        private readonly ILogger _logger;
+        private readonly ILogger? _logger;
 
         protected abstract string DerivedModelName { get; }
         protected abstract TypedDirectoryPathString StatisticsDirectory { get; }
@@ -38,7 +38,7 @@ namespace DocSearchAIO.Classes
             try
             {
                 var model = JsonConvert.DeserializeObject<ProcessingJobStatistic>(content);
-                return Maybe<ProcessingJobStatistic>.From(model);
+                return model!;
             }
             catch (Exception e)
             {
@@ -51,7 +51,7 @@ namespace DocSearchAIO.Classes
     public class StatisticModelWord : StatisticModel
     {
         protected override string DerivedModelName => GetType().Name;
-        protected override TypedDirectoryPathString StatisticsDirectory { get; }
+        protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
 
         public StatisticModelWord()
         {
@@ -67,7 +67,7 @@ namespace DocSearchAIO.Classes
     public class StatisticModelPowerpoint : StatisticModel
     {
         protected override string DerivedModelName => GetType().Name;
-        protected override TypedDirectoryPathString StatisticsDirectory { get; }
+        protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
 
         public StatisticModelPowerpoint()
         {
@@ -82,7 +82,7 @@ namespace DocSearchAIO.Classes
     public class StatisticModelPdf : StatisticModel
     {
         protected override string DerivedModelName => GetType().Name;
-        protected override TypedDirectoryPathString StatisticsDirectory { get; }
+        protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
 
         public StatisticModelPdf()
         {
@@ -98,7 +98,7 @@ namespace DocSearchAIO.Classes
     public class StatisticModelExcel : StatisticModel
     {
         protected override string DerivedModelName => GetType().Name;
-        protected override TypedDirectoryPathString StatisticsDirectory { get; }
+        protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
 
         public StatisticModelExcel()
         {

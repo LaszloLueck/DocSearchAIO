@@ -2,7 +2,7 @@
 {
     public class JobStatusRequest
     {
-        public string JobName { get; set; }
-        public string GroupId { get; set; }
+        public string JobName { get; set; } = string.Empty;
+        public string GroupId { get; set; } = string.Empty;
     }
 }

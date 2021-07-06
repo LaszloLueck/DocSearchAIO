@@ -107,7 +107,7 @@ namespace DocSearchAIO.Scheduler
 
     public class CacheEntry
     {
-        public string CacheKey { get; set; }
+        public string CacheKey { get; set; } = string.Empty;
         public DateTime DateTime { get; set; }
         public JobState JobState { get; set; }
     }

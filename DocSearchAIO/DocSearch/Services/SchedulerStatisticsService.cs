@@ -44,7 +44,7 @@ namespace DocSearchAIO.DocSearch.Services
                 var cleanup = configurationObject.Cleanup.Select(d => (d.Value.TriggerName, d.Value.Active));
                 return processing.Concat(cleanup);
             };
-        
+
         private static readonly
             Func<IEnumerable<(string TriggerName, bool Active)>, TriggerKey, IScheduler,
                 Task<SchedulerTriggerStatisticElement>>
@@ -62,25 +62,14 @@ namespace DocSearchAIO.DocSearch.Services
                         .Unwrap(),
                     TriggerName = trigger.Name,
                     GroupName = trigger.Group,
-                    TriggerState = triggerState.ToString()
+                    TriggerState = triggerState.ToString(),
+                    NextFireTime = trg?.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime(),
+                    Description = trg?.Description ?? "",
+                    StartTime = trg?.StartTimeUtc.LocalDateTime,
+                    LastFireTime = trg?.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime(),
+                    JobName = trg?.JobKey.Name ?? ""
                 };
 
-                trg
-                    .MaybeValue()
-                    .Match(
-                        trgOpt =>
-                        {
-                            tResult.NextFireTime =
-                                trgOpt.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime();
-                            tResult.Description = trgOpt.Description;
-                            tResult.StartTime = trgOpt.StartTimeUtc.LocalDateTime;
-                            tResult.LastFireTime = trgOpt.GetPreviousFireTimeUtc()?.UtcDateTime
-                                .ToLocalTime();
-                            tResult.JobName = trgOpt.JobKey.Name;
-                            return tResult;
-                        },
-                        () => tResult
-                    );
 
                 return tResult;
             };
@@ -116,6 +105,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                             return statistics;
                         });
+
 
                     return await t;
                 };

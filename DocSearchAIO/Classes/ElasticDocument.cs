@@ -6,39 +6,39 @@ namespace DocSearchAIO.Classes
     public class ElasticDocument
     {
         [Text(Name = "id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         
         [Text(Name = "contentHash")]
-        public string ContentHash { get; set; }
+        public string ContentHash { get; set; } = string.Empty;
         
         [Text(Name = "originalFilePath")]
         public string OriginalFilePath { get; set; }
         
         [Text(Name = "uriFilePath")]
-        public string UriFilePath { get; set; }
+        public string UriFilePath { get; set; } = string.Empty;
 
         [Text(Name = "content", TermVector = TermVectorOption.WithPositionsOffsetsPayloads)]
-        public string Content { get; set; } [Completion(Name = "completionContent")]
-        
-        public CompletionField CompletionContent { get; set; }
+        public string Content { get; set; } = string.Empty;
+
+        [Completion(Name = "completionContent")]
+        public CompletionField CompletionContent { get; set; } = new CompletionField();
         
         [Text(Name = "createdBy")] 
-        public string Creator { get; set; }
-        
-        [Text(Name = "keywords")]
-        public string[] Keywords { get; set; }
+        public string Creator { get; set; } = string.Empty;
+
+        [Text(Name = "keywords")] public string[] Keywords { get; set; } = Array.Empty<string>();
         
         [Text(Name = "subject")] 
-        public string Subject { get; set; }
+        public string Subject { get; set; } = string.Empty;
         
         [Date(Name = "processTime")] 
         public DateTime ProcessTime { get; set; }
         
         [Text(Name = "title")] 
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         
         [Text(Name = "contentType")] 
-        public string ContentType { get; set; }
+        public string ContentType { get; set; } = string.Empty;
 
     }
 }

@@ -9,7 +9,7 @@ namespace DocSearchAIO.Classes
 {
     public abstract class ComparerModel
     {
-        private readonly ILogger _logger;
+        private readonly ILogger? _logger;
 
         protected abstract string DerivedModelName { get; }
 
@@ -19,7 +19,7 @@ namespace DocSearchAIO.Classes
 
         public string ComparerFilePath => $"{_comparerDirectory}/{ComparerFileName}";
 
-        private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects;
+        private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects = new();
 
         protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
         {

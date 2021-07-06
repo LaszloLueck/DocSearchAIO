@@ -4,8 +4,8 @@ namespace DocSearchAIO.DocSearch.TOs
 {
     public class DownloadFileResponse
     {
-        public Stream DownloadFileStream { get; set; }
-        public string ReturnFileName { get; set; }
-        public string ContentType { get; set; }
+        public Stream DownloadFileStream { get; set; } = Stream.Null;
+        public string ReturnFileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
     }
 }

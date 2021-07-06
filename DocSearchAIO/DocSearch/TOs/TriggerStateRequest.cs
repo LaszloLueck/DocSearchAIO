@@ -2,7 +2,7 @@
 {
     public class TriggerStateRequest
     {
-        public string TriggerId { get; set; }
-        public string GroupId { get; set; }
+        public string TriggerId { get; set; } = string.Empty;
+        public string GroupId { get; set; } = string.Empty;
     }
 }

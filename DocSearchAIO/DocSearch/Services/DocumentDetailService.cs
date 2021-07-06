@@ -45,8 +45,7 @@ namespace DocSearchAIO.DocSearch.Services
                         Some: hit =>
                         {
                             var source = hit.Source;
-                            return new DocumentDetailModel
-                            {
+                            return new DocumentDetailModel{
                                 Creator = source.Creator,
                                 Created = source.Created.ToString("dd.MM.yyyy HH:mm:ss"),
                                 Id = hit.Id,

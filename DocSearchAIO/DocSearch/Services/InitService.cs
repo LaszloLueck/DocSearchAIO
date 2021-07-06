@@ -34,7 +34,7 @@ namespace DocSearchAIO.DocSearch.Services
             returnValue.PowerpointFilterActive = enumerable.Contains("officedocuments-powerpoint");
             returnValue.PdfFilterActive = enumerable.Contains("officedocuments-pdf");
             
-            returnValue.ItemsPerPage = initRequestObject.ItemsPerPage ?? 20;
+            returnValue.ItemsPerPage = initRequestObject.ItemsPerPage;
 
             return returnValue;
         }
