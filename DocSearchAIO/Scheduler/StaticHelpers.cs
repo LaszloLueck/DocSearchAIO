@@ -17,7 +17,6 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Nest;
 
 namespace DocSearchAIO.Scheduler
@@ -164,38 +163,52 @@ namespace DocSearchAIO.Scheduler
             return sb.ToString();
         }
 
-        private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
+private static readonly Action<IEnumerable<OpenXmlElement>, StringBuilder> ExtractTextFromElement =
             (list, sb) =>
             {
                 list.ForEach(element =>
                 {
                     switch (element)
                     {
-                        case Paragraph p when p.InnerText.Any():
+                        case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
                             sb.Append(' ');
                             ExtractTextFromElement(element.ChildElements, sb);
                             sb.Append(' ');
                             break;
-                        case Text {HasChildren: false} wText:
-                            if (wText.Text.Length > 0)
+                        case DocumentFormat.OpenXml.Wordprocessing.Text {HasChildren: false} wText:
+                            if (wText.Text.Any())
                                 sb.Append(wText.Text);
                             break;
+                        case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
+                            if (sText.Text.Any())
+                                sb.Append(sText.Text);
+                            break;
                         case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
-                            if (dText.Text.Length > 0)
-                                sb.Append(dText.Text + " ");
+                            if (dText.Text.Any())
+                                sb.Append(dText.Text);
                             break;
-                        case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
-                            if (pText.Text.Length > 0)
-                                sb.Append(pText.Text);
+                        case DocumentFormat.OpenXml.Presentation.TextBody {HasChildren: false} tText:
+                            if (tText.TextFromParagraph().Any())
+                                sb.Append(' ' + tText.TextFromParagraph() + ' ');
                             break;
-                        case FieldChar {FieldCharType: {Value: FieldCharValues.Separate}}:
+                        case DocumentFormat.OpenXml.Drawing.Paragraph drawParagraph when drawParagraph.InnerText.Any():
+                            sb.Append(' ');
+                            ExtractTextFromElement(drawParagraph.ChildElements, sb);
                             sb.Append(' ');
                             break;
-                        case Break:
+                        case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
+                            if (pText.Text.Any())
+                                sb.Append(pText.Text);
+                            break;
+                        case DocumentFormat.OpenXml.Wordprocessing.FieldChar {FieldCharType: {Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate}}:
+                            sb.Append(' ');
+                            break;
+                        case DocumentFormat.OpenXml.Wordprocessing.Break:
                             sb.Append(Environment.NewLine);
                             break;
                         default:
-                            ExtractTextFromElement(element.ChildElements, sb);
+                            if(element.InnerText.Any())
+                                ExtractTextFromElement(element.ChildElements, sb);
                             break;
                     }
                 });
