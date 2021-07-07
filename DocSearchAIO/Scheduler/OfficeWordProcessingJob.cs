@@ -176,12 +176,6 @@ namespace DocSearchAIO.Scheduler
                 {
                     var wdOpt = WordprocessingDocument.Open(currentFile, false);
                     var mainDocumentPartOpt = wdOpt.MainDocumentPart.MaybeValue<MainDocumentPart, MainDocumentPart>();
-
-                    // return await wdOpt.Match(
-                    //     async wd =>
-                    //     {
-
-                    //Maybe<MainDocumentPart> mainDocumentPartOpt = wd.MainDocumentPart.MaybeValue();
                     return await mainDocumentPartOpt
                         .Match(
                             async mainDocumentPart =>
@@ -301,14 +295,6 @@ namespace DocSearchAIO.Scheduler
                                     currentFile);
                                 return await Task.Run(() => Maybe<WordElasticDocument>.None);
                             });
-                    // },
-                    // async () =>
-                    // {
-                    //     logger.LogWarning(
-                    //         "cannot process the base document of file {CurrentFile}, because it is null",
-                    //         currentFile);
-                    //     return await Task.Run(() => Maybe<WordElasticDocument>.None);
-                    // });
                 });
             }
             catch (Exception e)

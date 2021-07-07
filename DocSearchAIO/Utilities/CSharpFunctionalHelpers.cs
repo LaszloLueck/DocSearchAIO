@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
@@ -75,12 +76,8 @@ namespace DocSearchAIO.Utilities
             this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
             source.ToDictionary(d => d.Key, d => d.Value);
 
-        public static TOut ValueOr<TIn, TOut>(this TIn? value, TOut alternative) where TIn : TOut =>
+        public static TOut ValueOr<TIn, TOut>([AllowNull] this TIn? value, TOut alternative) where TIn : TOut where TOut : class =>
             value is null ? alternative : value;
-
-        // public static TOut ValueOr<TOut>(this TOut value, TOut alternative) =>
-        //     (value is null ? alternative is null ? default : alternative : value) ??
-        //     throw new ArgumentNullException(nameof(TOut), "value should not be null");
 
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
