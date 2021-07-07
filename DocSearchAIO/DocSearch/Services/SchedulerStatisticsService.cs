@@ -64,10 +64,10 @@ namespace DocSearchAIO.DocSearch.Services
                     GroupName = trigger.Group,
                     TriggerState = triggerState.ToString(),
                     NextFireTime = trg?.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime(),
-                    Description = trg?.Description ?? "",
+                    Description = trg?.Description ?? string.Empty,
                     StartTime = trg?.StartTimeUtc.LocalDateTime,
                     LastFireTime = trg?.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime(),
-                    JobName = trg?.JobKey.Name ?? ""
+                    JobName = trg?.JobKey.Name ?? string.Empty
                 };
 
 

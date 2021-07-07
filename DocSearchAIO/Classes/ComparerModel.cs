@@ -37,7 +37,7 @@ namespace DocSearchAIO.Classes
         public void CleanDictionaryAndRemoveComparerFile()
         {
             _logger.LogInformation("cleanup comparer dictionary before removing the file");
-            _comparerObjects?.Clear();
+            _comparerObjects.Clear();
             RemoveComparerFile();
             CheckAndCreateComparerDirectory();
         }
