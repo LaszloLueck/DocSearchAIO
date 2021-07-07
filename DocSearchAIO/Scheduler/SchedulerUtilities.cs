@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
@@ -51,13 +50,8 @@ namespace DocSearchAIO.Scheduler
         public static async Task<Maybe<IScheduler>> StdSchedulerByName(string schedulerName)
         {
             var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = await schedulerFactory.GetScheduler(schedulerName);
-            return scheduler.MaybeValue();
-        }
-
-        public static async Task<IEnumerable<IScheduler>> AllScheduler()
-        {
-            return await new StdSchedulerFactory().GetAllSchedulers();
+            var schedulerOpt = await schedulerFactory.GetScheduler(schedulerName);
+            return schedulerOpt == null ? Maybe<IScheduler>.None : Maybe<IScheduler>.From(schedulerOpt); 
         }
     }
 }

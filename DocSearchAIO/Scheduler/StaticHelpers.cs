@@ -185,8 +185,8 @@ namespace DocSearchAIO.Scheduler
                     {
                         case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
                             sb.Append(' ');
-                            ExtractTextFromElement(element.ChildElements, sb);
-                            sb.Append(' ');
+                            ExtractTextFromElement!(element.ChildElements, sb);
+                            sb!.Append(' ');
                             break;
                         case DocumentFormat.OpenXml.Wordprocessing.Text {HasChildren: false} wText:
                             if (wText.Text.Any())
@@ -206,7 +206,7 @@ namespace DocSearchAIO.Scheduler
                             break;
                         case DocumentFormat.OpenXml.Drawing.Paragraph drawParagraph when drawParagraph.InnerText.Any():
                             sb.Append(' ');
-                            ExtractTextFromElement(drawParagraph.ChildElements, sb);
+                            ExtractTextFromElement!(drawParagraph.ChildElements, sb);
                             sb.Append(' ');
                             break;
                         case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
@@ -222,7 +222,7 @@ namespace DocSearchAIO.Scheduler
                             break;
                         default:
                             if (element.InnerText.Any())
-                                ExtractTextFromElement(element.ChildElements, sb);
+                                ExtractTextFromElement!(element.ChildElements, sb);
                             break;
                     }
                 });

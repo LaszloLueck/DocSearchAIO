@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace DocSearchAIO.DocSearch.TOs
 {
-    public class AdministrationGenericModel
+    public class AdministrationGenericRequest
     {
         public string ScanPath { get; set; } = string.Empty;
         public List<string> ElasticEndpoints { get; set; } = new List<string>();

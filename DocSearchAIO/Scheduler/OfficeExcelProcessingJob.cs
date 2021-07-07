@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        
+
         public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
             IMemoryCache memoryCache)
@@ -48,7 +49,8 @@ namespace DocSearchAIO.Scheduler
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            _statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(loggerFactory,
+                new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelExcel().StatisticFileName);
             _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
@@ -65,11 +67,12 @@ namespace DocSearchAIO.Scheduler
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
-                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    _logger.LogInformation(
+                        "cannot execute scanning and processing documents, opponent job cleanup running");
                     return;
                 }
-                
-                
+
+
                 configEntry
                     .Active
                     .IfTrueFalse(async () =>
@@ -97,7 +100,7 @@ namespace DocSearchAIO.Scheduler
                                             "directory to scan <{ScanPath}> does not exists. skip working",
                                             scanPath);
                                     },
-                                        async scanPath =>
+                                    async scanPath =>
                                     {
                                         try
                                         {
@@ -167,118 +170,119 @@ namespace DocSearchAIO.Scheduler
         {
             try
             {
-                var wdOpt = SpreadsheetDocument.Open(currentFile, false).MaybeValue();
-                return await wdOpt.Match(
-                    async wd =>
-                    {
-                        var mainWorkbookPartOpt = wd.WorkbookPart.MaybeValue();
-                        return await mainWorkbookPartOpt
-                            .Match(
-                                async mainWorkbookPart =>
-                                {
-                                    var fInfo = wd.PackageProperties;
-                                    var category = fInfo.Category.ValueOr("");
-                                    var created =
-                                        new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(
-                                            new DateTime(1970, 1, 1));
-                                    var creator = fInfo.Creator.ValueOr("");
-                                    var description = fInfo.Description.ValueOr("");
-                                    var identifier = fInfo.Identifier.ValueOr("");
-                                    var keywords = fInfo.Keywords.ValueOr("");
-                                    var language = fInfo.Language.ValueOr("");
-                                    var modified =
-                                        new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(
-                                            new DateTime(1970, 1, 1));
-                                    var revision = fInfo.Revision.ValueOr("");
-                                    var subject = fInfo.Subject.ValueOr("");
-                                    var title = fInfo.Title.ValueOr("");
-                                    var version = fInfo.Version.ValueOr("");
-                                    var contentStatus = fInfo.ContentStatus.ValueOr("");
-                                    const string contentType = "xlsx";
-                                    var lastPrinted =
-                                        new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(
-                                            new DateTime(1970, 1, 1));
-                                    var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
-                                    var uriPath = currentFile
-                                        .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
-                                        .Replace(@"\", "/");
+                var wdOpt = SpreadsheetDocument.Open(currentFile, false);
 
-                                    var id = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(currentFile));
-                                    
-                                    static IEnumerable<OfficeDocumentComment>
-                                        CommentArray(WorkbookPart workbookPart) =>
-                                        workbookPart?
-                                            .WorksheetParts
-                                            .CommentsFromDocument();
+                // return await wdOpt.Match(
+                //     async wd =>
+                //     {
+                var mainWorkbookPartOpt = wdOpt.WorkbookPart.MaybeValue<WorkbookPart, WorkbookPart>();
+                return await mainWorkbookPartOpt
+                    .Match(
+                        async mainWorkbookPart =>
+                        {
+                            var fInfo = wdOpt.PackageProperties;
+                            var category = fInfo.Category.ValueOr("");
+                            var created =
+                                new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(
+                                    new DateTime(1970, 1, 1));
+                            var creator = fInfo.Creator.ValueOr("");
+                            var description = fInfo.Description.ValueOr("");
+                            var identifier = fInfo.Identifier.ValueOr("");
+                            var keywords = fInfo.Keywords.ValueOr("");
+                            var language = fInfo.Language.ValueOr("");
+                            var modified =
+                                new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(
+                                    new DateTime(1970, 1, 1));
+                            var revision = fInfo.Revision.ValueOr("");
+                            var subject = fInfo.Subject.ValueOr("");
+                            var title = fInfo.Title.ValueOr("");
+                            var version = fInfo.Version.ValueOr("");
+                            var contentStatus = fInfo.ContentStatus.ValueOr("");
+                            const string contentType = "xlsx";
+                            var lastPrinted =
+                                new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(
+                                    new DateTime(1970, 1, 1));
+                            var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
+                            var uriPath = currentFile
+                                .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
+                                .Replace(@"\", "/");
 
-                                    var commentsArray = CommentArray(mainWorkbookPart).ToArray();
+                            var id = await StaticHelpers.CreateMd5HashString(
+                                new TypedMd5InputString(currentFile));
 
-                                    var toReplaced = new List<(string, string)>();
+                            static IEnumerable<OfficeDocumentComment>
+                                CommentArray(WorkbookPart workbookPart) =>
+                                workbookPart
+                                    .WorksheetParts
+                                    .CommentsFromDocument();
 
-                                    var contentString = mainWorkbookPart
-                                        .SharedStringTablePart
-                                        .Elements()
-                                        .ContentString()
-                                        .ReplaceSpecialStrings(toReplaced);
+                            var commentsArray = CommentArray(mainWorkbookPart).ToArray();
 
-                                    var elementsHash = await (
-                                        StaticHelpers.ListElementsToHash(category, created, contentString, creator,
-                                            description, identifier, keywords, language, modified, revision,
-                                            subject, title, version, contentStatus, contentType, lastPrinted,
-                                            lastModifiedBy), commentsArray).ContentHashString();
+                            var toReplaced = new List<(string, string)>();
 
-                                    var completionField = commentsArray
-                                        .StringFromCommentsArray()
-                                        .GenerateTextToSuggest(new TypedContentString(contentString))
-                                        .GenerateSearchAsYouTypeArray()
-                                        .WrapCompletionField();
+                            var contentString = mainWorkbookPart.SharedStringTablePart?
+                                .Elements()
+                                .ContentString()
+                                .ReplaceSpecialStrings(toReplaced) ?? string.Empty;
 
-                                    var returnValue = new ExcelElasticDocument
-                                    {
-                                        Category = category,
-                                        CompletionContent = completionField,
-                                        Content = contentString,
-                                        ContentHash = elementsHash.Value,
-                                        ContentStatus = contentStatus,
-                                        ContentType = contentType,
-                                        Created = created,
-                                        Creator = creator,
-                                        Description = description,
-                                        Id = id.Value,
-                                        Identifier = identifier,
-                                        Keywords = StaticHelpers.KeywordsList(keywords),
-                                        Language = language,
-                                        Modified = modified,
-                                        Revision = revision,
-                                        Subject = subject,
-                                        Title = title,
-                                        Version = version,
-                                        LastPrinted = lastPrinted,
-                                        ProcessTime = DateTime.Now,
-                                        LastModifiedBy = lastModifiedBy,
-                                        OriginalFilePath = currentFile,
-                                        UriFilePath = uriPath,
-                                        Comments = commentsArray
-                                    };
+                            var elementsHash = await (
+                                StaticHelpers.ListElementsToHash(category, created, contentString, creator,
+                                    description, identifier, keywords, language, modified, revision,
+                                    subject, title, version, contentStatus, contentType, lastPrinted,
+                                    lastModifiedBy), commentsArray).ContentHashString();
+
+                            var completionField = commentsArray
+                                .StringFromCommentsArray()
+                                .GenerateTextToSuggest(new TypedContentString(contentString))
+                                .GenerateSearchAsYouTypeArray()
+                                .WrapCompletionField();
+
+                            var returnValue = new ExcelElasticDocument
+                            {
+                                Category = category,
+                                CompletionContent = completionField,
+                                Content = contentString,
+                                ContentHash = elementsHash.Value,
+                                ContentStatus = contentStatus,
+                                ContentType = contentType,
+                                Created = created,
+                                Creator = creator,
+                                Description = description,
+                                Id = id.Value,
+                                Identifier = identifier,
+                                Keywords = StaticHelpers.KeywordsList(keywords),
+                                Language = language,
+                                Modified = modified,
+                                Revision = revision,
+                                Subject = subject,
+                                Title = title,
+                                Version = version,
+                                LastPrinted = lastPrinted,
+                                ProcessTime = DateTime.Now,
+                                LastModifiedBy = lastModifiedBy,
+                                OriginalFilePath = currentFile,
+                                UriFilePath = uriPath,
+                                Comments = commentsArray
+                            };
 
 
-                                    return Maybe<ExcelElasticDocument>.From(returnValue);
-                                },
-                                async () =>
-                                {
-                                    logger.LogWarning(
-                                        "cannot process main document part of file {CurrentFile}, because it is null",
-                                        currentFile);
-                                    return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
-                                });
-                    },
-                    async () =>
-                    {
-                        logger.LogWarning(
-                            "cannot process the base document of file {CurrentFile}, because it is null",
-                            currentFile);
-                        return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
-                    });
+                            return Maybe<ExcelElasticDocument>.From(returnValue);
+                        },
+                        async () =>
+                        {
+                            logger.LogWarning(
+                                "cannot process main document part of file {CurrentFile}, because it is null",
+                                currentFile);
+                            return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
+                        });
+                // },
+                // async () =>
+                // {
+                //     logger.LogWarning(
+                //         "cannot process the base document of file {CurrentFile}, because it is null",
+                //         currentFile);
+                //     return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
+                // });
             }
             catch (Exception e)
             {
@@ -291,13 +295,13 @@ namespace DocSearchAIO.Scheduler
         private static IEnumerable<OfficeDocumentComment>
             ConvertToOfficeDocumentComment(this CommentList comments)
         {
-            return comments.ChildElements.Select(comment => OfficeDocumentComment((Comment)comment));
+            return comments.ChildElements.Select(comment => OfficeDocumentComment((Comment) comment));
         }
 
-        private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
+        private static OfficeDocumentComment OfficeDocumentComment([NotNull] Comment comment) =>
             new()
             {
-                Comment = comment.CommentText?.InnerText
+                Comment = comment.CommentText?.InnerText ?? ""
             };
 
         private static IEnumerable<OfficeDocumentComment>
@@ -308,14 +312,14 @@ namespace DocSearchAIO.Scheduler
                     var officeDocumentCommentsEmpty = Array.Empty<OfficeDocumentComment>();
                     return part
                         .WorksheetCommentsPart
-                        .MaybeValue()
+                        .MaybeValue<WorksheetCommentsPart, WorksheetCommentsPart>()
                         .Match(
                             values =>
                             {
-                                return values
+                                return values?
                                     .Comments
-                                    .CommentList
-                                    .MaybeValue()
+                                    .CommentList?
+                                    .MaybeValue<CommentList, CommentList>()
                                     .Match(
                                         ConvertToOfficeDocumentComment,
                                         () => officeDocumentCommentsEmpty
@@ -323,13 +327,10 @@ namespace DocSearchAIO.Scheduler
                             },
                             () => officeDocumentCommentsEmpty);
                 })
-                .SelectMany(p => p);
+                .SelectMany(p => p ?? Array.Empty<OfficeDocumentComment>());
 
         private static IEnumerable<OpenXmlElement> Elements(this SharedStringTablePart sharedStringTablePart)
         {
-            if (sharedStringTablePart?.SharedStringTable is null)
-                return ArraySegment<OpenXmlElement>.Empty;
-
             return sharedStringTablePart.SharedStringTable;
         }
     }

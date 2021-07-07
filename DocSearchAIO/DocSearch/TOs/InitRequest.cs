@@ -2,7 +2,7 @@
 
 namespace DocSearchAIO.DocSearch.TOs
 {
-    public class InitRequestObject
+    public class InitRequest
     {
         [JsonProperty("filterExcel", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
         public bool FilterExcel { get; set; }

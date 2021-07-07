@@ -17,7 +17,7 @@ namespace DocSearchAIO.Classes
             .ReadAllLines(path)
             .AsParallel()
             .WithDegreeOfParallelism(10)
-            .Select(ConvertLine)
+            .Select(ConvertLine!)
             .Values()
             .AsAkkaSource();
 
@@ -32,7 +32,7 @@ namespace DocSearchAIO.Classes
             if (spl.Length != 3) return Maybe<ComparerObject>.None;
             var cpo = new ComparerObject
                 {DocumentHash = spl[0], PathHash = spl[1], OriginalPath = spl[2]};
-            return Maybe<ComparerObject>.From(cpo);
+            return cpo;
         };
 
         public static readonly Func<string, ConcurrentDictionary<string, ComparerObject>> FillConcurrentDictionary =

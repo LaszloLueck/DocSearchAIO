@@ -10,10 +10,10 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
-using DocSearchAIO.Utilities;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
+using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
@@ -48,7 +48,8 @@ namespace DocSearchAIO.Scheduler
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
-                new TypedDirectoryPathString(_cfg.StatisticsDirectory), new StatisticModelPowerpoint().StatisticFileName);
+                new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+                new StatisticModelPowerpoint().StatisticFileName);
             _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
@@ -64,10 +65,11 @@ namespace DocSearchAIO.Scheduler
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
-                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    _logger.LogInformation(
+                        "cannot execute scanning and processing documents, opponent job cleanup running");
                     return;
                 }
-                
+
                 configEntry
                     .Active
                     .IfTrueFalse(
@@ -172,14 +174,13 @@ namespace DocSearchAIO.Scheduler
             {
                 return await Task.Run(async () =>
                 {
-                    var wdOpt = PresentationDocument
-                        .Open(currentFile, false)
-                        .MaybeValue();
+                    var wdOpt = PresentationDocument.Open(currentFile, false);
+                    var presentationPart = wdOpt.PresentationPart.MaybeValue<PresentationPart, PresentationPart>();
 
-                    return await wdOpt.Match(
+                    return await presentationPart.Match(
                         async wd =>
                         {
-                            var fInfo = wd.PackageProperties;
+                            var fInfo = wdOpt.PackageProperties;
                             var category = fInfo.Category.ValueOr("");
                             var created =
                                 new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(new DateTime(1970,
@@ -211,24 +212,18 @@ namespace DocSearchAIO.Scheduler
 
                             var id = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(currentFile));
                             var slideCount = wd
-                                .PresentationPart
-                                .MaybeValue()
-                                .Match(
-                                    part => part.SlideParts.Count(),
-                                    () => 0);
+                                .SlideParts
+                                .Count();
 
                             static IEnumerable<OfficeDocumentComment>
                                 CommentArray(PresentationPart presentationPart) =>
-                                presentationPart?
-                                    .SlideParts
-                                    .CommentsFromDocument();
+                                CommentsFromDocument(presentationPart.SlideParts);
 
-                            var commentsArray = CommentArray(wd.PresentationPart).ToArray();
+                            var commentsArray = CommentArray(wd).ToArray();
 
                             var toReplaced = new List<(string, string)>();
 
                             var contentString = wd
-                                .PresentationPart
                                 .Elements()
                                 .ContentString()
                                 .ReplaceSpecialStrings(toReplaced);
@@ -301,30 +296,21 @@ namespace DocSearchAIO.Scheduler
         private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()
             {
-                Comment = comment.Text?.Text,
-                Date = new GenericSourceNullable<DateTime>(comment.DateTime).ValueOrDefault(
-                    new DateTime(1970, 1, 1))
+                Comment = comment.Text?.Text ?? string.Empty,
+                Date = comment.DateTime?.Value ?? new DateTime(1970, 1, 1)
             };
 
         private static IEnumerable<OfficeDocumentComment>
             CommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
             slideParts
-                .Select(part =>
-                {
-                    return part
-                        .SlideCommentsPart
-                        .MaybeValue()
-                        .Match(
-                            values => ConvertToOfficeDocumentComment(values.CommentList),
-                            Array.Empty<OfficeDocumentComment>);
-                })
-                .SelectMany(p => p);
+                .Select(part => part
+                    .SlideCommentsPart?
+                    .CommentList
+                    .ConvertToOfficeDocumentComment())
+                .SelectMany(p => p ?? Array.Empty<OfficeDocumentComment>());
 
         private static IEnumerable<OpenXmlElement> Elements(this PresentationPart presentationPart)
         {
-            if (presentationPart?.SlideParts is null)
-                return ArraySegment<OpenXmlElement>.Empty;
-
             return presentationPart
                 .SlideParts.Select(p => p.Slide);
         }

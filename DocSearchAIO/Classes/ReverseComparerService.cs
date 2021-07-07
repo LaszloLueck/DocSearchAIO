@@ -40,7 +40,7 @@ namespace DocSearchAIO.Classes
             {
                 var grpArray = group.ToArray();
                 return grpArray.Length > 0
-                    ? grpArray.Select(cmpObject => lazyCache.Remove(cmpObject.PathHash, out cmpObject))
+                    ? grpArray.Select(cmpObject => lazyCache.Remove(cmpObject.PathHash, out cmpObject!))
                     : Array.Empty<bool>().Select(t => t);
             });
         }

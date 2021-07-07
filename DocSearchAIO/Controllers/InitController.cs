@@ -25,10 +25,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("init")]
         [HttpPost]
-        public async Task<InitResponseObject> Init(InitRequestObject initRequestObject)
+        public async Task<InitResponseObject> Init(InitRequest initRequest)
         {
             _logger.LogInformation("calling init");
-            return await _initService.Init(initRequestObject);
+            return await _initService.Init(initRequest);
         }
         
         [Route("download")]

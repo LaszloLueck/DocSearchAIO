@@ -50,14 +50,17 @@ namespace DocSearchAIO.Services
 
         public async Task<bool> RemoveItemById(string indexName, string id)
         {
-            var result = await _elasticClient.DeleteAsync<ElasticDocument>(new DocumentPath<ElasticDocument>(new ElasticDocument { Id = id }),
+            var result = await _elasticClient.DeleteAsync<ElasticDocument>(
+                new DocumentPath<ElasticDocument>(new ElasticDocument {Id = id}),
                 f => f.Index(indexName));
             return ProcessResponse(result);
         }
 
         public async Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove)
         {
-            var result = await _elasticClient.DeleteManyAsync<ElasticDocument>(toRemove.Select(id => new ElasticDocument { Id = id }), indexName);
+            var result =
+                await _elasticClient.DeleteManyAsync<ElasticDocument>(
+                    toRemove.Select(id => new ElasticDocument {Id = id}), indexName);
             ProcessResponse(result);
             return result.Items.Count;
         }
@@ -218,7 +221,7 @@ namespace DocSearchAIO.Services
                     _logger.LogError(searchResponse.OriginalException, searchResponse.ServerError.Error.Reason);
                     return searchResponse.IsValid;
                 default:
-                    _logger.LogWarning($"Cannot find Conversion for type <{response.GetType().Name}>");
+                    _logger.LogWarning("Cannot find Conversion for type <{TypeName}>", response?.GetType().Name ?? "");
                     return false;
             }
         }

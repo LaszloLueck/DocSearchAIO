@@ -158,22 +158,22 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        public async Task<bool> SetAdministrationGenericContent(AdministrationGenericModel model)
+        public async Task<bool> SetAdministrationGenericContent(AdministrationGenericRequest request)
         {
             try
             {
-                _configurationObject.ElasticEndpoints = model.ElasticEndpoints;
-                _configurationObject.SchedulerGroupName = model.ProcessorGroupName;
-                _configurationObject.IndexName = model.IndexName;
-                _configurationObject.ScanPath = model.ScanPath;
-                _configurationObject.SchedulerId = model.SchedulerId;
-                _configurationObject.SchedulerName = model.SchedulerName;
-                _configurationObject.UriReplacement = model.UriReplacement;
-                _configurationObject.ActorSystemName = model.ActorSystemName;
-                _configurationObject.ComparerDirectory = model.ComparerDirectory;
-                _configurationObject.CleanupGroupName = model.CleanupGroupName;
+                _configurationObject.ElasticEndpoints = request.ElasticEndpoints;
+                _configurationObject.SchedulerGroupName = request.ProcessorGroupName;
+                _configurationObject.IndexName = request.IndexName;
+                _configurationObject.ScanPath = request.ScanPath;
+                _configurationObject.SchedulerId = request.SchedulerId;
+                _configurationObject.SchedulerName = request.SchedulerName;
+                _configurationObject.UriReplacement = request.UriReplacement;
+                _configurationObject.ActorSystemName = request.ActorSystemName;
+                _configurationObject.ComparerDirectory = request.ComparerDirectory;
+                _configurationObject.CleanupGroupName = request.CleanupGroupName;
 
-                _configurationObject.Processing = model
+                _configurationObject.Processing = request
                     .ProcessorConfigurations
                     .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry
                     {
@@ -188,7 +188,7 @@ namespace DocSearchAIO.DocSearch.Services
                     }))
                     .ToDictionary();
 
-                _configurationObject.Cleanup = model
+                _configurationObject.Cleanup = request
                     .CleanupConfigurations
                     .Select(kv =>
                         new KeyValuePair<string, CleanUpEntry>(kv.Key, new CleanUpEntry
@@ -304,12 +304,12 @@ namespace DocSearchAIO.DocSearch.Services
                 });
         }
 
-        public AdministrationGenericModel GenericContent()
+        public AdministrationGenericRequest GenericContent()
         {
             var processSubTypes = StaticHelpers.SubtypesOfType<ElasticDocument>();
             var cleanupSubTypes = StaticHelpers.SubtypesOfType<CleanupDocument>();
 
-            var adminGenModel = new AdministrationGenericModel
+            var adminGenModel = new AdministrationGenericRequest
             {
                 ScanPath = _configurationObject.ScanPath,
                 ElasticEndpoints = _configurationObject.ElasticEndpoints,

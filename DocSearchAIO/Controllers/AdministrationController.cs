@@ -32,10 +32,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("setGenericContent")]
         [HttpPost]
-        public async Task<bool> SetGenericContent(AdministrationGenericModel model)
+        public async Task<bool> SetGenericContent(AdministrationGenericRequest request)
         {
             _logger.LogInformation("method setGenericContent called");
-            return await _administrationService.SetAdministrationGenericContent(model);
+            return await _administrationService.SetAdministrationGenericContent(request);
         }
 
         [Route("getAdministrationModal")]
@@ -118,7 +118,7 @@ namespace DocSearchAIO.Controllers
         {
             _logger.LogInformation("method getGenericContent called");
             var genericContent = _administrationService.GenericContent();
-            var responseModel = new TypedPartialViewResponse<AdministrationGenericModel>(genericContent);
+            var responseModel = new TypedPartialViewResponse<AdministrationGenericRequest>(genericContent);
             return new PartialViewResult
             {
                 ViewName = "AdministrationGenericContentPartial",

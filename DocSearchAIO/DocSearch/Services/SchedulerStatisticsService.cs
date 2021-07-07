@@ -85,27 +85,29 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(configurationObject.SchedulerName);
                     var t = schedulerOpt
-                        .Unwrap(async scheduler =>
-                        {
-                            var statistics = StatisticsObject(scheduler);
-                            var innerResultTasks = (await TriggerKeys(scheduler, groupName))
-                                .Select(async trigger =>
-                                    await SchedulerTriggerStatisticElement(Tuples(configurationObject), trigger,
-                                        scheduler));
-
-                            var results = (await innerResultTasks.WhenAll()).ToArray();
-
-                            statistics.TriggerElements = results;
-
-                            results.ForEach(result =>
+                        .Match(
+                            async scheduler =>
                             {
-                                logger.LogInformation("TriggerState: {TriggerState} : {TriggerName} : {TriggerGroup}",
-                                    result.TriggerState, result.TriggerName, result.GroupName);
-                            });
+                                var statistics = StatisticsObject(scheduler);
+                                var innerResultTasks = (await TriggerKeys(scheduler, groupName))
+                                    .Select(async trigger =>
+                                        await SchedulerTriggerStatisticElement(Tuples(configurationObject), trigger,
+                                            scheduler));
 
-                            return statistics;
-                        });
+                                var results = (await innerResultTasks.WhenAll()).ToArray();
 
+                                statistics.TriggerElements = results;
+
+                                results.ForEach(result =>
+                                {
+                                    logger.LogInformation(
+                                        "TriggerState: {TriggerState} : {TriggerName} : {TriggerGroup}",
+                                        result.TriggerState, result.TriggerName, result.GroupName);
+                                });
+
+                                return statistics;
+                            },
+                            () => Task.Run(() => new SchedulerStatistics()));
 
                     return await t;
                 };

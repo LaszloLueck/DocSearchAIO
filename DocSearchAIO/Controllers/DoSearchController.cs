@@ -41,7 +41,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<SuggestResult> Post(SuggestRequest request)
         {
-            _logger.LogInformation($"hit suggestResult with phrase {request.SearchPhrase}");
+            _logger.LogInformation("hit suggestResult with phrase {SearchPhrase}",request.SearchPhrase);
             return await _searchSuggestService.Suggestions(request.SearchPhrase);
         }
 

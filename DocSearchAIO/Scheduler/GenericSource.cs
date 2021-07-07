@@ -1,4 +1,6 @@
-﻿namespace DocSearchAIO.Scheduler
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace DocSearchAIO.Scheduler
 {
     public abstract class GenericSource
     {
@@ -34,7 +36,7 @@
 
         private readonly T? _value;
 
-        public GenericSourceNullable(T? value)
+        public GenericSourceNullable([AllowNull] T? value)
         {
             _value = value;
         }

@@ -10,9 +10,8 @@ namespace DocSearchAIO.Classes
         
         [Text(Name = "contentHash")]
         public string ContentHash { get; set; } = string.Empty;
-        
-        [Text(Name = "originalFilePath")]
-        public string OriginalFilePath { get; set; }
+
+        [Text(Name = "originalFilePath")] public string OriginalFilePath { get; set; } = string.Empty;
         
         [Text(Name = "uriFilePath")]
         public string UriFilePath { get; set; } = string.Empty;
@@ -21,7 +20,7 @@ namespace DocSearchAIO.Classes
         public string Content { get; set; } = string.Empty;
 
         [Completion(Name = "completionContent")]
-        public CompletionField CompletionContent { get; set; } = new CompletionField();
+        public CompletionField CompletionContent { get; set; } = new();
         
         [Text(Name = "createdBy")] 
         public string Creator { get; set; } = string.Empty;
