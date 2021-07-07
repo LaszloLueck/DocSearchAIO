@@ -70,7 +70,7 @@ namespace DocSearchAIO.Scheduler
 
         private void _checkAndCreateStatisticsDirectory(TypedDirectoryPathString directoryPath)
         {
-            _logger.LogInformation("check if directory {DirectoryPath} exists", directoryPath);
+            _logger.LogInformation("check if directory {@DirectoryPath} exists", directoryPath);
             if (!Directory.Exists(directoryPath.Value))
                 Directory.CreateDirectory(directoryPath.Value);
         }

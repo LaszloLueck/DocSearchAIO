@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;

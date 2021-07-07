@@ -109,7 +109,6 @@ namespace DocSearchAIO.Scheduler
             commentsArray =>
             {
                 return commentsArray
-                    .Where(l => l.Comment is not null)
                     .Select(l => l.Comment.Split(" "))
                     .Distinct()
                     .ToList();

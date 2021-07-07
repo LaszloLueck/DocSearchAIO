@@ -218,10 +218,19 @@ namespace DocSearchAIO.Scheduler
                                     var comments = mainDocumentPart
                                         .WordprocessingCommentsPart?
                                         .Comments ?? new Comments();
-
+                                    
                                     return comments.Select(comment =>
                                     {
                                         var d = (Comment) comment;
+
+                                        // var foo = d
+                                        //     .Id
+                                        //     .MaybeValue<StringValue, StringValue>()
+                                        //     .Match(
+                                        //         x => x.Value, 
+                                        //         () => string.Empty
+                                        //         );
+
                                         var retValue = new OfficeDocumentComment();
                                         var dat = new GenericSourceNullable<DateTime>(d.Date?.Value)
                                             .ValueOrDefault(new DateTime(1970, 1, 1));
