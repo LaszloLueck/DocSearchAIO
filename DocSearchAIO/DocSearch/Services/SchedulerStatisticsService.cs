@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
+using Quartz.Impl.Triggers;
 
 namespace DocSearchAIO.DocSearch.Services
 {

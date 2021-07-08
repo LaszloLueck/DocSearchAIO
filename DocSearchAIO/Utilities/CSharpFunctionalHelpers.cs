@@ -66,19 +66,27 @@ namespace DocSearchAIO.Utilities
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
-
-        public static Maybe<TOut> MaybeValue<TIn, TOut>(this TIn? value) where TIn : TOut
+        
+        private static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
         {
-            return value == null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
+            return value is null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
         }
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
             this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
             source.ToDictionary(d => d.Key, d => d.Value);
 
-        public static TOut ValueOr<TIn, TOut>([AllowNull] this TIn? value, TOut alternative) where TIn : TOut where TOut : class =>
+        public static TOut ValueOr<TIn, TOut>([AllowNull] this TIn? value, TOut alternative)
+            where TIn : TOut where TOut : class =>
             value is null ? alternative : value;
 
+        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative, Func<TIn, TOut, TOut> action)
+        {
+            return nullable
+                .MaybeValue<TIn, TIn>()
+                .Match(d => action.Invoke(d, alternative), () => alternative);
+        }
+        
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 

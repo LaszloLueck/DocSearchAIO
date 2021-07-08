@@ -175,10 +175,9 @@ namespace DocSearchAIO.Scheduler
                 return await Task.Run(async () =>
                 {
                     var wdOpt = PresentationDocument.Open(currentFile, false);
-                    var presentationPart = wdOpt.PresentationPart.MaybeValue<PresentationPart, PresentationPart>();
-
-                    return await presentationPart.Match(
-                        async wd =>
+                    return await wdOpt
+                        .PresentationPart
+                        .ResolveNullable(Task.Run(() => Maybe<PowerpointElasticDocument>.None), async (wd, _) =>
                         {
                             var fInfo = wdOpt.PackageProperties;
                             var category = fInfo.Category.ValueOr("");
@@ -270,13 +269,6 @@ namespace DocSearchAIO.Scheduler
                             };
 
                             return Maybe<PowerpointElasticDocument>.From(returnValue);
-                        },
-                        async () =>
-                        {
-                            logger.LogWarning(
-                                "cannot process the base document of file {CurrentFile}, because it is null",
-                                currentFile);
-                            return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
                         });
                 });
             }
