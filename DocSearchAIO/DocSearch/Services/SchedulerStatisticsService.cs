@@ -53,7 +53,6 @@ namespace DocSearchAIO.DocSearch.Services
             {
                 var triggerState = await scheduler.GetTriggerState(trigger);
                 var trg = await scheduler.GetTrigger(trigger);
-
                 var tResult = new SchedulerTriggerStatisticElement
                 {
                     ProcessingState = tuples
@@ -64,14 +63,12 @@ namespace DocSearchAIO.DocSearch.Services
                     TriggerName = trigger.Name,
                     GroupName = trigger.Group,
                     TriggerState = triggerState.ToString(),
-                    NextFireTime = trg?.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime(),
-                    Description = trg?.Description ?? string.Empty,
-                    StartTime = trg?.StartTimeUtc.LocalDateTime,
-                    LastFireTime = trg?.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime(),
-                    JobName = trg?.JobKey.Name ?? string.Empty
+                    NextFireTime = trg.ResolveNullable(DateTime.Now, (v, a) => v.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
+                    Description = trg.ResolveNullable(string.Empty, (v, a) => v.Description ?? a),
+                    StartTime = trg.ResolveNullable(DateTime.Now, (v, _) => v.StartTimeUtc.LocalDateTime),
+                    LastFireTime = trg.ResolveNullable(DateTime.Now, (v, a) => v.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
+                    JobName = trg.JobKey.ResolveNullable(string.Empty, (v, a) => v.Name)
                 };
-
-
                 return tResult;
             };
 

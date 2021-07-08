@@ -20,6 +20,7 @@ using DocumentFormat.OpenXml.Presentation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Nest;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler
@@ -180,31 +181,22 @@ namespace DocSearchAIO.Scheduler
                         .ResolveNullable(Task.Run(() => Maybe<PowerpointElasticDocument>.None), async (wd, _) =>
                         {
                             var fInfo = wdOpt.PackageProperties;
-                            var category = fInfo.Category.ValueOr("");
-                            var created =
-                                new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(new DateTime(1970,
-                                    1,
-                                    1));
-                            var creator = fInfo.Creator.ValueOr("");
-                            var description = fInfo.Description.ValueOr("");
-                            var identifier = fInfo.Identifier.ValueOr("");
-                            var keywords = fInfo.Keywords.ValueOr("");
-                            var language = fInfo.Language.ValueOr("");
-                            var modified =
-                                new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(new DateTime(
-                                    1970, 1,
-                                    1));
-                            var revision = fInfo.Revision.ValueOr("");
-                            var subject = fInfo.Subject.ValueOr("");
-                            var title = fInfo.Title.ValueOr("");
-                            var version = fInfo.Version.ValueOr("");
-                            var contentStatus = fInfo.ContentStatus.ValueOr("");
+                            var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
+                            var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                            var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
+                            var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
+                            var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
+                            var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
+                            var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
+                            var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                            var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
+                            var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
+                            var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
+                            var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
+                            var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
                             const string contentType = "pptx";
-                            var lastPrinted =
-                                new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(new DateTime(
-                                    1970,
-                                    1, 1));
-                            var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
+                            var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                            var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
                             var uriPath = currentFile
                                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                 .Replace(@"\", "/");
@@ -233,16 +225,18 @@ namespace DocSearchAIO.Scheduler
                                     subject, title, version, contentStatus, contentType, lastPrinted,
                                     lastModifiedBy), commentsArray).ContentHashString();
 
-                            var completionField = commentsArray
-                                .StringFromCommentsArray()
-                                .GenerateTextToSuggest(new TypedContentString(contentString))
-                                .GenerateSearchAsYouTypeArray()
-                                .WrapCompletionField();
+                            static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
+                                commentsArray
+                                    .StringFromCommentsArray()
+                                    .GenerateTextToSuggest(new TypedContentString(contentString))
+                                    .GenerateSearchAsYouTypeArray()
+                                    .WrapCompletionField();
+
 
                             var returnValue = new PowerpointElasticDocument
                             {
                                 Category = category,
-                                CompletionContent = completionField,
+                                CompletionContent = GetCompletionField(commentsArray, contentString),
                                 Content = contentString,
                                 ContentHash = elementsHash.Value,
                                 ContentStatus = contentStatus,
@@ -269,6 +263,11 @@ namespace DocSearchAIO.Scheduler
                             };
 
                             return Maybe<PowerpointElasticDocument>.From(returnValue);
+                        }, t =>
+                        {
+                            logger.LogWarning(
+                                "cannot process the base document of file {CurrentFile}, because it is null", currentFile);
+                            return t;
                         });
                 });
             }
@@ -288,18 +287,16 @@ namespace DocSearchAIO.Scheduler
         private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()
             {
-                Comment = comment.Text?.Text ?? string.Empty,
-                Date = comment.DateTime?.Value ?? new DateTime(1970, 1, 1)
+                Comment = comment.Text.ResolveNullable(string.Empty, (v, _) => v.Text),
+                Date = comment.DateTime.ResolveNullable(new DateTime(1970, 1, 1), (v, _) => v.Value)
             };
 
-        private static IEnumerable<OfficeDocumentComment>
-            CommentsFromDocument(this IEnumerable<SlidePart> slideParts) =>
-            slideParts
-                .Select(part => part
-                    .SlideCommentsPart?
-                    .CommentList
-                    .ConvertToOfficeDocumentComment())
-                .SelectMany(p => p ?? Array.Empty<OfficeDocumentComment>());
+        private static IEnumerable<OfficeDocumentComment> CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
+            .Select(part => part
+                .SlideCommentsPart
+                .ResolveNullable(Array.Empty<OfficeDocumentComment>(), (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
+            )
+            .SelectMany(p => p);
 
         private static IEnumerable<OpenXmlElement> Elements(this PresentationPart presentationPart)
         {

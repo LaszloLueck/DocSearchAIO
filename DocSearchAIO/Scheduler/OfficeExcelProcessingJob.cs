@@ -176,28 +176,22 @@ namespace DocSearchAIO.Scheduler
                     .ResolveNullable(Task.Run(() => Maybe<ExcelElasticDocument>.None), async (mainWorkbookPart, _) =>
                     {
                         var fInfo = wdOpt.PackageProperties;
-                        var category = fInfo.Category.ValueOr("");
-                        var created =
-                            new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(
-                                new DateTime(1970, 1, 1));
-                        var creator = fInfo.Creator.ValueOr("");
-                        var description = fInfo.Description.ValueOr("");
-                        var identifier = fInfo.Identifier.ValueOr("");
-                        var keywords = fInfo.Keywords.ValueOr("");
-                        var language = fInfo.Language.ValueOr("");
-                        var modified =
-                            new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(
-                                new DateTime(1970, 1, 1));
-                        var revision = fInfo.Revision.ValueOr("");
-                        var subject = fInfo.Subject.ValueOr("");
-                        var title = fInfo.Title.ValueOr("");
-                        var version = fInfo.Version.ValueOr("");
-                        var contentStatus = fInfo.ContentStatus.ValueOr("");
+                        var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
+                        var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                        var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
+                        var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
+                        var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
+                        var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
+                        var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
+                        var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                        var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
+                        var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
+                        var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
+                        var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
+                        var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
                         const string contentType = "xlsx";
-                        var lastPrinted =
-                            new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(
-                                new DateTime(1970, 1, 1));
-                        var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
+                        var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                        var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
                         var uriPath = currentFile
                             .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                             .Replace(@"\", "/");
@@ -260,117 +254,11 @@ namespace DocSearchAIO.Scheduler
                             Comments = commentsArray
                         };
                         return Maybe<ExcelElasticDocument>.From(returnValue);
+                    }, t =>
+                    {
+                        logger.LogWarning("cannot process main document part of file {CurrentFile}, because it is null", currentFile);
+                        return t;
                     });
-
-
-                // var mainWorkbookPartOpt = wdOpt.WorkbookPart.MaybeValue();
-                // return await mainWorkbookPartOpt
-                //     .Match(
-                //         async mainWorkbookPart =>
-                //         {
-                //             var fInfo = wdOpt.PackageProperties;
-                //             var category = fInfo.Category.ValueOr("");
-                //             var created =
-                //                 new GenericSourceNullable<DateTime>(fInfo.Created).ValueOrDefault(
-                //                     new DateTime(1970, 1, 1));
-                //             var creator = fInfo.Creator.ValueOr("");
-                //             var description = fInfo.Description.ValueOr("");
-                //             var identifier = fInfo.Identifier.ValueOr("");
-                //             var keywords = fInfo.Keywords.ValueOr("");
-                //             var language = fInfo.Language.ValueOr("");
-                //             var modified =
-                //                 new GenericSourceNullable<DateTime>(fInfo.Modified).ValueOrDefault(
-                //                     new DateTime(1970, 1, 1));
-                //             var revision = fInfo.Revision.ValueOr("");
-                //             var subject = fInfo.Subject.ValueOr("");
-                //             var title = fInfo.Title.ValueOr("");
-                //             var version = fInfo.Version.ValueOr("");
-                //             var contentStatus = fInfo.ContentStatus.ValueOr("");
-                //             const string contentType = "xlsx";
-                //             var lastPrinted =
-                //                 new GenericSourceNullable<DateTime>(fInfo.LastPrinted).ValueOrDefault(
-                //                     new DateTime(1970, 1, 1));
-                //             var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
-                //             var uriPath = currentFile
-                //                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
-                //                 .Replace(@"\", "/");
-                //
-                //             var id = await StaticHelpers.CreateMd5HashString(
-                //                 new TypedMd5InputString(currentFile));
-                //
-                //             static IEnumerable<OfficeDocumentComment>
-                //                 CommentArray(WorkbookPart workbookPart) =>
-                //                 workbookPart
-                //                     .WorksheetParts
-                //                     .CommentsFromDocument();
-                //
-                //             var commentsArray = CommentArray(mainWorkbookPart).ToArray();
-                //
-                //             var toReplaced = new List<(string, string)>();
-                //
-                //             var contentString = mainWorkbookPart.SharedStringTablePart?
-                //                 .Elements()
-                //                 .ContentString()
-                //                 .ReplaceSpecialStrings(toReplaced) ?? string.Empty;
-                //
-                //             var elementsHash = await (
-                //                 StaticHelpers.ListElementsToHash(category, created, contentString, creator,
-                //                     description, identifier, keywords, language, modified, revision,
-                //                     subject, title, version, contentStatus, contentType, lastPrinted,
-                //                     lastModifiedBy), commentsArray).ContentHashString();
-                //
-                //             var completionField = commentsArray
-                //                 .StringFromCommentsArray()
-                //                 .GenerateTextToSuggest(new TypedContentString(contentString))
-                //                 .GenerateSearchAsYouTypeArray()
-                //                 .WrapCompletionField();
-                //
-                //             var returnValue = new ExcelElasticDocument
-                //             {
-                //                 Category = category,
-                //                 CompletionContent = completionField,
-                //                 Content = contentString,
-                //                 ContentHash = elementsHash.Value,
-                //                 ContentStatus = contentStatus,
-                //                 ContentType = contentType,
-                //                 Created = created,
-                //                 Creator = creator,
-                //                 Description = description,
-                //                 Id = id.Value,
-                //                 Identifier = identifier,
-                //                 Keywords = StaticHelpers.KeywordsList(keywords),
-                //                 Language = language,
-                //                 Modified = modified,
-                //                 Revision = revision,
-                //                 Subject = subject,
-                //                 Title = title,
-                //                 Version = version,
-                //                 LastPrinted = lastPrinted,
-                //                 ProcessTime = DateTime.Now,
-                //                 LastModifiedBy = lastModifiedBy,
-                //                 OriginalFilePath = currentFile,
-                //                 UriFilePath = uriPath,
-                //                 Comments = commentsArray
-                //             };
-                //
-                //
-                //             return Maybe<ExcelElasticDocument>.From(returnValue);
-                //         },
-                //         async () =>
-                //         {
-                //             logger.LogWarning(
-                //                 "cannot process main document part of file {CurrentFile}, because it is null",
-                //                 currentFile);
-                //             return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
-                //         });
-                // },
-                // async () =>
-                // {
-                //     logger.LogWarning(
-                //         "cannot process the base document of file {CurrentFile}, because it is null",
-                //         currentFile);
-                //     return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
-                // });
             }
             catch (Exception e)
             {
@@ -389,7 +277,7 @@ namespace DocSearchAIO.Scheduler
         private static OfficeDocumentComment OfficeDocumentComment([NotNull] Comment comment) =>
             new()
             {
-                Comment = comment.CommentText?.InnerText ?? ""
+                Comment = comment.CommentText.ResolveNullable(string.Empty, (v, _) => v.InnerText)
             };
 
         private static IEnumerable<OfficeDocumentComment>

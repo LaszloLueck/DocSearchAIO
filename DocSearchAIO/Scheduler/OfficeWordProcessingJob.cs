@@ -190,7 +190,7 @@ namespace DocSearchAIO.Scheduler
                             var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
                             var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
                             var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1),
-                                (value, _) => value!.Value);
+                                (value, a) => value ?? a);
                             var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
                             var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
                             var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
@@ -199,7 +199,7 @@ namespace DocSearchAIO.Scheduler
                             const string contentType = "docx";
                             var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1),
                                 (value, a) => value ?? a);
-                            var lastModifiedBy = fInfo.LastModifiedBy.ValueOr("");
+                            var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
                             var uriPath = currentFile
                                 .Replace(configurationObject.ScanPath,
                                     configurationObject.UriReplacement)
@@ -288,6 +288,10 @@ namespace DocSearchAIO.Scheduler
                             };
 
                             return Maybe<WordElasticDocument>.From(returnValue);
+                        }, t =>
+                        {
+                            logger.LogWarning("cannot process main document part of file {CurrentFile}, because it is null", currentFile);
+                            return t;
                         });
                 });
             }
@@ -303,17 +307,10 @@ namespace DocSearchAIO.Scheduler
         private static IEnumerable<OpenXmlElement> Elements(this
             MainDocumentPart mainDocumentPart)
         {
-            if (mainDocumentPart.Document.Body == null)
-                return Array.Empty<OpenXmlElement>();
             return mainDocumentPart
                 .Document
                 .Body
-                .ChildElements
-                .OfType<OpenXmlElement>();
+                .ResolveNullable(Array.Empty<OpenXmlElement>(), (v, _) => v.ChildElements.ToArray());
         }
-    }
-
-    public interface ITest
-    {
     }
 }

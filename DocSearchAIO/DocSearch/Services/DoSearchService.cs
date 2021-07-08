@@ -8,6 +8,7 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -163,7 +164,7 @@ namespace DocSearchAIO.DocSearch.Services
                     return new DoSearchResultContainer
                     {
                         RelativeUrl = hit.Source.UriFilePath,
-                        Relevance = hit.Score ?? 0,
+                        Relevance = hit.Score.ResolveNullable(0d, (v, a) => v ?? a),
                         SearchBody = grouped,
                         Id = hit.Id,
                         ProgramIcon = IconType(hit.Source.ContentType),
