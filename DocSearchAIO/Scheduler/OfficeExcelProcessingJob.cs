@@ -254,10 +254,10 @@ namespace DocSearchAIO.Scheduler
                             Comments = commentsArray
                         };
                         return Maybe<ExcelElasticDocument>.From(returnValue);
-                    }, t =>
+                    }, alternative =>
                     {
                         logger.LogWarning("cannot process main document part of file {CurrentFile}, because it is null", currentFile);
-                        return t;
+                        return alternative;
                     });
             }
             catch (Exception e)

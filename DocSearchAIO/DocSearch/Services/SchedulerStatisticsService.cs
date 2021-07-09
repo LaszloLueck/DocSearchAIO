@@ -11,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
-using Quartz.Impl.Triggers;
 
 namespace DocSearchAIO.DocSearch.Services
 {
@@ -67,7 +66,7 @@ namespace DocSearchAIO.DocSearch.Services
                     Description = trg.ResolveNullable(string.Empty, (v, a) => v.Description ?? a),
                     StartTime = trg.ResolveNullable(DateTime.Now, (v, _) => v.StartTimeUtc.LocalDateTime),
                     LastFireTime = trg.ResolveNullable(DateTime.Now, (v, a) => v.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
-                    JobName = trg.JobKey.ResolveNullable(string.Empty, (v, a) => v.Name)
+                    JobName = trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
                 };
                 return tResult;
             };

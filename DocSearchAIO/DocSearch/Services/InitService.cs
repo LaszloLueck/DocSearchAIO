@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.DocSearch.Services
@@ -23,7 +25,7 @@ namespace DocSearchAIO.DocSearch.Services
             var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
 
             var returnValue = new InitResponseObject();
-            var enumerable = indices as string[] ?? indices.ToArray();
+            var enumerable = indices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
             returnValue.FilterWord = enumerable.Contains("officedocuments-word") && initRequest.FilterWord;
             returnValue.FilterExcel = enumerable.Contains("officedocuments-excel") && initRequest.FilterExcel;
             returnValue.FilterPowerpoint =

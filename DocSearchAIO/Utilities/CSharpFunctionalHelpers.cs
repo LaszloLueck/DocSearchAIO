@@ -66,8 +66,8 @@ namespace DocSearchAIO.Utilities
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
-        
-        public static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
+
+        private static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
         {
             return value is null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
         }
@@ -78,20 +78,14 @@ namespace DocSearchAIO.Utilities
 
         public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative, Func<TIn, TOut, TOut> action)
         {
-            return nullable
-                .MaybeValue<TIn, TIn>()
-                .Match(d => action.Invoke(d, alternative), () => alternative);
+            return nullable is not null ? action.Invoke(nullable, alternative) : alternative;
         }
         
         public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative, Func<TIn, TOut, TOut> some, Func<TOut, TOut> none)
         {
-            return nullable
-                .MaybeValue<TIn, TIn>()
-                .Match(d => some.Invoke(d, alternative), () => none.Invoke(alternative));
+            return nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
         }        
-        
-        
-        
+
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 

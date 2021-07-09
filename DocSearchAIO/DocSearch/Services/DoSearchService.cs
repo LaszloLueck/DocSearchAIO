@@ -70,7 +70,7 @@ namespace DocSearchAIO.DocSearch.Services
 
 
                 var selectedIndices = new List<string>();
-                var enumerable = knownIndices as string[] ?? knownIndices.ToArray();
+                var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
                 if (enumerable.Contains("officedocuments-word") && doSearchRequest.FilterWord)
                     selectedIndices.Add("officedocuments-word");
                 if (enumerable.Contains("officedocuments-excel") && doSearchRequest.FilterExcel)
