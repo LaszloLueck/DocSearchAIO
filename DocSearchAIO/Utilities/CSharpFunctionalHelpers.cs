@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
@@ -10,10 +11,9 @@ namespace DocSearchAIO.Utilities
 {
     public static class CSharpFunctionalHelpers
     {
-        public static async Task<IEnumerable<TResult>> WhenAll<TResult>(this IEnumerable<Task<TResult>> source)
-        {
-            return await Task.WhenAll(source);
-        }
+        [Pure]
+        public static async Task<IEnumerable<TResult>> WhenAll<TResult>(this IEnumerable<Task<TResult>> source) =>
+            await Task.WhenAll(source);
 
         public static void ForEach<TIn>(this IEnumerable<TIn> source, Action<TIn> action)
         {
@@ -26,12 +26,10 @@ namespace DocSearchAIO.Utilities
         public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
             Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
 
+        [Pure]
         public static TOut IfTrueFalse<TOut>(this bool value,
             Func<TOut> falseAction,
-            Func<TOut> trueAction)
-        {
-            return value ? trueAction.Invoke() : falseAction.Invoke();
-        }
+            Func<TOut> trueAction) => value ? trueAction.Invoke() : falseAction.Invoke();
 
         public static void IfTrue(this bool value, Action action)
         {
@@ -67,28 +65,30 @@ namespace DocSearchAIO.Utilities
                 processor.Invoke(source.Value);
         }
 
-        private static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
-        {
-            return value is null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
-        }
+        // private static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
+        // {
+        //     return value is null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
+        // }
 
+        [Pure]
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
             this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
             source.ToDictionary(d => d.Key, d => d.Value);
 
-        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative, Func<TIn, TOut, TOut> action)
-        {
-            return nullable is not null ? action.Invoke(nullable, alternative) : alternative;
-        }
-        
-        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative, Func<TIn, TOut, TOut> some, Func<TOut, TOut> none)
-        {
-            return nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
-        }        
+        [Pure]
+        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative,
+            Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
+        [Pure]
+        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull] TOut alternative,
+            Func<TIn, TOut, TOut> some, Func<TOut, TOut> none) =>
+            nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
+
+        [Pure]
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
+        [Pure]
         public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
             source
                 .Where(filtered => filtered.HasValue)
