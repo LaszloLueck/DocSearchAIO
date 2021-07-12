@@ -44,7 +44,7 @@ namespace DocSearchAIO.Classes
                     .WithDegreeOfParallelism(10)
                     .Select(ConvertLine)
                     .Values()
-                    .Select(cpo => new KeyValuePair<string, ComparerObject>(cpo.PathHash, cpo))
+                    .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
                     .ToDictionary();
                 return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
             };
@@ -78,8 +78,8 @@ namespace DocSearchAIO.Classes
             string fileName)
         {
             await File.WriteAllLinesAsync(fileName,
-                cacheObject.Select(tpl =>
-                    $"{tpl.Value.DocumentHash};{tpl.Value.PathHash};{tpl.Value.OriginalPath}"));
+                cacheObject.SelectKv((_, value) =>
+                    $"{value.DocumentHash};{value.PathHash};{value.OriginalPath}"));
         }
     }
 }

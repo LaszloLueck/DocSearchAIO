@@ -41,7 +41,7 @@ namespace DocSearchAIO.Classes
                 var grpArray = group.ToArray();
                 return grpArray.Length > 0
                     ? grpArray.Select(cmpObject => lazyCache.Remove(cmpObject.PathHash, out cmpObject!))
-                    : Array.Empty<bool>().Select(t => t);
+                    : Array.Empty<bool>();
             });
         }
 
@@ -54,13 +54,12 @@ namespace DocSearchAIO.Classes
             {
                 var itemsArray = items.ToArray();
 
-                if (itemsArray.Length <= 0) return itemsArray.Select(t => t);
+                if (itemsArray.Length <= 0) return Array.Empty<ComparerObject>();
                 logger.LogInformation("try to remove {Elements} from elastic index", itemsArray.Length);
                 var resultCount =
                     await elasticSearchService.RemoveItemsById(indexName, itemsArray.Select(item => item.PathHash));
                 removedFileCount.Add(resultCount);
-
-                return itemsArray.Select(t => t);
+                return itemsArray.AsEnumerable();
             });
         }
     }

@@ -40,8 +40,8 @@ namespace DocSearchAIO.DocSearch.Services
         private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
             configurationObject =>
             {
-                var processing = configurationObject.Processing.Select(d => (d.Value.TriggerName, d.Value.Active));
-                var cleanup = configurationObject.Cleanup.Select(d => (d.Value.TriggerName, d.Value.Active));
+                var processing = configurationObject.Processing.SelectKv((_, value) => (value.TriggerName, value.Active));
+                var cleanup = configurationObject.Cleanup.SelectKv((_, value) => (value.TriggerName, value.Active));
                 return processing.Concat(cleanup);
             };
 

@@ -94,9 +94,9 @@ namespace DocSearchAIO.DocSearch.Services
                 configurationObject =>
                 {
                     var processingTuples =
-                        configurationObject.Processing.Select(kv => (kv.Key, kv.Value.TriggerName, "processing"));
+                        configurationObject.Processing.SelectKv((key, value) => (key, value.TriggerName, "processing"));
                     var cleanupTuples =
-                        configurationObject.Cleanup.Select(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
+                        configurationObject.Cleanup.SelectKv((key, value) => (key, value.TriggerName, "cleanup"));
                     return processingTuples.Concat(cleanupTuples);
                 };
 
@@ -178,31 +178,31 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = request
                     .ProcessorConfigurations
-                    .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Key, new SchedulerEntry
+                    .SelectKv((key, value) => new KeyValuePair<string, SchedulerEntry>(key, new SchedulerEntry
                     {
-                        ExcludeFilter = kv.Value.ExcludeFilter,
-                        FileExtension = kv.Value.FileExtension,
-                        IndexSuffix = kv.Value.IndexSuffix,
-                        JobName = kv.Value.JobName,
-                        Parallelism = kv.Value.Parallelism,
-                        RunsEvery = kv.Value.RunsEvery,
-                        StartDelay = kv.Value.StartDelay,
-                        TriggerName = kv.Value.TriggerName
+                        ExcludeFilter = value.ExcludeFilter,
+                        FileExtension = value.FileExtension,
+                        IndexSuffix = value.IndexSuffix,
+                        JobName = value.JobName,
+                        Parallelism = value.Parallelism,
+                        RunsEvery = value.RunsEvery,
+                        StartDelay = value.StartDelay,
+                        TriggerName = value.TriggerName
                     }))
                     .ToDictionary();
 
                 _configurationObject.Cleanup = request
                     .CleanupConfigurations
-                    .Select(kv =>
-                        new KeyValuePair<string, CleanUpEntry>(kv.Key, new CleanUpEntry
+                    .SelectKv((key, value) =>
+                        new KeyValuePair<string, CleanUpEntry>(key, new CleanUpEntry
                         {
-                            ForComparerName = kv.Value.ForComparer,
-                            ForIndexSuffix = kv.Value.ForIndexSuffix,
-                            JobName = kv.Value.JobName,
-                            Parallelism = kv.Value.Parallelism,
-                            RunsEvery = kv.Value.RunsEvery,
-                            StartDelay = kv.Value.StartDelay,
-                            TriggerName = kv.Value.TriggerName
+                            ForComparerName = value.ForComparer,
+                            ForIndexSuffix = value.ForIndexSuffix,
+                            JobName = value.JobName,
+                            Parallelism = value.Parallelism,
+                            RunsEvery = value.RunsEvery,
+                            StartDelay = value.StartDelay,
+                            TriggerName = value.TriggerName
                         }))
                     .ToDictionary();
 
@@ -328,32 +328,32 @@ namespace DocSearchAIO.DocSearch.Services
                 ProcessorConfigurations = _configurationObject
                     .Processing
                     .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv => new KeyValuePair<string, ProcessorConfiguration>(kv.Key,
+                    .SelectKv((key, value) => new KeyValuePair<string, ProcessorConfiguration>(key,
                         new ProcessorConfiguration
                         {
-                            ExcludeFilter = kv.Value.ExcludeFilter,
-                            FileExtension = kv.Value.FileExtension,
-                            IndexSuffix = kv.Value.IndexSuffix,
-                            JobName = kv.Value.JobName,
-                            Parallelism = kv.Value.Parallelism,
-                            RunsEvery = kv.Value.RunsEvery,
-                            StartDelay = kv.Value.StartDelay,
-                            TriggerName = kv.Value.TriggerName
+                            ExcludeFilter = value.ExcludeFilter,
+                            FileExtension = value.FileExtension,
+                            IndexSuffix = value.IndexSuffix,
+                            JobName = value.JobName,
+                            Parallelism = value.Parallelism,
+                            RunsEvery = value.RunsEvery,
+                            StartDelay = value.StartDelay,
+                            TriggerName = value.TriggerName
                         }))
                     .ToDictionary(),
                 CleanupConfigurations = _configurationObject
                     .Cleanup
                     .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .Select(kv => new KeyValuePair<string, CleanupConfiguration>(kv.Key,
+                    .SelectKv((key, value) => new KeyValuePair<string, CleanupConfiguration>(key,
                         new CleanupConfiguration
                         {
-                            ForComparer = kv.Value.ForComparerName,
-                            ForIndexSuffix = kv.Value.ForIndexSuffix,
-                            JobName = kv.Value.JobName,
-                            Parallelism = kv.Value.Parallelism,
-                            RunsEvery = kv.Value.RunsEvery,
-                            StartDelay = kv.Value.StartDelay,
-                            TriggerName = kv.Value.TriggerName
+                            ForComparer = value.ForComparerName,
+                            ForIndexSuffix = value.ForIndexSuffix,
+                            JobName = value.JobName,
+                            Parallelism = value.Parallelism,
+                            RunsEvery = value.RunsEvery,
+                            StartDelay = value.StartDelay,
+                            TriggerName = value.TriggerName
                         }))
                     .ToDictionary()
             };
@@ -478,32 +478,36 @@ namespace DocSearchAIO.DocSearch.Services
         private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
             memoryCacheModelProxy => memoryCacheModelProxy
                 .GetModels()
-                .Select(func => func
-                    .Value
+                .SelectKv((key, value) => value
                     .Element
                     .Invoke()
                     .CacheEntry()
                     .Match(
-                        el => KeyValuePair.Create(func.Key, el.JobState),
-                        () => KeyValuePair.Create(func.Key, JobState.Undefined)
+                        el => KeyValuePair.Create(key, el.JobState),
+                        () => KeyValuePair.Create(key, JobState.Undefined)
                     ))
                 .ToDictionary();
+
+        private static readonly Func<string, Dictionary<string, JobState>, Maybe<JobState>> FilterMemoryCacheState =
+            (jobName, memoryCacheStates) =>
+                memoryCacheStates
+                    .Where((key, _) => key == jobName)
+                    .SelectKv((_, v) => v)
+                    .TryFirst();
+
+        private static readonly Func<SchedulerStatistics, Dictionary<string, JobState>, Maybe<JobState>>
+            CalculateJobState = (schedulerStatisticsArray, memoryCacheStates) => schedulerStatisticsArray
+                .TriggerElements.Select(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
+                .Values()
+                .TryFirst();
 
         public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
         {
             var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
-
             var groupedSchedulerModels = (await _schedulerStatisticsService.SchedulerStatistics())
-                .Select(kv =>
+                .SelectKv((groupName, schedulerStatisticsArray) =>
                 {
-                    var (groupName, schedulerStatisticsArray) = kv;
-                    var state = schedulerStatisticsArray.TriggerElements.Select(keyElement =>
-                        {
-                            return memoryCacheStates.Where(targetState => targetState.Key == keyElement.JobName)
-                                .Select(o => o.Value).TryFirst();
-                        })
-                        .Values()
-                        .TryFirst();
+                    var state = CalculateJobState(schedulerStatisticsArray, memoryCacheStates);
                     var model = ConvertToActionModel(schedulerStatisticsArray, state);
                     return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName,
                         new[] {model});
