@@ -102,7 +102,8 @@ namespace DocSearchAIO.Scheduler
     public enum JobState
     {
         Running,
-        Stopped
+        Stopped,
+        Undefined
     }
 
     public class CacheEntry

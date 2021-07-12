@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nest;
 using Quartz;
+using JobState = DocSearchAIO.Scheduler.JobState;
 using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.DocSearch.Services
@@ -29,6 +30,7 @@ namespace DocSearchAIO.DocSearch.Services
         private readonly ILoggerFactory _loggerFactory;
         private readonly IMemoryCache _memoryCache;
         private readonly ElasticUtilities _elasticUtilities;
+        private readonly MemoryCacheModelProxy _memoryCacheModelProxy;
 
         public AdministrationService(ILoggerFactory loggerFactory,
             IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -40,6 +42,7 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+            _memoryCacheModelProxy = new MemoryCacheModelProxy(loggerFactory, memoryCache);
             _loggerFactory = loggerFactory;
             _memoryCache = memoryCache;
         }
@@ -318,8 +321,8 @@ namespace DocSearchAIO.DocSearch.Services
                 SchedulerId = _configurationObject.SchedulerId,
                 ActorSystemName = _configurationObject.ActorSystemName,
                 ProcessorGroupName = _configurationObject.SchedulerGroupName,
-                CleanupGroupName = _configurationObject.CleanupGroupName, 
-                UriReplacement = _configurationObject.UriReplacement, 
+                CleanupGroupName = _configurationObject.CleanupGroupName,
+                UriReplacement = _configurationObject.UriReplacement,
                 ComparerDirectory = _configurationObject.ComparerDirectory,
                 StatisticsDirectory = _configurationObject.StatisticsDirectory,
                 ProcessorConfigurations = _configurationObject
@@ -450,38 +453,62 @@ namespace DocSearchAIO.DocSearch.Services
             return ResponseModel(indexStatsResponses, runtimeStatistic);
         }
 
-        private static readonly Func<SchedulerStatistics, AdministrationActionSchedulerModel> ConvertToActionModel =
-            scheduler =>
-            {
-                return new AdministrationActionSchedulerModel
+        private static readonly Func<SchedulerStatistics, Maybe<JobState>, AdministrationActionSchedulerModel>
+            ConvertToActionModel =
+                (scheduler, jobStateOpt) =>
                 {
-                    SchedulerName = scheduler.SchedulerName,
-                    Triggers = scheduler.TriggerElements.Select(trigger =>
+                    return new AdministrationActionSchedulerModel
                     {
-                        var triggerModel = new AdministrationActionTriggerModel
+                        SchedulerName = scheduler.SchedulerName,
+                        Triggers = scheduler.TriggerElements.Select(trigger =>
                         {
-                            TriggerName = trigger.TriggerName,
-                            GroupName = trigger.GroupName,
-                            JobName = trigger.JobName,
-                            CurrentState = trigger.TriggerState
-                        };
-                        return triggerModel;
-                    })
+                            var triggerModel = new AdministrationActionTriggerModel
+                            {
+                                TriggerName = trigger.TriggerName,
+                                GroupName = trigger.GroupName,
+                                JobName = trigger.JobName,
+                                CurrentState = trigger.TriggerState,
+                                JobState = jobStateOpt.Unwrap(JobState.Undefined)
+                            };
+                            return triggerModel;
+                        })
+                    };
                 };
-            };
+
+        private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
+            memoryCacheModelProxy => memoryCacheModelProxy
+                .GetModels()
+                .Select(func => func
+                    .Value
+                    .Element
+                    .Invoke()
+                    .CacheEntry()
+                    .Match(
+                        el => KeyValuePair.Create(func.Key, el.JobState),
+                        () => KeyValuePair.Create(func.Key, JobState.Undefined)
+                    ))
+                .ToDictionary();
 
         public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
         {
+            var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
+
             var groupedSchedulerModels = (await _schedulerStatisticsService.SchedulerStatistics())
                 .Select(kv =>
                 {
                     var (groupName, schedulerStatisticsArray) = kv;
-                    var model = ConvertToActionModel(schedulerStatisticsArray);
+                    var state = schedulerStatisticsArray.TriggerElements.Select(keyElement =>
+                        {
+                            return memoryCacheStates.Where(targetState => targetState.Key == keyElement.JobName)
+                                .Select(o => o.Value).TryFirst();
+                        })
+                        .Values()
+                        .TryFirst();
+                    var model = ConvertToActionModel(schedulerStatisticsArray, state);
                     return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName,
                         new[] {model});
                 })
                 .ToDictionary();
-
             return groupedSchedulerModels;
         }
     }

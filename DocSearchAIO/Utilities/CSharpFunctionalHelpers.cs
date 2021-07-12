@@ -64,12 +64,7 @@ namespace DocSearchAIO.Utilities
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
-
-        // private static Maybe<TOut> MaybeValue<TIn, TOut>([AllowNull] this TIn? value) where TIn : TOut
-        // {
-        //     return value is null ? Maybe<TOut>.None : Maybe<TOut>.From(value);
-        // }
-
+        
         [Pure]
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
             this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>

@@ -1,3 +1,4 @@
+@using DocSearchAIO.Scheduler
 @model Dictionary<string, IEnumerable<DocSearchAIO.DocSearch.TOs.AdministrationActionSchedulerModel>>
 
 <div class="container mt-2">
@@ -70,27 +71,29 @@
                                             <button type="button" class="btn btn-warning mr-2" onclick="pauseTrigger('@triggerModel.TriggerName','@triggerModel.GroupName')"><i class="bi bi-pause-btn"></i> Pause</button>
                                             <button type="button" disabled class="btn btn-secondary mr-2"><i class="bi bi-play-btn"></i> Start</button>
                                         }
-                                        @if(administrationActionSchedulerModel.Key == "docSearch_Processing")
+                                        @if (administrationActionSchedulerModel.Key == "docSearch_Processing")
                                         {
-                                            @if (triggerModel.CurrentState.ToLower() == "normal")
-                                            {
-                                                <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
-                                                <button type="button" class="btn btn-danger mr-2" onclick="reindexAndStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
-                                            }
-                                            else
+                                            @if (triggerModel.JobState is JobState.Running || triggerModel.CurrentState.ToLower() is "paused")
                                             {
                                                 <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-recycle"></i> Indexieren</button>
                                                 <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
                                             }
-                                        } else {
-                                            @if (triggerModel.CurrentState.ToLower() == "normal")
+                                            else
                                             {
-                                                <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-tools"></i> Cleanup</button>
+                                                <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-recycle"></i> Indexieren</button>
+                                                <button type="button" class="btn btn-danger mr-2" onclick="reindexAndStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-exclamation-diamond"></i> Reindexieren</button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            @if (triggerModel.JobState is JobState.Running  || triggerModel.CurrentState.ToLower() is "paused")
+                                            {
+                                                <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-recycle"></i> Cleanup</button>
                                             }
                                             else
                                             {
-                                                <button type="button" class="btn btn-secondary mr-2" disabled><i class="bi bi-recycle"></i> Cleanup</button>
-                                            }                                        
+                                                <button type="button" class="btn btn-orange mr-2" onclick="instantStartJob('@triggerModel.JobName','@triggerModel.GroupName')"><i class="bi bi-tools"></i> Cleanup</button>
+                                            }
                                         }
                                     </div>
                                 </div>
