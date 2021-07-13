@@ -1,3 +1,5 @@
+using DocSearchAIO.Classes;
+
 namespace DocSearchAIO.DocSearch.TOs
 {
     public class DocumentDetailModel
@@ -11,6 +13,20 @@ namespace DocSearchAIO.DocSearch.TOs
         public string Version { get; set; } = string.Empty;
         public string Revision { get; set; } = string.Empty;
         public string Id { get; set; } = string.Empty;
-        
+        public string LastPrinted { get; set; } = string.Empty;
+
+        public static implicit operator DocumentDetailModel(WordElasticDocument wordElasticDocument) => new()
+        {
+            Created = wordElasticDocument.Created.ToString("dd.MM.yyyy HH:mm:ss"),
+            Creator = wordElasticDocument.Creator,
+            LastModified = wordElasticDocument.Modified.ToString("dd.MM.yyyy HH:mm:ss"),
+            LastModifiedBy = wordElasticDocument.LastModifiedBy,
+            Revision = wordElasticDocument.Revision,
+            Subject = wordElasticDocument.Subject,
+            Title = wordElasticDocument.Title,
+            Version = wordElasticDocument.Version,
+            LastPrinted = wordElasticDocument.LastPrinted.ToString("dd.MM.yyyy HH:mm:ss")
+        };
+
     }
 }

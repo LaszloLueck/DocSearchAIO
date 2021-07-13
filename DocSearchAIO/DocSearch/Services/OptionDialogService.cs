@@ -17,18 +17,18 @@ namespace DocSearchAIO.DocSearch.Services
             _elasticSearchService = elasticSearchService;
         }
 
-        public async Task<OptionDialogRequest> OptionDialog(
+        public async Task<OptionDialogResponse> OptionDialog(
             OptionDialogRequest optionDialogRequest)
         {
             var indexResponse = await _elasticSearchService.IndicesWithPatternAsync("officedocuments-*");
             var knownIndices = indexResponse.Indices.Keys.Select(key => key.Name);
 
-            optionDialogRequest.WordIndexExists = knownIndices.Contains("officedocuments-word");
-            optionDialogRequest.ExcelIndexExists = knownIndices.Contains("officedocuments-excel");
-            optionDialogRequest.PowerpointIndexExists = knownIndices.Contains("officedocuments-powerpoint");
-            optionDialogRequest.PdfIndexExists = knownIndices.Contains("officedocuments-pdf");
-
-            return optionDialogRequest;
+            OptionDialogResponse response = optionDialogRequest;
+            response.WordIndexExists = knownIndices.Contains("officedocuments-word");
+            response.ExcelIndexExists = knownIndices.Contains("officedocuments-excel");
+            response.PdfIndexExists = knownIndices.Contains("officedocuments-pdf");
+            response.PowerpointIndexExists = knownIndices.Contains("officedocuments-powwerpoint");
+            return response;
         }
     }
 }

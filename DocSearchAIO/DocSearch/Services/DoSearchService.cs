@@ -92,7 +92,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var request = new SearchRequest(indices)
                 {
-                    Query = new QueryContainer(query), Highlight = highlight, From = @from, Size = size, Source = f
+                    Query = new QueryContainer(query), Highlight = highlight, From = from, Size = size, Source = f
                 };
 
                 var sw = Stopwatch.StartNew();
@@ -105,7 +105,7 @@ namespace DocSearchAIO.DocSearch.Services
                 {
                     DocCount = result.Total,
                     SearchPhrase = searchPhrase,
-                    CurrentPage = @from,
+                    CurrentPage = from,
                     CurrentPageSize = size
                 };
 
@@ -161,16 +161,11 @@ namespace DocSearchAIO.DocSearch.Services
                             ContentValues = o.Select(s => s.Item2)
                         });
 
-                    return new DoSearchResultContainer
-                    {
-                        RelativeUrl = hit.Source.UriFilePath,
-                        Relevance = hit.Score.ResolveNullable(0d, (v, a) => v ?? a),
-                        SearchBody = grouped,
-                        Id = hit.Id,
-                        ProgramIcon = IconType(hit.Source.ContentType),
-                        AbsoluteUrl = hit.Source.OriginalFilePath,
-                        DocumentType = hit.Source.ContentType
-                    };
+                    DoSearchResultContainer container = hit.Source;
+                    container.SearchBody = grouped;
+                    container.Relevance = hit.Score.ResolveNullable(0d, (v, a) => v ?? a);
+                    container.ProgramIcon = IconType(hit.Source.ContentType);
+                    return container;
                 });
 
                 outResponse.Title = $"Doc.Search - Ihre Suche nach {searchPhrase}";

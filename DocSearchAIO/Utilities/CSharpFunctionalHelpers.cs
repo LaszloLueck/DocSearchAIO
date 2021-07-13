@@ -75,7 +75,7 @@ namespace DocSearchAIO.Utilities
             [NotNull] Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
         [Pure]
-        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull][NotNull] TOut alternative,
+        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull, NotNull] TOut alternative,
             [NotNull] Func<TIn, TOut, TOut> some, [NotNull] Func<TOut, TOut> none) =>
             nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
 
@@ -92,7 +92,7 @@ namespace DocSearchAIO.Utilities
             [NotNull] Func<TKey, TValue, bool> action) => source.Where(kv => action.Invoke(kv.Key, kv.Value));
 
         [Pure]
-        public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
+        public static IEnumerable<TSource> Values<TSource>([NotNull, DisallowNull] this IEnumerable<Maybe<TSource>> source) =>
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);

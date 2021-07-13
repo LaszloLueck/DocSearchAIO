@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using DocSearchAIO.DocSearch.TOs;
 using Newtonsoft.Json;
 
 namespace DocSearchAIO.Configuration
@@ -52,6 +53,18 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("forComparerName")] public string ForComparerName { get; set; } = "";
 
         [JsonProperty("forIndexSuffix")] public string ForIndexSuffix { get; set; } = "";
+
+        public static implicit operator CleanUpEntry(CleanupConfiguration cleanupConfiguration) => new()
+        {
+            ForComparerName = cleanupConfiguration.ForComparer,
+            ForIndexSuffix = cleanupConfiguration.ForIndexSuffix,
+            JobName = cleanupConfiguration.JobName,
+            Parallelism = cleanupConfiguration.Parallelism,
+            RunsEvery = cleanupConfiguration.RunsEvery,
+            StartDelay = cleanupConfiguration.StartDelay,
+            TriggerName = cleanupConfiguration.TriggerName
+        };
+
     }
 
     public class SchedulerEntry
@@ -73,5 +86,17 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("fileExtension")] public string FileExtension { get; set; } = "";
 
         [JsonProperty("indexSuffix")] public string IndexSuffix { get; set; } = "";
+
+        public static implicit operator SchedulerEntry(ProcessorConfiguration processorConfiguration) => new()
+        {
+            ExcludeFilter = processorConfiguration.ExcludeFilter,
+            FileExtension = processorConfiguration.FileExtension,
+            IndexSuffix = processorConfiguration.IndexSuffix,
+            JobName = processorConfiguration.JobName,
+            Parallelism = processorConfiguration.Parallelism,
+            RunsEvery = processorConfiguration.RunsEvery,
+            StartDelay = processorConfiguration.StartDelay,
+            TriggerName = processorConfiguration.TriggerName
+        };
     }
 }

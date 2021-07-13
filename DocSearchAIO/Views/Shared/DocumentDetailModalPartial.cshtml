@@ -81,6 +81,14 @@
                         <input type="text" disabled class="form-control" id="infoFieldRevision" value="@Html.Raw(Model.Revision)">
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="input-group mb-2 col-md-12">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="labelLastPrinted">Letzter Druck</span>
+                        </div>
+                        <input type="text" disabled class="form-control" id="infoFieldLastPrinted" value="@Html.Raw(Model.LastPrinted)">
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>

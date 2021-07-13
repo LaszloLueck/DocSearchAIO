@@ -42,22 +42,13 @@ namespace DocSearchAIO.DocSearch.Services
                     .Hits
                     .TryFirst()
                     .Match(
-                        Some: hit =>
+                        hit =>
                         {
-                            var source = hit.Source;
-                            return new DocumentDetailModel{
-                                Creator = source.Creator,
-                                Created = source.Created.ToString("dd.MM.yyyy HH:mm:ss"),
-                                Id = hit.Id,
-                                LastModified = source.Modified.ToString("dd.MM.yyyy HH:mm:ss"),
-                                LastModifiedBy = source.LastModifiedBy,
-                                Revision = source.Revision,
-                                Subject = source.Subject,
-                                Title = source.Title,
-                                Version = source.Version
-                            };
+                            DocumentDetailModel source = hit.Source;
+                            source.Id = hit.Id;
+                            return source;
                         },
-                        None: () => new DocumentDetailModel()
+                        () => new DocumentDetailModel()
                     );
             }
             catch (Exception exception)

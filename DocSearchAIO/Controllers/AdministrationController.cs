@@ -104,7 +104,7 @@ namespace DocSearchAIO.Controllers
         {
             _logger.LogInformation("method getOptionsDialog called!");
             var dialogResponse = await _optionDialogService.OptionDialog(optionDialogRequest);
-            var responseModel = new TypedPartialViewResponse<OptionDialogRequest>(dialogResponse);
+            var responseModel = new TypedPartialViewResponse<OptionDialogResponse>(dialogResponse);
             return new PartialViewResult
             {
                 ViewName = "ResultPageConfigurationModalPartial",

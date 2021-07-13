@@ -178,32 +178,13 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = request
                     .ProcessorConfigurations
-                    .SelectKv((key, value) => new KeyValuePair<string, SchedulerEntry>(key, new SchedulerEntry
-                    {
-                        ExcludeFilter = value.ExcludeFilter,
-                        FileExtension = value.FileExtension,
-                        IndexSuffix = value.IndexSuffix,
-                        JobName = value.JobName,
-                        Parallelism = value.Parallelism,
-                        RunsEvery = value.RunsEvery,
-                        StartDelay = value.StartDelay,
-                        TriggerName = value.TriggerName
-                    }))
+                    .SelectKv((key, value) => new KeyValuePair<string, SchedulerEntry>(key, value))
                     .ToDictionary();
 
                 _configurationObject.Cleanup = request
                     .CleanupConfigurations
                     .SelectKv((key, value) =>
-                        new KeyValuePair<string, CleanUpEntry>(key, new CleanUpEntry
-                        {
-                            ForComparerName = value.ForComparer,
-                            ForIndexSuffix = value.ForIndexSuffix,
-                            JobName = value.JobName,
-                            Parallelism = value.Parallelism,
-                            RunsEvery = value.RunsEvery,
-                            StartDelay = value.StartDelay,
-                            TriggerName = value.TriggerName
-                        }))
+                        new KeyValuePair<string, CleanUpEntry>(key, value))
                     .ToDictionary();
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
@@ -311,53 +292,18 @@ namespace DocSearchAIO.DocSearch.Services
         {
             var processSubTypes = StaticHelpers.SubtypesOfType<ElasticDocument>();
             var cleanupSubTypes = StaticHelpers.SubtypesOfType<CleanupDocument>();
-
-            var adminGenModel = new AdministrationGenericRequest
-            {
-                ScanPath = _configurationObject.ScanPath,
-                ElasticEndpoints = _configurationObject.ElasticEndpoints,
-                IndexName = _configurationObject.IndexName,
-                SchedulerName = _configurationObject.SchedulerName,
-                SchedulerId = _configurationObject.SchedulerId,
-                ActorSystemName = _configurationObject.ActorSystemName,
-                ProcessorGroupName = _configurationObject.SchedulerGroupName,
-                CleanupGroupName = _configurationObject.CleanupGroupName,
-                UriReplacement = _configurationObject.UriReplacement,
-                ComparerDirectory = _configurationObject.ComparerDirectory,
-                StatisticsDirectory = _configurationObject.StatisticsDirectory,
-                ProcessorConfigurations = _configurationObject
-                    .Processing
-                    .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .SelectKv((key, value) => new KeyValuePair<string, ProcessorConfiguration>(key,
-                        new ProcessorConfiguration
-                        {
-                            ExcludeFilter = value.ExcludeFilter,
-                            FileExtension = value.FileExtension,
-                            IndexSuffix = value.IndexSuffix,
-                            JobName = value.JobName,
-                            Parallelism = value.Parallelism,
-                            RunsEvery = value.RunsEvery,
-                            StartDelay = value.StartDelay,
-                            TriggerName = value.TriggerName
-                        }))
-                    .ToDictionary(),
-                CleanupConfigurations = _configurationObject
-                    .Cleanup
-                    .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
-                    .SelectKv((key, value) => new KeyValuePair<string, CleanupConfiguration>(key,
-                        new CleanupConfiguration
-                        {
-                            ForComparer = value.ForComparerName,
-                            ForIndexSuffix = value.ForIndexSuffix,
-                            JobName = value.JobName,
-                            Parallelism = value.Parallelism,
-                            RunsEvery = value.RunsEvery,
-                            StartDelay = value.StartDelay,
-                            TriggerName = value.TriggerName
-                        }))
-                    .ToDictionary()
-            };
-
+            AdministrationGenericRequest adminGenModel = _configurationObject;
+            adminGenModel.ProcessorConfigurations = _configurationObject
+                .Processing
+                .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
+                .SelectKv((key, value) => new KeyValuePair<string, ProcessorConfiguration>(key, value))
+                .ToDictionary();
+            adminGenModel.CleanupConfigurations = _configurationObject
+                .Cleanup
+                .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
+                .SelectKv((key, value) =>
+                    new KeyValuePair<string, CleanupConfiguration>(key, value))
+                .ToDictionary();
             return adminGenModel;
         }
 
@@ -384,18 +330,12 @@ namespace DocSearchAIO.DocSearch.Services
                     .WhenAll();
 
             static RunnableStatistic
-                ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn) =>
-                new()
-                {
-                    Id = doc.Id,
-                    EndJob = doc.EndJob,
-                    StartJob = doc.StartJob,
-                    ProcessingError = doc.ProcessingError,
-                    ElapsedTimeMillis = doc.ElapsedTimeMillis,
-                    EntireDocCount = doc.EntireDocCount,
-                    IndexedDocCount = doc.IndexedDocCount,
-                    CacheEntry = fn.Invoke().CacheEntry()
-                };
+                ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn)
+            {
+                RunnableStatistic ret = doc;
+                ret.CacheEntry = fn.Invoke().CacheEntry();
+                return ret;
+            }
 
             static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
                 ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
@@ -435,18 +375,7 @@ namespace DocSearchAIO.DocSearch.Services
                 Dictionary<string, RunnableStatistic> runtimeStatistic) =>
                 new()
                 {
-                    IndexStatisticModels = indexStatsResponses.Select(index => new IndexStatisticModel
-                    {
-                        IndexName = index.Indices.First().Key,
-                        DocCount = index.Stats.Total.Documents.Count,
-                        SizeInBytes = index.Stats.Total.Store.SizeInBytes,
-                        FetchTimeMs = index.Stats.Total.Search.FetchTimeInMilliseconds,
-                        FetchTotal = index.Stats.Total.Search.FetchTotal,
-                        QueryTimeMs = index.Stats.Total.Search.QueryTimeInMilliseconds,
-                        QueryTotal = index.Stats.Total.Search.QueryTotal,
-                        SuggestTimeMs = index.Stats.Total.Search.SuggestTimeInMilliseconds,
-                        SuggestTotal = index.Stats.Total.Search.SuggestTotal
-                    }),
+                    IndexStatisticModels = indexStatsResponses.Select(index => (IndexStatisticModel) index),
                     RuntimeStatistics = runtimeStatistic
                 };
 
@@ -462,15 +391,9 @@ namespace DocSearchAIO.DocSearch.Services
                         SchedulerName = scheduler.SchedulerName,
                         Triggers = scheduler.TriggerElements.Select(trigger =>
                         {
-                            var triggerModel = new AdministrationActionTriggerModel
-                            {
-                                TriggerName = trigger.TriggerName,
-                                GroupName = trigger.GroupName,
-                                JobName = trigger.JobName,
-                                CurrentState = trigger.TriggerState,
-                                JobState = jobStateOpt.Unwrap(JobState.Undefined)
-                            };
-                            return triggerModel;
+                            AdministrationActionTriggerModel triggerElement = trigger;
+                            triggerElement.JobState = jobStateOpt.Unwrap(JobState.Undefined);
+                            return triggerElement;
                         })
                     };
                 };

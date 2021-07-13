@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using DocSearchAIO.Classes;
+using DocSearchAIO.Utilities;
+using Nest;
 
 namespace DocSearchAIO.DocSearch.TOs
 {
@@ -12,5 +15,13 @@ namespace DocSearchAIO.DocSearch.TOs
         public string Id { get; set; } = string.Empty;
         public string AbsoluteUrl { get; set; } = string.Empty;
         public string DocumentType { get; set; } = string.Empty;
+
+        public static implicit operator DoSearchResultContainer(ElasticDocument document) => new()
+        {
+            AbsoluteUrl = document.OriginalFilePath,
+            DocumentType = document.ContentType,
+            Id = document.Id,
+            RelativeUrl = document.UriFilePath
+        };
     }
 }
