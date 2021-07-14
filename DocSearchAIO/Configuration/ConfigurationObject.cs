@@ -21,10 +21,10 @@ namespace DocSearchAIO.Configuration
         [JsonProperty("uriReplacement")] public string UriReplacement { get; set; } = "";
 
         [JsonProperty("processing")]
-        public Dictionary<string, SchedulerEntry> Processing { get; set; } = new Dictionary<string, SchedulerEntry>();
+        public Dictionary<string, SchedulerEntry> Processing { get; set; } = new();
 
         [JsonProperty("cleanup")]
-        public Dictionary<string, CleanUpEntry> Cleanup { get; set; } = new Dictionary<string, CleanUpEntry>();
+        public Dictionary<string, CleanUpEntry> Cleanup { get; set; } = new();
 
         [JsonProperty("schedulerGroupName")] public string SchedulerGroupName { get; set; } = "";
 

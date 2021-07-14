@@ -48,13 +48,15 @@ namespace DocSearchAIO.DocSearch.Services
                             source.Id = hit.Id;
                             return source;
                         },
-                        () => new DocumentDetailModel()
+                        () => new DocumentDetailModel(string.Empty, string.Empty, string.Empty, string.Empty,
+                            string.Empty, string.Empty, string.Empty, string.Empty, string.Empty)
                     );
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, "An error occured");
-                return new DocumentDetailModel();
+                return new DocumentDetailModel(string.Empty, string.Empty, string.Empty, string.Empty,
+                    string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
             }
         }
     }

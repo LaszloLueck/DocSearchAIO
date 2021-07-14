@@ -1,8 +1,5 @@
 namespace DocSearchAIO.DocSearch.TOs
 {
-    public class DocumentDetailRequest
-    {
-        public string Id { get; set; } = string.Empty;
-        
-    }
+    public record DocumentDetailRequest(string Id);
+
 }

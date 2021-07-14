@@ -23,22 +23,18 @@ namespace DocSearchAIO.DocSearch.Services
         {
             var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync("officedocuments-*");
             var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
-
-            var returnValue = new InitResponseObject();
             var enumerable = indices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-            returnValue.FilterWord = enumerable.Contains("officedocuments-word") && initRequest.FilterWord;
-            returnValue.FilterExcel = enumerable.Contains("officedocuments-excel") && initRequest.FilterExcel;
-            returnValue.FilterPowerpoint =
-                enumerable.Contains("officedocuments-powerpoint") && initRequest.FilterPowerpoint;
-            returnValue.FilterPdf = enumerable.Contains("officedocuments-pdf") && initRequest.FilterPdf;
-            returnValue.WordFilterActive = enumerable.Contains("officedocuments-word");
-            returnValue.ExcelFilterActive = enumerable.Contains("officedocuments-excel");
-            returnValue.PowerpointFilterActive = enumerable.Contains("officedocuments-powerpoint");
-            returnValue.PdfFilterActive = enumerable.Contains("officedocuments-pdf");
-            
-            returnValue.ItemsPerPage = initRequest.ItemsPerPage;
-
-            return returnValue;
+            return new InitResponseObject(
+                enumerable.Contains("officedocuments-excel") && initRequest.FilterExcel,
+                enumerable.Contains("officedocuments-word") && initRequest.FilterWord,
+                enumerable.Contains("officedocuments-powerpoint") && initRequest.FilterPowerpoint,
+                enumerable.Contains("officedocuments-pdf") && initRequest.FilterPdf,
+                initRequest.ItemsPerPage,
+                enumerable.Contains("officedocuments-word"),
+                enumerable.Contains("officedocuments-excel"),
+                enumerable.Contains("officedocuments-powerpoint"),
+                enumerable.Contains("officedocuments-pdf")
+            );
         }
     }
 }

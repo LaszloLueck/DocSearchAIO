@@ -28,19 +28,19 @@ namespace DocSearchAIO.DocSearch.Services
         }
 
         private static readonly Func<IScheduler, SchedulerStatistics> StatisticsObject = scheduler =>
-            new SchedulerStatistics
-            {
-                SchedulerName = scheduler.SchedulerName,
-                SchedulerInstanceId = scheduler.SchedulerInstanceId,
-                State = scheduler.IsStarted ? "Gestartet" :
-                    scheduler.IsShutdown ? "Heruntergefahren" :
-                    scheduler.InStandbyMode ? "Pausiert" : "Unbekannt"
-            };
+            new SchedulerStatistics(scheduler.SchedulerName, scheduler.SchedulerInstanceId, scheduler.IsStarted
+                ? "Gestartet"
+                : scheduler.IsShutdown
+                    ? "Heruntergefahren"
+                    : scheduler.InStandbyMode
+                        ? "Pausiert"
+                        : "Unbekannt");
 
         private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
             configurationObject =>
             {
-                var processing = configurationObject.Processing.SelectKv((_, value) => (value.TriggerName, value.Active));
+                var processing =
+                    configurationObject.Processing.SelectKv((_, value) => (value.TriggerName, value.Active));
                 var cleanup = configurationObject.Cleanup.SelectKv((_, value) => (value.TriggerName, value.Active));
                 return processing.Concat(cleanup);
             };
@@ -52,23 +52,18 @@ namespace DocSearchAIO.DocSearch.Services
             {
                 var triggerState = await scheduler.GetTriggerState(trigger);
                 var trg = await scheduler.GetTrigger(trigger);
-                var tResult = new SchedulerTriggerStatisticElement
-                {
-                    ProcessingState = tuples
+                return new SchedulerTriggerStatisticElement(
+                    trigger.Name, trigger.Group, trg.ResolveNullable(DateTime.Now,
+                        (v, a) => v.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
+                    trg.ResolveNullable(DateTime.Now, (v, _) => v.StartTimeUtc.LocalDateTime),
+                    trg.ResolveNullable(DateTime.Now,
+                        (v, a) => v.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a), triggerState.ToString(),
+                    trg.ResolveNullable(string.Empty, (v, a) => v.Description ?? a), tuples
                         .Where(r => r.TriggerName == trigger.Name)
                         .Select(d => d.Active)
                         .TryFirst()
-                        .Unwrap(),
-                    TriggerName = trigger.Name,
-                    GroupName = trigger.Group,
-                    TriggerState = triggerState.ToString(),
-                    NextFireTime = trg.ResolveNullable(DateTime.Now, (v, a) => v.GetNextFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
-                    Description = trg.ResolveNullable(string.Empty, (v, a) => v.Description ?? a),
-                    StartTime = trg.ResolveNullable(DateTime.Now, (v, _) => v.StartTimeUtc.LocalDateTime),
-                    LastFireTime = trg.ResolveNullable(DateTime.Now, (v, a) => v.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a),
-                    JobName = trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
-                };
-                return tResult;
+                        .Unwrap(), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
+                );
             };
 
         private static readonly Func<IScheduler, TypedGroupNameString, Task<IReadOnlyCollection<TriggerKey>>>
@@ -104,7 +99,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                                 return statistics;
                             },
-                            () => Task.Run(() => new SchedulerStatistics()));
+                            () => Task.Run(() => new SchedulerStatistics("", "", "")));
 
                     return await t;
                 };

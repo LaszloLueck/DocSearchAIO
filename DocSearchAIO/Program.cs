@@ -10,7 +10,7 @@ namespace DocSearchAIO
     public class Program
     {
         public static Dictionary<string, string> ArrayDict =
-            new Dictionary<string, string>
+            new()
             {
                 {"array:entries:0", "value0"},
                 {"array:entries:1", "value1"},

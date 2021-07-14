@@ -2,21 +2,17 @@
 
 namespace DocSearchAIO.DocSearch.TOs
 {
-    public class InitRequest
-    {
+    public record InitRequest(
         [JsonProperty("filterExcel", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
-        public bool FilterExcel { get; set; }
-        
+        bool FilterExcel,
         [JsonProperty("filterWord", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
-        public bool FilterWord { get; set; }
-        
-        [JsonProperty("filterPowerpoint", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
-        public bool FilterPowerpoint { get; set; }
-        
+        bool FilterWord,
+        [JsonProperty("filterPowerpoint", ItemConverterType = typeof(bool),
+            NullValueHandling = NullValueHandling.Ignore)]
+        bool FilterPowerpoint,
         [JsonProperty("filterPdf", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
-        public bool FilterPdf { get; set; }
-
+        bool FilterPdf,
         [JsonProperty("itemsPerPage", ItemConverterType = typeof(int), NullValueHandling = NullValueHandling.Ignore)]
-        public int ItemsPerPage { get; set; } = 20;
-    }
+        int ItemsPerPage = 20
+    );
 }

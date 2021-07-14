@@ -101,24 +101,11 @@ namespace DocSearchAIO.DocSearch.Services
                 _logger.LogInformation("find {ResultTotal} documents in {ElapsedTimeMs} ms", result.Total,
                     sw.ElapsedMilliseconds);
 
-                var paginationResult = new DoSearchResult
-                {
-                    DocCount = result.Total,
-                    SearchPhrase = searchPhrase,
-                    CurrentPage = from,
-                    CurrentPageSize = size
-                };
-
-                var outResponse = new DoSearchResponse();
+                var paginationResult = new DoSearchResult(from, size, result.Total, searchPhrase);
 
                 var pagination = await _viewToStringRenderer.Render("PaginationPartial", paginationResult);
-                outResponse.SearchPhrase = searchPhrase;
-                outResponse.Pagination = pagination;
-
-                var statisticsModel = new SearchStatisticsModel
-                    {DocCount = result.Total, SearchTime = sw.ElapsedMilliseconds};
+                var statisticsModel = new SearchStatisticsModel(sw.ElapsedMilliseconds, result.Total);
                 var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
-                outResponse.Statistics = statisticResponse;
 
                 var retCol = result.Hits.Select(hit =>
                 {
@@ -155,11 +142,7 @@ namespace DocSearchAIO.DocSearch.Services
                     }
 
                     var grouped = highlightContent.Concat(highlightComments).GroupBy(item => item.Item1).Select(o =>
-                        new ContentTypeAndValues
-                        {
-                            ContentType = o.Key,
-                            ContentValues = o.Select(s => s.Item2)
-                        });
+                        new ContentTypeAndValues(o.Key, o.Select(s => s.Item2)));
 
                     DoSearchResultContainer container = hit.Source;
                     container.SearchBody = grouped;
@@ -168,16 +151,15 @@ namespace DocSearchAIO.DocSearch.Services
                     return container;
                 });
 
-                outResponse.Title = $"Doc.Search - Ihre Suche nach {searchPhrase}";
+                var title = $"Doc.Search - Ihre Suche nach {searchPhrase}";
 
                 var searchResults = await _viewToStringRenderer.Render("SearchResultsPartial", retCol);
-                outResponse.SearchResults = searchResults;
-                return outResponse;
+                return new DoSearchResponse(pagination, searchResults, title, searchPhrase, statisticResponse);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occured");
-                return new DoSearchResponse();
+                return new DoSearchResponse("", "", "", "", "");
             }
         }
     }

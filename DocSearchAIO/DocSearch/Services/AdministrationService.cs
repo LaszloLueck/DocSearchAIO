@@ -348,55 +348,46 @@ namespace DocSearchAIO.DocSearch.Services
                 JobStateMemoryCacheProxy
                     .AsIEnumerable(loggerFactory, memoryCache);
 
-            var runtimeStatistic = new Dictionary<string, RunnableStatistic>();
             var jobStateMemoryCaches = JobStateMemoryCaches(_loggerFactory, _memoryCache);
-
-            StatisticUtilities(_loggerFactory, _configurationObject)
-                .ForEach((processorBase, statisticModel) =>
+            var runtimeStatistic = StatisticUtilities(_loggerFactory, _configurationObject)
+                .SelectKv((processorBase, statisticModel) =>
                 {
-                    statisticModel
+                    return statisticModel
                         .Invoke()
                         .LatestJobStatisticByModel()
                         .Map(doc =>
                         {
-                            jobStateMemoryCaches
-                                .Where(d => d.Key.DerivedModelName ==
-                                            processorBase.DerivedModelName)
+                            return jobStateMemoryCaches
+                                .Where(d => d.Key.DerivedModelName == processorBase.DerivedModelName)
                                 .TryFirst()
-                                .Map(jobState =>
-                                {
-                                    runtimeStatistic.Add(processorBase.ShortName,
-                                        ConvertToRunnableStatistic(doc, jobState.Value));
-                                });
+                                .Map(jobState => KeyValuePair.Create(processorBase.ShortName,
+                                    ConvertToRunnableStatistic(doc, jobState.Value)));
                         });
-                });
+                })
+                .Values()
+                .Values()
+                .ToDictionary();
 
             static IndexStatistic ResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
                 Dictionary<string, RunnableStatistic> runtimeStatistic) =>
-                new()
-                {
-                    IndexStatisticModels = indexStatsResponses.Select(index => (IndexStatisticModel) index),
-                    RuntimeStatistics = runtimeStatistic
-                };
+                new(indexStatsResponses.Select(index => (IndexStatisticModel) index), runtimeStatistic);
 
             return ResponseModel(indexStatsResponses, runtimeStatistic);
         }
 
+        private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Maybe<JobState>,
+            IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =
+            (triggerElements, jobStateOpt) => triggerElements.Select(trigger =>
+            {
+                AdministrationActionTriggerModel triggerElement = trigger;
+                triggerElement.JobState = jobStateOpt.Unwrap(JobState.Undefined);
+                return triggerElement;
+            });
+
         private static readonly Func<SchedulerStatistics, Maybe<JobState>, AdministrationActionSchedulerModel>
             ConvertToActionModel =
-                (scheduler, jobStateOpt) =>
-                {
-                    return new AdministrationActionSchedulerModel
-                    {
-                        SchedulerName = scheduler.SchedulerName,
-                        Triggers = scheduler.TriggerElements.Select(trigger =>
-                        {
-                            AdministrationActionTriggerModel triggerElement = trigger;
-                            triggerElement.JobState = jobStateOpt.Unwrap(JobState.Undefined);
-                            return triggerElement;
-                        })
-                    };
-                };
+                (scheduler, jobStateOpt) => new AdministrationActionSchedulerModel(scheduler.SchedulerName,
+                    ConvertTriggerElements(scheduler.TriggerElements, jobStateOpt));
 
         private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
             memoryCacheModelProxy => memoryCacheModelProxy

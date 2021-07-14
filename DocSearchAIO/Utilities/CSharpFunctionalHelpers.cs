@@ -64,6 +64,11 @@ namespace DocSearchAIO.Utilities
             if (source.HasValue)
                 processor.Invoke(source.Value);
         }
+
+        // public static Maybe<TOut> Map<TIn, TOut>(this Maybe<TIn> source, Func<TIn, TOut> processor)
+        // {
+        //     return source.HasValue ? Maybe.From(processor.Invoke(source.Value)) : Maybe<TOut>.None;
+        // }
         
         [Pure]
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(

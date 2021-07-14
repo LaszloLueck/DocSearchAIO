@@ -26,14 +26,8 @@ namespace DocSearchAIO.DocSearch.Services
             };
 
             var returnFileName = HttpUtility.UrlEncode(Path.GetFileName(path));
-            
-            var downloadFileResponse = new DownloadFileResponse
-            {
-                ReturnFileName = returnFileName,
-                DownloadFileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096),
-                ContentType = ContentType(documentType)
-            };
-            return downloadFileResponse;
+            var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, bufferSize: 4096);
+            return new DownloadFileResponse(fs, returnFileName, ContentType(documentType));
         }
         
     }
