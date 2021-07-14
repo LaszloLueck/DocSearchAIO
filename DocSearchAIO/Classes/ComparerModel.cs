@@ -89,12 +89,7 @@ namespace DocSearchAIO.Classes
                         .IfTrueFalse(
                             () =>
                             {
-                                var innerDoc = new ComparerObject
-                                {
-                                    DocumentHash = contentHash,
-                                    PathHash = pathHash,
-                                    OriginalPath = originalFilePath
-                                };
+                                var innerDoc = new ComparerObject(pathHash, contentHash, originalFilePath);
                                 _comparerObjects.AddOrUpdate(pathHash, innerDoc, (_, _) => innerDoc);
                                 return Maybe<TModel>.From(doc);
                             },
@@ -104,10 +99,10 @@ namespace DocSearchAIO.Classes
 
                                 if (comparerObject.DocumentHash == contentHash)
                                     return Maybe<TModel>.None;
-
-                                comparerObject.DocumentHash = contentHash;
-                                _comparerObjects.AddOrUpdate(pathHash, comparerObject,
-                                    (_, _) => comparerObject);
+                                var comparerObjectCopy = new ComparerObject(comparerObject.PathHash, contentHash,
+                                    comparerObject.OriginalPath);
+                                _comparerObjects.AddOrUpdate(pathHash, comparerObjectCopy,
+                                    (_, _) => comparerObjectCopy);
                                 return Maybe<TModel>.From(doc);
                             });
                 });

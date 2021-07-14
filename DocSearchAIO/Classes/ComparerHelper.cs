@@ -30,8 +30,7 @@ namespace DocSearchAIO.Classes
         {
             var spl = line.Split(";");
             if (spl.Length != 3) return Maybe<ComparerObject>.None;
-            var cpo = new ComparerObject
-                {DocumentHash = spl[0], PathHash = spl[1], OriginalPath = spl[2]};
+            var cpo = new ComparerObject(spl[1], spl[0], spl[2]);
             return cpo;
         };
 

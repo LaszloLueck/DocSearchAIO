@@ -10,6 +10,5 @@ namespace DocSearchAIO.Classes
         [Date(Name = "date")] public DateTime Date { get; set; }
         [Text(Name = "id")] public string Id { get; set; } = string.Empty;
         [Text(Name = "initials")] public string Initials { get; set; } = string.Empty;
-
     }
 }

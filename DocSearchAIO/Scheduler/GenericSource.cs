@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace DocSearchAIO.Scheduler
+﻿namespace DocSearchAIO.Scheduler
 {
     public abstract class GenericSource
     {
@@ -31,23 +29,6 @@ namespace DocSearchAIO.Scheduler
         }
     }
 
-    public class GenericSourceNullable<T> : GenericSource where T : struct
-    {
-
-        private readonly T? _value;
-
-        public GenericSourceNullable([AllowNull] T? value)
-        {
-            _value = value;
-        }
-
-        public T ValueOrDefault(T alternative)
-        {
-            return _value.GetValueOrDefault(alternative);
-        }
-        
-    }
-    
     public class TypedGroupNameString : GenericSourceString
     {
         public TypedGroupNameString(string value) : base(value)
