@@ -72,7 +72,7 @@ namespace DocSearchAIO.Scheduler
                 var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
                 configEntry
                     .Active
-                    .IfTrueFalse(
+                    .ProcessState(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
@@ -94,7 +94,7 @@ namespace DocSearchAIO.Scheduler
                             Directory
                                 .Exists(_cfg.ScanPath)
                                 .IfTrueFalse(
-                                    (_cfg.ScanPath, _cfg.ScanPath),
+                                    _cfg.ScanPath,
                                     scanPath =>
                                     {
                                         _logger.LogWarning(

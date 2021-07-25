@@ -3,6 +3,7 @@ using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Controllers
@@ -15,10 +16,10 @@ namespace DocSearchAIO.Controllers
         private readonly InitService _initService;
         private readonly FileDownloadService _fileDownloadService;
 
-        public InitController(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
+        public InitController(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<InitController>();
-            _initService = new InitService(loggerFactory, elasticSearchService);
+            _initService = new InitService(loggerFactory, elasticSearchService, configuration);
             _fileDownloadService = new FileDownloadService(loggerFactory);
         }
         

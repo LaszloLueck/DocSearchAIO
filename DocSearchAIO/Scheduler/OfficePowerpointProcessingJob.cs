@@ -73,7 +73,7 @@ namespace DocSearchAIO.Scheduler
 
                 configEntry
                     .Active
-                    .IfTrueFalse(
+                    .ProcessState(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
@@ -94,7 +94,7 @@ namespace DocSearchAIO.Scheduler
 
                             Directory
                                 .Exists(_cfg.ScanPath)
-                                .IfTrueFalse((_cfg.ScanPath, _cfg.ScanPath),
+                                .IfTrueFalse(_cfg.ScanPath,
                                     scanPath =>
                                     {
                                         _logger.LogWarning(

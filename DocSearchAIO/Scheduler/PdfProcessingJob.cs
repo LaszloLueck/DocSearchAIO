@@ -73,7 +73,7 @@ namespace DocSearchAIO.Scheduler
                 
                 configEntry
                     .Active
-                    .IfTrueFalse(
+                    .ProcessState(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
@@ -92,7 +92,7 @@ namespace DocSearchAIO.Scheduler
                             _logger.LogInformation("start crunching and indexing some pdf-files");
                             Directory
                                 .Exists(_cfg.ScanPath)
-                                .IfTrueFalse((_cfg.ScanPath, _cfg.ScanPath),
+                                .IfTrueFalse(_cfg.ScanPath,
                                     scanPath =>
                                     {
                                         _logger.LogWarning(

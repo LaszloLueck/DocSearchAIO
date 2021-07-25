@@ -7,16 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
 {
-    public class MemoryCacheElement
-    {
-        public readonly Func<MemoryCacheModel> Element;
-
-        public MemoryCacheElement(Func<MemoryCacheModel> element)
-        {
-            Element = element;
-        }
-    }
-
     public class MemoryCacheModelProxy
     {
         private readonly ILoggerFactory _loggerFactory;
@@ -28,26 +18,26 @@ namespace DocSearchAIO.Classes
             _memoryCache = memoryCache;
         }
 
-        public IEnumerable<KeyValuePair<string, MemoryCacheElement>> GetModels()
+        public IEnumerable<Tuple<string, Func<MemoryCacheModel>>> GetModels()
         {
-            return new[]
+            return new List<Tuple<string, Func<MemoryCacheModel>>>
             {
-                KeyValuePair.Create("wordProcessingJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelWord(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("excelProcessingJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelExcel(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("pdfProcessingJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelPdf(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("powerpointProcessingJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("wordCleanupJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("excelCleanupJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("powerpointCleanupJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache))),
-                KeyValuePair.Create("pdfCleanupJob",
-                    new MemoryCacheElement(() => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache)))
+                Tuple.Create<string, Func<MemoryCacheModel>>("wordProcessingJob",
+                    () => new MemoryCacheModelWord(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("excelProcessingJob",
+                    () => new MemoryCacheModelExcel(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("pdfProcessingJob",
+                    () => new MemoryCacheModelPdf(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("powerpointProcessingJob",
+                    () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("wordCleanupJob",
+                    () => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("excelCleanupJob",
+                    () => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("powerpointCleanupJob",
+                    () => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache)),
+                Tuple.Create<string,  Func<MemoryCacheModel>>("pdfCleanupJob",
+                    () => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache))
             };
         }
     }

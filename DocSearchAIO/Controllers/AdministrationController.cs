@@ -27,7 +27,7 @@ namespace DocSearchAIO.Controllers
             _administrationService =
                 new AdministrationService(loggerFactory, configuration, elasticSearchService, memoryCache);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _optionDialogService = new OptionDialogService(loggerFactory, elasticSearchService);
+            _optionDialogService = new OptionDialogService(loggerFactory, elasticSearchService, configuration);
         }
 
         [Route("setGenericContent")]
@@ -97,6 +97,16 @@ namespace DocSearchAIO.Controllers
             return await _administrationService.TriggerStatusById(triggerStateRequest);
         }
 
+        [Route("getOptionsDialogData")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [HttpPost]
+        public async Task<OptionDialogResponse> OptionDialogData(OptionDialogRequest optionDialogRequest)
+        {
+            _logger.LogInformation("method getOptionsDialogData called!");
+            return await _optionDialogService.OptionDialog(optionDialogRequest);
+        }
+        
+
         [Route("getOptionsDialog")]
         [Consumes(MediaTypeNames.Application.Json)]
         [HttpPost]
@@ -107,9 +117,16 @@ namespace DocSearchAIO.Controllers
             var responseModel = new TypedPartialViewResponse<OptionDialogResponse>(dialogResponse);
             return new PartialViewResult
             {
-                ViewName = "ResultPageConfigurationModalPartial",
-                ViewData = responseModel.PartialViewResponseModel()
+                ViewName = "ResultPageConfigurationModalPartial", ViewData = responseModel.PartialViewResponseModel()
             };
+        }
+
+        [Route("getGenericContentData")]
+        [HttpGet]
+        public AdministrationGenericRequest GenericContentData()
+        {
+            _logger.LogInformation("method getGenericContentData called");
+            return _administrationService.GenericContent();
         }
 
         [Route("getGenericContent")]

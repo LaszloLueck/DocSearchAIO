@@ -43,19 +43,30 @@ namespace DocSearchAIO.Utilities
             if (!source.ContainsKey(comparer)) return;
             action.Invoke(comparer, source[comparer]);
         }
-
-        public static void IfTrueFalse<TInputLeft, TInputRight>(this bool value, (TInputLeft, TInputRight) parameters,
-            Action<TInputLeft> falseAction,
-            Action<TInputRight> trueAction)
+        
+        public static void ProcessState(this bool value, Action falseAction, Action trueAction)
         {
-            var (inputLeft, inputRight) = parameters;
             if (value)
             {
-                trueAction.Invoke(inputRight);
+                trueAction.Invoke();
             }
             else
             {
-                falseAction.Invoke(inputLeft);
+                falseAction.Invoke();
+            }
+        }
+
+        public static void IfTrueFalse<TInput>(this bool value, TInput parameter,
+            Action<TInput> falseAction,
+            Action<TInput> trueAction)
+        {
+            if (value)
+            {
+                trueAction.Invoke(parameter);
+            }
+            else
+            {
+                falseAction.Invoke(parameter);
             }
         }
 
@@ -91,6 +102,11 @@ namespace DocSearchAIO.Utilities
         [Pure]
         public static IEnumerable<TOut> SelectKv<TKey, TValue, TOut>([NotNull] this IEnumerable<KeyValuePair<TKey, TValue>> dic,
             [NotNull] Func<TKey, TValue, TOut> action) => dic.Select(kv => action.Invoke(kv.Key, kv.Value));
+
+        [Pure]
+        public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
+            [NotNull] this IEnumerable<Tuple<TKey, TValue>> source, [NotNull] Func<TKey, TValue, TOut> action) =>
+            source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
         
         [Pure]
         public static IEnumerable<KeyValuePair<TKey, TValue>> Where<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<TKey, TValue>> source,

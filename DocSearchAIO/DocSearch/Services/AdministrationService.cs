@@ -337,20 +337,20 @@ namespace DocSearchAIO.DocSearch.Services
                 return ret;
             }
 
-            static IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
+            static IEnumerable<Tuple<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
                 ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
                 StatisticUtilitiesProxy
                     .AsIEnumerable(loggerFactory,
                         new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
 
-            static IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>> JobStateMemoryCaches(
+            static IEnumerable<Tuple<ProcessorBase, Func<MemoryCacheModel>>> JobStateMemoryCaches(
                 ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
                 JobStateMemoryCacheProxy
                     .AsIEnumerable(loggerFactory, memoryCache);
 
             var jobStateMemoryCaches = JobStateMemoryCaches(_loggerFactory, _memoryCache);
             var runtimeStatistic = StatisticUtilities(_loggerFactory, _configurationObject)
-                .SelectKv((processorBase, statisticModel) =>
+                .SelectTuple((processorBase, statisticModel) =>
                 {
                     return statisticModel
                         .Invoke()
@@ -358,10 +358,10 @@ namespace DocSearchAIO.DocSearch.Services
                         .Map(doc =>
                         {
                             return jobStateMemoryCaches
-                                .Where(d => d.Key.DerivedModelName == processorBase.DerivedModelName)
+                                .Where(d => d.Item1.DerivedModelName == processorBase.DerivedModelName)
                                 .TryFirst()
                                 .Map(jobState => KeyValuePair.Create(processorBase.ShortName,
-                                    ConvertToRunnableStatistic(doc, jobState.Value)));
+                                    ConvertToRunnableStatistic(doc, jobState.Item2)));
                         });
                 })
                 .Values()
@@ -392,8 +392,7 @@ namespace DocSearchAIO.DocSearch.Services
         private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
             memoryCacheModelProxy => memoryCacheModelProxy
                 .GetModels()
-                .SelectKv((key, value) => value
-                    .Element
+                .SelectTuple((key, value) => value
                     .Invoke()
                     .CacheEntry()
                     .Match(

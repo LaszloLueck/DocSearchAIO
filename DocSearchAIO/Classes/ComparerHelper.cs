@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace DocSearchAIO.Classes
             return Source.From(ieNumerable);
         }
 
+        [NotNull]
         private static readonly Func<string, Maybe<ComparerObject>> ConvertLine = line =>
         {
             var spl = line.Split(";");

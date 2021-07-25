@@ -11,21 +11,21 @@ namespace DocSearchAIO.Scheduler
     public static class StatisticUtilitiesProxy
     {
         public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
-                IEnumerable<KeyValuePair<ProcessorBase, Func<StatisticModel>>>>
+                IEnumerable<Tuple<ProcessorBase, Func<StatisticModel>>>>
             AsIEnumerable = (loggerFactory, statisticsPath) =>
             {
                 return new[]
                 {
-                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                    Tuple.Create<ProcessorBase, Func<StatisticModel>>(
                         new ProcessorBaseWord(),
                         () => new StatisticModelWord(loggerFactory, statisticsPath)),
-                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                    Tuple.Create<ProcessorBase, Func<StatisticModel>>(
                         new ProcessorBasePowerpoint(),
                         () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)),
-                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(
+                    Tuple.Create<ProcessorBase, Func<StatisticModel>>(
                         new ProcessorBasePdf(),
                         () => new StatisticModelPdf(loggerFactory, statisticsPath)),
-                    KeyValuePair.Create<ProcessorBase, Func<StatisticModel>>(new ProcessorBaseExcel(),
+                    Tuple.Create<ProcessorBase, Func<StatisticModel>>(new ProcessorBaseExcel(),
                         () => new StatisticModelExcel(loggerFactory, statisticsPath))
                 };
             };

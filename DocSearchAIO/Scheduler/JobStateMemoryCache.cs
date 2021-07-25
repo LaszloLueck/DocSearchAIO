@@ -10,21 +10,21 @@ namespace DocSearchAIO.Scheduler
     public static class JobStateMemoryCacheProxy
     {
         public static readonly Func<ILoggerFactory, IMemoryCache,
-                IEnumerable<KeyValuePair<ProcessorBase, Func<MemoryCacheModel>>>>
+                IEnumerable<Tuple<ProcessorBase, Func<MemoryCacheModel>>>>
             AsIEnumerable = (loggerFactory, memoryCache) =>
             {
                 return new[]
                 {
-                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
                         new ProcessorBaseWord(),
                         () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
-                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
                         new ProcessorBasePowerpoint(),
                         () => new MemoryCacheModelPowerpoint(loggerFactory, memoryCache)),
-                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
                         new ProcessorBasePdf(),
                         () => new MemoryCacheModelPdf(loggerFactory, memoryCache)),
-                    KeyValuePair.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseExcel(),
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseExcel(),
                         () => new MemoryCacheModelExcel(loggerFactory, memoryCache))
                 };
             };

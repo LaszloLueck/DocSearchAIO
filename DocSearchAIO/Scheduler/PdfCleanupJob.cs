@@ -44,7 +44,7 @@ namespace DocSearchAIO.Scheduler
                 _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                 _cleanUpEntry
                     .Active
-                    .IfTrueFalse(
+                    .ProcessState(
                         async () =>
                         {
                             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,

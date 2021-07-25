@@ -36,8 +36,6 @@ namespace DocSearchAIO.Scheduler
         public static readonly Func<TypedMd5InputString, Task<TypedMd5String>> CreateMd5HashString =
             async stringValue =>
             {
-                return await Task.Run(async () =>
-                {
                     using var md5 = MD5.Create();
                     await using var ms = new MemoryStream();
                     await using var wt = new StreamWriter(ms);
@@ -45,8 +43,12 @@ namespace DocSearchAIO.Scheduler
                     await wt.FlushAsync();
                     ms.Position = 0;
                     return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
-                });
             };
+
+        public static readonly Func<ConfigurationObject, string[], string, bool>
+            GetIndexKeyExpressionFromConfiguration =
+                (configurationObject, indexNames, configurationKey) => configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
+                    $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
             keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
@@ -113,7 +115,7 @@ namespace DocSearchAIO.Scheduler
                     .Distinct()
                     .ToList();
             };
-
+        
         private static readonly Func<IEnumerable<string>, IEnumerable<OfficeDocumentComment>, IEnumerable<string>>
             BuildHashList =
                 (listElementsToHash, commentsArray) =>
@@ -186,7 +188,7 @@ namespace DocSearchAIO.Scheduler
                     case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
                         sb.Append(' ');
                         ExtractTextFromElement(element.ChildElements, sb);
-                        sb!.Append(' ');
+                        sb.Append(' ');
                         break;
                     case DocumentFormat.OpenXml.Wordprocessing.Text {HasChildren: false} wText:
                         if (wText.Text.Any())
