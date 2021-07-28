@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -37,6 +38,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
+        private readonly MD5 _md5;
 
         public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -55,6 +57,7 @@ namespace DocSearchAIO.Scheduler
             _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
+            _md5 = MD5.Create();
         }
 
 
@@ -116,7 +119,7 @@ namespace DocSearchAIO.Scheduler
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                                    _logger)
+                                                    _logger, _md5)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -158,15 +161,15 @@ namespace DocSearchAIO.Scheduler
     {
         public static Source<Maybe<ExcelElasticDocument>, NotUsed> ProcessExcelDocumentAsync(
             this Source<string, NotUsed> source, SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger)
+            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger, MD5 md5)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
+                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger, md5));
         }
 
         private static async Task<Maybe<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelExcel> statisticUtilities,
-            ILogger logger)
+            ILogger logger, MD5 md5)
         {
             try
             {
@@ -197,7 +200,7 @@ namespace DocSearchAIO.Scheduler
                             .Replace(@"\", "/");
 
                         var id = await StaticHelpers.CreateMd5HashString(
-                            new TypedMd5InputString(currentFile));
+                            new TypedMd5InputString(currentFile), md5);
 
                         static IEnumerable<OfficeDocumentComment>
                             CommentArray(WorkbookPart workbookPart) =>
@@ -218,7 +221,7 @@ namespace DocSearchAIO.Scheduler
                             StaticHelpers.ListElementsToHash(category, created, contentString, creator,
                                 description, identifier, keywords, language, modified, revision,
                                 subject, title, version, contentStatus, contentType, lastPrinted,
-                                lastModifiedBy), commentsArray).ContentHashString();
+                                lastModifiedBy), commentsArray).ContentHashString(md5);
 
                         var completionField = commentsArray
                             .StringFromCommentsArray()

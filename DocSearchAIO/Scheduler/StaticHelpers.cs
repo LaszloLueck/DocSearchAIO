@@ -35,12 +35,10 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
-        private static readonly MD5 Md5 = MD5.Create();
-        
-        public static readonly Func<TypedMd5InputString, Task<TypedMd5String>> CreateMd5HashString =
-            async stringValue =>
+        public static readonly Func<TypedMd5InputString, MD5, Task<TypedMd5String>> CreateMd5HashString =
+            async (stringValue, md5) =>
             {
-                var res1 = await Md5.ComputeHashAsync(new MemoryStream(Encoding.UTF8.GetBytes(stringValue.Value)));
+                var res1 = await md5.ComputeHashAsync(new MemoryStream(Encoding.UTF8.GetBytes(stringValue.Value)));
                 return new TypedMd5String(res1.Select(x => x.ToString("x2")).Concat());
             };
 
@@ -132,9 +130,9 @@ namespace DocSearchAIO.Scheduler
 
         [Pure]
         public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
-            IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
+            IEnumerable<OfficeDocumentComment> commentsArray) kv, MD5 md5) =>
             await CreateMd5HashString(
-                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()));
+                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), md5);
 
         [Pure]
         public static List<string> ListElementsToHash(string category, DateTime created,

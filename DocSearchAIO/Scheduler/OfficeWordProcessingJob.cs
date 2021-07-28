@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -36,7 +37,8 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-
+        private readonly MD5 _md5;
+        
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
             IMemoryCache memoryCache)
@@ -54,6 +56,7 @@ namespace DocSearchAIO.Scheduler
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
+            _md5 = MD5.Create();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -116,7 +119,7 @@ namespace DocSearchAIO.Scheduler
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                                    _logger)
+                                                    _logger, _md5)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -160,15 +163,15 @@ namespace DocSearchAIO.Scheduler
         public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger)
+            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger, MD5 md5)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
+                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger, md5));
         }
 
         private static async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
-            ILogger logger)
+            ILogger logger, MD5 md5)
         {
             try
             {
@@ -206,7 +209,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(@"\", "/");
 
                             var id = await StaticHelpers.CreateMd5HashString(
-                                new TypedMd5InputString(currentFile));
+                                new TypedMd5InputString(currentFile), md5);
 
 
                             static OfficeDocumentComment[] CommentArray(
@@ -251,7 +254,7 @@ namespace DocSearchAIO.Scheduler
                                         description, identifier, keywords, language, modified, revision,
                                         subject, title, version, contentStatus, contentType, lastPrinted,
                                         lastModifiedBy), commentsArray)
-                                .ContentHashString();
+                                .ContentHashString(md5);
 
                             var completionField = commentsArray
                                 .StringFromCommentsArray()
