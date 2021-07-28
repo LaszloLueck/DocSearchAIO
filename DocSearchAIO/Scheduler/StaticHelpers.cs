@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
@@ -18,7 +17,10 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Nest;
+using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -33,16 +35,13 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
+        private static readonly MD5 Md5 = MD5.Create();
+        
         public static readonly Func<TypedMd5InputString, Task<TypedMd5String>> CreateMd5HashString =
             async stringValue =>
             {
-                    using var md5 = MD5.Create();
-                    await using var ms = new MemoryStream();
-                    await using var wt = new StreamWriter(ms);
-                    await wt.WriteAsync(stringValue.Value);
-                    await wt.FlushAsync();
-                    ms.Position = 0;
-                    return new TypedMd5String(BitConverter.ToString(await md5.ComputeHashAsync(ms)));
+                var res1 = await Md5.ComputeHashAsync(new MemoryStream(Encoding.UTF8.GetBytes(stringValue.Value)));
+                return new TypedMd5String(res1.Select(x => x.ToString("x2")).Concat());
             };
 
         public static readonly Func<ConfigurationObject, string[], string, bool>
@@ -65,8 +64,11 @@ namespace DocSearchAIO.Scheduler
         }
 
         [Pure]
-        public static string Join([NotNull] this IEnumerable<string> source, [NotNull] string separator) =>
+        public static string Join(this IEnumerable<string> source, string separator) =>
             string.Join(separator, source);
+
+        [Pure]
+        public static string Concat(this IEnumerable<string> source) => string.Concat(source);
 
         [Pure]
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
@@ -132,7 +134,7 @@ namespace DocSearchAIO.Scheduler
         public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
             await CreateMd5HashString(
-                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Join("")));
+                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()));
 
         [Pure]
         public static List<string> ListElementsToHash(string category, DateTime created,
@@ -178,19 +180,19 @@ namespace DocSearchAIO.Scheduler
         }
 
 
-        private static void ExtractTextFromElement([DisallowNull] IEnumerable<OpenXmlElement> list,
-            [DisallowNull] StringBuilder sb)
+        private static void ExtractTextFromElement(IEnumerable<OpenXmlElement> list,
+            StringBuilder sb)
         {
             list.ForEach(element =>
             {
                 switch (element)
                 {
-                    case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
+                    case Paragraph p when p.InnerText.Any():
                         sb.Append(' ');
                         ExtractTextFromElement(element.ChildElements, sb);
                         sb.Append(' ');
                         break;
-                    case DocumentFormat.OpenXml.Wordprocessing.Text {HasChildren: false} wText:
+                    case Text {HasChildren: false} wText:
                         if (wText.Text.Any())
                             sb.Append(wText.Text);
                         break;
@@ -202,7 +204,7 @@ namespace DocSearchAIO.Scheduler
                         if (dText.Text.Any())
                             sb.Append(dText.Text);
                         break;
-                    case DocumentFormat.OpenXml.Presentation.TextBody {HasChildren: false} tText:
+                    case TextBody {HasChildren: false} tText:
                         if (tText.TextFromParagraph().Any())
                             sb.Append(' ' + tText.TextFromParagraph() + ' ');
                         break;
@@ -215,11 +217,11 @@ namespace DocSearchAIO.Scheduler
                         if (pText.Text.Any())
                             sb.Append(pText.Text);
                         break;
-                    case DocumentFormat.OpenXml.Wordprocessing.FieldChar
-                        {FieldCharType: {Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate}}:
+                    case FieldChar
+                        {FieldCharType: {Value: FieldCharValues.Separate}}:
                         sb.Append(' ');
                         break;
-                    case DocumentFormat.OpenXml.Wordprocessing.Break:
+                    case Break:
                         sb.Append(Environment.NewLine);
                         break;
                     default:

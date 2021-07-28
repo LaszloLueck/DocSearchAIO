@@ -229,11 +229,11 @@ namespace DocSearchAIO.Scheduler
 
                     var listElementsToHash = new List<string>
                     {
-                        contentString, elasticDoc.Creator, elasticDoc.Keywords.Join(""),
+                        contentString, elasticDoc.Creator, elasticDoc.Keywords.Concat(),
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.Join("")))).Value;
+                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.Concat()))).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }
