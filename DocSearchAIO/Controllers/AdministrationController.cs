@@ -106,7 +106,6 @@ namespace DocSearchAIO.Controllers
             return await _optionDialogService.OptionDialog(optionDialogRequest);
         }
         
-
         [Route("getOptionsDialog")]
         [Consumes(MediaTypeNames.Application.Json)]
         [HttpPost]
@@ -143,6 +142,15 @@ namespace DocSearchAIO.Controllers
             };
         }
 
+
+        [Route("getSchedulerContentData")]
+        [HttpGet]
+        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerContentData()
+        {
+            _logger.LogInformation("method getSchedulerContentData called");
+            return await _administrationService.SchedulerContent();
+        }
+        
         [Route("getSchedulerContent")]
         [HttpGet]
         public async Task<PartialViewResult> SchedulerContent()
@@ -157,6 +165,13 @@ namespace DocSearchAIO.Controllers
             };
         }
 
+        [Route("getStatisticsContentData")]
+        public async Task<IndexStatistic> StatisticsContentData()
+        {
+            _logger.LogInformation("method getStatisticsContentData called");
+            return await _administrationService.StatisticsContent();
+        }
+        
         [Route("getStatisticsContent")]
         [HttpGet]
         public async Task<PartialViewResult> StatisticsContent()
@@ -169,6 +184,14 @@ namespace DocSearchAIO.Controllers
                 ViewName = "AdministrationStatisticsContentPartial",
                 ViewData = responseModel.PartialViewResponseModel()
             };
+        }
+
+        [Route("getActionContentData")]
+        [HttpGet]
+        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContentData()
+        {
+            _logger.LogInformation("method getActionContentData called");
+            return await _administrationService.ActionContent();
         }
 
         [Route("getActionContent")]

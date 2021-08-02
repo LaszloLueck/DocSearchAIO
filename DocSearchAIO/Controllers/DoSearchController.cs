@@ -45,6 +45,14 @@ namespace DocSearchAIO.Controllers
             return await _searchSuggestService.Suggestions(request.SearchPhrase);
         }
 
+        [Route("documentDetailData")]
+        [HttpPost]
+        public async Task<DocumentDetailModel> DocumentDetailData(DocumentDetailRequest request)
+        {
+            _logger.LogInformation("get document details for {RequestId}", request.Id);
+            return await _documentDetailService.DocumentDetail(request);
+        }
+        
         [Route("documentDetail")]
         [HttpPost]
         public async Task<PartialViewResult> DocumentDetail(DocumentDetailRequest request)

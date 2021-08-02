@@ -75,9 +75,9 @@ namespace DocSearchAIO.Scheduler
         {
             return source.Select(e =>
             {
-                var cntArr = e.ToArray();
-                statisticUtilities.AddToChangedDocuments(cntArr.Length);
-                return cntArr.AsEnumerable();
+                var enumerable = e as TSource[] ?? e.ToArray();
+                statisticUtilities.AddToChangedDocuments(enumerable.Length);
+                return (IEnumerable<TSource>) enumerable;
             });
         }
 
@@ -112,8 +112,7 @@ namespace DocSearchAIO.Scheduler
             {
                 return commentsArray
                     .Select(l => l.Comment.Split(" "))
-                    .Distinct()
-                    .ToList();
+                    .Distinct();
             };
         
         private static readonly Func<IEnumerable<string>, IEnumerable<OfficeDocumentComment>, IEnumerable<string>>
@@ -124,7 +123,8 @@ namespace DocSearchAIO.Scheduler
                         .Concat(
                             CommentsString(commentsArray)
                                 .Where(d => d.Any())
-                                .SelectMany(k => k).Distinct()
+                                .SelectMany(k => k)
+                                .Distinct()
                         );
                 };
 
