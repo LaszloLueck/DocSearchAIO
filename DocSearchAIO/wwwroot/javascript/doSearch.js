@@ -29,9 +29,12 @@ doSearch = (searchText, from) => {
 
             document.title = result.title;
 
+            let pagination = renderPagination(result.documentCount, result.pageSize, result.currentPage, result.searchPhrase);
+            
+            
             $("#pagination")
                 .empty()
-                .append(result.pagination);
+                .append(pagination);
             
             $("#statsContainer")
                 .empty()

@@ -53,18 +53,18 @@ namespace DocSearchAIO.Controllers
             return await _documentDetailService.DocumentDetail(request);
         }
         
-        [Route("documentDetail")]
-        [HttpPost]
-        public async Task<PartialViewResult> DocumentDetail(DocumentDetailRequest request)
-        {
-            _logger.LogInformation("get document details for {RequestId}",request.Id);
-            var documentDetail = await _documentDetailService.DocumentDetail(request);
-            var responseModel = new TypedPartialViewResponse<DocumentDetailModel>(documentDetail);
-            return new PartialViewResult
-            {
-                ViewName = "DocumentDetailModalPartial",
-                ViewData = responseModel.PartialViewResponseModel()
-            };
-        }
+        // [Route("documentDetail")]
+        // [HttpPost]
+        // public async Task<PartialViewResult> DocumentDetail(DocumentDetailRequest request)
+        // {
+        //     _logger.LogInformation("get document details for {RequestId}",request.Id);
+        //     var documentDetail = await _documentDetailService.DocumentDetail(request);
+        //     var responseModel = new TypedPartialViewResponse<DocumentDetailModel>(documentDetail);
+        //     return new PartialViewResult
+        //     {
+        //         ViewName = "DocumentDetailModalPartial",
+        //         ViewData = responseModel.PartialViewResponseModel()
+        //     };
+        // }
     }
 }

@@ -43,18 +43,18 @@ namespace DocSearchAIO.DocSearch.Services
                 var size = doSearchRequest.Size;
                 var searchPhrase = doSearchRequest.SearchPhrase == "" ? "*" : doSearchRequest.SearchPhrase;
                 var query = new SimpleQueryStringQuery();
-                var include = new[] {new Field("comments.comment"), new Field("content")};
+                var include = new[] { new Field("comments.comment"), new Field("content") };
                 query.Fields = include;
                 query.Query = searchPhrase;
                 query.AnalyzeWildcard = true;
 
                 var highlight = new Highlight
                 {
-                    PreTags = new[] {"[#OO#]"},
-                    PostTags = new[] {"[#CO#]"},
+                    PreTags = new[] { "[#OO#]" },
+                    PostTags = new[] { "[#CO#]" },
                     Fields = new Dictionary<Field, IHighlightField>
                     {
-                        {"content", new HighlightField()}, {"comments.comment", new HighlightField()}
+                        { "content", new HighlightField() }, { "comments.comment", new HighlightField() }
                     },
                     Fragmenter = HighlighterFragmenter.Span,
                     FragmentSize = 500,
@@ -62,7 +62,7 @@ namespace DocSearchAIO.DocSearch.Services
                     Encoder = HighlighterEncoder.Html
                 };
 
-                var io = new[] {new Field("completionContent")};
+                var io = new[] { new Field("completionContent") };
 
                 var indicesResponse =
                     await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
@@ -71,13 +71,17 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var selectedIndices = new List<string>();
                 var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(WordElasticDocument)) && doSearchRequest.FilterWord)
+                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(WordElasticDocument)) &&
+                    doSearchRequest.FilterWord)
                     selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(WordElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(ExcelElasticDocument)) && doSearchRequest.FilterExcel)
+                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(ExcelElasticDocument)) &&
+                    doSearchRequest.FilterExcel)
                     selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(ExcelElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PowerpointElasticDocument)) && doSearchRequest.FilterPowerpoint)
+                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PowerpointElasticDocument)) &&
+                    doSearchRequest.FilterPowerpoint)
                     selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(PowerpointElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PdfElasticDocument)) && doSearchRequest.FilterPdf)
+                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PdfElasticDocument)) &&
+                    doSearchRequest.FilterPdf)
                     selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(PdfElasticDocument)].IndexSuffix}");
 
                 if (selectedIndices.Count == 4)
@@ -88,7 +92,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var indices = Indices.Index(selectedIndices);
 
-                var f = new SourceFilter {Excludes = io};
+                var f = new SourceFilter { Excludes = io };
 
                 var request = new SearchRequest(indices)
                 {
@@ -103,7 +107,7 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var paginationResult = new DoSearchResult(from, size, result.Total, searchPhrase);
 
-                var pagination = await _viewToStringRenderer.Render("PaginationPartial", paginationResult);
+                //var pagination = await _viewToStringRenderer.Render("PaginationPartial", paginationResult);
                 var statisticsModel = new SearchStatisticsModel(sw.ElapsedMilliseconds, result.Total);
                 var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
 
@@ -154,12 +158,12 @@ namespace DocSearchAIO.DocSearch.Services
                 var title = $"Doc.Search - Ihre Suche nach {searchPhrase}";
 
                 var searchResults = await _viewToStringRenderer.Render("SearchResultsPartial", retCol);
-                return new DoSearchResponse(pagination, searchResults, title, searchPhrase, statisticResponse);
+                return new DoSearchResponse(searchResults, title, searchPhrase, result.Total, size, from, statisticResponse);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occured");
-                return new DoSearchResponse("", "", "", "", "");
+                return new DoSearchResponse("", "", "", 0, 0, 0, "");
             }
         }
     }
