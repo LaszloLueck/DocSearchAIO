@@ -64,6 +64,14 @@
       <_ContentIncludedByDefault Remove="config\config_20210615234617.json" />
       <_ContentIncludedByDefault Remove="config\config_20210615234841.json" />
       <_ContentIncludedByDefault Remove="config\config_20210615234846.json" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\actionModal.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\adminModal.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\documentDetail.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\doSearch.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\genericModal.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\init.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\optionDialog.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\javascript\pagination.js" />
     </ItemGroup>
 
     <ItemGroup>

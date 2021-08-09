@@ -106,10 +106,7 @@ namespace DocSearchAIO.DocSearch.Services
                     sw.ElapsedMilliseconds);
 
                 var paginationResult = new DoSearchResult(from, size, result.Total, searchPhrase);
-
-                //var pagination = await _viewToStringRenderer.Render("PaginationPartial", paginationResult);
                 var statisticsModel = new SearchStatisticsModel(sw.ElapsedMilliseconds, result.Total);
-                var statisticResponse = await _viewToStringRenderer.Render("SearchStatisticsPartial", statisticsModel);
 
                 var retCol = result.Hits.Select(hit =>
                 {
@@ -155,15 +152,12 @@ namespace DocSearchAIO.DocSearch.Services
                     return container;
                 });
 
-                var title = $"Doc.Search - Ihre Suche nach {searchPhrase}";
-
-                var searchResults = await _viewToStringRenderer.Render("SearchResultsPartial", retCol);
-                return new DoSearchResponse(searchResults, title, searchPhrase, result.Total, size, from, statisticResponse);
+                return new DoSearchResponse(retCol, paginationResult, statisticsModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occured");
-                return new DoSearchResponse("", "", "", 0, 0, 0, "");
+                return new DoSearchResponse(Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""), new SearchStatisticsModel(0, 0));
             }
         }
     }

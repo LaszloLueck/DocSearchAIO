@@ -17,28 +17,31 @@ doSearch = (searchText, from) => {
         data: JSON.stringify(data)
     })
         .done(function (result) {
-            $('#searchField').val(result.searchPhrase);
-            if(result.docCount === 0){
-                showAlert("Keine Dokumente mit dem Suchbegriff " + result.searchPhrase + " gefunden!", "alert-warning")
+            $('#searchField').val(result.searchResult.searchPhrase);
+            if(result.searchResult.docCount === 0){
+                showAlert("Keine Dokumente mit dem Suchbegriff " + result.searchResult.searchPhrase + " gefunden!", "alert-warning")
             }
             let searchResults = $('#searchResults');
             $(searchResults).empty();
-            let inner = result.searchResults.replaceAll("[#OO#]", "<b style='color:orange'>").replaceAll("[#CO#]", "</b>");
-
+            //let inner = result.searchResults.replaceAll("[#OO#]", "<b style='color:orange'>").replaceAll("[#CO#]", "</b>");
+            let inner = renderSearchResultDetails(result.searchResults);
+            
             $(searchResults).html(inner);
 
-            document.title = result.title;
+            document.title = 'Doc.Search - Ihre Suche nach ' + result.searchResult.searchPhrase;
 
-            let pagination = renderPagination(result.documentCount, result.pageSize, result.currentPage, result.searchPhrase);
+            let pagination = renderPagination(result.searchResult.docCount, result.searchResult.currentPageSize, result.searchResult.currentPage, result.searchResult.searchPhrase);
             
             
             $("#pagination")
                 .empty()
                 .append(pagination);
             
+            let statistics = renderStatistics(result.statistics.docCount, result.statistics.searchTime);
+            
             $("#statsContainer")
                 .empty()
-                .append(result.statistics);
+                .append(statistics);
 
         })
         .fail(function(){
