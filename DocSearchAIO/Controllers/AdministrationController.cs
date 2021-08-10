@@ -166,6 +166,7 @@ namespace DocSearchAIO.Controllers
         }
 
         [Route("getStatisticsContentData")]
+        [HttpGet]
         public async Task<IndexStatistic> StatisticsContentData()
         {
             _logger.LogInformation("method getStatisticsContentData called");
