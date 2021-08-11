@@ -128,21 +128,6 @@ namespace DocSearchAIO.Controllers
             return _administrationService.GenericContent();
         }
 
-        // [Route("getGenericContent")]
-        // [HttpGet]
-        // public PartialViewResult GenericContent()
-        // {
-        //     _logger.LogInformation("method getGenericContent called");
-        //     var genericContent = _administrationService.GenericContent();
-        //     var responseModel = new TypedPartialViewResponse<AdministrationGenericRequest>(genericContent);
-        //     return new PartialViewResult
-        //     {
-        //         ViewName = "AdministrationGenericContentPartial",
-        //         ViewData = responseModel.PartialViewResponseModel()
-        //     };
-        // }
-
-
         [Route("getSchedulerContentData")]
         [HttpGet]
         public async Task<Dictionary<string, SchedulerStatistics>> SchedulerContentData()
