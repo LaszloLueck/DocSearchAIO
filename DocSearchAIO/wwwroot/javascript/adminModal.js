@@ -26,13 +26,13 @@ switchAdminContent = (element) => {
 
 loadGenericContent = () => {
     $.ajax({
-        url: "/api/administration/getGenericContent",
-        dataType: "html",
+        url: "/api/administration/getGenericContentData",
+        dataType: "json",
         method: "GET",
     })
         .done(function (result) {
             $('#navContainer')
-                .html(result)
+                .html(renderAdminGenericModal(result))
                 .slideDown();
         })
         .fail(function () {
