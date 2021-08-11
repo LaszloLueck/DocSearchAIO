@@ -37,18 +37,7 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method setGenericContent called");
             return await _administrationService.SetAdministrationGenericContent(request);
         }
-
-        [Route("getAdministrationModal")]
-        [HttpGet]
-        public PartialViewResult AdministrationModal()
-        {
-            _logger.LogInformation("method getAdministrationModal called");
-            return new PartialViewResult
-            {
-                ViewName = "AdministrationModalPartial"
-            };
-        }
-
+        
         [Route("getSchedulerStatistics")]
         [HttpGet]
         public async Task<Dictionary<string, SchedulerStatistics>> SchedulerStatistics()

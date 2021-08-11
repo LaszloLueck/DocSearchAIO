@@ -1,5 +1,5 @@
 init = () => {
-    
+
     let data = {
         filterExcel: localStorage.getItem("filterExcel") === 'true',
         filterWord: localStorage.getItem("filterWord") === 'true',
@@ -75,27 +75,17 @@ setAutoCompleteWithCondition = () => {
 }
 
 getAdministrationModal = () => {
-    $.ajax({
-        url: "/api/administration/getAdministrationModal",
-        dataType: "html",
-        "method" : "GET",
-    })
-        .done(function(result){
-            $('#modalContainer').append(result);
-            const element = $('#adminModal');
-            $(element).on('hidden.bs.modal', function () {
-                $(element).remove();
-            });
-            $(element).modal('show');
-            switchAdminContent($('#generalSettings'));
-        })
-        .fail(function(){
-            showAlert("Ein Fehler ist beim abrufen von Daten aufgetreten!", "alert-danger");
-        });
+    $('#modalContainer').append(renderAdminModal());
+    const element = $('#adminModal');
+    $(element).on('hidden.bs.modal', function () {
+        $(element).remove();
+    });
+    $(element).modal('show');
+    switchAdminContent($('#generalSettings'));
 }
 
 showAlert = (alertText, alertType) => {
-    $('body').append('<div style="display: none; position: fixed; top: 0; left: 0; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText + 
+    $('body').append('<div style="display: none; position: fixed; top: 0; left: 0; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText +
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
         '<span aria-hidden="true">&times;</span>\n' +
         '</button>' +
@@ -110,7 +100,7 @@ showAlert = (alertText, alertType) => {
 $(document).ready(function () {
     init();
     setAutoCompleteWithCondition();
-    
+
     $('#searchField').keyup(function (e) {
         const code = e.key;
         if (code === "Enter") {
@@ -131,8 +121,8 @@ $(document).ready(function () {
         }
         event.preventDefault();
     });
-    
-    $('#openAdministration').click(function(event){
+
+    $('#openAdministration').click(function (event) {
         getAdministrationModal();
     })
 

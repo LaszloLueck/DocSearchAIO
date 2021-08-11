@@ -24,6 +24,43 @@ switchAdminContent = (element) => {
     });
 }
 
+renderAdminModal = () => {
+    let mainContent = '';
+    mainContent +=  '<div class="modal fade bd-example-modal-xl" id="adminModal" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">';
+    mainContent +=  '    <div class="modal-dialog modal-xl" style="height: 80%;" role="document">';
+    mainContent +=  '        <div class="modal-content" style="height: 80%;">';
+    mainContent +=  '            <div class="modal-header">';
+    mainContent +=  '                <h5 class="modal-title" id="optionModalLabel">Administration </h5>';
+    mainContent +=  '                <button type="button" class="close" data-dismiss="modal" aria-label="Close">';
+    mainContent +=  '                    <span aria-hidden="true">&times;</span>';
+    mainContent +=  '                </button>';
+    mainContent +=  '            </div>';
+    mainContent +=  '            <div class="modal-body" style="max-height: calc(100% - 120px); overflow-y: scroll;">';
+    mainContent +=  '                <ul class="nav nav-tabs nav-fill">';
+    mainContent +=  '                    <li class="nav-item">';
+    mainContent +=  '                       <a class="nav-link active" href="javascript:void(0);" onClick="switchAdminContent(this)" id="generalSettings">Allgemein</a>';
+    mainContent +=  '                    </li>';
+    mainContent +=  '                    <li class="nav-item">';
+    mainContent +=  '                        <a class="nav-link" href="javascript:void(0);" onClick="switchAdminContent(this)" id="schedulerSettings">Scheduler</a>';
+    mainContent +=  '                    </li>';
+    mainContent +=  '                    <li class="nav-item">';
+    mainContent +=  '                        <a class="nav-link" href="javascript:void(0);" onClick="switchAdminContent(this)" id="statisticSettings">Statistiken</a>';
+    mainContent +=  '                    </li>';
+    mainContent +=  '                    <li class="nav-item">';
+    mainContent +=  '                        <a class="nav-link" href="javascript:void(0);" onClick="switchAdminContent(this)" id="actionSettings">Aktionen</a>';
+    mainContent +=  '                    </li>';
+    mainContent +=  '                </ul>';
+    mainContent +=  '                <div class="form-row" style="display: none;" id="navContainer">&nbsp;</div>';
+    mainContent +=  '            </div>';
+    mainContent +=  '            <div class="modal-footer">';
+    mainContent +=  '                <button type="button" class="btn btn-secondary" data-dismiss="modal">Schließen</button>';
+    mainContent +=  '            </div>';
+    mainContent +=  '        </div>';
+    mainContent +=  '    </div>';
+    mainContent +=  '</div>';    
+    return mainContent;
+}
+
 loadGenericContent = () => {
     $.ajax({
         url: "/api/administration/getGenericContentData",
