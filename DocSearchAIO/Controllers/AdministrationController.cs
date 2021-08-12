@@ -168,21 +168,5 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method getActionContentData called");
             return await _administrationService.ActionContent();
         }
-
-        [Route("getActionContent")]
-        [HttpGet]
-        public async Task<PartialViewResult> ActionContent()
-        {
-            _logger.LogInformation("method getActionContent called");
-            var actionContent = await _administrationService.ActionContent();
-            var responseModel =
-                new TypedPartialViewResponse<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>>(
-                    actionContent);
-            return new PartialViewResult
-            {
-                ViewName = "AdministrationActionContentPartial",
-                ViewData = responseModel.PartialViewResponseModel()
-            };
-        }
     }
 }

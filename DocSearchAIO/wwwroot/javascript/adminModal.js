@@ -111,13 +111,13 @@ loadStatisticContent = () => {
 
 loadActionContent = () => {
     $.ajax({
-        url: "/api/administration/getActionContent",
-        dataType: "html",
+        url: "/api/administration/getActionContentData",
+        dataType: "json",
         method: "GET",
     })
         .done(function (result) {
             $('#navContainer')
-                .html(result)
+                .html(renderAdminActionModal(result))
                 .slideDown();
         })
         .fail(function () {
