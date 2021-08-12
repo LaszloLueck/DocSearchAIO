@@ -94,20 +94,6 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method getOptionsDialogData called!");
             return await _optionDialogService.OptionDialog(optionDialogRequest);
         }
-        
-        [Route("getOptionsDialog")]
-        [Consumes(MediaTypeNames.Application.Json)]
-        [HttpPost]
-        public async Task<PartialViewResult> OptionDialog(OptionDialogRequest optionDialogRequest)
-        {
-            _logger.LogInformation("method getOptionsDialog called!");
-            var dialogResponse = await _optionDialogService.OptionDialog(optionDialogRequest);
-            var responseModel = new TypedPartialViewResponse<OptionDialogResponse>(dialogResponse);
-            return new PartialViewResult
-            {
-                ViewName = "ResultPageConfigurationModalPartial", ViewData = responseModel.PartialViewResponseModel()
-            };
-        }
 
         [Route("getGenericContentData")]
         [HttpGet]

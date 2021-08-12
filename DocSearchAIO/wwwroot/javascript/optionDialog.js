@@ -9,13 +9,13 @@ openOptionDialog = () => {
 
     $.ajax({
         method: "POST",
-        dataType: "html",
+        dataType: "json",
         contentType: "application/json",
-        url: "/api/administration/getOptionsDialog",
+        url: "/api/administration/getOptionsDialogData",
         data: JSON.stringify(optionData)
     })
         .done(function (result) {
-            $("#modalContainer").append(result);
+            $("#modalContainer").append(renderResultPageConfigModal(result));
             const element = $('#optionModal');
             $(element).on('hidden.bs.modal', function (e) {
                 $(element).remove();
