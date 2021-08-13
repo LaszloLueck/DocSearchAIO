@@ -333,7 +333,9 @@ namespace DocSearchAIO.DocSearch.Services
                 ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn)
             {
                 RunnableStatistic ret = doc;
-                ret.CacheEntry = fn.Invoke().CacheEntry();
+                var cacheEntryOpt = fn.Invoke().CacheEntry();
+                if (cacheEntryOpt.HasValue)
+                    ret.CacheEntry = cacheEntryOpt.Value;
                 return ret;
             }
 

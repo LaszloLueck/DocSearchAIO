@@ -95,13 +95,13 @@ loadSchedulerContent = () => {
 
 loadStatisticContent = () => {
     $.ajax({
-        url: "/api/administration/getStatisticsContent",
-        dataType: "html",
+        url: "/api/administration/getStatisticsContentData",
+        dataType: "json",
         method: "GET",
     })
         .done(function (result) {
             $('#navContainer')
-                .html(result)
+                .html(renderAdminStatisticsModal(result))
                 .slideDown();
         })
         .fail(function () {

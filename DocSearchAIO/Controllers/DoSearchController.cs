@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
@@ -19,11 +18,11 @@ namespace DocSearchAIO.Controllers
         private readonly DocumentDetailService _documentDetailService;
 
         public DoSearchController(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
-            ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
+            IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<DoSearchController>();
             _doSearchService =
-                new DoSearchService(elasticSearchService, loggerFactory, viewToStringRenderer, configuration);
+                new DoSearchService(elasticSearchService, loggerFactory, configuration);
             _searchSuggestService = new SearchSuggestService(elasticSearchService, loggerFactory, configuration);
             _documentDetailService =
                 new DocumentDetailService(elasticSearchService, loggerFactory);
@@ -41,7 +40,7 @@ namespace DocSearchAIO.Controllers
         [HttpPost]
         public async Task<SuggestResult> Post(SuggestRequest request)
         {
-            _logger.LogInformation("hit suggestResult with phrase {SearchPhrase}",request.SearchPhrase);
+            _logger.LogInformation("hit suggestResult with phrase {SearchPhrase}", request.SearchPhrase);
             return await _searchSuggestService.Suggestions(request.SearchPhrase);
         }
 
@@ -52,6 +51,5 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("get document details for {RequestId}", request.Id);
             return await _documentDetailService.DocumentDetail(request);
         }
-
     }
 }

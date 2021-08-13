@@ -8,7 +8,7 @@ namespace DocSearchAIO.DocSearch.TOs
     public record RunnableStatistic(string Id, int EntireDocCount, int IndexedDocCount, int ProcessingError,
         DateTime StartJob, DateTime EndJob, long ElapsedTimeMillis)
     {
-        public Maybe<CacheEntry> CacheEntry { get; set; }
+        public CacheEntry? CacheEntry { get; set; }
 
         public static implicit operator RunnableStatistic(ProcessingJobStatistic source) => new(
             source.Id, source.EntireDocCount, source.IndexedDocCount, source.ProcessingError, source.StartJob,

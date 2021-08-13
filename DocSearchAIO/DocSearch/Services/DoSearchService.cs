@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
@@ -20,15 +19,13 @@ namespace DocSearchAIO.DocSearch.Services
     public class DoSearchService
     {
         private readonly ILogger<DoSearchService> _logger;
-        private readonly ViewToStringRenderer _viewToStringRenderer;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ConfigurationObject _configurationObject;
 
         public DoSearchService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
-            ViewToStringRenderer viewToStringRenderer, IConfiguration configuration)
+            IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<DoSearchService>();
-            _viewToStringRenderer = viewToStringRenderer;
             _elasticSearchService = elasticSearchService;
             _configurationObject = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_configurationObject);

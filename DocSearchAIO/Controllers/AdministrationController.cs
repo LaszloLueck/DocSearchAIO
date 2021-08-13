@@ -110,20 +110,6 @@ namespace DocSearchAIO.Controllers
             _logger.LogInformation("method getSchedulerContentData called");
             return await _administrationService.SchedulerContent();
         }
-        
-        [Route("getSchedulerContent")]
-        [HttpGet]
-        public async Task<PartialViewResult> SchedulerContent()
-        {
-            _logger.LogInformation("method getSchedulerContent called");
-            var schedulerContent = await _administrationService.SchedulerContent();
-            var responseModel = new TypedPartialViewResponse<Dictionary<string, SchedulerStatistics>>(schedulerContent);
-            return new PartialViewResult
-            {
-                ViewName = "AdministrationSchedulerContentPartial",
-                ViewData = responseModel.PartialViewResponseModel()
-            };
-        }
 
         [Route("getStatisticsContentData")]
         [HttpGet]
@@ -131,20 +117,6 @@ namespace DocSearchAIO.Controllers
         {
             _logger.LogInformation("method getStatisticsContentData called");
             return await _administrationService.StatisticsContent();
-        }
-        
-        [Route("getStatisticsContent")]
-        [HttpGet]
-        public async Task<PartialViewResult> StatisticsContent()
-        {
-            _logger.LogInformation("method getStatisticsContent called");
-            var statisticContent = await _administrationService.StatisticsContent();
-            var responseModel = new TypedPartialViewResponse<IndexStatistic>(statisticContent);
-            return new PartialViewResult
-            {
-                ViewName = "AdministrationStatisticsContentPartial",
-                ViewData = responseModel.PartialViewResponseModel()
-            };
         }
 
         [Route("getActionContentData")]

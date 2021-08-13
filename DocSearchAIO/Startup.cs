@@ -25,7 +25,6 @@ namespace DocSearchAIO
         {
             services.AddControllers();
             services.AddRazorPages();
-            services.AddScoped<ViewToStringRenderer, ViewToStringRenderer>();
             services.AddElasticSearch(Configuration);
             services.AddMemoryCache();
             services.AddQuartzScheduler(Configuration);
