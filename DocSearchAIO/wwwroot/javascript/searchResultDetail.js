@@ -25,7 +25,7 @@ renderSearchResultDetails = (detailElements) => {
             mainContent += '<ul class="list-group">';
             bodyElement.contentValues.forEach(content => {
                mainContent += '<li class="list-group-item py-2">';
-               mainContent += '<small>' + content + '</small>';
+               mainContent += '<small>' + escapeMarkup(content) + '</small>';
                mainContent += '</li>';
             });
             mainContent += '</ul>';
