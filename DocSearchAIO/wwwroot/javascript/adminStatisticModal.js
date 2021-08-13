@@ -16,11 +16,11 @@ renderAdminStatisticsModal = (result) => {
     mainContent += '    </div>';
     mainContent += '    <div class="row mt-1">';
     mainContent += '        <div class="col-3">Gesamtanzahl Dokumente</div>';
-    mainContent += '        <div class="col-9">' + result.entireDocCount + '</div>';
+    mainContent += '        <div class="col-9">' + result.entireDocCount.toLocaleString() + '</div>';
     mainContent += '    </div>';
     mainContent += '    <div class="row mt-1">';
     mainContent += '        <div class="col-3">Gesamte Indexgröße in Byte</div>';
-    mainContent += '        <div class="col-9">' + result.entireSizeInBytes + '</div>';
+    mainContent += '        <div class="col-9">' + result.entireSizeInBytes.toLocaleString() + '</div>';
     mainContent += '    </div>';
     mainContent += '</div>';
     mainContent += '<div class="container mt-2 border rounded border-color-gray">';
@@ -48,7 +48,7 @@ renderAdminStatisticsModal = (result) => {
         mainContent += '        <span>Startzeit:</span>';
         mainContent += '        </div>';
         mainContent += '        <div class="col-9">';
-        mainContent += '        <span>' + value.startJob + '</span>';
+        mainContent += '        <span>' + luxon.DateTime.fromISO(value.startJob).toFormat('dd.MM.yyyy HH:mm:ss ttt') + '</span>';
         mainContent += '        </div>';
         mainContent += '        </div>';
         mainContent += '        <div class="row">';
@@ -56,7 +56,7 @@ renderAdminStatisticsModal = (result) => {
         mainContent += '        <span>Endezeit:</span>';
         mainContent += '        </div>';
         mainContent += '        <div class="col-9">';
-        mainContent += '        <span>' + value.endJob + '</span>';
+        mainContent += '        <span>' + luxon.DateTime.fromISO(value.endJob).toFormat('dd.MM.yyyy HH:mm:ss ttt') + '</span>';
         mainContent += '        </div>';
         mainContent += '        </div>';
         mainContent += '        <div class="row">';
@@ -89,7 +89,7 @@ renderAdminStatisticsModal = (result) => {
         mainContent += '        </div>';
         if (value.elapsedTimeMillis > 0 && value.entireDocCount > 0 && value.elapsedTimeMillis / 1000 > 0) {
             mainContent += '        <div class="col-9">';
-            mainContent += '        <span>' + value.entireDocCount / (value.elapsedTimeMillis / 1000) + '</span>';
+            mainContent += '        <span>' + (Math.round(value.entireDocCount / (value.elapsedTimeMillis / 1000) * 100) / 100).toFixed(2) + '</span>';
             mainContent += '        </div>';
         } else {
             mainContent += '        <div class="col-9">';
@@ -123,8 +123,6 @@ renderAdminStatisticsModal = (result) => {
     mainContent += '            <span class="h5">Pro Index</span>';
     mainContent += '        </div>';
     mainContent += '    </div>';
-    mainContent += '    @foreach (var indexStatisticModel in Model.IndexStatisticModels)';
-    mainContent += '    {';
     result.indexStatisticModels.forEach(indexStatisticModel => {
         mainContent += '        <div class="row">';
         mainContent += '            <div class="col-12">';
@@ -133,11 +131,11 @@ renderAdminStatisticsModal = (result) => {
         mainContent += '        </div>';
         mainContent += '        <div class="row mb-2">';
         mainContent += '        <div class="col-3">Anzahl Dokumente</div>';
-        mainContent += '        <div class="col-9">' + indexStatisticModel.docCount + '</div>';
+        mainContent += '        <div class="col-9">' + indexStatisticModel.docCount.toLocaleString() + '</div>';
         mainContent += '        </div>';
         mainContent += '        <div class="row mb-2">';
         mainContent += '        <div class="col-3">Größe ind Bytes</div>';
-        mainContent += '        <div class="col-9">' + indexStatisticModel.sizeInBytes + '</div>';
+        mainContent += '        <div class="col-9">' + indexStatisticModel.sizeInBytes.toLocaleString() + '</div>';
         mainContent += '        </div>';
         mainContent += '        <div class="row mb-2">';
         mainContent += '        <div class="col-3">Fetch-Time in ms</div>';
