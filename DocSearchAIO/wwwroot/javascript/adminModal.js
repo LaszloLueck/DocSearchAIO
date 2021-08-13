@@ -79,13 +79,13 @@ loadGenericContent = () => {
 
 loadSchedulerContent = () => {
     $.ajax({
-        url: "/api/administration/getSchedulerContent",
-        dataType: "html",
+        url: "/api/administration/getSchedulerContentData",
+        dataType: "json",
         method: "GET",
     })
         .done(function (result) {
             $('#navContainer')
-                .html(result)
+                .html(renderAdminSchedulerModal(result))
                 .slideDown();
         })
         .fail(function () {

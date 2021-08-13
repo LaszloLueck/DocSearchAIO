@@ -368,9 +368,17 @@ namespace DocSearchAIO.DocSearch.Services
                 .Values()
                 .ToDictionary();
 
+            static IEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(IEnumerable<IndicesStatsResponse> responses) =>
+                responses.Select(index => (IndexStatisticModel)index);
+
+
             static IndexStatistic ResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
-                Dictionary<string, RunnableStatistic> runtimeStatistic) =>
-                new(indexStatsResponses.Select(index => (IndexStatisticModel) index), runtimeStatistic);
+                Dictionary<string, RunnableStatistic> runtimeStatistic)
+            {
+                var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
+                return new IndexStatistic(convertedModel, runtimeStatistic, convertedModel.Sum(d => d.DocCount), convertedModel.Sum(a => a.SizeInBytes));
+            }
+
 
             return ResponseModel(indexStatsResponses, runtimeStatistic);
         }
@@ -423,7 +431,7 @@ namespace DocSearchAIO.DocSearch.Services
                     var state = CalculateJobState(schedulerStatisticsArray, memoryCacheStates);
                     var model = ConvertToActionModel(schedulerStatisticsArray, state);
                     return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName,
-                        new[] {model});
+                        new[] { model });
                 })
                 .ToDictionary();
             return groupedSchedulerModels;

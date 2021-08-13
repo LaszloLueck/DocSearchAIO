@@ -45,15 +45,29 @@ renderAdminSchedulerModal = (result) => {
         mainContent += '             </div>';
         mainContent += '             </div>';
         schedulerStatistics.triggerElements.forEach(trigger => {
-            // mainContent += '             var triggerBatch = trigger.TriggerState.ToLower() switch{';
-            // mainContent += '             "blocked" => "<span class=\"badge badge-warning\">Blockiert</span>",';
-            // mainContent += '             "complete" => "<span class=\"badge badge-secondary\">Komplett</span>",';
-            // mainContent += '             "error" => "<span class=\"badge badge-danger\">Fehler</span>",';
-            // mainContent += '             "none" => "<span class=\"badge badge-info\">Kein Status</span>",';
-            // mainContent += '             "normal" => "<span class=\"badge badge-success\">Normal</span>",';
-            // mainContent += '             "paused" => "<span class=\"badge badge-primary\">Pausiert</span>",';
-            // mainContent += '             _ => "span class=\"badge badge-secondary\">Unbekannt</span>"';
-            // mainContent += '         };';
+            let triggerBatch = '<span class="badge badge-secondary">Unbekannt</span>"';
+            switch (trigger.triggerState.toLowerCase()) {
+                case "blocked":
+                    triggerBatch = '<span class="badge badge-warning">Blockiert</span>';
+                    break;
+                case "complete":
+                    triggerBatch = '<span class="badge badge-secondary">Komplett</span>';
+                    break;
+                case "error":
+                    triggerBatch = '<span class="badge badge-danger">Fehler</span>';
+                    break;
+                case "none":
+                    triggerBatch = '<span class="badge badge-info">Kein Status</span>';
+                    break;
+                case "normal":
+                    triggerBatch = '<span class="badge badge-success">Normal</span>';
+                    break;
+                case "paused":
+                    triggerBatch = '<span class="badge badge-primary">Pausiert</span>';
+                    break;
+            }
+
+
             mainContent += '             <div class="row border-top border-color-gray">';
             mainContent += '             <div class="col-1">&nbsp;</div>';
             mainContent += '             <div class="col-3">';
@@ -89,7 +103,7 @@ renderAdminSchedulerModal = (result) => {
             mainContent += '             <div class="row mb-2">';
             mainContent += '             <div class="col-1">&nbsp;</div>';
             mainContent += '             <div class="col-3">Nächster Start</div>';
-            mainContent += '             <div class="col-8">' + trigger.NextFireTime + '</div>';
+            mainContent += '             <div class="col-8">' + trigger.nextFireTime + '</div>';
             mainContent += '             </div>';
         });
         mainContent += '         </div>';
