@@ -24,7 +24,6 @@ namespace DocSearchAIO
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddRazorPages();
             services.AddElasticSearch(Configuration);
             services.AddMemoryCache();
             services.AddQuartzScheduler(Configuration);
