@@ -13,6 +13,7 @@
         <PackageReference Include="DocumentFormat.OpenXml" Version="2.13.0" />
         <PackageReference Include="DocumentFormat.OpenXml.DotNet.Core" Version="1.0.1" />
         <PackageReference Include="itext7" Version="7.1.16" />
+        <PackageReference Include="MsgReader" Version="4.1.0" />
         <PackageReference Include="NEST" Version="7.14.1" />
         <PackageReference Include="NEST.JsonNetSerializer" Version="7.14.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

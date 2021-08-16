@@ -9,7 +9,7 @@ namespace DocSearchAIO
 {
     public class Program
     {
-        public static Dictionary<string, string> ArrayDict =
+        public static readonly Dictionary<string, string> ArrayDict =
             new()
             {
                 {"array:entries:0", "value0"},
