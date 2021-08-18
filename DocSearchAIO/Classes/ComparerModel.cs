@@ -166,4 +166,32 @@ namespace DocSearchAIO.Classes
         {
         }
     }
+
+    public class ComparerModelMsg : ComparerModel
+    {
+        protected override string DerivedModelName => GetType().Name;
+
+        public ComparerModelMsg(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
+
+        public ComparerModelMsg(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+            comparerDirectory)
+        {
+        }
+        
+    }
+
+    public class ComparerModelEml : ComparerModel
+    {
+        public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+        {
+        }
+
+        public ComparerModelEml(string comparerDirectory) : base(comparerDirectory)
+        {
+        }
+
+        protected override string DerivedModelName => GetType().Name;
+    }
 }

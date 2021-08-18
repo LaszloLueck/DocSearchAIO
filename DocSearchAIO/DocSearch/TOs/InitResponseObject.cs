@@ -11,6 +11,10 @@ namespace DocSearchAIO.DocSearch.TOs
         bool FilterPowerpoint,
         [JsonProperty("filterPdf", ItemConverterType = typeof(bool))]
         bool FilterPdf,
+        [JsonProperty("filterMsg", ItemConverterType = typeof(bool))]
+        bool FilterMsg,
+        [JsonProperty("filterEml", ItemConverterType = typeof(bool))]
+        bool FilterEml,
         [JsonProperty("itemsPerPage", ItemConverterType = typeof(int))]
         int ItemsPerPage,
         [JsonProperty("wordFilterActive", ItemConverterType = typeof(bool))]
@@ -20,28 +24,10 @@ namespace DocSearchAIO.DocSearch.TOs
         [JsonProperty("powerpointFilterActive", ItemConverterType = typeof(bool))]
         bool PowerpointFilterActive,
         [JsonProperty("pdfFilterActive", ItemConverterType = typeof(bool))]
-        bool PdfFilterActive
+        bool PdfFilterActive,
+        [JsonProperty("msgFilterActive", ItemConverterType = typeof(bool))]
+        bool MsgFilterActive,
+        [JsonProperty("emlFilterActive", ItemConverterType = typeof(bool))]
+        bool EmlFilterActive
     );
-
-    // public class InitResponseObject
-    // {
-    //     [JsonProperty("filterExcel", ItemConverterType = typeof(bool))]
-    //     public bool FilterExcel { get; set; }
-    //     [JsonProperty("filterWord", ItemConverterType = typeof(bool))]
-    //     public bool FilterWord { get; set; }
-    //     [JsonProperty("filterPowerpoint", ItemConverterType = typeof(bool))]
-    //     public bool FilterPowerpoint { get; set; }
-    //     [JsonProperty("filterPdf", ItemConverterType = typeof(bool))]
-    //     public bool FilterPdf { get; set; }
-    //     [JsonProperty("itemsPerPage", ItemConverterType = typeof(int))]
-    //     public int ItemsPerPage { get; set; }
-    //     [JsonProperty("wordFilterActive", ItemConverterType = typeof(bool))]
-    //      public bool WordFilterActive { get; set; }
-    //      [JsonProperty("excelFilterActive", ItemConverterType = typeof(bool))]
-    //      public bool ExcelFilterActive { get; set; }
-    //      [JsonProperty("powerpointFilterActive", ItemConverterType = typeof(bool))]
-    //      public bool PowerpointFilterActive { get; set; }
-    //      [JsonProperty("pdfFilterActive", ItemConverterType = typeof(bool))]
-    //      public bool PdfFilterActive { get; set; }     
-    // }
 }

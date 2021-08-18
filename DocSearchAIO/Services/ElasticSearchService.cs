@@ -166,7 +166,7 @@ namespace DocSearchAIO.Services
                     _logger.LogError(indicesStatsResponse.OriginalException,
                         "{Reason}", indicesStatsResponse.ServerError.Error.Reason);
                     return indicesStatsResponse.IsValid;
-                case ISearchResponse<WordElasticDocument> searchResponse:
+                case ISearchResponse<ElasticDocument> searchResponse:
                     if (searchResponse.IsValid) return searchResponse.IsValid;
                     _logger.LogWarning("{DebugInfo}", searchResponse.DebugInformation);
                     _logger.LogError(searchResponse.OriginalException, "{Reason}",
@@ -225,12 +225,6 @@ namespace DocSearchAIO.Services
                     _logger.LogError(existsResponse.OriginalException, "{Reason}",
                         existsResponse.ServerError.Error.Reason);
                     return existsResponse.IsValid;
-                case SearchResponse<ElasticDocument> searchResponse:
-                    if (searchResponse.IsValid) return searchResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", searchResponse.DebugInformation);
-                    _logger.LogError(searchResponse.OriginalException, "{Reason}",
-                        searchResponse.ServerError.Error.Reason);
-                    return searchResponse.IsValid;
                 default:
                     _logger.LogWarning("Cannot find Conversion for type <{TypeName}>",
                         response.ResolveNullable(string.Empty,

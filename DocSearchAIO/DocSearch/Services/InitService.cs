@@ -32,7 +32,7 @@ namespace DocSearchAIO.DocSearch.Services
             var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
             var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
             var enumerable = indices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-            return new InitResponseObject(
+            return new (
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(ExcelElasticDocument)) &&
                 initRequest.FilterExcel,
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(WordElasticDocument)) &&
@@ -41,12 +41,16 @@ namespace DocSearchAIO.DocSearch.Services
                     nameof(PowerpointElasticDocument)) && initRequest.FilterPowerpoint,
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(PdfElasticDocument)) &&
                 initRequest.FilterPdf,
+                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(MsgElasticDocument)) && initRequest.FilterMsg,
+                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(EmlElasticDocument)) && initRequest.FilterEml,
                 initRequest.ItemsPerPage,
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(WordElasticDocument)),
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(ExcelElasticDocument)),
                 StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable,
                     nameof(PowerpointElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(PdfElasticDocument))
+                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(PdfElasticDocument)),
+                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(MsgElasticDocument)),
+                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(EmlElasticDocument))
             );
         }
     }

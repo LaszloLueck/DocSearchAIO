@@ -44,6 +44,12 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                             q.AddJob<PdfCleanupJob>(jk,
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
+                        case "msgCleanupJob":
+                            
+                            break;    
+                        case "emlCleanupJob":
+                            
+                            break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(cleanupEntry.JobName),
                                 cleanupEntry.JobName, "cannot build quartz job with the given scheduler entry");

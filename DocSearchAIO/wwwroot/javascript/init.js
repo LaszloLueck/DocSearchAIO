@@ -5,6 +5,8 @@ init = () => {
         filterWord: localStorage.getItem("filterWord") === 'true',
         filterPowerpoint: localStorage.getItem("filterPowerpoint") === 'true',
         filterPdf: localStorage.getItem("filterPdf") === 'true',
+        filterMsg: localStorage.getItem("filterMsg") === 'true',
+        filterEml: localStorage.getItem("filterEml") === 'true',
         itemsPerPage: localStorage.getItem("itemsPerPage") ?? undefined
     };
 
@@ -21,9 +23,13 @@ init = () => {
             localStorage.setItem("filterExcel", result.filterExcel);
             localStorage.setItem("filterPowerpoint", result.filterPowerpoint);
             localStorage.setItem("filterPdf", result.filterPdf);
+            localStorage.setItem("filterMsg", result.filterMsg);
+            localStorage.setItem("filterEml", result.filterEml);
             localStorage.setItem("wordFilterActive", result["wordFilterActive"]);
             localStorage.setItem("excelFilterActive", result["excelFilterActive"]);
             localStorage.setItem("powerpointFilterActive", result["powerpointFilterActive"]);
+            localStorage.setItem("msgFilterActive", result["msgFilterActive"]);
+            localStorage.setItem("emlFilterActive", result["emlFilterActive"]);
             localStorage.setItem("pdfFilterActive", result["pdfFilterActive"]);
         })
         .fail(function () {
@@ -36,7 +42,9 @@ checkIfAnyIndexActive = () => {
     return localStorage.getItem("filterWord") === 'true' ||
         localStorage.getItem("filterExcel") === 'true' ||
         localStorage.getItem("filterPowerpoint") === 'true' ||
-        localStorage.getItem("filterPdf") === 'true';
+        localStorage.getItem("filterPdf") === 'true' ||
+        localStorage.getItem("filterMsg") === 'true' ||
+        localStorage.getItem("filterEml") === 'true';
 }
 
 setAutoCompleteWithCondition = () => {

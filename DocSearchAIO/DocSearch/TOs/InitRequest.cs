@@ -12,6 +12,10 @@ namespace DocSearchAIO.DocSearch.TOs
         bool FilterPowerpoint,
         [JsonProperty("filterPdf", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
         bool FilterPdf,
+        [JsonProperty("filterMsg", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
+        bool FilterMsg,
+        [JsonProperty("filterEml", ItemConverterType = typeof(bool), NullValueHandling = NullValueHandling.Ignore)]
+        bool FilterEml,
         [JsonProperty("itemsPerPage", ItemConverterType = typeof(int), NullValueHandling = NullValueHandling.Ignore)]
         int ItemsPerPage = 20
     );
