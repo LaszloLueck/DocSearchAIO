@@ -45,10 +45,10 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                                 p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
                         case "msgCleanupJob":
-                            
+                            q.AddJob<MsgCleanupJob>(jk, p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;    
                         case "emlCleanupJob":
-                            
+                            q.AddJob<EmlCleanupJob>(jk, p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(cleanupEntry.JobName),
@@ -88,6 +88,12 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
                         case "pdfProcessingJob":
                             q.AddJob<PdfProcessingJob>(jk,
                                 p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        case "msgProcessingJob":
+                            q.AddJob<MsgProcessingJob>(jk, p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
+                            break;
+                        case "emlProcessingJob":
+                            q.AddJob<EmlProcessingJob>(jk, p => p.WithDescription($"job for processing and indexing {schedulerKey} documents"));
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(schedulerEntry.JobName),
