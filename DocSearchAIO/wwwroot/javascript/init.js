@@ -83,7 +83,8 @@ setAutoCompleteWithCondition = () => {
 }
 
 escapeMarkup = (unsafe) => {
-    return unsafe.replace(/[<>&'"]/g, function (c) {
+    let prep = unsafe.replaceAll('<span style="color:orange;">', "##COLORGRADESTART##").replaceAll('</span>',"##COLORGRADEEND##");
+    return prep.replace(/[<>&'"]/g, function (c) {
         switch (c) {
             case '<':
                 return '&lt;';
@@ -95,8 +96,12 @@ escapeMarkup = (unsafe) => {
                 return '&apos;';
             case '"':
                 return '&quot;';
+            case '':
+                return c;
+            case '</span>':
+                return c;
         }
-    });
+    }).replaceAll('##COLORGRADESTART##','<span style="color:orange;"><strong>').replaceAll('##COLORGRADEEND##', '</strong></span>');
 }
 
 getAdministrationModal = () => {

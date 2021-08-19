@@ -9,4 +9,8 @@ namespace DocSearchAIO.Classes
     public abstract record ExcelCleanupDocument : CleanupDocument;
 
     public abstract record PdfCleanupDocument : CleanupDocument;
+
+    public abstract record MsgCleanupDocument : CleanupDocument;
+
+    public abstract record EmlCleanupDocument : CleanupDocument;
 }

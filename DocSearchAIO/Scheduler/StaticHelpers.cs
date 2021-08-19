@@ -42,10 +42,19 @@ namespace DocSearchAIO.Scheduler
                 return new TypedMd5String(res1.Select(x => x.ToString("x2")).Concat());
             };
 
-        public static readonly Func<ConfigurationObject, string[], string, bool>
+        private static readonly Func<ConfigurationObject, string[], string, bool>
             GetIndexKeyExpressionFromConfiguration =
                 (configurationObject, indexNames, configurationKey) => configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
                     $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
+
+        public static bool IndexKeyExpression<T>(ConfigurationObject configurationObject, string[] enumerable, bool filter = true) where T : ElasticDocument
+        {
+            return GetIndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
+        }
+
+        public static string GenerateIndexName<T>(ConfigurationObject configurationObject) where T : ElasticDocument =>
+            $"{configurationObject.IndexName}-{configurationObject.Processing[typeof(T).Name].IndexSuffix}";
+
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
             keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
@@ -77,7 +86,7 @@ namespace DocSearchAIO.Scheduler
             {
                 var enumerable = e as TSource[] ?? e.ToArray();
                 statisticUtilities.AddToChangedDocuments(enumerable.Length);
-                return (IEnumerable<TSource>) enumerable;
+                return (IEnumerable<TSource>)enumerable;
             });
         }
 
@@ -105,7 +114,7 @@ namespace DocSearchAIO.Scheduler
         [Pure]
         public static CompletionField WrapCompletionField(this
             IEnumerable<string> searchAsYouTypeContent) =>
-            new() {Input = searchAsYouTypeContent};
+            new() { Input = searchAsYouTypeContent };
 
         private static readonly Func<IEnumerable<OfficeDocumentComment>, IEnumerable<string[]>> CommentsString =
             commentsArray =>
@@ -114,7 +123,7 @@ namespace DocSearchAIO.Scheduler
                     .Select(l => l.Comment.Split(" "))
                     .Distinct();
             };
-        
+
         private static readonly Func<IEnumerable<string>, IEnumerable<OfficeDocumentComment>, IEnumerable<string>>
             BuildHashList =
                 (listElementsToHash, commentsArray) =>
@@ -190,19 +199,19 @@ namespace DocSearchAIO.Scheduler
                         ExtractTextFromElement(element.ChildElements, sb);
                         sb.Append(' ');
                         break;
-                    case Text {HasChildren: false} wText:
+                    case Text { HasChildren: false } wText:
                         if (wText.Text.Any())
                             sb.Append(wText.Text);
                         break;
-                    case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
+                    case DocumentFormat.OpenXml.Spreadsheet.Text { HasChildren: false } sText:
                         if (sText.Text.Any())
                             sb.Append(sText.Text);
                         break;
-                    case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
+                    case DocumentFormat.OpenXml.Drawing.Text { HasChildren: false } dText:
                         if (dText.Text.Any())
                             sb.Append(dText.Text);
                         break;
-                    case TextBody {HasChildren: false} tText:
+                    case TextBody { HasChildren: false } tText:
                         if (tText.TextFromParagraph().Any())
                             sb.Append(' ' + tText.TextFromParagraph() + ' ');
                         break;
@@ -211,12 +220,14 @@ namespace DocSearchAIO.Scheduler
                         ExtractTextFromElement(drawParagraph.ChildElements, sb);
                         sb.Append(' ');
                         break;
-                    case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
+                    case DocumentFormat.OpenXml.Presentation.Text { HasChildren: false } pText:
                         if (pText.Text.Any())
                             sb.Append(pText.Text);
                         break;
                     case FieldChar
-                        {FieldCharType: {Value: FieldCharValues.Separate}}:
+                    {
+                        FieldCharType: { Value: FieldCharValues.Separate }
+                    }:
                         sb.Append(' ');
                         break;
                     case Break:

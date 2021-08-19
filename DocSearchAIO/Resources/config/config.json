@@ -3,13 +3,24 @@
     "elasticEndpoints": [
       "http://127.0.0.1:9200"
     ],
-    "scanPath": "d:\\temp\\00-Gesamtprojekt",
+    "scanPath": "e:\\BVA",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
     "schedulerId": "DocSearchScheduler_001",
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern/",
     "processing": {
+      "EmlElasticDocument": {
+        "active": false,
+        "startDelay": 3,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "emlProcessingJob",
+        "triggerName": "emlProcessingTrigger",
+        "excludeFilter": "",
+        "fileExtension": "*.eml",
+        "indexSuffix": "eml"
+      },
       "ExcelElasticDocument": {
         "active": false,
         "startDelay": 3,
@@ -21,7 +32,7 @@
         "fileExtension": "*.xlsx",
         "indexSuffix": "excel"
       },
-      "MsgElasticDocument" : {
+      "MsgElasticDocument": {
         "active": false,
         "startDelay": 4,
         "runsEvery": 3600,
@@ -31,17 +42,6 @@
         "excludeFilter": "",
         "fileExtension": "*.msg",
         "indexSuffix": "msg"
-      },
-      "EmlElasticDocument" : {
-        "active": false,
-        "startDelay": 3,
-        "runsEvery": 3600,
-        "parallelism": 10,
-        "jobName": "emlProcessingJob",
-        "triggerName": "emlProcessingTrigger",
-        "excludeFilter": "",
-        "fileExtension": "*.eml",
-        "indexSuffix": "eml"
       },
       "PdfElasticDocument": {
         "active": false,
@@ -78,6 +78,16 @@
       }
     },
     "cleanup": {
+      "EmlCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "emlCleanupJob",
+        "triggerName": "emlCleanupTrigger",
+        "forComparerName": "ComparerModelEml",
+        "forIndexSuffix": "eml"
+      },
       "ExcelCleanupDocument": {
         "active": false,
         "startDelay": 15,
@@ -97,16 +107,6 @@
         "triggerName": "msgCleanupTrigger",
         "forComparerName": "ComparerModelMsg",
         "forIndexSuffix": "msg"
-      },
-      "EmlCleanupDocument": {
-        "active": false,
-        "startDelay": 15,
-        "runsEvery": 1800,
-        "parallelism": 5,
-        "jobName": "emlCleanupJob",
-        "triggerName": "emlCleanupTrigger",
-        "forComparerName": "ComparerModelEml",
-        "forIndexSuffix": "eml"
       },
       "PdfCleanupDocument": {
         "active": false,

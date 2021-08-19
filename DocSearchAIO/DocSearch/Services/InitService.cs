@@ -32,25 +32,20 @@ namespace DocSearchAIO.DocSearch.Services
             var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
             var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
             var enumerable = indices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-            return new (
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(ExcelElasticDocument)) &&
-                initRequest.FilterExcel,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(WordElasticDocument)) &&
-                initRequest.FilterWord,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable,
-                    nameof(PowerpointElasticDocument)) && initRequest.FilterPowerpoint,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(PdfElasticDocument)) &&
-                initRequest.FilterPdf,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(MsgElasticDocument)) && initRequest.FilterMsg,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(EmlElasticDocument)) && initRequest.FilterEml,
+            return new(
+                StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, enumerable, initRequest.FilterExcel),
+                StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, enumerable, initRequest.FilterWord),
+                StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, enumerable, initRequest.FilterPowerpoint),
+                StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, enumerable, initRequest.FilterPdf),
+                StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, enumerable, initRequest.FilterMsg),
+                StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, enumerable, initRequest.FilterEml),
                 initRequest.ItemsPerPage,
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(WordElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(ExcelElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable,
-                    nameof(PowerpointElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(PdfElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(MsgElasticDocument)),
-                StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, enumerable, nameof(EmlElasticDocument))
+                StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, enumerable),
+                StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, enumerable),
+                StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, enumerable),
+                StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, enumerable),
+                StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, enumerable),
+                StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, enumerable)
             );
         }
     }

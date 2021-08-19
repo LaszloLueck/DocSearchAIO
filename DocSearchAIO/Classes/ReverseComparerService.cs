@@ -38,10 +38,14 @@ namespace DocSearchAIO.Classes
         {
             return source.Select(group =>
             {
-                var grpArray = group.ToArray();
-                return grpArray.Length > 0
-                    ? grpArray.Select(cmpObject => lazyCache.Remove(cmpObject.PathHash, out cmpObject!))
-                    : Array.Empty<bool>();
+                return group.Select(cmpObject => lazyCache.TryRemove(cmpObject.PathHash, out _));
+
+                // var grpArray = group.ToArray();
+                // var ret =  grpArray.Length > 0
+                //     ? grpArray.Select(cmpObject => lazyCache.TryRemove(cmpObject.PathHash, out _))
+                //     : Array.Empty<bool>();
+                //
+                // return ret;
             });
         }
 
@@ -72,7 +76,7 @@ namespace DocSearchAIO.Classes
         private readonly ActorSystem _actorSystem;
         private readonly InterlockedCounter _allFileCount;
         private readonly InterlockedCounter _removedFileCount;
-        private readonly Lazy<ConcurrentDictionary<string, ComparerObject>> _lazyCache;
+        private readonly ConcurrentDictionary<string, ComparerObject> _lazyCache;
 
         public ReverseComparerService(ILoggerFactory loggerFactory, T model, IElasticSearchService elasticSearchService,
             ActorSystem actorSystem)
@@ -83,12 +87,8 @@ namespace DocSearchAIO.Classes
             _actorSystem = actorSystem;
             _allFileCount = new InterlockedCounter();
             _removedFileCount = new InterlockedCounter();
-            _lazyCache =
-                new Lazy<ConcurrentDictionary<string, ComparerObject>>(() =>
-                {
-                    _logger.LogInformation("lazy loading cache for comparer");
-                    return ComparerHelper.FillConcurrentDictionary(_comparerFile);
-                });
+            _lazyCache = new ConcurrentDictionary<string, ComparerObject>();
+            ComparerHelper.FillConcurrentDictionary(_comparerFile);
         }
 
         public async Task Process(string indexName)
@@ -104,7 +104,7 @@ namespace DocSearchAIO.Classes
                     .GroupedWithin(200, TimeSpan.FromSeconds(2))
                     .WithMaybeFilter()
                     .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName)
-                    .RemoveFromCache(_lazyCache.Value)
+                    .RemoveFromCache(_lazyCache)
                     .RunIgnore(_actorSystem.Materializer());
 
 
@@ -117,8 +117,8 @@ namespace DocSearchAIO.Classes
                     ComparerHelper.CreateComparerFile(_comparerFile);
                     _logger.LogInformation("write all new entries from cache to comparer file {ComparerFile}",
                         _comparerFile);
-                    _logger.LogInformation("cache have {CacheSize} entries", _lazyCache.Value.Count);
-                    await ComparerHelper.WriteAllLinesAsync(_lazyCache.Value, _comparerFile);
+                    _logger.LogInformation("cache have {CacheSize} entries", _lazyCache.Count);
+                    await ComparerHelper.WriteAllLinesAsync(_lazyCache, _comparerFile);
                 }
             }
             finally

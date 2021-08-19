@@ -66,22 +66,23 @@ namespace DocSearchAIO.DocSearch.Services
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 
+
                 var selectedIndices = new List<string>();
                 var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(WordElasticDocument)) &&
-                    doSearchRequest.FilterWord)
-                    selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(WordElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(ExcelElasticDocument)) &&
-                    doSearchRequest.FilterExcel)
-                    selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(ExcelElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PowerpointElasticDocument)) &&
-                    doSearchRequest.FilterPowerpoint)
-                    selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(PowerpointElasticDocument)].IndexSuffix}");
-                if (StaticHelpers.GetIndexKeyExpressionFromConfiguration(_configurationObject, enumerable, nameof(PdfElasticDocument)) &&
-                    doSearchRequest.FilterPdf)
-                    selectedIndices.Add($"{_configurationObject.IndexName}-{_configurationObject.Processing[nameof(PdfElasticDocument)].IndexSuffix}");
+                if(StaticHelpers.IndexKeyExpression<WordElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterWord))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<WordElasticDocument>(_configurationObject));
+                if(StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterExcel))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<ExcelElasticDocument>(_configurationObject));
+                if(StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPowerpoint))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<PowerpointElasticDocument>(_configurationObject));
+                if(StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPdf))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<PdfElasticDocument>(_configurationObject));
+                if(StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterMsg))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<MsgElasticDocument>(_configurationObject));
+                if (StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterEml))
+                    selectedIndices.Add(StaticHelpers.GenerateIndexName<EmlElasticDocument>(_configurationObject));
 
-                if (selectedIndices.Count == 4)
+                if (selectedIndices.Count == 6)
                 {
                     selectedIndices.Clear();
                     selectedIndices.Add($"{_configurationObject.IndexName}-*");
@@ -113,6 +114,8 @@ namespace DocSearchAIO.DocSearch.Services
                         "pptx" => "./images/powerpoint.svg",
                         "xlsx" => "./images/excel.svg",
                         "pdf" => "./images/pdf.svg",
+                        "msg" => "./images/outlook.svg",
+                        "eml" => "./images/eml.svg",
                         _ => "./images/unknown.svg"
                     };
 

@@ -31,10 +31,12 @@ namespace DocSearchAIO.DocSearch.Services
             var knownIndices = indexResponse.Indices.Keys.Select(key => key.Name).ToArray();
 
             OptionDialogResponse response = optionDialogRequest;
-            response.WordIndexExists = StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, knownIndices, nameof(WordElasticDocument));
-            response.ExcelIndexExists = StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, knownIndices, nameof(ExcelElasticDocument));
-            response.PdfIndexExists = StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, knownIndices, nameof(PdfElasticDocument));
-            response.PowerpointIndexExists = StaticHelpers.GetIndexKeyExpressionFromConfiguration(_cfg, knownIndices, nameof(PowerpointElasticDocument));
+            response.WordIndexExists = StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, knownIndices);
+            response.ExcelIndexExists = StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, knownIndices);
+            response.PowerpointIndexExists = StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, knownIndices);
+            response.PdfIndexExists = StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, knownIndices);
+            response.MsgIndexExists = StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, knownIndices);
+            response.EmlIndexExists = StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, knownIndices);
             return response;
         }
     }
