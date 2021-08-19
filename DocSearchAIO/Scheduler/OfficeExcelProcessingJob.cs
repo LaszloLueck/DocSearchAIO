@@ -210,12 +210,19 @@ namespace DocSearchAIO.Scheduler
 
                         var commentsArray = CommentArray(mainWorkbookPart).ToArray();
 
-                        var toReplaced = new List<(string, string)>();
+                        var toReplaced = new List<(string, string)>()
+                        {
+                            (@"\r\n?|\n",""),
+                            ("[ ]{2,}", " ")
+                        };
 
                         var contentString = mainWorkbookPart
                             .SharedStringTablePart
                             .ResolveNullable(string.Empty,
-                                (v, _) => Elements(v).ContentString().ReplaceSpecialStrings(toReplaced));
+                                (v, _) =>
+                                    Elements(v)
+                                        .ContentString()
+                                        .ReplaceSpecialStrings(toReplaced));
 
                         var elementsHash = await (
                             StaticHelpers.ListElementsToHash(category, created, contentString, creator,

@@ -25,7 +25,7 @@ renderSearchResultDetails = (detailElements) => {
             mainContent += '<ul class="list-group">';
             bodyElement.contentValues.forEach(content => {
                mainContent += '<li class="list-group-item py-2">';
-               mainContent += '<small>' + escapeMarkup(content) + '</small>';
+               mainContent += '<small>' + content + '</small>';
                mainContent += '</li>';
             });
             mainContent += '</ul>';
@@ -39,3 +39,4 @@ renderSearchResultDetails = (detailElements) => {
     });
     return mainContent;
 }
+//escapeMarkup(content)

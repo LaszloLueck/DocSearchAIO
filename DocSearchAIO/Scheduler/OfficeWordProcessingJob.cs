@@ -238,13 +238,19 @@ namespace DocSearchAIO.Scheduler
                                 }).ToArray();
                             }
 
-                            var toReplaced = new List<(string, string)>();
+                            var toReplaced = new List<(string, string)>()
+                            {
+                                (@"\r\n?|\n",""),
+                                ("[ ]{2,}", " ")
+                            };
 
 
                             var contentString = mainDocumentPart
                                 .Elements()
                                 .ContentString()
                                 .ReplaceSpecialStrings(toReplaced);
+                                // .Replace("\\n", "")
+                                // .Replace("\\r", "");
 
                             var commentsArray = CommentArray(mainDocumentPart);
 

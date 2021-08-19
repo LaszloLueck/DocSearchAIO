@@ -47,8 +47,8 @@ namespace DocSearchAIO.DocSearch.Services
 
                 var highlight = new Highlight
                 {
-                    PreTags = new[] { "<span style=\"color:orange;\">" },
-                    PostTags = new[] { "</span>" },
+                    PreTags = new[] { "<span style=\"color:orange;\"><strong>" },
+                    PostTags = new[] { "</strong></span>" },
                     Fields = new Dictionary<Field, IHighlightField>
                     {
                         { "content", new HighlightField() }, { "comments.comment", new HighlightField() }

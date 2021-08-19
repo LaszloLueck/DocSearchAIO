@@ -47,11 +47,13 @@ namespace DocSearchAIO.Scheduler
                 (configurationObject, indexNames, configurationKey) => configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
                     $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
 
+        [Pure]
         public static bool IndexKeyExpression<T>(ConfigurationObject configurationObject, string[] enumerable, bool filter = true) where T : ElasticDocument
         {
             return GetIndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
         }
 
+        [Pure]
         public static string GenerateIndexName<T>(ConfigurationObject configurationObject) where T : ElasticDocument =>
             $"{configurationObject.IndexName}-{configurationObject.Processing[typeof(T).Name].IndexSuffix}";
 
@@ -78,6 +80,9 @@ namespace DocSearchAIO.Scheduler
         public static string Concat(this IEnumerable<string> source) => string.Concat(source);
 
         [Pure]
+        public static string Concat(this IEnumerable<char> source) => string.Concat(source);
+
+        [Pure]
         public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(
             this Source<IEnumerable<TSource>, TMat> source,
             StatisticUtilities<TModel> statisticUtilities) where TModel : StatisticModel
@@ -95,11 +100,17 @@ namespace DocSearchAIO.Scheduler
             this IEnumerable<OfficeDocumentComment> commentsArray) =>
             new(commentsArray.Select(d => d.Comment).Join(" "));
 
+
+        private static readonly string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ";
+
         [Pure]
         public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
-            TypedContentString contentString) =>
-            new(Regex.Replace(contentString.Value + " " + commentString.Value, "[^a-zA-ZäöüßÄÖÜ]", " "));
+            TypedContentString contentString) => new(Repl(commentString.Value + " " + contentString.Value) ?? "");
 
+        private static readonly Func<string, string?> Repl = input => input.Select(chr => AllowedChars.Contains(chr) ? chr : ' ').Concat();
+
+        private static char CharToUpper(this char character) => char.ToUpper(character);
+        
         [Pure]
         public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
             suggestedText
