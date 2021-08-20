@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Nest;
 
 namespace DocSearchAIO.Classes
@@ -15,7 +16,7 @@ namespace DocSearchAIO.Classes
         [Text(Name = "lastModifiedBy")] public string LastModifiedBy { get; set; } = string.Empty;
 
         [Object(Name = "comments")]
-        public OfficeDocumentComment[] Comments { get; set; } = Array.Empty<OfficeDocumentComment>();
+        public IEnumerable<OfficeDocumentComment> Comments { get; set; } = Array.Empty<OfficeDocumentComment>();
         [Date(Name = "lastModified")] public DateTime Modified { get; set; }
         [Date(Name = "lastPrinted")] public DateTime LastPrinted { get; set; }
         [Date(Name = "created")] public DateTime Created { get; set; }

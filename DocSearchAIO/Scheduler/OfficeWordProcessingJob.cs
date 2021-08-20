@@ -212,7 +212,7 @@ namespace DocSearchAIO.Scheduler
                                 new TypedMd5InputString(currentFile), md5);
 
 
-                            static OfficeDocumentComment[] CommentArray(
+                            static IEnumerable<OfficeDocumentComment> CommentArray(
                                 MainDocumentPart mainDocumentPart)
                             {
                                 var comments = mainDocumentPart
@@ -235,7 +235,7 @@ namespace DocSearchAIO.Scheduler
                                             (value, alternative) => value.Value ?? alternative)
                                     };
                                     return retValue;
-                                }).ToArray();
+                                });
                             }
 
                             var toReplaced = new List<(string, string)>()
@@ -249,8 +249,6 @@ namespace DocSearchAIO.Scheduler
                                 .Elements()
                                 .ContentString()
                                 .ReplaceSpecialStrings(toReplaced);
-                                // .Replace("\\n", "")
-                                // .Replace("\\r", "");
 
                             var commentsArray = CommentArray(mainDocumentPart);
 
