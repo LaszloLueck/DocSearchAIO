@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Nest;
 
 namespace DocSearchAIO.Classes
@@ -38,6 +40,9 @@ namespace DocSearchAIO.Classes
         
         [Text(Name = "contentType")] 
         public string ContentType { get; set; } = string.Empty;
+        
+        [Object(Name = "comments")]
+        public IEnumerable<OfficeDocumentComment> Comments { get; set; } = Array.Empty<OfficeDocumentComment>();
 
     }
 }

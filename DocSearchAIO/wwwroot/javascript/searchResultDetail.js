@@ -9,29 +9,46 @@ renderSearchResultDetails = (detailElements) => {
         mainContent += '<small>' + element.relativeUrl + '</small>';
         mainContent += '</a>';
         mainContent += '</h4>';
-        
+
         mainContent += '<h5>';
         mainContent += '<small class="mr-1">Download</small>';
         mainContent += '<a href="/api/base/download?path=' + element.absoluteUrl + '&documentType=' + element.documentType + '" target="_blank">';
         mainContent += '<small>' + element.absoluteUrl + '</small>';
         mainContent += '</a>';
         mainContent += '</h5>';
-        
-        element.searchBody.forEach(bodyElement => {
+
+
+        if(element.contents.length > 0) {
             mainContent += '<div class="mb-1">';
             mainContent += '<div>';
-            mainContent += '<small class="text-muted">' + bodyElement.contentType + ': </small>';
+            mainContent += '<small class="text-muted">Inhalt</small>';
             mainContent += '</div>';
             mainContent += '<ul class="list-group">';
-            bodyElement.contentValues.forEach(content => {
-               mainContent += '<li class="list-group-item py-2">';
-               mainContent += '<small>' + content + '</small>';
-               mainContent += '</li>';
+            element.contents.forEach(content => {
+                mainContent += '<li class="list-group-item py-2">';
+                mainContent += '<small>' + content.contentText + '</small>';
+                mainContent += '</li>';
             });
             mainContent += '</ul>';
             mainContent += '</div>';
-        });
-        
+        }
+
+        if(element.comments.length > 0) {
+            mainContent += '<div class="mb-1">';
+            mainContent += '<div>';
+            mainContent += '<small class="text-muted">Kommentar</small>';
+            mainContent += '</div>';
+            mainContent += '<ul class="list-group">';
+            element.comments.forEach(comment => {
+                mainContent += '<li class="list-group-item py-2">';
+                mainContent += '<div><small>Autor: ' + comment.author + ' | Datum: ' + comment.date + '</small></div>'
+                mainContent += '<div><small>' + comment.commentText + '</small></div>';
+                mainContent += '</li>';
+            });
+            mainContent += '</ul>';
+            mainContent += '</div>';
+        }
+
         mainContent += '<h6>';
         mainContent += '<small class="text-muted">Relevanz: ' + element.relevance + ' | Id: ' + element.id + '</small>';
         mainContent += '</h6>';

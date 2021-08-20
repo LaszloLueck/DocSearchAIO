@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
@@ -66,18 +68,17 @@ namespace DocSearchAIO.DocSearch.Services
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
 
-
                 var selectedIndices = new List<string>();
                 var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-                if(StaticHelpers.IndexKeyExpression<WordElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterWord))
+                if (StaticHelpers.IndexKeyExpression<WordElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterWord))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<WordElasticDocument>(_configurationObject));
-                if(StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterExcel))
+                if (StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterExcel))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<ExcelElasticDocument>(_configurationObject));
-                if(StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPowerpoint))
+                if (StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPowerpoint))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<PowerpointElasticDocument>(_configurationObject));
-                if(StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPdf))
+                if (StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPdf))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<PdfElasticDocument>(_configurationObject));
-                if(StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterMsg))
+                if (StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterMsg))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<MsgElasticDocument>(_configurationObject));
                 if (StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterEml))
                     selectedIndices.Add(StaticHelpers.GenerateIndexName<EmlElasticDocument>(_configurationObject));
@@ -119,34 +120,44 @@ namespace DocSearchAIO.DocSearch.Services
                         _ => "./images/unknown.svg"
                     };
 
-                    var highlightContent = new List<Tuple<string, string>>();
-                    var highlightComments = new List<Tuple<string, string>>();
+                    IEnumerable<ContentDetail> highlightContent = Array.Empty<ContentDetail>();
+                    IEnumerable<CommentDetail> highlightComments = Array.Empty<CommentDetail>();
 
                     if (hit.Highlight.ContainsKey("content"))
                     {
                         highlightContent = hit.Highlight["content"].Select(p =>
-                                Tuple.Create("Inhalt", p))
-                            .ToList();
+                            new ContentDetail(p));
                     }
                     else
                     {
-                        highlightContent.Add(hit.Source.Content.Length > 512
-                            ? Tuple.Create("Inhalt", hit.Source.Content[..512] + " ...")
-                            : Tuple.Create("Inhalt", hit.Source.Content));
+                        highlightContent = hit.Source.Content.Length > 512
+                            ? new List<ContentDetail>
+                            {
+                                new(hit.Source.Content[..512] + " ...")
+                            }
+                            : new List<ContentDetail> { new(hit.Source.Content) };
                     }
 
                     if (hit.Highlight.ContainsKey("comments.comment"))
                     {
+                        var originalComments = hit.Source.Comments;
+
                         highlightComments = hit.Highlight["comments.comment"].Select(p =>
-                                Tuple.Create("Kommentar", p))
-                            .ToList();
+                        {
+                            var prepText = p.Replace(highlight.PreTags.First(), "").Replace(highlight.PostTags.First(), "");
+                            var commentObj = originalComments.Where(c => c.Comment.Contains(prepText)).TryFirst();
+
+                            var retVal = commentObj.HasValue
+                                ? new CommentDetail(p, commentObj.Value.Author, commentObj.Value.Date, commentObj.Value.Id, commentObj.Value.Initials)
+                                : new CommentDetail(p, "", DateTime.Now, "", "");
+
+                            return retVal;
+                        });
                     }
 
-                    var grouped = highlightContent.Concat(highlightComments).GroupBy(item => item.Item1).Select(o =>
-                        new ContentTypeAndValues(o.Key, o.Select(s => s.Item2)));
-
                     DoSearchResultContainer container = hit.Source;
-                    container.SearchBody = grouped;
+                    container.Contents = highlightContent;
+                    container.Comments = highlightComments;
                     container.Relevance = hit.Score.ResolveNullable(0d, (v, a) => v ?? a);
                     container.ProgramIcon = IconType(hit.Source.ContentType);
                     return container;

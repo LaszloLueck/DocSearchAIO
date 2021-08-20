@@ -23,7 +23,6 @@ doSearch = (searchText, from) => {
             }
             let searchResults = $('#searchResults');
             $(searchResults).empty();
-            //let inner = result.searchResults.replaceAll("[#OO#]", "<b style='color:orange'>").replaceAll("[#CO#]", "</b>");
             let inner = renderSearchResultDetails(result.searchResults);
             
             $(searchResults).html(inner);

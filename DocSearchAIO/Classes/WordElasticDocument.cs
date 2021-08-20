@@ -15,8 +15,7 @@ namespace DocSearchAIO.Classes
         [Text(Name = "revision")] public string Revision { get; set; } = string.Empty;
         [Text(Name = "lastModifiedBy")] public string LastModifiedBy { get; set; } = string.Empty;
 
-        [Object(Name = "comments")]
-        public IEnumerable<OfficeDocumentComment> Comments { get; set; } = Array.Empty<OfficeDocumentComment>();
+
         [Date(Name = "lastModified")] public DateTime Modified { get; set; }
         [Date(Name = "lastPrinted")] public DateTime LastPrinted { get; set; }
         [Date(Name = "created")] public DateTime Created { get; set; }
