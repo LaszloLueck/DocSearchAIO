@@ -3,6 +3,7 @@ using System.Xml;
 using System.Xml.Linq;
 using DocSearchAIO.Scheduler;
 using DocumentFormat.OpenXml;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,11 +27,10 @@ namespace DocSearchAIO_Test
             var typedContentString = new TypedContentString(testString);
 
             var result = typedCommentString.GenerateTextToSuggest(typedContentString);
-    
-            _testOutputHelper.WriteLine(result.ToString());
-            
 
-            Assert.True(true);
+            var compareString = "Fritz jagt im total verwahrlosten Taxi quer durch München  Fritz jagt im total verwahrlosten Taxi quer durch München ";
+
+            compareString.Should().Match(result.ToString());
         }
         
     }
