@@ -148,8 +148,10 @@ namespace DocSearchAIO.DocSearch.Services
                             var commentObj = originalComments.Where(c => c.Comment.Contains(prepText)).TryFirst();
 
                             var retVal = commentObj.HasValue
-                                ? new CommentDetail(p, commentObj.Value.Author, commentObj.Value.Date, commentObj.Value.Id, commentObj.Value.Initials)
-                                : new CommentDetail(p, "", DateTime.Now, "", "");
+                                ? new CommentDetail(p){Author = commentObj.Value.Author, Date = commentObj.Value.Date, Id = commentObj.Value.Id, Initials = commentObj.Value.Initials}
+                                : new CommentDetail(p);
+                            
+                            
 
                             return retVal;
                         });
