@@ -131,16 +131,13 @@ codeanalysis:
     paths:
       - .sonar/cache  
   script:
-    - "apt-get update"
-    - "apt-get install --yes openjdk-11-jre"
-    - "apt-get install --yes nodejs"
-    - "apt-get install --yes npm"
-    - "dotnet tool install --global dotnet-sonarscanner"
-    - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
-    - "dotnet sonarscanner begin /k:\"DocSearchAIO\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
-    - "dotnet clean"
-    - "dotnet build /t:rebuild"
-    - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
+      - "apt-get update"
+      - "apt-get install --yes openjdk-11-jre nodejs npm"
+      - "dotnet tool install --global dotnet-sonarscanner"
+      - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
+      - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
+      - "dotnet build"
+      - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
   allow_failure: true
   only:
     - master
