@@ -31,6 +31,7 @@ variables:
   # NOTE: Please edit this path so it matches the structure of your project!
   SOURCE_CODE_PATH: 'DocSearchAIO/'
 
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
 # ### Define global cache rule
 #
 # Before building the project, all dependencies (e.g. third-party NuGet packages)
@@ -114,11 +115,19 @@ tests:
     - 'dotnet test --no-restore'
 
 
-analysis:
+securityanalysis:
   stage: test
   script:
-    #- 'cat << \EOF >> ~/.bash_profile'
-    #- 'export PATH="$PATH:/root/.dotnet/tools"'
+    - 'export PATH="$PATH:/root/.dotnet/tools"'
     - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
+
+codeanalysis:
+  stage: test
+  script:
+    - 'export PATH="$PATH:/root/.dotnet/tools"'
+    - 'apt-get update'
+    - 'apt-get install --yes openjdk-11-jre'
     - 'dotnet tool install --global dotnet-sonarscanner'
+    - 'dotnet sonarscanner begin /k:\"DocSearchAIO\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" '
+    - 'dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\"'
