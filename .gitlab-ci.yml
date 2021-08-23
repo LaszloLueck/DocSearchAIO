@@ -113,29 +113,9 @@ tests:
   script:
     - 'dotnet test --no-restore'
 
-code_quality:
+
+analysis:
   stage: test
-  when: always
-  image: docker:latest
-  variables:
-    DOCKER_DRIVER: overlay
-  services:
-    - docker:dind
   script:
-    - docker pull codeclimate/codeclimate
-    - docker run 
-       --env CODECLIMATE_DEBUG=1 
-       --env CODECLIMATE_CODE="$PWD" 
-       --volume "$PWD":/code 
-       --volume /var/run/docker.sock:/var/run/docker.sock 
-       --volume /tmp/cc:/tmp/cc 
-       codeclimate/codeclimate analyze -f html > report.html
-    #- cat report.html
-
-  artifacts:
-    paths: [report.html]
-  dependencies: []
-  except:
-    variables:
-      - $CODE_QUALITY_DISABLED
-
+    - 'dotnet tool install --global security-scan'
+    - 'security-scan DocSearchAIO.sln'
