@@ -119,5 +119,6 @@ analysis:
   script:
     #- 'cat << \EOF >> ~/.bash_profile'
     #- 'export PATH="$PATH:/root/.dotnet/tools"'
-    - 'dotnet tool install --global --tool-path tools security-scan'
-    - './tools/security-scan ./DocSearchAIO.sln'
+    - 'dotnet tool install --global security-scan'
+    - 'security-scan ./DocSearchAIO.sln'
+    - 'dotnet tool install --global dotnet-sonarscanner'
