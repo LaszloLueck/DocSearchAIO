@@ -128,6 +128,7 @@ codeanalysis:
     - 'export PATH="$PATH:/root/.dotnet/tools"'
     - 'apt-get update'
     - 'apt-get install --yes openjdk-11-jre'
+    - 'apt-get install --yes nodejs'
     - 'dotnet tool install --global dotnet-sonarscanner'
     - 'dotnet sonarscanner begin /k:"DocSearchAIO" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="$SONAR_HOST_URL" '
     - 'dotnet clean'
