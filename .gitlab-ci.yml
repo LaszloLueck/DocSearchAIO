@@ -133,7 +133,7 @@ codeanalysis:
   script:
       - "apt-get update"
       - "apt-get install --yes curl"
-      - "curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh"
+      - "curl -sL https://deb.nodesource.com/setup_14.x | bash -"
       - "apt-get install --yes nodejs"
       - "apt-get install --yes openjdk-11-jre"
       - "dotnet tool install --global dotnet-sonarscanner"
