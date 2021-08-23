@@ -132,7 +132,10 @@ codeanalysis:
       - .sonar/cache  
   script:
       - "apt-get update"
-      - "apt-get install --yes openjdk-11-jre nodejs npm"
+      - "apt-get install --yes curl"
+      - "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash"
+      - "nvm install 14.4.0"
+      - "apt-get install --yes openjdk-11-jre"
       - "dotnet tool install --global dotnet-sonarscanner"
       - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
       - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
