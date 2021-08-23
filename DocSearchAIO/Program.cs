@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -9,15 +10,6 @@ namespace DocSearchAIO
 {
     public class Program
     {
-        public static readonly Dictionary<string, string> ArrayDict =
-            new()
-            {
-                {"array:entries:0", "value0"},
-                {"array:entries:1", "value1"},
-                {"array:entries:2", "value2"},
-                {"array:entries:4", "value4"},
-                {"array:entries:5", "value5"}
-            };
 
         public static void Main(string[] args)
         {
@@ -28,7 +20,15 @@ namespace DocSearchAIO
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
-                    config.AddInMemoryCollection(ArrayDict);
+                    var builder = ImmutableDictionary.CreateBuilder<string, string>();
+                    builder.Add("array:entries:0", "value0");
+                    builder.Add("array:entries:1", "value1");
+                    builder.Add("array:entries:2", "value2");
+                    builder.Add("array:entries:3", "value3");
+                    builder.Add("array:entries:4", "value4");
+                    builder.Add("array:entries:5", "value5");
+                    
+                    config.AddInMemoryCollection(builder.ToImmutable());
                     config.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
