@@ -29,7 +29,7 @@ variables:
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   # 3) A relative path to the source code from project repository root.
   # NOTE: Please edit this path so it matches the structure of your project!
-  SOURCE_CODE_PATH: '*/*/'
+  SOURCE_CODE_PATH: '/DocSearchAIO/'
 
 # ### Define global cache rule
 #
