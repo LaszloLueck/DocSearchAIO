@@ -129,5 +129,5 @@ codeanalysis:
     - 'apt-get update'
     - 'apt-get install --yes openjdk-11-jre'
     - 'dotnet tool install --global dotnet-sonarscanner'
-    - 'dotnet sonarscanner begin /k:\"DocSearchAIO\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" '
-    - 'dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\"'
+    - 'dotnet sonarscanner begin /k:"DocSearchAIO" /d:sonar.login="$SONAR_TOKEN" /d:"sonar.host.url=$SONAR_HOST_URL" '
+    - 'dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"'
