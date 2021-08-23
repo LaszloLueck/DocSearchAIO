@@ -115,7 +115,7 @@ tests:
 
 code_quality:
   stage: test
-  when: auto
+  when: always
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay
