@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace DocSearchAIO.Classes
 {
@@ -37,7 +37,7 @@ namespace DocSearchAIO.Classes
                 return Maybe<ProcessingJobStatistic>.None;
             try
             {
-                var model = JsonConvert.DeserializeObject<ProcessingJobStatistic>(content);
+                var model = JsonSerializer.Deserialize<ProcessingJobStatistic>(content);
                 return model!;
             }
             catch (Exception e)

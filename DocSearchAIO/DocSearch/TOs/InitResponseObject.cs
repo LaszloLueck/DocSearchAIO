@@ -1,33 +1,48 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace DocSearchAIO.DocSearch.TOs
 {
-    public record InitResponseObject(
-        [JsonProperty("filterExcel", ItemConverterType = typeof(bool))]
-        bool FilterExcel,
-        [JsonProperty("filterWord", ItemConverterType = typeof(bool))]
-        bool FilterWord,
-        [JsonProperty("filterPowerpoint", ItemConverterType = typeof(bool))]
-        bool FilterPowerpoint,
-        [JsonProperty("filterPdf", ItemConverterType = typeof(bool))]
-        bool FilterPdf,
-        [JsonProperty("filterMsg", ItemConverterType = typeof(bool))]
-        bool FilterMsg,
-        [JsonProperty("filterEml", ItemConverterType = typeof(bool))]
-        bool FilterEml,
-        [JsonProperty("itemsPerPage", ItemConverterType = typeof(int))]
-        int ItemsPerPage,
-        [JsonProperty("wordFilterActive", ItemConverterType = typeof(bool))]
-        bool WordFilterActive,
-        [JsonProperty("excelFilterActive", ItemConverterType = typeof(bool))]
-        bool ExcelFilterActive,
-        [JsonProperty("powerpointFilterActive", ItemConverterType = typeof(bool))]
-        bool PowerpointFilterActive,
-        [JsonProperty("pdfFilterActive", ItemConverterType = typeof(bool))]
-        bool PdfFilterActive,
-        [JsonProperty("msgFilterActive", ItemConverterType = typeof(bool))]
-        bool MsgFilterActive,
-        [JsonProperty("emlFilterActive", ItemConverterType = typeof(bool))]
-        bool EmlFilterActive
-    );
+    public class InitResponseObject
+    {
+       
+        [JsonPropertyName("filterExcel")]
+        public bool FilterExcel { get; set; }
+
+        [JsonPropertyName("filterWord")]
+        public bool FilterWord { get; set; }
+
+        [JsonPropertyName("filterPowerpoint")]
+        public bool FilterPowerpoint { get; set; }
+
+        [JsonPropertyName("filterPdf")]
+        public bool FilterPdf { get; set; }
+
+        [JsonPropertyName("filterMsg")]
+        public bool FilterMsg { get; set; }
+
+        [JsonPropertyName("filterEml")]
+        public bool FilterEml { get; set; }
+
+        [JsonPropertyName("itemsPerPage")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? ItemsPerPage { get; set; }
+
+        [JsonPropertyName("wordFilterActive")]
+        public bool WordFilterActive { get; set; }
+
+        [JsonPropertyName("excelFilterActive")]
+        public bool ExcelFilterActive { get; set; }
+
+        [JsonPropertyName("powerpointFilterActive")]
+        public bool PowerpointFilterActive { get; set; }
+
+        [JsonPropertyName("pdfFilterActive")]
+        public bool PdfFilterActive { get; set; }
+
+        [JsonPropertyName("msgFilterActive")]
+        public bool MsgFilterActive { get; set; }
+
+        [JsonPropertyName("emlFilterActive")]
+        public bool EmlFilterActive { get; set; }
+    }
 }
