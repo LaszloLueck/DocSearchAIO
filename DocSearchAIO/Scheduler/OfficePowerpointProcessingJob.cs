@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -38,7 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly MD5 _md5;
+        private readonly EncryptionService _encryptionService;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -54,10 +53,10 @@ namespace DocSearchAIO.Scheduler
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPowerpoint().StatisticFileName);
             _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
+            _encryptionService = new EncryptionService();
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
-            _md5 = MD5.Create();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -120,7 +119,7 @@ namespace DocSearchAIO.Scheduler
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .ProcessPowerpointDocumentAsync(configEntry, _cfg,
-                                                    _statisticUtilities, _logger, _md5)
+                                                    _statisticUtilities, _logger, _encryptionService)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -164,15 +163,15 @@ namespace DocSearchAIO.Scheduler
         public static Source<Maybe<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger, MD5 md5)
+            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger, EncryptionService encryptionService)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger, md5));
+                f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
         }
 
         private static async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelPowerpoint> statisticUtilities,
-            ILogger logger, MD5 md5)
+            ILogger logger, EncryptionService encryptionService)
         {
             try
             {
@@ -204,7 +203,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                 .Replace(@"\", "/");
 
-                            var id = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(currentFile), md5);
+                            var id = await StaticHelpers.CreateHashString(new TypedEncryptedInputString(currentFile), encryptionService);
                             var slideCount = wd
                                 .SlideParts
                                 .Count();
@@ -215,7 +214,11 @@ namespace DocSearchAIO.Scheduler
 
                             var commentsArray = CommentArray(wd).ToArray();
 
-                            var toReplaced = new List<(string, string)>();
+                            var toReplaced = new List<(string, string)>()
+                            {
+                                (@"\r\n?|\n",""),
+                                ("[ ]{2,}", " ")
+                            };
 
                             var contentString = wd
                                 .Elements()
@@ -226,7 +229,7 @@ namespace DocSearchAIO.Scheduler
                                 StaticHelpers.ListElementsToHash(category, created, contentString, creator,
                                     description, identifier, keywords, language, modified, revision,
                                     subject, title, version, contentStatus, contentType, lastPrinted,
-                                    lastModifiedBy), commentsArray).ContentHashString(md5);
+                                    lastModifiedBy), commentsArray).ContentHashString(encryptionService);
 
                             static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
                                 commentsArray
@@ -285,7 +288,7 @@ namespace DocSearchAIO.Scheduler
 
         private static IEnumerable<OfficeDocumentComment>
             ConvertToOfficeDocumentComment(this CommentList comments) =>
-            comments.Select(comment => OfficeDocumentComment((Comment) comment));
+            comments.Select(comment => OfficeDocumentComment((Comment)comment));
 
         private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()

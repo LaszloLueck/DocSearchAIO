@@ -37,7 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly MD5 _md5;
+        private readonly EncryptionService _encryptionService;
         
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -54,9 +54,9 @@ namespace DocSearchAIO.Scheduler
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelWord().StatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
+            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
-            _md5 = MD5.Create();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -119,7 +119,7 @@ namespace DocSearchAIO.Scheduler
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                                    _logger, _md5)
+                                                    _logger, _encryptionService)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -163,15 +163,15 @@ namespace DocSearchAIO.Scheduler
         public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger, MD5 md5)
+            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger, EncryptionService encryptionService)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger, md5));
+                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
         }
 
         private static async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
-            ILogger logger, MD5 md5)
+            ILogger logger, EncryptionService encryptionService)
         {
             try
             {
@@ -208,8 +208,8 @@ namespace DocSearchAIO.Scheduler
                                     configurationObject.UriReplacement)
                                 .Replace(@"\", "/");
 
-                            var id = await StaticHelpers.CreateMd5HashString(
-                                new TypedMd5InputString(currentFile), md5);
+                            var id = await StaticHelpers.CreateHashString(
+                                new TypedEncryptedInputString(currentFile), encryptionService);
 
 
                             static IEnumerable<OfficeDocumentComment> CommentArray(
@@ -258,7 +258,7 @@ namespace DocSearchAIO.Scheduler
                                         description, identifier, keywords, language, modified, revision,
                                         subject, title, version, contentStatus, contentType, lastPrinted,
                                         lastModifiedBy), commentsArray)
-                                .ContentHashString(md5);
+                                .ContentHashString(encryptionService);
 
                             var completionField = commentsArray
                                 .StringFromCommentsArray()

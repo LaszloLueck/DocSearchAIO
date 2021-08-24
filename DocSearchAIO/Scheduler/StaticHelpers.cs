@@ -4,7 +4,6 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -35,22 +34,22 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
-        public static readonly Func<TypedMd5InputString, MD5, Task<TypedMd5String>> CreateMd5HashString =
-            async (stringValue, md5) =>
+        public static readonly Func<TypedEncryptedInputString, EncryptionService, Task<TypedEncryptedString>> CreateHashString =
+            async (stringValue, encryptionService) =>
             {
-                var res1 = await md5.ComputeHashAsync(new MemoryStream(Encoding.UTF8.GetBytes(stringValue.Value)));
-                return new TypedMd5String(res1.Select(x => x.ToString("x2")).Concat());
+                var res1 = await encryptionService.ComputeHashAsync(stringValue.Value);
+                return new TypedEncryptedString(encryptionService.ConvertToStringFromByteArray(res1));
             };
 
         private static readonly Func<ConfigurationObject, string[], string, bool>
-            GetIndexKeyExpressionFromConfiguration =
+            IndexKeyExpressionFromConfiguration =
                 (configurationObject, indexNames, configurationKey) => configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
                     $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
 
         [Pure]
         public static bool IndexKeyExpression<T>(ConfigurationObject configurationObject, string[] enumerable, bool filter = true) where T : ElasticDocument
         {
-            return GetIndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
+            return IndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
         }
 
         [Pure]
@@ -109,8 +108,6 @@ namespace DocSearchAIO.Scheduler
 
         private static readonly Func<string, string?> Repl = input => input.Select(chr => AllowedChars.Contains(chr) ? chr : ' ').Concat();
 
-        private static char CharToUpper(this char character) => char.ToUpper(character);
-        
         [Pure]
         public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
             suggestedText
@@ -149,10 +146,10 @@ namespace DocSearchAIO.Scheduler
                 };
 
         [Pure]
-        public static async Task<TypedMd5String> ContentHashString(this (List<string> listElementsToHash,
-            IEnumerable<OfficeDocumentComment> commentsArray) kv, MD5 md5) =>
-            await CreateMd5HashString(
-                new TypedMd5InputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), md5);
+        public static async Task<TypedEncryptedString> ContentHashString(this (List<string> listElementsToHash,
+            IEnumerable<OfficeDocumentComment> commentsArray) kv, EncryptionService encryptionService) =>
+            await CreateHashString(
+                new TypedEncryptedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
 
         [Pure]
         public static List<string> ListElementsToHash(string category, DateTime created,

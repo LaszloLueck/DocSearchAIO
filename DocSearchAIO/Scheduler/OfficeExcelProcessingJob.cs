@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -38,7 +37,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly MD5 _md5;
+        private readonly EncryptionService _encryptionService;
 
         public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -55,9 +54,9 @@ namespace DocSearchAIO.Scheduler
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelExcel().StatisticFileName);
             _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
+            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
-            _md5 = MD5.Create();
         }
 
 
@@ -119,7 +118,7 @@ namespace DocSearchAIO.Scheduler
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
                                                 .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                                    _logger, _md5)
+                                                    _logger, _encryptionService)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -161,15 +160,15 @@ namespace DocSearchAIO.Scheduler
     {
         public static Source<Maybe<ExcelElasticDocument>, NotUsed> ProcessExcelDocumentAsync(
             this Source<string, NotUsed> source, SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger, MD5 md5)
+            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger, EncryptionService encryptionService)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger, md5));
+                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
         }
 
         private static async Task<Maybe<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelExcel> statisticUtilities,
-            ILogger logger, MD5 md5)
+            ILogger logger, EncryptionService encryptionService)
         {
             try
             {
@@ -199,8 +198,8 @@ namespace DocSearchAIO.Scheduler
                             .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                             .Replace(@"\", "/");
 
-                        var id = await StaticHelpers.CreateMd5HashString(
-                            new TypedMd5InputString(currentFile), md5);
+                        var id = await StaticHelpers.CreateHashString(
+                            new TypedEncryptedInputString(currentFile), encryptionService);
 
                         static IEnumerable<OfficeDocumentComment>
                             CommentArray(WorkbookPart workbookPart) =>
@@ -212,7 +211,7 @@ namespace DocSearchAIO.Scheduler
 
                         var toReplaced = new List<(string, string)>()
                         {
-                            (@"\r\n?|\n",""),
+                            (@"\r\n?|\n", ""),
                             ("[ ]{2,}", " ")
                         };
 
@@ -225,10 +224,11 @@ namespace DocSearchAIO.Scheduler
                                         .ReplaceSpecialStrings(toReplaced));
 
                         var elementsHash = await (
-                            StaticHelpers.ListElementsToHash(category, created, contentString, creator,
-                                description, identifier, keywords, language, modified, revision,
-                                subject, title, version, contentStatus, contentType, lastPrinted,
-                                lastModifiedBy), commentsArray).ContentHashString(md5);
+                                StaticHelpers.ListElementsToHash(category, created, contentString, creator,
+                                    description, identifier, keywords, language, modified, revision,
+                                    subject, title, version, contentStatus, contentType, lastPrinted,
+                                    lastModifiedBy), commentsArray)
+                            .ContentHashString(encryptionService);
 
                         var completionField = commentsArray
                             .StringFromCommentsArray()
@@ -281,10 +281,10 @@ namespace DocSearchAIO.Scheduler
         private static IEnumerable<OfficeDocumentComment>
             ConvertToOfficeDocumentComment(this CommentList comments)
         {
-            return comments.ChildElements.Select(comment => OfficeDocumentComment((Comment) comment));
+            return comments.ChildElements.Select(comment => OfficeDocumentComment((Comment)comment));
         }
 
-        private static OfficeDocumentComment OfficeDocumentComment([NotNull] Comment comment) =>
+        private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
             new()
             {
                 Comment = comment.CommentText.ResolveNullable(string.Empty, (v, _) => v.InnerText)

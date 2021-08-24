@@ -40,7 +40,7 @@ namespace DocSearchAIO.Scheduler
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly MD5 _md5;
+        private readonly EncryptionService _encryptionService;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -55,9 +55,9 @@ namespace DocSearchAIO.Scheduler
             _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPdf().StatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
+            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
-            _md5 = MD5.Create();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -115,7 +115,7 @@ namespace DocSearchAIO.Scheduler
                                                 .CreateSource(configEntry.FileExtension)
                                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                                 .CountEntireDocs(_statisticUtilities)
-                                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger, _md5)
+                                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger, _encryptionService)
                                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                                 .WithMaybeFilter()
@@ -158,14 +158,14 @@ namespace DocSearchAIO.Scheduler
         public static Source<Maybe<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, MD5 md5)
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, EncryptionService encryptionService)
         {
             return source.SelectAsync(schedulerEntry.Parallelism,
-                f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger, md5));
+                f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
         }
 
         private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, MD5 md5)
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, EncryptionService encryptionService)
         {
             return await Task.Run(async () =>
             {
@@ -203,7 +203,7 @@ namespace DocSearchAIO.Scheduler
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var fileNameHash = await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(fileName), md5);
+                    var fileNameHash = await StaticHelpers.CreateHashString(new TypedEncryptedInputString(fileName), encryptionService);
 
                     var elasticDoc = new PdfElasticDocument
                     {
@@ -236,7 +236,7 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = (await StaticHelpers.CreateMd5HashString(new TypedMd5InputString(listElementsToHash.Concat()), md5)).Value;
+                    elasticDoc.ContentHash = (await StaticHelpers.CreateHashString(new TypedEncryptedInputString(listElementsToHash.Concat()), encryptionService)).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }

@@ -78,16 +78,16 @@
         }
     }
 
-    public class TypedMd5String : GenericSourceString
+    public class TypedEncryptedString : GenericSourceString
     {
-        public TypedMd5String(string value) : base(value)
+        public TypedEncryptedString(string value) : base(value)
         {
         }
     }
 
-    public class TypedMd5InputString : GenericSourceString
+    public class TypedEncryptedInputString : GenericSourceString
     {
-        public TypedMd5InputString(string value) : base(value)
+        public TypedEncryptedInputString(string value) : base(value)
         {
         }
     }
