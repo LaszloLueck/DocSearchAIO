@@ -34,20 +34,8 @@ namespace DocSearchAIO.Classes
 
         public static Source<IEnumerable<bool>, NotUsed> RemoveFromCache(
             this Source<IEnumerable<ComparerObject>, NotUsed> source,
-            ConcurrentDictionary<string, ComparerObject> lazyCache)
-        {
-            return source.Select(group =>
-            {
-                return group.Select(cmpObject => lazyCache.TryRemove(cmpObject.PathHash, out _));
-
-                // var grpArray = group.ToArray();
-                // var ret =  grpArray.Length > 0
-                //     ? grpArray.Select(cmpObject => lazyCache.TryRemove(cmpObject.PathHash, out _))
-                //     : Array.Empty<bool>();
-                //
-                // return ret;
-            });
-        }
+            ConcurrentDictionary<string, ComparerObject> memoryCache) =>
+            source.Select(group => group.Select(cmpObject => memoryCache.TryRemove(cmpObject.PathHash, out _)));
 
 
         public static Source<IEnumerable<ComparerObject>, NotUsed> RemoveFromIndexById(
