@@ -203,7 +203,7 @@ namespace DocSearchAIO.Scheduler
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var fileNameHash = await StaticHelpers.CreateHashString(new TypedEncryptedInputString(fileName), encryptionService);
+                    var fileNameHash = await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName), encryptionService);
 
                     var elasticDoc = new PdfElasticDocument
                     {
@@ -236,7 +236,7 @@ namespace DocSearchAIO.Scheduler
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = (await StaticHelpers.CreateHashString(new TypedEncryptedInputString(listElementsToHash.Concat()), encryptionService)).Value;
+                    elasticDoc.ContentHash = (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()), encryptionService)).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }

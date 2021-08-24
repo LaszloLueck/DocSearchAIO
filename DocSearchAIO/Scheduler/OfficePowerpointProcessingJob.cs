@@ -203,7 +203,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                                 .Replace(@"\", "/");
 
-                            var id = await StaticHelpers.CreateHashString(new TypedEncryptedInputString(currentFile), encryptionService);
+                            var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile), encryptionService);
                             var slideCount = wd
                                 .SlideParts
                                 .Count();

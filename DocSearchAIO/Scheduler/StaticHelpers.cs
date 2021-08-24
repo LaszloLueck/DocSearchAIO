@@ -34,11 +34,11 @@ namespace DocSearchAIO.Scheduler
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
-        public static readonly Func<TypedEncryptedInputString, EncryptionService, Task<TypedEncryptedString>> CreateHashString =
+        public static readonly Func<TypedHashedInputString, EncryptionService, Task<TypedHashedString>> CreateHashString =
             async (stringValue, encryptionService) =>
             {
                 var res1 = await encryptionService.ComputeHashAsync(stringValue.Value);
-                return new TypedEncryptedString(encryptionService.ConvertToStringFromByteArray(res1));
+                return new TypedHashedString(encryptionService.ConvertToStringFromByteArray(res1));
             };
 
         private static readonly Func<ConfigurationObject, string[], string, bool>
@@ -100,13 +100,13 @@ namespace DocSearchAIO.Scheduler
             new(commentsArray.Select(d => d.Comment).Join(" "));
 
 
-        private static readonly string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ";
+        private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ ";
 
         [Pure]
         public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
             TypedContentString contentString) => new(Repl(commentString.Value + " " + contentString.Value) ?? "");
 
-        private static readonly Func<string, string?> Repl = input => input.Select(chr => AllowedChars.Contains(chr) ? chr : ' ').Concat();
+        private static readonly Func<string, string?> Repl = input => input.Select(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
 
         [Pure]
         public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
@@ -146,10 +146,10 @@ namespace DocSearchAIO.Scheduler
                 };
 
         [Pure]
-        public static async Task<TypedEncryptedString> ContentHashString(this (List<string> listElementsToHash,
+        public static async Task<TypedHashedString> ContentHashString(this (List<string> listElementsToHash,
             IEnumerable<OfficeDocumentComment> commentsArray) kv, EncryptionService encryptionService) =>
             await CreateHashString(
-                new TypedEncryptedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
+                new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
 
         [Pure]
         public static List<string> ListElementsToHash(string category, DateTime created,

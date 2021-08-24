@@ -78,16 +78,16 @@
         }
     }
 
-    public class TypedEncryptedString : GenericSourceString
+    public class TypedHashedString : GenericSourceString
     {
-        public TypedEncryptedString(string value) : base(value)
+        public TypedHashedString(string value) : base(value)
         {
         }
     }
 
-    public class TypedEncryptedInputString : GenericSourceString
+    public class TypedHashedInputString : GenericSourceString
     {
-        public TypedEncryptedInputString(string value) : base(value)
+        public TypedHashedInputString(string value) : base(value)
         {
         }
     }

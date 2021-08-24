@@ -209,7 +209,7 @@ namespace DocSearchAIO.Scheduler
                                 .Replace(@"\", "/");
 
                             var id = await StaticHelpers.CreateHashString(
-                                new TypedEncryptedInputString(currentFile), encryptionService);
+                                new TypedHashedInputString(currentFile), encryptionService);
 
 
                             static IEnumerable<OfficeDocumentComment> CommentArray(
