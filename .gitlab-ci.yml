@@ -138,8 +138,9 @@ codeanalysis:
       - "apt-get install --yes openjdk-11-jre"
       - "dotnet tool install --global dotnet-sonarscanner"
       - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
-      - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
+      - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
       - "dotnet build"
+      - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
       - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
   allow_failure: true
   only:
