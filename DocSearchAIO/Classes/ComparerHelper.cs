@@ -27,7 +27,6 @@ namespace DocSearchAIO.Classes
             return Source.From(ieNumerable);
         }
 
-        [NotNull]
         private static readonly Func<string, Maybe<ComparerObject>> ConvertLine = line =>
         {
             var spl = line.Split(";");

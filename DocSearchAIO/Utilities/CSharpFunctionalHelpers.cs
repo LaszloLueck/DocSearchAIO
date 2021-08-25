@@ -76,33 +76,33 @@ namespace DocSearchAIO.Utilities
             source.ToDictionary(d => d.Key, d => d.Value);
 
         [Pure]
-        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull][NotNull] TOut alternative,
-            [NotNull] Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
+        public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull][NotNull] TOut alternative,
+            Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
         [Pure]
-        public static TOut ResolveNullable<TIn, TOut>([AllowNull] this TIn? nullable, [DisallowNull, NotNull] TOut alternative,
-            [NotNull] Func<TIn, TOut, TOut> some, [NotNull] Func<TOut, TOut> none) =>
+        public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull, NotNull] TOut alternative,
+            Func<TIn, TOut, TOut> some, Func<TOut, TOut> none) =>
             nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
 
         [Pure]
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
-            [NotNull] this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
+            this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
         [Pure]
-        public static IEnumerable<TOut> SelectKv<TKey, TValue, TOut>([NotNull] this IEnumerable<KeyValuePair<TKey, TValue>> dic,
-            [NotNull] Func<TKey, TValue, TOut> action) => dic.Select(kv => action.Invoke(kv.Key, kv.Value));
+        public static IEnumerable<TOut> SelectKv<TKey, TValue, TOut>(this IEnumerable<KeyValuePair<TKey, TValue>> dic,
+            Func<TKey, TValue, TOut> action) => dic.Select(kv => action.Invoke(kv.Key, kv.Value));
 
         [Pure]
         public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
-            [NotNull] this IEnumerable<Tuple<TKey, TValue>> source, [NotNull] Func<TKey, TValue, TOut> action) =>
+            this IEnumerable<Tuple<TKey, TValue>> source, Func<TKey, TValue, TOut> action) =>
             source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
         
         [Pure]
-        public static IEnumerable<KeyValuePair<TKey, TValue>> Where<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<TKey, TValue>> source,
-            [NotNull] Func<TKey, TValue, bool> action) => source.Where(kv => action.Invoke(kv.Key, kv.Value));
+        public static IEnumerable<KeyValuePair<TKey, TValue>> Where<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source,
+            Func<TKey, TValue, bool> action) => source.Where(kv => action.Invoke(kv.Key, kv.Value));
 
         [Pure]
-        public static IEnumerable<TSource> Values<TSource>([NotNull, DisallowNull] this IEnumerable<Maybe<TSource>> source) =>
+        public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
             source
                 .Where(filtered => filtered.HasValue)
                 .Select(selected => selected.Value);
