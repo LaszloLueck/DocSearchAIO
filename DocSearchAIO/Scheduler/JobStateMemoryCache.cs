@@ -25,7 +25,11 @@ namespace DocSearchAIO.Scheduler
                         new ProcessorBasePdf(),
                         () => new MemoryCacheModelPdf(loggerFactory, memoryCache)),
                     Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseExcel(),
-                        () => new MemoryCacheModelExcel(loggerFactory, memoryCache))
+                        () => new MemoryCacheModelExcel(loggerFactory, memoryCache)),
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseMsg(),
+                        () => new MemoryCacheModelMsg(loggerFactory, memoryCache)),
+                    Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseEml(),
+                        () => new MemoryCacheModelEml(loggerFactory, memoryCache))
                 };
             };
 
@@ -46,6 +50,12 @@ namespace DocSearchAIO.Scheduler
             GetExcelJobStateMemoryCache = (loggerFactory, memoryCache) =>
                 new JobStateMemoryCache<MemoryCacheModelExcel>(loggerFactory, memoryCache);
 
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsg>>
+            GetMsgJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelMsg>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEml>>
+            GetEmlJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelEml>(loggerFactory, memoryCache);
+
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcelCleanup>>
             GetExcelCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
                 new JobStateMemoryCache<MemoryCacheModelExcelCleanup>(loggerFactory, memoryCache);
@@ -62,6 +72,12 @@ namespace DocSearchAIO.Scheduler
         public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWordCleanup>>
             GetWordCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
                 new JobStateMemoryCache<MemoryCacheModelWordCleanup>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsgCleanup>>
+            GetMsgCleanupJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelMsgCleanup>(loggerFactory, memoryCache);
+
+        public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEmlCleanup>>
+            GetEmlCleanupJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelEmlCleanup>(loggerFactory, memoryCache);
     }
 
     public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
@@ -94,7 +110,7 @@ namespace DocSearchAIO.Scheduler
         public void SetCacheEntry(JobState jobState)
         {
             _logger.LogInformation("set cache entry to {JobState}", jobState);
-            var cacheEntry = new CacheEntry {CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState};
+            var cacheEntry = new CacheEntry { CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState };
             _memoryCache.Set(cacheEntry.CacheKey, cacheEntry);
         }
     }
