@@ -1,5 +1,8 @@
 let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
-    let pagingCount = documentCount <= pageSize ? 0 : (documentCount - documentCount % pageSize) / pageSize + (documentCount % pageSize === 0 ? 0 : 1);
+    let modResult = (documentCount % pageSize === 0) ? 0 : 1;
+    
+    let pagingCount = documentCount <= pageSize ? 0 : (documentCount - documentCount % pageSize) / pageSize + modResult;
+    
     let currentPageNumber = currentPage / pageSize + 1;
 
     let mainContent = '<nav aria-label="Main-Navigation">';
