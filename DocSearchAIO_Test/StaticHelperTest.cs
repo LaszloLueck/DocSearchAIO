@@ -23,7 +23,7 @@ namespace DocSearchAIO_Test
         {
             var testStringContent = "Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
             var testStringComment = "Fritz jagt im total verwahrlosten Taxi quer durch München";
-            
+
 
             var typedCommentString = new TypedCommentString(testStringComment);
             var typedContentString = new TypedContentString(testStringContent);
@@ -49,8 +49,22 @@ namespace DocSearchAIO_Test
 
 
             expectedString.Should().Match(result.Value);
-
         }
-        
+
+        [Fact]
+        public void Build_a_suggest_array_from_a_text_string()
+        {
+            var testString = new TypedSuggestString("The quick brown fo jumps over the lazy do");
+            var result = testString.GenerateSearchAsYouTypeArray();
+
+            Assert.Collection(result,
+                item => Assert.Contains("the", item),
+                item => Assert.Contains("quick", item),
+                item => Assert.Contains("brown", item),
+                item => Assert.Contains("jumps", item),
+                item => Assert.Contains("over", item),
+                item => Assert.Contains("lazy", item)
+            );
+        }
     }
 }
