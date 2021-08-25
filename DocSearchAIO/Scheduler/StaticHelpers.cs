@@ -17,10 +17,7 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Presentation;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Nest;
-using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO.Scheduler
 {
@@ -202,12 +199,12 @@ namespace DocSearchAIO.Scheduler
             {
                 switch (element)
                 {
-                    case Paragraph p when p.InnerText.Any():
+                    case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
                         sb.Append(' ');
                         ExtractTextFromElement(element.ChildElements, sb);
                         sb.Append(' ');
                         break;
-                    case Text { HasChildren: false } wText:
+                    case DocumentFormat.OpenXml.Wordprocessing.Text { HasChildren: false } wText:
                         if (wText.Text.Any())
                             sb.Append(wText.Text);
                         break;
@@ -219,7 +216,7 @@ namespace DocSearchAIO.Scheduler
                         if (dText.Text.Any())
                             sb.Append(dText.Text);
                         break;
-                    case TextBody { HasChildren: false } tText:
+                    case DocumentFormat.OpenXml.Presentation.TextBody { HasChildren: false } tText:
                         if (tText.TextFromParagraph().Any())
                             sb.Append(' ' + tText.TextFromParagraph() + ' ');
                         break;
@@ -232,13 +229,13 @@ namespace DocSearchAIO.Scheduler
                         if (pText.Text.Any())
                             sb.Append(pText.Text);
                         break;
-                    case FieldChar
+                    case DocumentFormat.OpenXml.Wordprocessing.FieldChar
                     {
-                        FieldCharType: { Value: FieldCharValues.Separate }
+                        FieldCharType: { Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate }
                     }:
                         sb.Append(' ');
                         break;
-                    case Break:
+                    case DocumentFormat.OpenXml.Wordprocessing.Break:
                         sb.Append(Environment.NewLine);
                         break;
                     default:

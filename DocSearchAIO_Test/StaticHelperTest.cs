@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DocSearchAIO.Scheduler;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Wordprocessing;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -66,5 +68,28 @@ namespace DocSearchAIO_Test
                 item => Assert.Contains("lazy", item)
             );
         }
+
+        [Fact]
+        public void Build_ContentString_From_TextElement()
+        {
+            var list1 = new List<OpenXmlElement>
+            {
+                new Text("Text List A"),
+            };
+            var list2 = new List<OpenXmlElement>
+            {
+                new Text("Text List B"),
+            };
+
+            var p1 = new Paragraph(list1);
+            var p2 = new Paragraph(list2);
+            var pList = new List<OpenXmlElement>{p1, p2};
+
+            var result = pList.ContentString();
+
+            "Text List A Text List B".Should().Match(result);
+
+        }
+        
     }
 }
