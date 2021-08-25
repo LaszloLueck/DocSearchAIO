@@ -1,4 +1,4 @@
-renderSearchResultDetails = (detailElements) => {
+let renderSearchResultDetails = (detailElements) => {
     let mainContent = '';
     detailElements.forEach(element => {
         mainContent += '<div class="w-100 mb-2">';

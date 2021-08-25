@@ -1,4 +1,4 @@
-openDocumentDetailDialog = (id) => {
+let openDocumentDetailDialog = (id) => {
     let data = {id: id};
     $.ajax({
         method: "POST",
@@ -19,7 +19,7 @@ openDocumentDetailDialog = (id) => {
         });
 }
 
-getDocumentDetailData = (result) => {
+let getDocumentDetailData = (result) => {
     return `<div class="modal fade bd-example-modal-xl" id="documentDetailModal" tabIndex="-1" role="dialog"
          aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl" role="document">

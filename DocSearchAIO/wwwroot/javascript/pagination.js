@@ -1,4 +1,4 @@
-renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
+let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
     let pagingCount = documentCount <= pageSize ? 0 : (documentCount - documentCount % pageSize) / pageSize + (documentCount % pageSize === 0 ? 0 : 1);
     let currentPageNumber = currentPage / pageSize + 1;
 

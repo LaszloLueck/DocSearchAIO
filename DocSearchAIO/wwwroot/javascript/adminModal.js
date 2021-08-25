@@ -1,4 +1,4 @@
-switchAdminContent = (element) => {
+let switchAdminContent = (element) => {
     $('ul.nav-tabs li.nav-item a.nav-link').each(function () {
         $(this).removeClass('active');
         if ($(this).attr("id") === $(element).attr("id")) {
@@ -24,7 +24,7 @@ switchAdminContent = (element) => {
     });
 }
 
-renderAdminModal = () => {
+let renderAdminModal = () => {
     let mainContent = '';
     mainContent +=  '<div class="modal fade bd-example-modal-xl" id="adminModal" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">';
     mainContent +=  '    <div class="modal-dialog modal-xl" style="height: 80%;" role="document">';
@@ -61,7 +61,7 @@ renderAdminModal = () => {
     return mainContent;
 }
 
-loadGenericContent = () => {
+let loadGenericContent = () => {
     $.ajax({
         url: "/api/administration/getGenericContentData",
         dataType: "json",
@@ -77,7 +77,7 @@ loadGenericContent = () => {
         });
 }
 
-loadSchedulerContent = () => {
+let loadSchedulerContent = () => {
     $.ajax({
         url: "/api/administration/getSchedulerContentData",
         dataType: "json",
@@ -93,7 +93,7 @@ loadSchedulerContent = () => {
         });
 }
 
-loadStatisticContent = () => {
+let loadStatisticContent = () => {
     $.ajax({
         url: "/api/administration/getStatisticsContentData",
         dataType: "json",
@@ -109,7 +109,7 @@ loadStatisticContent = () => {
         });
 }
 
-loadActionContent = () => {
+let loadActionContent = () => {
     $.ajax({
         url: "/api/administration/getActionContentData",
         dataType: "json",

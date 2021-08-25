@@ -1,4 +1,4 @@
-addNewElasticNode = () => {
+let addNewElasticNode = () => {
     let currentElements = $('#elasticNodeContainer > div').length;
 
     let element = '<div style="display: none" class="input-group input-group-sm m-2" id="elasticEndpoint_' + (currentElements + 1) + '">';
@@ -13,13 +13,13 @@ addNewElasticNode = () => {
     $('#elasticEndpoint_' + (currentElements + 1)).fadeIn();
 }
 
-removeNodeEntry = (id) => {
+let removeNodeEntry = (id) => {
     $('#elasticEndpoint_' + id).fadeOut(function () {
         $("#elasticEndpoint_" + id).remove();
     });
 }
 
-saveAdminContent = () => {
+let saveAdminContent = () => {
     let elasticNodes = $('input[id^="elastic_endpoint_"]').map(function () {
         return this.value;
     })

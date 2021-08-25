@@ -1,4 +1,4 @@
-renderAdminGenericModal = (result) => {
+let renderAdminGenericModal = (result) => {
     let mainContent = '<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray">';
     mainContent += '<div class="input-group input-group-sm m-2">';
     mainContent += '<div class="input-group-prepend">';

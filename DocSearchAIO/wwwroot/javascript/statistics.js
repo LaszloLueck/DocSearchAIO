@@ -1,4 +1,4 @@
-renderStatistics = (docCount, searchTime) => {
+let renderStatistics = (docCount, searchTime) => {
     let mainContent = '<div class="w-50 mx-auto d-flex justify-content-center">';
     if (docCount === 0) {
         mainContent += '<span id="suggestedDocCount">Keine Ergebnisse vorhanden (' + searchTime + ' ms)</span>';

@@ -1,4 +1,4 @@
-init = () => {
+let init = () => {
 
     let data = {
         filterExcel: localStorage.getItem("filterExcel") === 'true',
@@ -38,7 +38,7 @@ init = () => {
 
 };
 
-checkIfAnyIndexActive = () => {
+let checkIfAnyIndexActive = () => {
     return localStorage.getItem("filterWord") === 'true' ||
         localStorage.getItem("filterExcel") === 'true' ||
         localStorage.getItem("filterPowerpoint") === 'true' ||
@@ -47,7 +47,7 @@ checkIfAnyIndexActive = () => {
         localStorage.getItem("filterEml") === 'true';
 }
 
-setAutoCompleteWithCondition = () => {
+let setAutoCompleteWithCondition = () => {
     if (checkIfAnyIndexActive()) {
         $('#searchField').autoComplete({
             resolver: 'custom',
@@ -82,7 +82,7 @@ setAutoCompleteWithCondition = () => {
     }
 }
 
-escapeMarkup = (unsafe) => {
+let escapeMarkup = (unsafe) => {
     let prep = unsafe.replaceAll('<span style="color:orange;">', "##COLORGRADESTART##").replaceAll('</span>',"##COLORGRADEEND##");
     return prep.replace(/[<>&'"]/g, function (c) {
         switch (c) {
@@ -104,7 +104,7 @@ escapeMarkup = (unsafe) => {
     }).replaceAll('##COLORGRADESTART##','<span style="color:orange;"><strong>').replaceAll('##COLORGRADEEND##', '</strong></span>');
 }
 
-getAdministrationModal = () => {
+let getAdministrationModal = () => {
     $('#modalContainer').append(renderAdminModal());
     const element = $('#adminModal');
     $(element).on('hidden.bs.modal', function () {
@@ -114,7 +114,7 @@ getAdministrationModal = () => {
     switchAdminContent($('#generalSettings'));
 }
 
-showAlert = (alertText, alertType) => {
+let showAlert = (alertText, alertType) => {
     $('body').append('<div style="display: none; position: fixed; top: 0; left: 0; width: 100%;" class="alert ' + alertType + '" role="alert" id="customAlert">' + alertText +
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
         '<span aria-hidden="true">&times;</span>\n' +
@@ -127,7 +127,7 @@ showAlert = (alertText, alertType) => {
     });
 }
 
-$(document).ready(function () {
+$(function () {
     init();
     setAutoCompleteWithCondition();
 

@@ -1,4 +1,4 @@
-doSearch = (searchText, from) => {
+let doSearch = (searchText, from) => {
     let data = {
         searchPhrase: unescape(searchText),
         from: from,

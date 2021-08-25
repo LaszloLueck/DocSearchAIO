@@ -1,4 +1,4 @@
-renderAdminSchedulerModal = (result) => {
+let renderAdminSchedulerModal = (result) => {
     let mainContent = '';
     mainContent += ' <div class="container mt-2 border rounded border-color-gray">';
     mainContent += '     <div class="row">';

@@ -1,4 +1,4 @@
-instantStartJob = (jobId, groupId) => {
+let instantStartJob = (jobId, groupId) => {
     let request = {
         jobName: jobId,
         groupId: groupId
@@ -18,7 +18,7 @@ instantStartJob = (jobId, groupId) => {
         });
 }
 
-reindexAndStartJob = (jobId, groupId) => {
+let reindexAndStartJob = (jobId, groupId) => {
     let request = {
         jobName: jobId,
         groupId: groupId
@@ -38,7 +38,7 @@ reindexAndStartJob = (jobId, groupId) => {
         });
 }
 
-resumeTrigger = (triggerId, triggerGroup) => {
+let resumeTrigger = (triggerId, triggerGroup) => {
     let request = {
         triggerId: triggerId,
         groupId: triggerGroup
@@ -59,7 +59,7 @@ resumeTrigger = (triggerId, triggerGroup) => {
         });
 }
 
-pauseTrigger = (triggerId, triggerGroup) => {
+let pauseTrigger = (triggerId, triggerGroup) => {
     let request = {
         triggerId: triggerId,
         groupId: triggerGroup

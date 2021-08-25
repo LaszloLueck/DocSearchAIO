@@ -1,4 +1,4 @@
-renderAdminActionModal = (result) => {
+let renderAdminActionModal = (result) => {
     let mainContent = '';
 
     mainContent += '<div class="container mt-2">';

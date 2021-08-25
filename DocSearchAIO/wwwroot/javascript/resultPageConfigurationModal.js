@@ -1,4 +1,4 @@
-renderResultPageConfigModal = (result) => {
+let renderResultPageConfigModal = (result) => {
     let mainContent = '';
 
     mainContent += '<div class="modal fade bd-example-modal-xl" id="optionModal" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">';

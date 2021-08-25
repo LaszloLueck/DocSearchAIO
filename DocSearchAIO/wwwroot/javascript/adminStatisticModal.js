@@ -1,4 +1,4 @@
-renderAdminStatisticsModal = (result) => {
+let renderAdminStatisticsModal = (result) => {
     let mainContent = '';
 
     mainContent += '<div class="container mt-2">';

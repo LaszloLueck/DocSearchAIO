@@ -1,4 +1,4 @@
-openOptionDialog = () => {
+let openOptionDialog = () => {
     let optionData = {
         filterWord: localStorage.getItem("filterWord") === "true",
         filterExcel: localStorage.getItem("filterExcel") === "true",
@@ -28,7 +28,7 @@ openOptionDialog = () => {
 
 }
 
-checkCheckboxElementsFilter = (element) => {
+let checkCheckboxElementsFilter = (element) => {
     const grpName = $(element).attr('name');
     const elements = $('input[name=' + grpName + ']');
     let selected = 0;
@@ -47,7 +47,7 @@ checkCheckboxElementsFilter = (element) => {
 
 }
 
-switchSizeDropDown = (value) => {
+let switchSizeDropDown = (value) => {
     let selector = $('#listSizeSelector a');
     $(selector).removeClass('active');
     $('#switchSize_' + value).addClass('active');
