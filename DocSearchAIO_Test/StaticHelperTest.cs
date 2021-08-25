@@ -1,13 +1,17 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
+using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
 using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Wordprocessing;
 using FluentAssertions;
+using iText.Layout.Element;
 using Xunit;
 using Xunit.Abstractions;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
+using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO_Test
 {
@@ -88,6 +92,22 @@ namespace DocSearchAIO_Test
             var result = pList.ContentString();
 
             "Text List A Text List B".Should().Match(result);
+
+        }
+
+        [Fact]
+        public void Replace_Characters_From_String()
+        {
+            var testString = "The quick brown fox jumps over the lazy dog";
+
+            var listToReplace = new List<(string, string)>
+            {
+                ("o", ""),
+                ("u", "")
+            };
+
+            var result = testString.ReplaceSpecialStrings(listToReplace);
+            "The qick brwn fx jmps ver the lazy dg".Should().Match(result);
 
         }
         
