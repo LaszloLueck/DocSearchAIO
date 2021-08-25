@@ -28,13 +28,18 @@ namespace DocSearchAIO.DocSearch.Services
         }
 
         private static readonly Func<IScheduler, SchedulerStatistics> StatisticsObject = scheduler =>
-            new SchedulerStatistics(scheduler.SchedulerName, scheduler.SchedulerInstanceId, scheduler.IsStarted
-                ? "Gestartet"
-                : scheduler.IsShutdown
-                    ? "Heruntergefahren"
-                    : scheduler.InStandbyMode
-                        ? "Pausiert"
-                        : "Unbekannt");
+            new SchedulerStatistics(scheduler.SchedulerName, scheduler.SchedulerInstanceId, CalculateStateCheck(scheduler));
+
+        private static string CalculateStateCheck(IScheduler scheduler)
+        {
+            if (scheduler.IsStarted)
+                return "Gestartet";
+
+            if (scheduler.IsShutdown)
+                return "Heruntergefahren";
+
+            return scheduler.InStandbyMode ? "Pausiert" : "Unbekannt";
+        }
 
         private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
             configurationObject =>

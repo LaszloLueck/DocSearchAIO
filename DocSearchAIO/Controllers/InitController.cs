@@ -19,8 +19,8 @@ namespace DocSearchAIO.Controllers
         public InitController(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService, IConfiguration configuration)
         {
             _logger = loggerFactory.CreateLogger<InitController>();
-            _initService = new InitService(loggerFactory, elasticSearchService, configuration);
-            _fileDownloadService = new FileDownloadService(loggerFactory);
+            _initService = new InitService(elasticSearchService, configuration);
+            _fileDownloadService = new FileDownloadService();
         }
         
 

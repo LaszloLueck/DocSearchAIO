@@ -1,19 +1,11 @@
 ﻿using System.IO;
 using System.Web;
 using DocSearchAIO.DocSearch.TOs;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.DocSearch.Services
 {
     public class FileDownloadService
     {
-        private readonly ILogger _logger;
-        
-        public FileDownloadService(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<FileDownloadService>();
-        }
-
         public DownloadFileResponse DownloadFileStream(string path, string documentType)
         {
             static string ContentType(string documentType) => documentType switch
@@ -29,6 +21,5 @@ namespace DocSearchAIO.DocSearch.Services
             var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, bufferSize: 4096);
             return new DownloadFileResponse(fs, returnFileName, ContentType(documentType));
         }
-        
     }
 }

@@ -12,13 +12,11 @@ namespace DocSearchAIO.DocSearch.Services
 {
     public class OptionDialogService
     {
-        private readonly ILogger _logger;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ConfigurationObject _cfg;
         
-        public OptionDialogService(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService, IConfiguration configuration)
+        public OptionDialogService(IElasticSearchService elasticSearchService, IConfiguration configuration)
         {
-            _logger = loggerFactory.CreateLogger<OptionDialogService>();
             _elasticSearchService = elasticSearchService;
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);

@@ -8,20 +8,17 @@ using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.DocSearch.Services
 {
     public class InitService
     {
-        private readonly ILogger _logger;
         private readonly IElasticSearchService _elasticSearchService;
         private readonly ConfigurationObject _cfg;
 
-        public InitService(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService,
+        public InitService(IElasticSearchService elasticSearchService,
             IConfiguration configuration)
         {
-            _logger = loggerFactory.CreateLogger<InitService>();
             _elasticSearchService = elasticSearchService;
             _cfg = new ConfigurationObject();
             configuration.GetSection("configurationObject").Bind(_cfg);

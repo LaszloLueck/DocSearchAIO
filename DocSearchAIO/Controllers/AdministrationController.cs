@@ -27,7 +27,7 @@ namespace DocSearchAIO.Controllers
             _administrationService =
                 new AdministrationService(loggerFactory, configuration, elasticSearchService, memoryCache);
             _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-            _optionDialogService = new OptionDialogService(loggerFactory, elasticSearchService, configuration);
+            _optionDialogService = new OptionDialogService(elasticSearchService, configuration);
         }
 
         [Route("setGenericContent")]
