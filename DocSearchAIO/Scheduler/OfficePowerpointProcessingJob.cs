@@ -11,6 +11,7 @@ using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
@@ -225,11 +226,13 @@ namespace DocSearchAIO.Scheduler
                                 .ContentString()
                                 .ReplaceSpecialStrings(toReplaced);
 
+                            var toHash = new ElementsToHash(category, created, contentString, creator,
+                                description, identifier, keywords, language, modified, revision,
+                                subject, title, version, contentStatus, contentType, lastPrinted,
+                                lastModifiedBy);
+                            
                             var elementsHash = await (
-                                StaticHelpers.ListElementsToHash(category, created, contentString, creator,
-                                    description, identifier, keywords, language, modified, revision,
-                                    subject, title, version, contentStatus, contentType, lastPrinted,
-                                    lastModifiedBy), commentsArray).ContentHashString(encryptionService);
+                                StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString(encryptionService);
 
                             static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
                                 commentsArray

@@ -13,6 +13,7 @@ using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
@@ -151,31 +152,30 @@ namespace DocSearchAIO.Scheduler
             await CreateHashString(
                 new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
 
+
+        
+        
         [Pure]
-        public static List<string> ListElementsToHash(string category, DateTime created,
-            string contentString, string creator, string description, string identifier,
-            string keywords, string language, DateTime modified, string revision,
-            string subject, string title, string version, string contentStatus,
-            string contentType, DateTime lastPrinted, string lastModifiedBy) =>
+        public static List<string> ListElementsToHash(ElementsToHash toHash) =>
             new()
             {
-                category,
-                created.ToString(CultureInfo.CurrentCulture),
-                contentString,
-                creator,
-                description,
-                identifier,
-                keywords,
-                language,
-                modified.ToString(CultureInfo.CurrentCulture),
-                revision,
-                subject,
-                title,
-                version,
-                contentStatus,
-                contentType,
-                lastPrinted.ToString(CultureInfo.CurrentCulture),
-                lastModifiedBy
+                toHash.Category,
+                toHash.Created.ToString(CultureInfo.CurrentCulture),
+                toHash.ContentString,
+                toHash.Creator,
+                toHash.Description,
+                toHash.Identifier,
+                toHash.Keywords,
+                toHash.Language,
+                toHash.Modified.ToString(CultureInfo.CurrentCulture),
+                toHash.Revision,
+                toHash.Subject,
+                toHash.Title,
+                toHash.Version,
+                toHash.ContentStatus,
+                toHash.ContentType,
+                toHash.LastPrinted.ToString(CultureInfo.CurrentCulture),
+                toHash.LastModifiedBy
             };
 
         [Pure]
