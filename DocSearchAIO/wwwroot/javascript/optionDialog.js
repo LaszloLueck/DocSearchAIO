@@ -32,8 +32,8 @@ let checkCheckboxElementsFilter = (element) => {
     const grpName = $(element).attr('name');
     const elements = $('input[name=' + grpName + ']');
     let selected = 0;
-    $(elements).each(function (inner, element) {
-        if ($(element).prop('checked'))
+    $(elements).each(function (inner, innerElement) {
+        if ($(innerElement).prop('checked'))
             selected += 1
     });
     if (selected === 0) {

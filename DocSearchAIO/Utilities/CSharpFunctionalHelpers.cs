@@ -30,6 +30,20 @@ namespace DocSearchAIO.Utilities
         public static TOut IfTrueFalse<TOut>(this bool value,
             Func<TOut> falseAction,
             Func<TOut> trueAction) => value ? trueAction.Invoke() : falseAction.Invoke();
+        
+        public static void IfTrueFalse<TInput>(this bool value, TInput parameter,
+            Action<TInput> falseAction,
+            Action<TInput> trueAction)
+        {
+            if (value)
+            {
+                trueAction.Invoke(parameter);
+            }
+            else
+            {
+                falseAction.Invoke(parameter);
+            }
+        }
 
         public static void IfTrue(this bool value, Action action)
         {
@@ -56,31 +70,6 @@ namespace DocSearchAIO.Utilities
             }
         }
 
-        public static void IfTrueFalse<TInput>(this bool value, TInput parameter,
-            Action<TInput> falseAction,
-            Action<TInput> trueAction)
-        {
-            if (value)
-            {
-                trueAction.Invoke(parameter);
-            }
-            else
-            {
-                falseAction.Invoke(parameter);
-            }
-        }
-
-        public static void Map<TIn>(this Maybe<TIn> source, Action<TIn> processor)
-        {
-            if (source.HasValue)
-                processor.Invoke(source.Value);
-        }
-
-        // public static Maybe<TOut> Map<TIn, TOut>(this Maybe<TIn> source, Func<TIn, TOut> processor)
-        // {
-        //     return source.HasValue ? Maybe.From(processor.Invoke(source.Value)) : Maybe<TOut>.None;
-        // }
-        
         [Pure]
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
             this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
