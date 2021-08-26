@@ -33,19 +33,24 @@ namespace DocSearchAIO.DocSearch.Services
             configuration.GetSection("configurationObject").Bind(_configurationObject);
         }
 
-
+#pragma warning disable S3776
         public async Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest)
         {
             try
             {
                 var from = doSearchRequest.From;
                 var size = doSearchRequest.Size;
-                var searchPhrase = doSearchRequest.SearchPhrase == "" ? "*" : doSearchRequest.SearchPhrase;
+                var searchPhrase = CheckSearchPhrase(doSearchRequest.SearchPhrase);
                 var query = new SimpleQueryStringQuery();
                 var include = new[] { new Field("comments.comment"), new Field("content") };
                 query.Fields = include;
                 query.Query = searchPhrase;
                 query.AnalyzeWildcard = true;
+
+                static string CheckSearchPhrase(string searchPhrase)
+                {
+                    return searchPhrase == "" ? "*" : searchPhrase;
+                }
 
                 var highlight = new Highlight
                 {
@@ -67,21 +72,23 @@ namespace DocSearchAIO.DocSearch.Services
                     await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
                 var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
 
-
+                var documentTypesAndFilters = new List<(Type, bool)>
+                {
+                    (typeof(WordElasticDocument), doSearchRequest.FilterWord),
+                    (typeof(ExcelElasticDocument), doSearchRequest.FilterExcel),
+                    (typeof(PowerpointElasticDocument), doSearchRequest.FilterPowerpoint),
+                    (typeof(PdfElasticDocument), doSearchRequest.FilterPdf),
+                    (typeof(MsgElasticDocument), doSearchRequest.FilterMsg),
+                    (typeof(EmlElasticDocument), doSearchRequest.FilterEml)
+                };
+                
                 var selectedIndices = new List<string>();
                 var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-                if (StaticHelpers.IndexKeyExpression<WordElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterWord))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<WordElasticDocument>(_configurationObject));
-                if (StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterExcel))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<ExcelElasticDocument>(_configurationObject));
-                if (StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPowerpoint))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<PowerpointElasticDocument>(_configurationObject));
-                if (StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterPdf))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<PdfElasticDocument>(_configurationObject));
-                if (StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterMsg))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<MsgElasticDocument>(_configurationObject));
-                if (StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_configurationObject, enumerable, doSearchRequest.FilterEml))
-                    selectedIndices.Add(StaticHelpers.GenerateIndexName<EmlElasticDocument>(_configurationObject));
+                documentTypesAndFilters.ForEach((filterType, requestFilter) => 
+                {
+                    if(StaticHelpers.TypedIndexKeyExistsAndFilter(filterType,_configurationObject, enumerable, requestFilter))
+                        selectedIndices.Add(StaticHelpers.IndexNameByType(filterType, _configurationObject));
+                });
 
                 if (selectedIndices.Count == 6)
                 {
@@ -148,10 +155,13 @@ namespace DocSearchAIO.DocSearch.Services
                             var commentObj = originalComments.Where(c => c.Comment.Contains(prepText)).TryFirst();
 
                             var retVal = commentObj.HasValue
-                                ? new CommentDetail(p){Author = commentObj.Value.Author, Date = commentObj.Value.Date, Id = commentObj.Value.Id, Initials = commentObj.Value.Initials}
+                                ? new CommentDetail(p)
+                                {
+                                    Author = commentObj.Value.Author, Date = commentObj.Value.Date, Id = commentObj.Value.Id,
+                                    Initials = commentObj.Value.Initials
+                                }
                                 : new CommentDetail(p);
-                            
-                            
+
 
                             return retVal;
                         });
@@ -173,5 +183,6 @@ namespace DocSearchAIO.DocSearch.Services
                 return new DoSearchResponse(Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""), new SearchStatisticsModel(0, 0));
             }
         }
+#pragma warning restore S3776
     }
 }

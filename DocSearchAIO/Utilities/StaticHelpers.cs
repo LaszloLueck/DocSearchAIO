@@ -50,10 +50,11 @@ namespace DocSearchAIO.Scheduler
             return IndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
         }
 
-        [Pure]
-        public static string GenerateIndexName<T>(ConfigurationObject configurationObject) where T : ElasticDocument =>
-            $"{configurationObject.IndexName}-{configurationObject.Processing[typeof(T).Name].IndexSuffix}";
+        public static readonly Func<Type, ConfigurationObject, string[], bool, bool> TypedIndexKeyExistsAndFilter =
+            (type, configurationObject, enumerable, filter) => IndexKeyExpressionFromConfiguration(configurationObject, enumerable, type.Name) && filter;
 
+        public static readonly Func<Type, ConfigurationObject, string> IndexNameByType = (type, configurationObject) =>
+            $"{configurationObject.IndexName}-{configurationObject.Processing[type.Name].IndexSuffix}";
 
         public static readonly Func<string, string[]> KeywordsList = keywords =>
             keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
@@ -150,8 +151,6 @@ namespace DocSearchAIO.Scheduler
                 new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
 
 
-        
-        
         [Pure]
         public static List<string> ListElementsToHash(ElementsToHash toHash) =>
             new()

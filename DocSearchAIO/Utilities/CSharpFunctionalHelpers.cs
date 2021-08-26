@@ -26,6 +26,14 @@ namespace DocSearchAIO.Utilities
         public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
             Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
 
+        public static void ForEach<TTuple1, TTuple2>(this IEnumerable<(TTuple1, TTuple2)> source, Action<TTuple1, TTuple2> action)
+        {
+            foreach (var valueTuple in source)
+            {
+                action.Invoke(valueTuple.Item1, valueTuple.Item2);
+            }
+        }
+        
         [Pure]
         public static TOut IfTrueFalse<TOut>(this bool value,
             Func<TOut> falseAction,
@@ -96,7 +104,7 @@ namespace DocSearchAIO.Utilities
         public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
             this IEnumerable<Tuple<TKey, TValue>> source, Func<TKey, TValue, TOut> action) =>
             source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
-        
+
         [Pure]
         public static IEnumerable<KeyValuePair<TKey, TValue>> Where<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source,
             Func<TKey, TValue, bool> action) => source.Where(kv => action.Invoke(kv.Key, kv.Value));
