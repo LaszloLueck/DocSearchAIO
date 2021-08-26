@@ -48,13 +48,13 @@ let renderRightPart = (currentPageNumber, pagingCount, searchPhrase, pageSize) =
 
 let getPager = (counter, pageSize, currentPage, searchPhrase) => {
 
-    let pager = '';
+    let pager;
     if ((counter - 1) * pageSize === currentPage) {
-        pager = '<li class="page-item active"><div class="page-link"><span aria-hidden="true">' + x + '</span></div></li>'
+        pager = '<li class="page-item active"><div class="page-link"><span aria-hidden="true">' + counter + '</span></div></li>'
     } else {
-        let calculatedValue = (x - 1) * pageSize;
+        let calculatedValue = (counter - 1) * pageSize;
         let link = 'javascript:doSearch(\'' + searchPhrase + '\',' + calculatedValue + ')';
-        pager = '<li class="page-item"><a class="page-link" href="' + link + '">' + x + '</a></li>';
+        pager = '<li class="page-item"><a class="page-link" href="' + link + '">' + counter + '</a></li>';
     }
     return pager;
 }
