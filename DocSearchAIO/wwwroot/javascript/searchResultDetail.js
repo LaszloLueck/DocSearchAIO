@@ -71,7 +71,7 @@ let renderSearchResultDetails = (detailElements) => {
                 let date = renderDate(comment.date);
                 let id = renderId(comment.id);
                 let initials = renderInitials(comment.initials);
-                mainContent += renderInitials(author, date, id, initials); 
+                mainContent += renderComment(author, date, id, initials); 
                 mainContent += '<div><small>' + comment.commentText + '</small></div>';
                 mainContent += '</li>';
             });
