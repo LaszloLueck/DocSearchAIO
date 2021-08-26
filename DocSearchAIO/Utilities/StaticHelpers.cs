@@ -191,7 +191,7 @@ namespace DocSearchAIO.Scheduler
             return sb.ToString();
         }
 
-
+#pragma warning disable S3776
         private static void ExtractTextFromElement(IEnumerable<OpenXmlElement> list,
             StringBuilder sb)
         {
@@ -245,6 +245,7 @@ namespace DocSearchAIO.Scheduler
                 }
             });
         }
+#pragma warning restore S3776
 
         [Pure]
         public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,
