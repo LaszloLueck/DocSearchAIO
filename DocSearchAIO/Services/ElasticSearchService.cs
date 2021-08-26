@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
-using DocSearchAIO.Utilities;
 using Elasticsearch.Net;
 using Microsoft.Extensions.Logging;
 using Nest;
@@ -44,26 +43,41 @@ namespace DocSearchAIO.Services
 
         public async Task<IndicesStatsResponse> IndexStatistics(string indexName)
         {
-            var result = await _elasticClient.Indices.StatsAsync(indexName);
-            ProcessResponse(result);
-            return result;
+            var indicesStatsResponse = await _elasticClient.Indices.StatsAsync(indexName);
+            if (indicesStatsResponse.IsValid) return indicesStatsResponse;
+            _logger.LogWarning("{DebugInfo}", indicesStatsResponse.DebugInformation);
+            _logger.LogError(indicesStatsResponse.OriginalException,
+                "{Reason}", indicesStatsResponse.ServerError.Error.Reason);
+            return indicesStatsResponse;
         }
 
         public async Task<bool> RemoveItemById(string indexName, string id)
         {
-            var result = await _elasticClient.DeleteAsync(
+            var deleteResponse = await _elasticClient.DeleteAsync(
                 new DocumentPath<ElasticDocument>(new ElasticDocument {Id = id}),
                 f => f.Index(indexName));
-            return ProcessResponse(result);
+            if (deleteResponse.IsValid) return deleteResponse.IsValid;
+            _logger.LogWarning("{DebugInfo}", deleteResponse.DebugInformation);
+            _logger.LogError(deleteResponse.OriginalException, "{Reason}",
+                deleteResponse.ServerError.Error.Reason);
+            return deleteResponse.IsValid;
         }
 
         public async Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove)
         {
-            var result =
+            var bulkResponse =
                 await _elasticClient.DeleteManyAsync(
                     toRemove.Select(id => new ElasticDocument {Id = id}), indexName);
-            ProcessResponse(result);
-            return result.Items.Count;
+            if (bulkResponse.IsValid)
+            {
+                _logger.LogInformation(
+                    "{Info}", $"Successfully processed {bulkResponse.Items.Count} documents to elastic");
+                return bulkResponse.Items.Count;
+            }
+
+            _logger.LogWarning("{DebugInfo}", bulkResponse.DebugInformation);
+            _logger.LogError(bulkResponse.OriginalException, "{Reason}", bulkResponse.ServerError.Error.Reason);
+            return bulkResponse.Items.Count;
         }
 
         public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
@@ -74,8 +88,17 @@ namespace DocSearchAIO.Services
             if (!docs.Any())
                 return await Task.Run(() => false);
 
-            var result = await _elasticClient.IndexManyAsync(docs, indexName);
-            return ProcessResponse(result);
+            var bulkResponse = await _elasticClient.IndexManyAsync(docs, indexName);
+            if (bulkResponse.IsValid)
+            {
+                _logger.LogInformation(
+                    "{Info}", $"Successfully processed {bulkResponse.Items.Count} documents to elastic");
+                return bulkResponse.IsValid;
+            }
+
+            _logger.LogWarning("{DebugInfo}", bulkResponse.DebugInformation);
+            _logger.LogError(bulkResponse.OriginalException, "{Reason}", bulkResponse.ServerError.Error.Reason);
+            return bulkResponse.IsValid;
         }
 
         public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument
@@ -87,27 +110,43 @@ namespace DocSearchAIO.Services
             _logger.LogInformation("Mapping: {Mapping}", mapString);
 
 
-            var result = await _elasticClient.Indices.CreateAsync(indexName, index => index.Map<T>(t => t.AutoMap()));
+            var createIndexResponse = await _elasticClient.Indices.CreateAsync(indexName, index => index.Map<T>(t => t.AutoMap()));
 
-            return ProcessResponse(result);
+            if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
+            _logger.LogWarning("{DebugInfo}", createIndexResponse.DebugInformation);
+            _logger.LogError(createIndexResponse.OriginalException,
+                "{Reason}", createIndexResponse.ServerError.Error.Reason);
+            return createIndexResponse.IsValid;
         }
 
         public async Task<bool> DeleteIndexAsync(string indexName)
         {
-            var result = await _elasticClient.Indices.DeleteAsync(indexName);
-            return ProcessResponse(result);
+            var deleteIndexResponse = await _elasticClient.Indices.DeleteAsync(indexName);
+            if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
+            _logger.LogWarning("{DebugInfo}", deleteIndexResponse.DebugInformation);
+            _logger.LogError(deleteIndexResponse.OriginalException,
+                "{Reason}", deleteIndexResponse.ServerError.Error.Reason);
+            return deleteIndexResponse.Acknowledged;
         }
 
         public async Task<bool> RefreshIndexAsync(string indexName)
         {
-            var result = await _elasticClient.Indices.RefreshAsync(indexName);
-            return ProcessResponse(result);
+            var refreshResponse = await _elasticClient.Indices.RefreshAsync(indexName);
+            if (refreshResponse.IsValid) return refreshResponse.IsValid;
+            _logger.LogWarning("{DebugInfo}", refreshResponse.DebugInformation);
+            _logger.LogError(refreshResponse.OriginalException, "{Reason}",
+                refreshResponse.ServerError.Error.Reason);
+            return refreshResponse.IsValid;
         }
 
         public async Task<bool> FlushIndexAsync(string indexName)
         {
-            var result = await _elasticClient.Indices.FlushAsync(indexName);
-            return ProcessResponse(result);
+            var flushResponse = await _elasticClient.Indices.FlushAsync(indexName);
+            if (flushResponse.IsValid) return flushResponse.IsValid;
+            _logger.LogWarning("{DebugInfo}", flushResponse.DebugInformation);
+            _logger.LogError(flushResponse.OriginalException, "{Reason}",
+                flushResponse.ServerError.Error.Reason);
+            return flushResponse.IsValid;
         }
 
         public async Task<GetIndexResponse> IndicesWithPatternAsync(string pattern, bool logToConsole = true)
@@ -124,9 +163,12 @@ namespace DocSearchAIO.Services
                 _logger.LogInformation("{Log}", log);
             }
 
-            var result = await _elasticClient.Indices.GetAsync(getIndexRequest);
-            ProcessResponse(result);
-            return result;
+            var getIndexResponse = await _elasticClient.Indices.GetAsync(getIndexRequest);
+            if (getIndexResponse.IsValid) return getIndexResponse;
+            _logger.LogWarning("{DebugInfo}", getIndexResponse.DebugInformation);
+            _logger.LogError(getIndexResponse.OriginalException, "{Reason}",
+                getIndexResponse.ServerError.Error.Reason);
+            return getIndexResponse;
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
@@ -146,91 +188,11 @@ namespace DocSearchAIO.Services
             }
 
             var searchResponse = await _elasticClient.SearchAsync<T>(searchRequest);
-            ProcessResponse(searchResponse);
+            if (searchResponse.IsValid) return searchResponse;
+            _logger.LogWarning("{DebugInfo}", searchResponse.DebugInformation);
+            _logger.LogError(searchResponse.OriginalException, "{Reason}",
+                searchResponse.ServerError.Error.Reason);
             return searchResponse;
-        }
-
-        private bool ProcessResponse<T>(T response)
-        {
-            switch (response)
-            {
-                case DeleteResponse deleteResponse:
-                    if (deleteResponse.IsValid) return deleteResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", deleteResponse.DebugInformation);
-                    _logger.LogError(deleteResponse.OriginalException, "{Reason}",
-                        deleteResponse.ServerError.Error.Reason);
-                    return deleteResponse.IsValid;
-                case IndicesStatsResponse indicesStatsResponse:
-                    if (indicesStatsResponse.IsValid) return indicesStatsResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", indicesStatsResponse.DebugInformation);
-                    _logger.LogError(indicesStatsResponse.OriginalException,
-                        "{Reason}", indicesStatsResponse.ServerError.Error.Reason);
-                    return indicesStatsResponse.IsValid;
-                case ISearchResponse<ElasticDocument> searchResponse:
-                    if (searchResponse.IsValid) return searchResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", searchResponse.DebugInformation);
-                    _logger.LogError(searchResponse.OriginalException, "{Reason}",
-                        searchResponse.ServerError.Error.Reason);
-                    return searchResponse.IsValid;
-                case GetIndexResponse getIndexResponse:
-                    if (getIndexResponse.IsValid) return getIndexResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", getIndexResponse.DebugInformation);
-                    _logger.LogError(getIndexResponse.OriginalException, "{Reason}",
-                        getIndexResponse.ServerError.Error.Reason);
-                    return getIndexResponse.IsValid;
-                case DeleteIndexResponse deleteIndexResponse:
-                    if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
-                    _logger.LogWarning("{DebugInfo}", deleteIndexResponse.DebugInformation);
-                    _logger.LogError(deleteIndexResponse.OriginalException,
-                        "{Reason}", deleteIndexResponse.ServerError.Error.Reason);
-                    return deleteIndexResponse.Acknowledged;
-                case CreateIndexResponse createIndexResponse:
-                    if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", createIndexResponse.DebugInformation);
-                    _logger.LogError(createIndexResponse.OriginalException,
-                        "{Reason}", createIndexResponse.ServerError.Error.Reason);
-                    return createIndexResponse.IsValid;
-                case FlushResponse flushResponse:
-                    if (flushResponse.IsValid) return flushResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", flushResponse.DebugInformation);
-                    _logger.LogError(flushResponse.OriginalException, "{Reason}",
-                        flushResponse.ServerError.Error.Reason);
-                    return flushResponse.IsValid;
-                case RefreshResponse refreshResponse:
-                    if (refreshResponse.IsValid) return refreshResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", refreshResponse.DebugInformation);
-                    _logger.LogError(refreshResponse.OriginalException, "{Reason}",
-                        refreshResponse.ServerError.Error.Reason);
-                    return refreshResponse.IsValid;
-                case BulkResponse bulkResponse:
-                    if (bulkResponse.IsValid)
-                    {
-                        _logger.LogInformation(
-                            "{Info}", $"Successfully processed {bulkResponse.Items.Count} documents to elastic");
-                        return bulkResponse.IsValid;
-                    }
-
-                    _logger.LogWarning("{DebugInfo}", bulkResponse.DebugInformation);
-                    _logger.LogError(bulkResponse.OriginalException, "{Reason}", bulkResponse.ServerError.Error.Reason);
-                    return bulkResponse.IsValid;
-                case IndexResponse indexResponse:
-                    if (indexResponse.IsValid) return indexResponse.IsValid;
-                    _logger.LogWarning("{DebugInfo}", indexResponse.DebugInformation);
-                    _logger.LogError(indexResponse.OriginalException, "{Reason}",
-                        indexResponse.ServerError.Error.Reason);
-                    return indexResponse.IsValid;
-                case ExistsResponse existsResponse:
-                    if (!existsResponse.Exists || existsResponse.IsValid) return existsResponse.Exists;
-                    _logger.LogWarning("{DebugInfo}", existsResponse.DebugInformation);
-                    _logger.LogError(existsResponse.OriginalException, "{Reason}",
-                        existsResponse.ServerError.Error.Reason);
-                    return existsResponse.IsValid;
-                default:
-                    _logger.LogWarning("Cannot find Conversion for type <{TypeName}>",
-                        response.ResolveNullable(string.Empty,
-                            (v, a) => v?.GetType().Name ?? a));
-                    return false;
-            }
         }
     }
 }
