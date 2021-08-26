@@ -42,8 +42,54 @@ let renderRightPart = (currentPageNumber, pagingCount, searchPhrase, pageSize) =
         mainContent += '</div>';
         mainContent += '</li>';
     }
-    
+
     return mainContent;
+}
+
+let getPager = (counter, pageSize, currentPage, searchPhrase) => {
+
+    let pager = '';
+    if ((counter - 1) * pageSize === currentPage) {
+        pager = '<li class="page-item active"><div class="page-link"><span aria-hidden="true">' + x + '</span></div></li>'
+    } else {
+        let calculatedValue = (x - 1) * pageSize;
+        let link = 'javascript:doSearch(\'' + searchPhrase + '\',' + calculatedValue + ')';
+        pager = '<li class="page-item"><a class="page-link" href="' + link + '">' + x + '</a></li>';
+    }
+    return pager;
+}
+
+let renderInnerRight = (currentPageNumber, pager, count) => {
+    let mainContent = '';
+    if (count === currentPageNumber + 2) {
+        mainContent += pager;
+        mainContent += '<li class="page-item">';
+        mainContent += '<div class="page-link">';
+        mainContent += '<span aria-hidden="true">&nbsp;</span>';
+        mainContent += '</div>';
+        mainContent += '</li>';
+    }
+
+    return mainContent;
+}
+
+let renderInnerLeft = (currentPageNumber, pager, count) => {
+    let mainContent = '';
+    if (count === currentPageNumber - 2) {
+        mainContent += '<li class="page-item">';
+        mainContent += '<div class="page-link">';
+        mainContent += '<span aria-hidden="true">&nbsp;</span>';
+        mainContent += '</div>';
+        mainContent += '</li>';
+        mainContent += pager;
+    }
+    return mainContent;
+}
+
+let renderInnerMiddle = (currentPageNumber, pager, count) => {
+    if (count === currentPageNumber || count === currentPageNumber - 1 || count === currentPageNumber + 1) {
+        return pager;
+    }
 }
 
 let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
@@ -55,39 +101,18 @@ let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
     mainContent += '<ul class="pagination">';
 
     mainContent += renderLeftPart(currentPageNumber, pagingCount, searchPhrase, pageSize, documentCount);
-    
+
     for (let x = 1; x <= pagingCount; x++) {
-        let pager = '';
-        if ((x - 1) * pageSize === currentPage) {
-            pager = '<li class="page-item active"><div class="page-link"><span aria-hidden="true">' + x + '</span></div></li>'
-        } else {
-            let calculatedValue = (x - 1) * pageSize;
-            let link = 'javascript:doSearch(\'' + searchPhrase + '\',' + calculatedValue + ')';
-            pager = '<li class="page-item"><a class="page-link" href="' + link + '">' + x + '</a></li>';
-        }
+        let pager = getPager(x, pageSize, currentPage, searchPhrase);
+
+
         if (pagingCount > 12) {
             if (x === 1 || x >= pagingCount) {
                 mainContent += pager;
             } else {
-                if (x === currentPageNumber - 2) {
-                    mainContent += '<li class="page-item">';
-                    mainContent += '<div class="page-link">';
-                    mainContent += '<span aria-hidden="true">&nbsp;</span>';
-                    mainContent += '</div>';
-                    mainContent += '</li>';
-                    mainContent += pager;
-                }
-                if (x === currentPageNumber || x === currentPageNumber - 1 || x === currentPageNumber + 1) {
-                    mainContent += pager;
-                }
-                if (x === currentPageNumber + 2) {
-                    mainContent += pager;
-                    mainContent += '<li class="page-item">';
-                    mainContent += '<div class="page-link">';
-                    mainContent += '<span aria-hidden="true">&nbsp;</span>';
-                    mainContent += '</div>';
-                    mainContent += '</li>';
-                }
+                mainContent += renderInnerLeft(currentPageNumber, pager, x);
+                mainContent += renderInnerMiddle(currentPageNumber, pager, x)
+                mainContent += renderInnerRight(currentPageNumber, pager, x);
             }
         } else {
             mainContent += pager;
