@@ -28,6 +28,10 @@
         <PackageReference Include="Quartz.AspNetCore" Version="3.3.3" />
         <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.3.3" />
         <PackageReference Include="Quartz.Extensions.Hosting" Version="3.3.3" />
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.27.0.35380">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.5" />
     </ItemGroup>
 
