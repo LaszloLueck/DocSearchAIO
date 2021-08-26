@@ -1,3 +1,42 @@
+
+let renderContentGroup = (contents) => {
+    let mainContent = '';
+
+    if(contents.length > 0) {
+        mainContent += '<div class="mb-1">';
+        mainContent += '<div>';
+        mainContent += '<small class="text-muted">Inhalt</small>';
+        mainContent += '</div>';
+        mainContent += '<ul class="list-group">';
+        contents.forEach(content => {
+            mainContent += '<li class="list-group-item py-2">';
+            mainContent += '<small>' + content.contentText + '</small>';
+            mainContent += '</li>';
+        });
+        mainContent += '</ul>';
+        mainContent += '</div>';
+    }
+    
+    return mainContent;
+}
+
+let renderAuthor = (author) => {
+    return typeof author !== "undefined" ? "Author: " + author + " | " : "";
+}
+let renderDate = (date) => {
+    return typeof date !== "undefined" ? "Datum: " + luxon.DateTime.fromISO(date).toFormat('dd.MM.yyyy HH:mm:ss ttt') + " | " : "";
+}
+let renderId = (id) => {
+    return typeof id !== "undefined" ? "Id: " + id + " | " : "";
+}
+let renderInitials = (initials) => {
+    return typeof initials !== "undefined" ? "Initiale: " + initials + " | " : "";
+}
+
+let renderComment = (author, date, id, initials) => {
+    return (author + date + id + initials).slice(-2) === "| " ? "<div class='text-muted'><small>" + (author + date + id + initials).slice(0, -2) + "</small></div>" : "";
+}
+
 let renderSearchResultDetails = (detailElements) => {
     let mainContent = '';
     detailElements.forEach(element => {
@@ -18,20 +57,7 @@ let renderSearchResultDetails = (detailElements) => {
         mainContent += '</h5>';
 
 
-        if(element.contents.length > 0) {
-            mainContent += '<div class="mb-1">';
-            mainContent += '<div>';
-            mainContent += '<small class="text-muted">Inhalt</small>';
-            mainContent += '</div>';
-            mainContent += '<ul class="list-group">';
-            element.contents.forEach(content => {
-                mainContent += '<li class="list-group-item py-2">';
-                mainContent += '<small>' + content.contentText + '</small>';
-                mainContent += '</li>';
-            });
-            mainContent += '</ul>';
-            mainContent += '</div>';
-        }
+        mainContent += renderContentGroup(element.contents);
 
         if(element.comments.length > 0) {
             mainContent += '<div class="mb-1">';
@@ -41,11 +67,11 @@ let renderSearchResultDetails = (detailElements) => {
             mainContent += '<ul class="list-group">';
             element.comments.forEach(comment => {
                 mainContent += '<li class="list-group-item py-2">';
-                let author = typeof comment.author !== "undefined" ? "Author: " + comment.author + " | " : "";
-                let date = typeof comment.date !== "undefined" ? "Datum: " + luxon.DateTime.fromISO(comment.date).toFormat('dd.MM.yyyy HH:mm:ss ttt') + " | " : "";
-                let id = typeof comment.id !== "undefined" ? "Id: " + comment.id + " | " : "";
-                let initials = typeof comment.initials !== "undefined" ? "Initiale: " + comment.initials + " | " : "";
-                mainContent += (author + date + id + initials).slice(-2) === "| " ? "<div class='text-muted'><small>" + (author + date + id + initials).slice(0, -2) + "</small></div>" : ""; 
+                let author = renderAuthor(comment.author);
+                let date = renderDate(comment.date);
+                let id = renderId(comment.id);
+                let initials = renderInitials(comment.initials);
+                mainContent += renderInitials(author, date, id, initials); 
                 mainContent += '<div><small>' + comment.commentText + '</small></div>';
                 mainContent += '</li>';
             });
