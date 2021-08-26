@@ -1,8 +1,11 @@
+let getModResult = (documentCount, pageSize) => (documentCount % pageSize === 0) ? 0 : 1;
+let getPagingCount = (documentCount, pageSize) => documentCount <= pageSize ? 0 : (documentCount - documentCount % pageSize) / pageSize + getModResult(documentCount, pageSize);
+
+
 let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
-    let modResult = (documentCount % pageSize === 0) ? 0 : 1;
-    
-    let pagingCount = documentCount <= pageSize ? 0 : (documentCount - documentCount % pageSize) / pageSize + modResult;
-    
+
+    let pagingCount = getPagingCount(documentCount, pageSize);
+
     let currentPageNumber = currentPage / pageSize + 1;
 
     let mainContent = '<nav aria-label="Main-Navigation">';
@@ -64,8 +67,8 @@ let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
             mainContent += pager;
         }
     }
-    
-    if(currentPageNumber < pagingCount){
+
+    if (currentPageNumber < pagingCount) {
         let link = 'javascript:doSearch(\'' + searchPhrase + '\', ' + currentPageNumber * pageSize + ')';
         mainContent += '<li class="page-item">';
         mainContent += '<a class="page-link" href="' + link + '" aria-label="Vor">';
