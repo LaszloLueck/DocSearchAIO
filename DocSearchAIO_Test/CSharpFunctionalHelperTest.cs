@@ -81,7 +81,7 @@ namespace DocSearchAIO_Test
                 "A".Should().Be(stringValue);
             });
         }
-        
+
         [Fact]
         public void Check_if_a_dictionary_contains_not_a_key_and_do_nothing()
         {
@@ -92,7 +92,7 @@ namespace DocSearchAIO_Test
             tDictionary.Add(kv2);
 
             tDictionary.DictionaryKeyExistsAction(3, (_, _) => throw new FieldAccessException("value should be none"));
-            
+
             Assert.True(true);
         }
 
@@ -115,7 +115,7 @@ namespace DocSearchAIO_Test
         {
             var retVal = true.IfTrueFalse(() => throw new FieldAccessException("The expected result should be true"),
                 () => true);
-            
+
             Assert.True(retVal);
         }
 
@@ -130,9 +130,38 @@ namespace DocSearchAIO_Test
             dic.Keys.Count.Should().Be(2);
             dic.Keys.First().Should().Be("a");
             dic.Keys.Last().Should().Be("b");
-
-
         }
-        
+
+        [Fact]
+        public void Resolve_Nullable_With_Value()
+        {
+            var toTest = "the quick brown fox jumps over the lazy dog";
+#nullable enable
+            static string? GenerateNullable(string toTest)
+            {
+                return toTest;
+            }
+#nullable disable
+
+            var result = GenerateNullable(toTest).ResolveNullable("alternative", (a, _) => a);
+
+            result.Should().Be(toTest);
+        }
+
+        [Fact]
+        public void Resolve_Nullable_With_Alternative()
+        {
+#nullable enable
+            static string? GenerateNullable()
+            {
+                return null;
+            }
+#nullable disable
+            
+            var result = GenerateNullable().ResolveNullable("alternative", (a, _) => a);
+
+            result.Should().Be("alternative");
+            
+        }
     }
 }
