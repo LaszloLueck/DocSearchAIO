@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Xunit;
@@ -116,6 +117,21 @@ namespace DocSearchAIO_Test
                 () => true);
             
             Assert.True(retVal);
+        }
+
+        [Fact]
+        public void Create_a_dictionary_from_IEnumerable()
+        {
+            var list = new List<KeyValuePair<string, string>>
+                { KeyValuePair.Create("a", "a"), KeyValuePair.Create<string, string>("b", "b") };
+
+            var dic = list.ToDictionary();
+
+            dic.Keys.Count.Should().Be(2);
+            dic.Keys.First().Should().Be("a");
+            dic.Keys.Last().Should().Be("b");
+
+
         }
         
     }
