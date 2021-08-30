@@ -90,6 +90,8 @@ let renderInnerMiddle = (currentPageNumber, pager, count) => {
     if (count === currentPageNumber || count === currentPageNumber - 1 || count === currentPageNumber + 1) {
         return pager;
     }
+    
+    return '';
 }
 
 let renderPagination = (documentCount, pageSize, currentPage, searchPhrase) => {
