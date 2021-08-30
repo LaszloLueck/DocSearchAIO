@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using CSharpFunctionalExtensions;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using FluentAssertions;
 using iText.Layout.Element;
@@ -17,11 +19,10 @@ namespace DocSearchAIO_Test
 {
     public class StaticHelperTest
     {
-        private readonly ITestOutputHelper _testOutputHelper;
-
-        public StaticHelperTest(ITestOutputHelper testOutputHelper)
+        //if we need a Console Out, we mus inherit ITestOutputHelper testOutputHelper
+        public StaticHelperTest()
         {
-            _testOutputHelper = testOutputHelper;
+
         }
 
         [Fact]

@@ -6,7 +6,7 @@ using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public static class StatisticUtilitiesProxy
     {

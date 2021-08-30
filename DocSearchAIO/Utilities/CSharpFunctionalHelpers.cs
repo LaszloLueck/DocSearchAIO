@@ -88,11 +88,6 @@ namespace DocSearchAIO.Utilities
             Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
         [Pure]
-        public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull, NotNull] TOut alternative,
-            Func<TIn, TOut, TOut> some, Func<TOut, TOut> none) =>
-            nullable is not null ? some.Invoke(nullable, alternative) : none.Invoke(alternative);
-
-        [Pure]
         public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
             this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
 
@@ -104,11 +99,7 @@ namespace DocSearchAIO.Utilities
         public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
             this IEnumerable<Tuple<TKey, TValue>> source, Func<TKey, TValue, TOut> action) =>
             source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
-
-        [Pure]
-        public static IEnumerable<KeyValuePair<TKey, TValue>> Where<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source,
-            Func<TKey, TValue, bool> action) => source.Where(kv => action.Invoke(kv.Key, kv.Value));
-
+        
         [Pure]
         public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
             source

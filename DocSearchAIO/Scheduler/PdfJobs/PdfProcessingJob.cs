@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Akka;
@@ -26,7 +25,7 @@ using Microsoft.Extensions.Logging;
 using Nest;
 using Quartz;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Scheduler.PdfJobs
 {
     [DisallowConcurrentExecution]
     public class PdfProcessingJob : IJob

@@ -15,11 +15,10 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
-using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using Nest;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public static class StaticHelpers
     {

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public class EncryptionService
     {

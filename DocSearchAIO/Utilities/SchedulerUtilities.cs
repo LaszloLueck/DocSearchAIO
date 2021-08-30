@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public class SchedulerUtilities
     {

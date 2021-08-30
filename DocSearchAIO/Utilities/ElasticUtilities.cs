@@ -2,10 +2,9 @@ using System;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
-using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Logging;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public class ElasticUtilities
     {

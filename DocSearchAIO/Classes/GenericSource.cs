@@ -1,4 +1,4 @@
-﻿namespace DocSearchAIO.Scheduler
+﻿namespace DocSearchAIO.Classes
 {
     public abstract class GenericSource
     {

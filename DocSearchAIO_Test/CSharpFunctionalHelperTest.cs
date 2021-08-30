@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Akka;
+using Akka.Actor;
+using Akka.Streams;
+using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
-using Xunit;
 using DocSearchAIO.Utilities;
 using FluentAssertions;
+using Xunit;
 
 namespace DocSearchAIO_Test
 {
@@ -80,7 +85,7 @@ namespace DocSearchAIO_Test
                 "A".Should().Be(stringValue);
             });
         }
-        
+
         [Fact]
         public void Check_if_a_dictionary_contains_not_a_key_and_do_nothing()
         {
@@ -91,7 +96,7 @@ namespace DocSearchAIO_Test
             tDictionary.Add(kv2);
 
             tDictionary.DictionaryKeyExistsAction(3, (_, _) => throw new FieldAccessException("value should be none"));
-            
+
             Assert.True(true);
         }
 
@@ -114,9 +119,110 @@ namespace DocSearchAIO_Test
         {
             var retVal = true.IfTrueFalse(() => throw new FieldAccessException("The expected result should be true"),
                 () => true);
-            
+
             Assert.True(retVal);
         }
-        
+
+        [Fact]
+        public void Create_a_dictionary_from_IEnumerable()
+        {
+            var list = new List<KeyValuePair<string, string>>
+                { KeyValuePair.Create("a", "a"), KeyValuePair.Create("b", "b") };
+
+            var dic = list.ToDictionary();
+
+            dic.Keys.Count.Should().Be(2);
+            dic.Keys.First().Should().Be("a");
+            dic.Keys.Last().Should().Be("b");
+        }
+
+        [Fact]
+        public void Resolve_Nullable_With_Value()
+        {
+            var toTest = "the quick brown fox jumps over the lazy dog";
+#nullable enable
+            static string GenerateNullable(string toTest)
+            {
+                return toTest;
+            }
+#nullable disable
+
+            var result = GenerateNullable(toTest).ResolveNullable("alternative", (a, _) => a);
+
+            result.Should().Be(toTest);
+        }
+
+        [Fact]
+        public void Resolve_Nullable_With_Alternative()
+        {
+#nullable enable
+            static string? GenerateNullable()
+            {
+                return null;
+            }
+#nullable disable
+
+            var result = GenerateNullable().ResolveNullable("alternative", (a, _) => a);
+
+            result.Should().Be("alternative");
+        }
+
+        [Fact]
+        public void Filter_Maybe_None_from_IEnumerable_wrapped_on_Source()
+        {
+            var materializer = ActorMaterializer.Create(ActorSystem.Create("testActorsystem"));
+            IEnumerable<Maybe<int>> list = new[] { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+
+            Source<IEnumerable<Maybe<int>>, NotUsed> source = Source.From(new List<IEnumerable<Maybe<int>>> { list });
+
+            var result = source
+                .WithMaybeFilter()
+                .RunWith(Sink.Seq<IEnumerable<int>>(), materializer)
+                .Result
+                .SelectMany(x => x);
+
+            materializer.Dispose();
+
+            result.Count().Should().Be(3);
+            result.First().Should().Be(8);
+            result.Last().Should().Be(1);
+        }
+
+        [Fact]
+        public void Get_element_from_Dictionary_and_process_an_action()
+        {
+            var dic = new List<KeyValuePair<int, int>> { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
+
+            var result = dic.SelectKv((k, v) => k + v);
+
+            result.Count().Should().Be(3);
+            result.First().Should().Be(2);
+            result.Last().Should().Be(3);
+        }
+
+        [Fact]
+        public void Get_element_from_List_of_tuples_and_process_an_action()
+        {
+            var dic = new List<Tuple<int, int>> { Tuple.Create(1, 1), Tuple.Create(2, 2), Tuple.Create(0, 3) };
+
+            var result = dic.SelectTuple((k, v) => k + v);
+
+            result.Count().Should().Be(3);
+            result.First().Should().Be(2);
+            result.Last().Should().Be(3);
+        }
+
+        [Fact]
+        public void Filter_out_Maybe_None_from_IEnumerable()
+        {
+            IEnumerable<Maybe<int>> list = new[] { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+
+            var result = list.Values();
+
+
+            result.Count().Should().Be(3);
+            result.First().Should().Be(8);
+            result.Last().Should().Be(1);
+        }
     }
 }

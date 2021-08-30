@@ -412,11 +412,7 @@ namespace DocSearchAIO.DocSearch.Services
                 .ToDictionary();
 
         private static readonly Func<string, Dictionary<string, JobState>, Maybe<JobState>> FilterMemoryCacheState =
-            (jobName, memoryCacheStates) =>
-                memoryCacheStates
-                    .Where((key, _) => key == jobName)
-                    .SelectKv((_, v) => v)
-                    .TryFirst();
+            (jobName, memoryCacheStates) => memoryCacheStates.TryGetValue(jobName, out var value) ? Maybe<JobState>.From(value) : Maybe<JobState>.None;
 
         private static readonly Func<SchedulerStatistics, Dictionary<string, JobState>, Maybe<JobState>>
             CalculateJobState = (schedulerStatisticsArray, memoryCacheStates) => schedulerStatisticsArray
