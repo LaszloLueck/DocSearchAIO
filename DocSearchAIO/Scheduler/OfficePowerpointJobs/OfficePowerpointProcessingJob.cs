@@ -179,105 +179,101 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                 return await Task.Run(async () =>
                 {
                     var wdOpt = PresentationDocument.Open(currentFile, false);
-                    return await wdOpt
-                        .PresentationPart
-                        .ResolveNullable(Task.Run(() => Maybe<PowerpointElasticDocument>.None), async (wd, _) =>
-                        {
-                            var fInfo = wdOpt.PackageProperties;
-                            var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
-                            var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                            var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
-                            var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
-                            var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
-                            var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
-                            var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
-                            var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                            var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
-                            var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
-                            var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
-                            var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
-                            var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
-                            const string contentType = "pptx";
-                            var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                            var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
-                            var uriPath = currentFile
-                                .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
-                                .Replace(@"\", "/");
 
-                            var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile), encryptionService);
-                            var slideCount = wd
-                                .SlideParts
-                                .Count();
+                    Maybe<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
+                    if (presentationPartOpt.HasNoValue)
+                        return Maybe<PowerpointElasticDocument>.None;
 
-                            static IEnumerable<OfficeDocumentComment>
-                                CommentArray(PresentationPart presentationPart) =>
-                                CommentsFromDocument(presentationPart.SlideParts);
+                    var presentaionPart = presentationPartOpt.Value;
+                    var fInfo = wdOpt.PackageProperties;
+                    var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
+                    var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                    var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
+                    var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
+                    var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
+                    var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
+                    var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
+                    var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                    var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
+                    var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
+                    var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
+                    var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
+                    var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
+                    const string contentType = "pptx";
+                    var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
+                    var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
+                    var uriPath = currentFile
+                        .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
+                        .Replace(@"\", "/");
 
-                            var commentsArray = CommentArray(wd).ToArray();
+                    var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile), encryptionService);
+                    var slideCount = presentaionPart
+                        .SlideParts
+                        .Count();
 
-                            var toReplaced = new List<(string, string)>()
-                            {
-                                (@"\r\n?|\n",""),
-                                ("[ ]{2,}", " ")
-                            };
+                    static IEnumerable<OfficeDocumentComment>
+                        CommentArray(PresentationPart presentationPart) =>
+                        CommentsFromDocument(presentationPart.SlideParts);
 
-                            var contentString = wd
-                                .Elements()
-                                .ContentString()
-                                .ReplaceSpecialStrings(toReplaced);
+                    var commentsArray = CommentArray(presentaionPart).ToArray();
 
-                            var toHash = new ElementsToHash(category, created, contentString, creator,
-                                description, identifier, keywords, language, modified, revision,
-                                subject, title, version, contentStatus, contentType, lastPrinted,
-                                lastModifiedBy);
-                            
-                            var elementsHash = await (
-                                StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString(encryptionService);
+                    var toReplaced = new List<(string, string)>()
+                    {
+                        (@"\r\n?|\n", ""),
+                        ("[ ]{2,}", " ")
+                    };
 
-                            static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
-                                commentsArray
-                                    .StringFromCommentsArray()
-                                    .GenerateTextToSuggest(new TypedContentString(contentString))
-                                    .GenerateSearchAsYouTypeArray()
-                                    .WrapCompletionField();
+                    var contentString = presentaionPart
+                        .Elements()
+                        .ContentString()
+                        .ReplaceSpecialStrings(toReplaced);
+
+                    var toHash = new ElementsToHash(category, created, contentString, creator,
+                        description, identifier, keywords, language, modified, revision,
+                        subject, title, version, contentStatus, contentType, lastPrinted,
+                        lastModifiedBy);
+
+                    var elementsHash = await (
+                        StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString(encryptionService);
+
+                    static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
+                        commentsArray
+                            .StringFromCommentsArray()
+                            .GenerateTextToSuggest(new TypedContentString(contentString))
+                            .GenerateSearchAsYouTypeArray()
+                            .WrapCompletionField();
 
 
-                            var returnValue = new PowerpointElasticDocument
-                            {
-                                Category = category,
-                                CompletionContent = GetCompletionField(commentsArray, contentString),
-                                Content = contentString,
-                                ContentHash = elementsHash.Value,
-                                ContentStatus = contentStatus,
-                                ContentType = contentType,
-                                Created = created,
-                                Creator = creator,
-                                Description = description,
-                                Id = id.Value,
-                                Identifier = identifier,
-                                Keywords = StaticHelpers.KeywordsList(keywords),
-                                Language = language,
-                                Modified = modified,
-                                Revision = revision,
-                                Subject = subject,
-                                Title = title,
-                                Version = version,
-                                LastPrinted = lastPrinted,
-                                ProcessTime = DateTime.Now,
-                                LastModifiedBy = lastModifiedBy,
-                                OriginalFilePath = currentFile,
-                                UriFilePath = uriPath,
-                                SlideCount = slideCount,
-                                Comments = commentsArray
-                            };
+                    var returnValue = new PowerpointElasticDocument
+                    {
+                        Category = category,
+                        CompletionContent = GetCompletionField(commentsArray, contentString),
+                        Content = contentString,
+                        ContentHash = elementsHash.Value,
+                        ContentStatus = contentStatus,
+                        ContentType = contentType,
+                        Created = created,
+                        Creator = creator,
+                        Description = description,
+                        Id = id.Value,
+                        Identifier = identifier,
+                        Keywords = StaticHelpers.KeywordsList(keywords),
+                        Language = language,
+                        Modified = modified,
+                        Revision = revision,
+                        Subject = subject,
+                        Title = title,
+                        Version = version,
+                        LastPrinted = lastPrinted,
+                        ProcessTime = DateTime.Now,
+                        LastModifiedBy = lastModifiedBy,
+                        OriginalFilePath = currentFile,
+                        UriFilePath = uriPath,
+                        SlideCount = slideCount,
+                        Comments = commentsArray
+                    };
 
-                            return Maybe<PowerpointElasticDocument>.From(returnValue);
-                        }, t =>
-                        {
-                            logger.LogWarning(
-                                "cannot process the base document of file {CurrentFile}, because it is null", currentFile);
-                            return t;
-                        });
+                    return Maybe<PowerpointElasticDocument>.From(returnValue);
                 });
             }
             catch (Exception e)

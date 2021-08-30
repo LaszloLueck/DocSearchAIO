@@ -38,7 +38,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
         private readonly EncryptionService _encryptionService;
-        
+
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
             IMemoryCache memoryCache)
@@ -179,129 +179,125 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
                 {
                     var wdOpt = WordprocessingDocument.Open(currentFile, false);
 
-                    return await wdOpt
-                        .MainDocumentPart
-                        .ResolveNullable(Task.Run(() => Maybe<WordElasticDocument>.None), async (mainDocumentPart, _) =>
+                    Maybe<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
+                    if (mainDocumentPartOpt.HasNoValue)
+                        return Maybe<WordElasticDocument>.None;
+
+                    var mainDocumentPart = mainDocumentPartOpt.Value;
+                    var fInfo = wdOpt.PackageProperties;
+                    var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
+                    var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1),
+                        (value, a) => value ?? a);
+                    var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
+                    var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
+                    var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
+                    var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
+                    var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
+                    var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1),
+                        (value, a) => value ?? a);
+                    var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
+                    var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
+                    var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
+                    var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
+                    var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
+                    const string contentType = "docx";
+                    var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1),
+                        (value, a) => value ?? a);
+                    var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
+                    var uriPath = currentFile
+                        .Replace(configurationObject.ScanPath,
+                            configurationObject.UriReplacement)
+                        .Replace(@"\", "/");
+
+                    var id = await StaticHelpers.CreateHashString(
+                        new TypedHashedInputString(currentFile), encryptionService);
+
+
+                    static IEnumerable<OfficeDocumentComment> CommentArray(
+                        MainDocumentPart mainDocumentPart)
+                    {
+                        var comments = mainDocumentPart
+                            .WordprocessingCommentsPart
+                            .ResolveNullable(new Comments(), (v, _) => v.Comments);
+
+                        return comments.Select(comment =>
                         {
-                            var fInfo = wdOpt.PackageProperties;
-                            var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
-                            var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1),
-                                (value, a) => value ?? a);
-                            var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
-                            var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
-                            var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
-                            var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
-                            var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
-                            var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1),
-                                (value, a) => value ?? a);
-                            var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
-                            var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
-                            var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
-                            var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
-                            var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
-                            const string contentType = "docx";
-                            var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1),
-                                (value, a) => value ?? a);
-                            var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
-                            var uriPath = currentFile
-                                .Replace(configurationObject.ScanPath,
-                                    configurationObject.UriReplacement)
-                                .Replace(@"\", "/");
-
-                            var id = await StaticHelpers.CreateHashString(
-                                new TypedHashedInputString(currentFile), encryptionService);
-
-
-                            static IEnumerable<OfficeDocumentComment> CommentArray(
-                                MainDocumentPart mainDocumentPart)
+                            var d = (Comment)comment;
+                            var retValue = new OfficeDocumentComment
                             {
-                                var comments = mainDocumentPart
-                                    .WordprocessingCommentsPart
-                                    .ResolveNullable(new Comments(), (v, _) => v.Comments);
-
-                                return comments.Select(comment =>
-                                {
-                                    var d = (Comment) comment;
-                                    var retValue = new OfficeDocumentComment
-                                    {
-                                        Author = d.Author.ResolveNullable(string.Empty,
-                                            (value, alternative) => value.Value ?? alternative),
-                                        Comment = d.InnerText,
-                                        Date = d.Date.ResolveNullable(new DateTime(1970, 1, 1),
-                                            (value, _) => value.Value),
-                                        Id = d.Id.ResolveNullable(string.Empty,
-                                            (value, alternative) => value.Value ?? alternative),
-                                        Initials = d.Initials.ResolveNullable(string.Empty,
-                                            (value, alternative) => value.Value ?? alternative)
-                                    };
-                                    return retValue;
-                                });
-                            }
-
-                            var toReplaced = new List<(string, string)>()
-                            {
-                                (@"\r\n?|\n",""),
-                                ("[ ]{2,}", " ")
+                                Author = d.Author.ResolveNullable(string.Empty,
+                                    (value, alternative) => value.Value ?? alternative),
+                                Comment = d.InnerText,
+                                Date = d.Date.ResolveNullable(new DateTime(1970, 1, 1),
+                                    (value, _) => value.Value),
+                                Id = d.Id.ResolveNullable(string.Empty,
+                                    (value, alternative) => value.Value ?? alternative),
+                                Initials = d.Initials.ResolveNullable(string.Empty,
+                                    (value, alternative) => value.Value ?? alternative)
                             };
-
-
-                            var contentString = mainDocumentPart
-                                .Elements()
-                                .ContentString()
-                                .ReplaceSpecialStrings(toReplaced);
-
-                            OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
-
-                            var toHash = new ElementsToHash(category, created, contentString,
-                                creator,
-                                description, identifier, keywords, language, modified, revision,
-                                subject, title, version, contentStatus, contentType, lastPrinted,
-                                lastModifiedBy);
-                            
-                            var elementsHash = await (
-                                    StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                                .ContentHashString(encryptionService);
-
-                            var completionField = commentsArray
-                                .StringFromCommentsArray()
-                                .GenerateTextToSuggest(new TypedContentString(contentString))
-                                .GenerateSearchAsYouTypeArray()
-                                .WrapCompletionField();
-
-                            var returnValue = new WordElasticDocument
-                            {
-                                Category = category,
-                                CompletionContent = completionField,
-                                Content = contentString,
-                                ContentHash = elementsHash.Value,
-                                ContentStatus = contentStatus,
-                                ContentType = contentType,
-                                Created = created,
-                                Creator = creator,
-                                Description = description,
-                                Id = id.Value,
-                                Identifier = identifier,
-                                Keywords = StaticHelpers.KeywordsList(keywords),
-                                Language = language,
-                                Modified = modified,
-                                Revision = revision,
-                                Subject = subject,
-                                Title = title,
-                                Version = version,
-                                LastPrinted = lastPrinted,
-                                ProcessTime = DateTime.Now,
-                                LastModifiedBy = lastModifiedBy,
-                                OriginalFilePath = currentFile,
-                                UriFilePath = uriPath,
-                                Comments = commentsArray
-                            };
-
-                            return Maybe<WordElasticDocument>.From(returnValue);
-                        }, t =>
-                        {
-                            logger.LogWarning("cannot process main document part of file {CurrentFile}, because it is null", currentFile);
-                            return t;
+                            return retValue;
                         });
+                    }
+
+                    var toReplaced = new List<(string, string)>()
+                    {
+                        (@"\r\n?|\n", ""),
+                        ("[ ]{2,}", " ")
+                    };
+
+
+                    var contentString = mainDocumentPart
+                        .Elements()
+                        .ContentString()
+                        .ReplaceSpecialStrings(toReplaced);
+
+                    OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
+
+                    var toHash = new ElementsToHash(category, created, contentString,
+                        creator,
+                        description, identifier, keywords, language, modified, revision,
+                        subject, title, version, contentStatus, contentType, lastPrinted,
+                        lastModifiedBy);
+
+                    var elementsHash = await (
+                            StaticHelpers.ListElementsToHash(toHash), commentsArray)
+                        .ContentHashString(encryptionService);
+
+                    var completionField = commentsArray
+                        .StringFromCommentsArray()
+                        .GenerateTextToSuggest(new TypedContentString(contentString))
+                        .GenerateSearchAsYouTypeArray()
+                        .WrapCompletionField();
+
+                    var returnValue = new WordElasticDocument
+                    {
+                        Category = category,
+                        CompletionContent = completionField,
+                        Content = contentString,
+                        ContentHash = elementsHash.Value,
+                        ContentStatus = contentStatus,
+                        ContentType = contentType,
+                        Created = created,
+                        Creator = creator,
+                        Description = description,
+                        Id = id.Value,
+                        Identifier = identifier,
+                        Keywords = StaticHelpers.KeywordsList(keywords),
+                        Language = language,
+                        Modified = modified,
+                        Revision = revision,
+                        Subject = subject,
+                        Title = title,
+                        Version = version,
+                        LastPrinted = lastPrinted,
+                        ProcessTime = DateTime.Now,
+                        LastModifiedBy = lastModifiedBy,
+                        OriginalFilePath = currentFile,
+                        UriFilePath = uriPath,
+                        Comments = commentsArray
+                    };
+
+                    return Maybe<WordElasticDocument>.From(returnValue);
                 });
             }
             catch (Exception e)

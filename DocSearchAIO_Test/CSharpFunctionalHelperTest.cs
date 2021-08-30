@@ -4,14 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
-using Akka.Actor.Internal;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Streams.Implementation;
 using CSharpFunctionalExtensions;
-using Xunit;
 using DocSearchAIO.Utilities;
 using FluentAssertions;
+using Xunit;
 
 namespace DocSearchAIO_Test
 {
@@ -215,31 +213,16 @@ namespace DocSearchAIO_Test
         }
 
         [Fact]
-        public void Check_where_function_that_deconstruct_a_keyvaluepair()
-        {
-            var dic = new List<KeyValuePair<int, int>> { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(1, 3) };
-
-            var result = dic.Where(k => k.Key is 1);
-            result.Count().Should().Be(2);
-            result.First().Value.Should().Be(1);
-            result.Last().Value.Should().Be(3);
-            
-        }
-        
-        
-        [Fact]
         public void Filter_out_Maybe_None_from_IEnumerable()
         {
-            
             IEnumerable<Maybe<int>> list = new[] { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
 
             var result = list.Values();
-            
+
 
             result.Count().Should().Be(3);
             result.First().Should().Be(8);
             result.Last().Should().Be(1);
         }
-        
     }
 }
