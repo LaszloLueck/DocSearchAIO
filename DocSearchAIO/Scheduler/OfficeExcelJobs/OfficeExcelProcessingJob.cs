@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Scheduler.OfficeExcelJobs
 {
     [DisallowConcurrentExecution]
     public class OfficeExcelProcessingJob : IJob

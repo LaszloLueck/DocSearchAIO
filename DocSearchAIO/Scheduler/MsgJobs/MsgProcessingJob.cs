@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Quartz;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Scheduler.MsgJobs
 {
     public class MsgProcessingJob : IJob
     {

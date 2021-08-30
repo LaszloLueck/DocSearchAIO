@@ -24,7 +24,7 @@ using Microsoft.Extensions.Logging;
 using Nest;
 using Quartz;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
 {
     [DisallowConcurrentExecution]
     public class OfficePowerpointProcessingJob : IJob

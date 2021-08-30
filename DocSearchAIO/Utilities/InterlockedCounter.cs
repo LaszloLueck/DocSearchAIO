@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Utilities
 {
     public sealed class InterlockedCounter
     {
