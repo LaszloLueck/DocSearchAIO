@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -24,7 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace DocSearchAIO.Scheduler
+namespace DocSearchAIO.Scheduler.OfficeWordJobs
 {
     [DisallowConcurrentExecution]
     public class OfficeWordProcessingJob : IJob

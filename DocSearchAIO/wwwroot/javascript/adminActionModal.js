@@ -26,7 +26,7 @@ let calculateTriggerCurrentState = (triggerState) => {
 };
 
 let calculateTrigger = (key, triggerModel) => {
-    let currentState = triggerModel.currentState.toLowerCase();
+        let currentState = triggerModel.currentState.toLowerCase();
     let mainContent = '';
     
     mainContent += '<div class="container mb-3 border rounded border-color-gray">';

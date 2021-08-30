@@ -1,6 +1,7 @@
 ﻿using System;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler;
+using DocSearchAIO.Scheduler.OfficeWordJobs;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
