@@ -75,7 +75,7 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                     return;
                 }
 
-                if (configEntry.Active)
+                if (!configEntry.Active)
                 {
                     await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                         configEntry.TriggerName,

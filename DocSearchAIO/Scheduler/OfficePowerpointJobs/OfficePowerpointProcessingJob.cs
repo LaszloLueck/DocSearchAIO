@@ -74,7 +74,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                     return;
                 }
 
-                if (configEntry.Active)
+                if (!configEntry.Active)
                 {
                     await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                         configEntry.TriggerName,
@@ -92,7 +92,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
 
                     _logger.LogInformation("start crunching and indexing some powerpoint documents");
 
-                    if (Directory.Exists(_cfg.ScanPath))
+                    if (!Directory.Exists(_cfg.ScanPath))
                     {
                         _logger.LogWarning(
                             "directory to scan <{ScanPath}> does not exists. skip working", _cfg.ScanPath);

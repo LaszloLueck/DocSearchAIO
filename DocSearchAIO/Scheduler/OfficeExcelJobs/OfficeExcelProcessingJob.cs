@@ -75,7 +75,7 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
                 }
 
 
-                if (configEntry.Active)
+                if (!configEntry.Active)
                 {
                     await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                         configEntry.TriggerName,
@@ -90,7 +90,7 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
                         _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
                     await _elasticUtilities.CheckAndCreateElasticIndex<ExcelElasticDocument>(indexName);
                     _logger.LogInformation("start crunching and indexing some excel-documents");
-                    if (Directory.Exists(_cfg.ScanPath))
+                    if (!Directory.Exists(_cfg.ScanPath))
                     {
                         _logger.LogWarning(
                             "directory to scan <{ScanPath}> does not exists. skip working",

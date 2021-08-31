@@ -73,7 +73,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
                 }
 
                 var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
-                if (configEntry.Active)
+                if (!configEntry.Active)
                 {
                     await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                         configEntry.TriggerName,
@@ -91,7 +91,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
 
                     _logger.LogInformation("start crunching and indexing some word-documents");
 
-                    if (Directory.Exists(_cfg.ScanPath))
+                    if (!Directory.Exists(_cfg.ScanPath))
                     {
                         _logger.LogWarning(
                             "directory to scan <{ScanPath}> does not exists. skip working",
