@@ -15,8 +15,10 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
             
             var str = JsonConvert.SerializeObject(outer, Formatting.Indented);
-            
-            withBackup.IfTrue(() => File.Copy("./Resources/config/config.json", $"./Resources/config/config_{DateTime.Now:yyyyMMddHHmmssfff}.json"));
+
+            if (withBackup)
+                File.Copy("./Resources/config/config.json",
+                    $"./Resources/config/config_{DateTime.Now:yyyyMMddHHmmssfff}.json");
             
             await File.WriteAllTextAsync("./Resources/config/config.json", str, Encoding.UTF8);
         }

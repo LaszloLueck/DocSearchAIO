@@ -26,56 +26,25 @@ namespace DocSearchAIO.Utilities
         public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
             Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
 
-        public static void ForEach<TTuple1, TTuple2>(this IEnumerable<(TTuple1, TTuple2)> source, Action<TTuple1, TTuple2> action)
+        public static void ForEach<TTuple1, TTuple2>(this IEnumerable<(TTuple1, TTuple2)> source,
+            Action<TTuple1, TTuple2> action)
         {
             foreach (var valueTuple in source)
             {
                 action.Invoke(valueTuple.Item1, valueTuple.Item2);
             }
         }
-        
+
         [Pure]
         public static TOut IfTrueFalse<TOut>(this bool value,
             Func<TOut> falseAction,
             Func<TOut> trueAction) => value ? trueAction.Invoke() : falseAction.Invoke();
-        
-        public static void IfTrueFalse<TInput>(this bool value, TInput parameter,
-            Action<TInput> falseAction,
-            Action<TInput> trueAction)
-        {
-            if (value)
-            {
-                trueAction.Invoke(parameter);
-            }
-            else
-            {
-                falseAction.Invoke(parameter);
-            }
-        }
-
-        public static void IfTrue(this bool value, Action action)
-        {
-            if (value)
-                action.Invoke();
-        }
 
         public static void DictionaryKeyExistsAction<TKey, TValue>(this IDictionary<TKey, TValue> source, TKey comparer,
             Action<TKey, TValue> action)
         {
             if (!source.ContainsKey(comparer)) return;
             action.Invoke(comparer, source[comparer]);
-        }
-        
-        public static void ProcessState(this bool value, Action falseAction, Action trueAction)
-        {
-            if (value)
-            {
-                trueAction.Invoke();
-            }
-            else
-            {
-                falseAction.Invoke();
-            }
         }
 
         [Pure]
@@ -84,7 +53,7 @@ namespace DocSearchAIO.Utilities
             source.ToDictionary(d => d.Key, d => d.Value);
 
         [Pure]
-        public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull][NotNull] TOut alternative,
+        public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull] [NotNull] TOut alternative,
             Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
         [Pure]
@@ -99,7 +68,7 @@ namespace DocSearchAIO.Utilities
         public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
             this IEnumerable<Tuple<TKey, TValue>> source, Func<TKey, TValue, TOut> action) =>
             source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
-        
+
         [Pure]
         public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
             source

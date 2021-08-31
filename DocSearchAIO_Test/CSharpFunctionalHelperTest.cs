@@ -8,6 +8,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
+using DocumentFormat.OpenXml.Office2019.Excel.RichData;
 using FluentAssertions;
 using Xunit;
 
@@ -171,7 +172,8 @@ namespace DocSearchAIO_Test
         public void Filter_Maybe_None_from_IEnumerable_wrapped_on_Source()
         {
             var materializer = ActorMaterializer.Create(ActorSystem.Create("testActorsystem"));
-            IEnumerable<Maybe<int>> list = new[] { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+            IEnumerable<Maybe<int>> list = new[]
+                { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
 
             Source<IEnumerable<Maybe<int>>, NotUsed> source = Source.From(new List<IEnumerable<Maybe<int>>> { list });
 
@@ -191,7 +193,8 @@ namespace DocSearchAIO_Test
         [Fact]
         public void Get_element_from_Dictionary_and_process_an_action()
         {
-            var dic = new List<KeyValuePair<int, int>> { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
+            var dic = new List<KeyValuePair<int, int>>
+                { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
 
             var result = dic.SelectKv((k, v) => k + v);
 
@@ -215,7 +218,8 @@ namespace DocSearchAIO_Test
         [Fact]
         public void Filter_out_Maybe_None_from_IEnumerable()
         {
-            IEnumerable<Maybe<int>> list = new[] { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+            IEnumerable<Maybe<int>> list = new[]
+                { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
 
             var result = list.Values();
 
@@ -224,5 +228,52 @@ namespace DocSearchAIO_Test
             result.First().Should().Be(8);
             result.Last().Should().Be(1);
         }
+
+        [Fact]
+        public void Test_ForEach_on_KeyValuePair()
+        {
+            IEnumerable<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>
+                { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(3, 3) };
+
+            var result = 0;
+
+            list.ForEach((k, v) => { result += k; });
+
+            result.Should().Be(6);
+        }
+
+        [Fact]
+        public void Test_ForEach_on_Tuple()
+        {
+            IEnumerable<(int, int)> list = new List<(int, int)>
+                { (1, 1), (2, 2), (3, 3) };
+
+            var result = 0;
+            list.ForEach((t1, t2) => { result += t1; });
+
+            result.Should().Be(6);
+        }
+
+        [Fact]
+        public void Test_IfTrueFalse_with_positive_value_and_return_value()
+        {
+            var result = true.IfTrueFalse(
+                () => throw new FieldAccessException("The expected result should be true"),
+                () => "trueValue");
+
+            "trueValue".Should().Be(result);
+        }
+
+        [Fact]
+        public void Test_IfTrueFalse_with_negative_value_and_return_value()
+        {
+            var result = false.IfTrueFalse(
+                () => "falseValue",
+                () => throw new FieldAccessException("The expected result should be false")
+            );
+
+            "falseValue".Should().Be(result);
+        }
+
     }
 }

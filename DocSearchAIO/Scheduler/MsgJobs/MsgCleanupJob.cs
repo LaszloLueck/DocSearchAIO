@@ -21,7 +21,8 @@ namespace DocSearchAIO.Scheduler.MsgJobs
         private readonly JobStateMemoryCache<MemoryCacheModelMsgCleanup> _jobStateMemoryCache;
         private readonly CleanUpEntry _cleanUpEntry;
 
-        public MsgCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
+        public MsgCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+            IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
             ActorSystem actorSystem)
         {
             _logger = loggerFactory.CreateLogger<MsgCleanupJob>();
@@ -31,43 +32,46 @@ namespace DocSearchAIO.Scheduler.MsgJobs
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
             _reverseComparerService =
-                new ReverseComparerService<ComparerModelMsg>(loggerFactory, new ComparerModelMsg(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
-            _jobStateMemoryCache = JobStateMemoryCacheProxy.GetMsgCleanupJobStateMemoryCache(loggerFactory, memoryCache);
+                new ReverseComparerService<ComparerModelMsg>(loggerFactory,
+                    new ComparerModelMsg(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
+            _jobStateMemoryCache =
+                JobStateMemoryCacheProxy.GetMsgCleanupJobStateMemoryCache(loggerFactory, memoryCache);
         }
 
 
         public async Task Execute(IJobExecutionContext context)
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                _cleanUpEntry
-                    .Active
-                    .ProcessState(async () =>
+                if (_cleanUpEntry.Active)
+                {
+                    await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
+                        _cfg.CleanupGroupName,
+                        TriggerState.Paused);
+                    _logger.LogWarning(
+                        "skip cleanup of msg-files documents because the scheduler is inactive per config");
+                }
+                else
+                {
+                    await Task.Run(async () =>
+                    {
+                        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
+                        if (!cacheEntryOpt.HasNoValue &&
+                            (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                         {
-                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName, _cfg.CleanupGroupName,
-                                TriggerState.Paused);
-                            _logger.LogWarning("skip cleanup of msg-files documents because the scheduler is inactive per config");
-                        },
-                        async () =>
-                        {
-                            await Task.Run(async () =>
-                            {
-                                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
-                                if (!cacheEntryOpt.HasNoValue &&
-                                    (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
-                                {
-                                    _logger.LogInformation(
-                                        "cannot execute cleanup documents, opponent job scanning and processing running");
-                                    return;
-                                }
+                            _logger.LogInformation(
+                                "cannot execute cleanup documents, opponent job scanning and processing running");
+                            return;
+                        }
 
-                                _logger.LogInformation("start processing cleanup job");
-                                var cleanupIndexName =
-                                    _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
-                                await _reverseComparerService.Process(cleanupIndexName);
-                            });
-                        });
+                        _logger.LogInformation("start processing cleanup job");
+                        var cleanupIndexName =
+                            _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
+                        await _reverseComparerService.Process(cleanupIndexName);
+                    });
+                }
+
                 _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
             });
         }

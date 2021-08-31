@@ -63,7 +63,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
         public async Task Execute(IJobExecutionContext context)
         {
             var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
@@ -74,87 +74,81 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                     return;
                 }
 
-                configEntry
-                    .Active
-                    .ProcessState(
-                        async () =>
+                if (configEntry.Active)
+                {
+                    await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                        configEntry.TriggerName,
+                        _cfg.SchedulerGroupName, TriggerState.Paused);
+                    _logger.LogWarning(
+                        "skip processing of powerpoint documents because the scheduler is inactive per config");
+                }
+                else
+                {
+                    _logger.LogInformation("start job");
+                    var indexName =
+                        _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+
+                    await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
+
+                    _logger.LogInformation("start crunching and indexing some powerpoint documents");
+
+                    if (Directory.Exists(_cfg.ScanPath))
+                    {
+                        _logger.LogWarning(
+                            "directory to scan <{ScanPath}> does not exists. skip working", _cfg.ScanPath);
+                    }
+                    else
+                    {
+                        try
                         {
-                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                                configEntry.TriggerName,
-                                _cfg.SchedulerGroupName, TriggerState.Paused);
-                            _logger.LogWarning(
-                                "skip processing of powerpoint documents because the scheduler is inactive per config");
-                        },
-                        async () =>
+                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                            var jobStatistic = new ProcessingJobStatistic
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                StartJob = DateTime.Now
+                            };
+
+                            var sw = Stopwatch.StartNew();
+                            await new TypedFilePathString(_cfg.ScanPath)
+                                .CreateSource(configEntry.FileExtension)
+                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
+                                .CountEntireDocs(_statisticUtilities)
+                                .ProcessPowerpointDocumentAsync(configEntry, _cfg,
+                                    _statisticUtilities, _logger, _encryptionService)
+                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                .WithMaybeFilter()
+                                .CountFilteredDocs(_statisticUtilities)
+                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
+                                    indexName)
+                                .RunIgnore(_actorSystem.Materializer());
+
+                            _logger.LogInformation("finished processing powerpoint documents");
+
+                            sw.Stop();
+                            await _elasticSearchService.FlushIndexAsync(indexName);
+                            await _elasticSearchService.RefreshIndexAsync(indexName);
+                            jobStatistic.EndJob = DateTime.Now;
+                            jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                            jobStatistic.ProcessingError =
+                                _statisticUtilities.FailedDocumentsCount();
+                            jobStatistic.IndexedDocCount =
+                                _statisticUtilities.ChangedDocumentsCount();
+                            _statisticUtilities.AddJobStatisticToDatabase(
+                                jobStatistic);
+                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                                sw.ElapsedMilliseconds);
+                            _comparerModel.RemoveComparerFile();
+                            await _comparerModel.WriteAllLinesAsync();
+                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+                        }
+                        catch (Exception ex)
                         {
-                            _logger.LogInformation("start job");
-                            var indexName =
-                                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
-
-                            await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
-
-                            _logger.LogInformation("start crunching and indexing some powerpoint documents");
-
-                            Directory
-                                .Exists(_cfg.ScanPath)
-                                .IfTrueFalse(_cfg.ScanPath,
-                                    scanPath =>
-                                    {
-                                        _logger.LogWarning(
-                                            "directory to scan <{ScanPath}> does not exists. skip working", scanPath);
-                                    },
-                                    async scanPath =>
-                                    {
-                                        try
-                                        {
-                                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                                            var jobStatistic = new ProcessingJobStatistic
-                                            {
-                                                Id = Guid.NewGuid().ToString(),
-                                                StartJob = DateTime.Now
-                                            };
-
-                                            var sw = Stopwatch.StartNew();
-                                            await new TypedFilePathString(scanPath)
-                                                .CreateSource(configEntry.FileExtension)
-                                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                                                .CountEntireDocs(_statisticUtilities)
-                                                .ProcessPowerpointDocumentAsync(configEntry, _cfg,
-                                                    _statisticUtilities, _logger, _encryptionService)
-                                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
-                                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                                .WithMaybeFilter()
-                                                .CountFilteredDocs(_statisticUtilities)
-                                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
-                                                    indexName)
-                                                .RunIgnore(_actorSystem.Materializer());
-
-                                            _logger.LogInformation("finished processing powerpoint documents");
-
-                                            sw.Stop();
-                                            await _elasticSearchService.FlushIndexAsync(indexName);
-                                            await _elasticSearchService.RefreshIndexAsync(indexName);
-                                            jobStatistic.EndJob = DateTime.Now;
-                                            jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
-                                            jobStatistic.ProcessingError =
-                                                _statisticUtilities.FailedDocumentsCount();
-                                            jobStatistic.IndexedDocCount =
-                                                _statisticUtilities.ChangedDocumentsCount();
-                                            _statisticUtilities.AddJobStatisticToDatabase(
-                                                jobStatistic);
-                                            _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                                                sw.ElapsedMilliseconds);
-                                            _comparerModel.RemoveComparerFile();
-                                            await _comparerModel.WriteAllLinesAsync();
-                                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _logger.LogError(ex, "An error in processing pipeline occured");
-                                        }
-                                    });
-                        });
+                            _logger.LogError(ex, "An error in processing pipeline occured");
+                        }
+                    }
+                }
             });
         }
     }
@@ -164,7 +158,8 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
         public static Source<Maybe<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger, EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger,
+            EncryptionService encryptionService)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
                 f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
@@ -206,7 +201,8 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile), encryptionService);
+                    var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile),
+                        encryptionService);
                     var slideCount = presentaionPart
                         .SlideParts
                         .Count();
@@ -236,7 +232,8 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                     var elementsHash = await (
                         StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString(encryptionService);
 
-                    static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray, string contentString) =>
+                    static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
+                        string contentString) =>
                         commentsArray
                             .StringFromCommentsArray()
                             .GenerateTextToSuggest(new TypedContentString(contentString))
@@ -296,10 +293,12 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                 Date = comment.DateTime.ResolveNullable(new DateTime(1970, 1, 1), (v, _) => v.Value)
             };
 
-        private static IEnumerable<OfficeDocumentComment> CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
+        private static IEnumerable<OfficeDocumentComment>
+            CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
             .Select(part => part
                 .SlideCommentsPart
-                .ResolveNullable(Array.Empty<OfficeDocumentComment>(), (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
+                .ResolveNullable(Array.Empty<OfficeDocumentComment>(),
+                    (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
             )
             .SelectMany(p => p);
 

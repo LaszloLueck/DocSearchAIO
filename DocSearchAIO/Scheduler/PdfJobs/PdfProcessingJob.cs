@@ -51,7 +51,8 @@ namespace DocSearchAIO.Scheduler.PdfJobs
             _elasticSearchService = elasticSearchService;
             _schedulerUtilities = new SchedulerUtilities(loggerFactory);
             _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
-            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory, new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory,
+                new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPdf().StatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
             _encryptionService = new EncryptionService();
@@ -63,91 +64,86 @@ namespace DocSearchAIO.Scheduler.PdfJobs
         {
             var configEntry = _cfg.Processing[nameof(PdfElasticDocument)];
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdfCleanup());
                 if (!cacheEntryOpt.HasNoValue &&
                     (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                 {
-                    _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                    _logger.LogInformation(
+                        "cannot execute scanning and processing documents, opponent job cleanup running");
                     return;
                 }
-                
-                configEntry
-                    .Active
-                    .ProcessState(
-                        async () =>
-                        {
-                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                                configEntry.TriggerName,
-                                _cfg.SchedulerGroupName, TriggerState.Paused);
-                            _logger.LogWarning(
-                                "skip cleanup of PDF documents because the scheduler is inactive per config");
-                        },
-                        async () =>
-                        {
-                            _logger.LogInformation("start job");
-                            var indexName =
-                                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
 
-                            await _elasticUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
-                            _logger.LogInformation("start crunching and indexing some pdf-files");
-                            Directory
-                                .Exists(_cfg.ScanPath)
-                                .IfTrueFalse(_cfg.ScanPath,
-                                    scanPath =>
-                                    {
-                                        _logger.LogWarning(
-                                            "directory to scan <{ScanPath}> does not exists, skip working", scanPath);
-                                    },
-                                    async scanPath =>
-                                    {
-                                        try
-                                        {
-                                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                                            var jobStatistic = new ProcessingJobStatistic
-                                            {
-                                                Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
-                                            };
-                                            var sw = Stopwatch.StartNew();
-                                            await new TypedFilePathString(scanPath)
-                                                .CreateSource(configEntry.FileExtension)
-                                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                                                .CountEntireDocs(_statisticUtilities)
-                                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger, _encryptionService)
-                                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
-                                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                                                .WithMaybeFilter()
-                                                .CountFilteredDocs(_statisticUtilities)
-                                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService, indexName)
-                                                .RunIgnore(_actorSystem.Materializer());
+                if (configEntry.Active)
+                {
+                    await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                        configEntry.TriggerName,
+                        _cfg.SchedulerGroupName, TriggerState.Paused);
+                    _logger.LogWarning(
+                        "skip cleanup of PDF documents because the scheduler is inactive per config");
+                }
+                else
+                {
+                    _logger.LogInformation("start job");
+                    var indexName =
+                        _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
 
-                                            _logger.LogInformation("finished processing pdf documents");
-                                            sw.Stop();
-                                            await _elasticSearchService.FlushIndexAsync(indexName);
-                                            await _elasticSearchService.RefreshIndexAsync(indexName);
-                                            jobStatistic.EndJob = DateTime.Now;
-                                            jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
-                                            jobStatistic.ProcessingError =
-                                                _statisticUtilities.FailedDocumentsCount();
-                                            jobStatistic.IndexedDocCount =
-                                                _statisticUtilities.ChangedDocumentsCount();
-                                            _statisticUtilities.AddJobStatisticToDatabase(
-                                                jobStatistic);
-                                            _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                                                sw.ElapsedMilliseconds);
-                                            _comparerModel.RemoveComparerFile();
-                                            await _comparerModel.WriteAllLinesAsync();
-                                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _logger.LogError(ex, "An error in processing pipeline occured");
-                                        }
-                                    });
+                    await _elasticUtilities.CheckAndCreateElasticIndex<PdfElasticDocument>(indexName);
+                    _logger.LogInformation("start crunching and indexing some pdf-files");
+                    if (!Directory.Exists(_cfg.ScanPath))
+                    {
+                        _logger.LogWarning(
+                            "directory to scan <{ScanPath}> does not exists, skip working", _cfg.ScanPath);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                            var jobStatistic = new ProcessingJobStatistic
+                            {
+                                Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                            };
+                            var sw = Stopwatch.StartNew();
+                            await new TypedFilePathString(_cfg.ScanPath)
+                                .CreateSource(configEntry.FileExtension)
+                                .UseExcludeFileFilter(configEntry.ExcludeFilter)
+                                .CountEntireDocs(_statisticUtilities)
+                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger,
+                                    _encryptionService)
+                                .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                                .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                                .WithMaybeFilter()
+                                .CountFilteredDocs(_statisticUtilities)
+                                .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService, indexName)
+                                .RunIgnore(_actorSystem.Materializer());
+
+                            _logger.LogInformation("finished processing pdf documents");
+                            sw.Stop();
+                            await _elasticSearchService.FlushIndexAsync(indexName);
+                            await _elasticSearchService.RefreshIndexAsync(indexName);
+                            jobStatistic.EndJob = DateTime.Now;
+                            jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                            jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                            jobStatistic.ProcessingError =
+                                _statisticUtilities.FailedDocumentsCount();
+                            jobStatistic.IndexedDocCount =
+                                _statisticUtilities.ChangedDocumentsCount();
+                            _statisticUtilities.AddJobStatisticToDatabase(
+                                jobStatistic);
+                            _logger.LogInformation("index documents in {ElapsedMillis} ms",
+                                sw.ElapsedMilliseconds);
+                            _comparerModel.RemoveComparerFile();
+                            await _comparerModel.WriteAllLinesAsync();
+                            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                         }
-                    );
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "An error in processing pipeline occured");
+                        }
+                    }
+                }
             });
         }
     }
@@ -157,14 +153,17 @@ namespace DocSearchAIO.Scheduler.PdfJobs
         public static Source<Maybe<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger,
+            EncryptionService encryptionService)
         {
             return source.SelectAsync(schedulerEntry.Parallelism,
                 f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
         }
 
-        private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger, EncryptionService encryptionService)
+        private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName,
+            ConfigurationObject configurationObject,
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger,
+            EncryptionService encryptionService)
         {
             return await Task.Run(async () =>
             {
@@ -202,7 +201,8 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var fileNameHash = await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName), encryptionService);
+                    var fileNameHash =
+                        await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName), encryptionService);
 
                     var elasticDoc = new PdfElasticDocument
                     {
@@ -226,7 +226,7 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                         .Distinct()
                         .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                         .Where(d => d.Length > 2);
-                    var completionField = new CompletionField {Input = searchAsYouTypeContent};
+                    var completionField = new CompletionField { Input = searchAsYouTypeContent };
                     elasticDoc.CompletionContent = completionField;
 
                     var listElementsToHash = new List<string>
@@ -235,7 +235,9 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                         elasticDoc.Title, elasticDoc.Subject, elasticDoc.ContentType
                     };
                     elasticDoc.Content = contentString;
-                    elasticDoc.ContentHash = (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()), encryptionService)).Value;
+                    elasticDoc.ContentHash =
+                        (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()),
+                            encryptionService)).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }

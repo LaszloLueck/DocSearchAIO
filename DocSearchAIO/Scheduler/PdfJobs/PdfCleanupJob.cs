@@ -39,40 +39,37 @@ namespace DocSearchAIO.Scheduler.PdfJobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                _cleanUpEntry
-                    .Active
-                    .ProcessState(
-                        async () =>
+                if (_cleanUpEntry.Active)
+                {
+                    await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                        _cleanUpEntry.TriggerName,
+                        _cfg.CleanupGroupName, TriggerState.Paused);
+                    _logger.LogWarning(
+                        "skip cleanup of pdf documents because the scheduler is inactive per config");
+                }
+                else
+                {
+                    await Task.Run(async () =>
+                    {
+                        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdf());
+                        if (!cacheEntryOpt.HasNoValue &&
+                            (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
                         {
-                            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                                _cleanUpEntry.TriggerName,
-                                _cfg.CleanupGroupName, TriggerState.Paused);
-                            _logger.LogWarning(
-                                "skip cleanup of pdf documents because the scheduler is inactive per config");
-                        },
-                        async () =>
-                        {
-                            await Task.Run(async () =>
-                            {
-                                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdf());
-                                if (!cacheEntryOpt.HasNoValue &&
-                                    (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
-                                {
-                                    _logger.LogInformation(
-                                        "cannot execute cleanup documents, opponent job scanning and processing running");
-                                    return;
-                                }
-
-                                _logger.LogInformation("start processing cleanup job");
-                                var cleanupIndexName =
-                                    _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
-                                await _reverseComparerService.Process(cleanupIndexName);
-                            });
+                            _logger.LogInformation(
+                                "cannot execute cleanup documents, opponent job scanning and processing running");
+                            return;
                         }
-                    );
+
+                        _logger.LogInformation("start processing cleanup job");
+                        var cleanupIndexName =
+                            _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
+                        await _reverseComparerService.Process(cleanupIndexName);
+                    });
+                }
+
                 _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
             });
         }
