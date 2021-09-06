@@ -1,19 +1,10 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Xml;
-using System.Xml.Linq;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Wordprocessing;
 using FluentAssertions;
-using iText.Layout.Element;
 using Xunit;
-using Xunit.Abstractions;
-using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
-using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO_Test
 {
@@ -22,7 +13,6 @@ namespace DocSearchAIO_Test
         //if we need a Console Out, we mus inherit ITestOutputHelper testOutputHelper
         public StaticHelperTest()
         {
-
         }
 
         [Fact]
@@ -37,7 +27,8 @@ namespace DocSearchAIO_Test
 
             var result = typedCommentString.GenerateTextToSuggest(typedContentString);
 
-            var compareString = "Fritz jagt im total verwahrlosten Taxi quer durch München Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
+            var compareString =
+                "Fritz jagt im total verwahrlosten Taxi quer durch München Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
 
             compareString.Should().Match(result.ToString());
         }
@@ -52,7 +43,8 @@ namespace DocSearchAIO_Test
             var typedContentString = new TypedContentString(testStringContent);
 
             var result = typedCommentString.GenerateTextToSuggest(typedContentString);
-            var expectedString = "The quick brown fox jumps over the lazy dog The quick brown fox jumps over the lazy dog";
+            var expectedString =
+                "The quick brown fox jumps over the lazy dog The quick brown fox jumps over the lazy dog";
 
 
             expectedString.Should().Match(result.Value);
@@ -88,12 +80,11 @@ namespace DocSearchAIO_Test
 
             var p1 = new Paragraph(list1);
             var p2 = new Paragraph(list2);
-            var pList = new List<OpenXmlElement>{p1, p2};
+            var pList = new List<OpenXmlElement> { p1, p2 };
 
             var result = pList.ContentString();
 
             "Text List A Text List B".Should().Match(result);
-
         }
 
         [Fact]
@@ -109,8 +100,6 @@ namespace DocSearchAIO_Test
 
             var result = testString.ReplaceSpecialStrings(listToReplace);
             "The qick brwn fx jmps ver the lazy dg".Should().Match(result);
-
         }
-        
     }
 }

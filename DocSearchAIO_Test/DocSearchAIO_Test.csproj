@@ -14,7 +14,7 @@
         <PackageReference Include="CSharpFunctionalExtensions" Version="2.20.0" />
         <PackageReference Include="FluentAssertions" Version="6.1.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.27.0.35380">
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.28.0.36354">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
