@@ -129,7 +129,7 @@ codeanalysis:
     paths:
       - .sonar/cache  
   script:
-      - "apk add --update nodejs npm"
+      - "apk add --update nodejs"
       - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
       - "dotnet build"
       - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
