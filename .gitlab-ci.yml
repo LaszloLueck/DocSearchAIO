@@ -1,5 +1,5 @@
 # This file is a template, and might need editing before it works on your project.
-﻿# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
 # https://docs.gitlab.com/ee/development/cicd/templates.html
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/dotNET-Core.yml
@@ -18,7 +18,7 @@
 # See other available tags for .NET Core: https://hub.docker.com/r/microsoft/dotnet
 # Learn more about Docker tags: https://docs.docker.com/glossary/?term=tag
 # and the Docker itself: https://opensource.com/resources/what-docker
-image: mcr.microsoft.com/dotnet/sdk:5.0
+image: gitlab.gretzki.ddns.net/laszlo/alpine-dotnet-sdk:latest
 
 # ### Define variables
 #
@@ -117,14 +117,10 @@ tests:
 securityanalysis:
   stage: test
   script:
-    - 'export PATH="$PATH:/root/.dotnet/tools"'
-    - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
 
 codeanalysis:
   stage: test
-  image: 
-    name: mcr.microsoft.com/dotnet/sdk:latest
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
     GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
@@ -133,13 +129,7 @@ codeanalysis:
     paths:
       - .sonar/cache  
   script:
-      - "apt-get update"
-      - "apt-get install --yes curl"
-      - "curl -sL https://deb.nodesource.com/setup_14.x | bash -"
-      - "apt-get install --yes nodejs"
-      - "apt-get install --yes openjdk-11-jre"
-      - "dotnet tool install --global dotnet-sonarscanner"
-      - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
+      - "apk add --update nodejs npm"
       - "dotnet sonarscanner begin /k:\"de655c1ea1243b2da948cc9f0feb88f68fd22cc8\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
       - "dotnet build"
       - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
