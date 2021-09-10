@@ -1,9 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
 WORKDIR /src
 EXPOSE 5000
 ENV ASPNETCORE_URLS=http://+:5000
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM gitlab.gretzki.ddns.net/laszlo/alpine-dotnet-sdk:latest as build AS build
 COPY DocSearchAIO.sln .
 COPY DocSearchAIO ./DocSearchAIO/
 COPY DocSearchAIO_Test ./DocSearchAIO_Test/
