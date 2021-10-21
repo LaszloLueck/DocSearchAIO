@@ -68,7 +68,7 @@ namespace DocSearchAIO.DocSearch.Services
                         .Where(r => r.TriggerName == trigger.Name)
                         .Select(d => d.Active)
                         .TryFirst()
-                        .Unwrap(), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
+                        .GetValueOrDefault(), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
                 );
             };
 

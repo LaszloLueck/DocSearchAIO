@@ -23,7 +23,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
             await File.WriteAllTextAsync("./Resources/config/config.json", str, Encoding.UTF8);
         }
 
-        private class OuterConfigurationObject
+        private sealed class OuterConfigurationObject
         {
             [JsonProperty("configurationObject")] public ConfigurationObject ConfigurationObject { get; set; } = new();
         }

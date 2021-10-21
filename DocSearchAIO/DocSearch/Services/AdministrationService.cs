@@ -390,7 +390,7 @@ namespace DocSearchAIO.DocSearch.Services
             (triggerElements, jobStateOpt) => triggerElements.Select(trigger =>
             {
                 AdministrationActionTriggerModel triggerElement = trigger;
-                triggerElement.JobState = jobStateOpt.Unwrap(JobState.Undefined);
+                triggerElement.JobState = jobStateOpt.GetValueOrDefault(JobState.Undefined);
                 return triggerElement;
             });
 

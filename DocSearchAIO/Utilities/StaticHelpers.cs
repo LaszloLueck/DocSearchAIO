@@ -275,7 +275,6 @@ namespace DocSearchAIO.Utilities
                     SearchOption.AllDirectories).Select(f => new TypedFilePathString(f)));
         }
 
-        [Pure]
         public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>
             source.RunWith(Sink.Ignore<T>(), actorMaterializer);
 
