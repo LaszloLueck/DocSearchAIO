@@ -8,10 +8,10 @@ namespace DocSearchAIO.Utilities
 {
     public class EncryptionService
     {
-        private readonly SHA256Managed _sha256;
+        private readonly SHA256 _sha256;
         public EncryptionService()
         {
-            _sha256 = new SHA256Managed();
+            _sha256 = SHA256.Create();
         }
 
         public byte[] ComputeHashSync(string input)

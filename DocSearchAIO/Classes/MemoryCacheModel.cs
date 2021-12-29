@@ -18,7 +18,7 @@ namespace DocSearchAIO.Classes
             _memoryCache = memoryCache;
         }
 
-        public IEnumerable<Tuple<string, Func<MemoryCacheModel>>> GetModels()
+        public IEnumerable<Tuple<string, Func<MemoryCacheModel>>> Models()
         {
             return new List<Tuple<string, Func<MemoryCacheModel>>>
             {
@@ -61,7 +61,7 @@ namespace DocSearchAIO.Classes
 
         public Maybe<CacheEntry> CacheEntry()
         {
-            _logger.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
+            _logger?.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
             _memoryCache.TryGetValue(DerivedModelName, out CacheEntry cacheEntry);
             return cacheEntry;
         }

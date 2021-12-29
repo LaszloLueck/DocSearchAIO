@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
 
@@ -30,7 +29,8 @@ namespace DocSearchAIO.Classes
         public Maybe<ProcessingJobStatistic> LatestJobStatisticByModel()
         {
             var filePath = $"{StatisticsDirectory}/{StatisticFileName}";
-            _logger.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}", filePath,
+            _logger?.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}",
+                filePath,
                 DerivedModelName);
             var content = File.ReadAllText(filePath);
             if (!content.Any())
@@ -42,7 +42,7 @@ namespace DocSearchAIO.Classes
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "error occured while converting statistic json to model");
+                _logger?.LogError(e, "error occured while converting statistic json to model");
                 return Maybe<ProcessingJobStatistic>.None;
             }
         }
@@ -73,7 +73,8 @@ namespace DocSearchAIO.Classes
         {
         }
 
-        public StatisticModelPowerpoint(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(loggerFactory)
+        public StatisticModelPowerpoint(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) :
+            base(loggerFactory)
         {
             StatisticsDirectory = statisticsDirectory;
         }

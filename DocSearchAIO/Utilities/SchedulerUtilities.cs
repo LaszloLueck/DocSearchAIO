@@ -9,7 +9,7 @@ namespace DocSearchAIO.Utilities
 {
     public class SchedulerUtilities
     {
-        private  readonly ILogger? _logger;
+        private  readonly ILogger _logger;
 
         public SchedulerUtilities(ILoggerFactory loggerFactory)
         {

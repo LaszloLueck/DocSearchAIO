@@ -1,3 +1,4 @@
+using System;
 using Akka.Actor;
 
 using DocSearchAIO.DocSearch.ServiceHooks;
@@ -37,6 +38,8 @@ namespace DocSearchAIO
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime)
         {
+            Environment.Exit(0);
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

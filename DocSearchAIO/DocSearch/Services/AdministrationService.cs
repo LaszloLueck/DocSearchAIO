@@ -401,7 +401,7 @@ namespace DocSearchAIO.DocSearch.Services
 
         private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
             memoryCacheModelProxy => memoryCacheModelProxy
-                .GetModels()
+                .Models()
                 .SelectTuple((key, value) => value
                     .Invoke()
                     .CacheEntry()

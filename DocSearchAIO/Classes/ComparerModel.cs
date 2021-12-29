@@ -36,7 +36,7 @@ namespace DocSearchAIO.Classes
 
         public void CleanDictionaryAndRemoveComparerFile()
         {
-            _logger.LogInformation("cleanup comparer dictionary before removing the file");
+            _logger?.LogInformation("cleanup comparer dictionary before removing the file");
             _comparerObjects.Clear();
             RemoveComparerFile();
             CheckAndCreateComparerDirectory();
@@ -44,14 +44,14 @@ namespace DocSearchAIO.Classes
 
         public void RemoveComparerFile()
         {
-            _logger.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
+            _logger?.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
                 ComparerFilePath, DerivedModelName);
             ComparerHelper.RemoveComparerFile(ComparerFilePath);
         }
 
         public async Task WriteAllLinesAsync()
         {
-            _logger.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
+            _logger?.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
             var sw = Stopwatch.StartNew();
             try
             {
@@ -60,16 +60,16 @@ namespace DocSearchAIO.Classes
             finally
             {
                 sw.Stop();
-                _logger.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
+                _logger?.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
             }
         }
 
         private void CheckAndCreateComparerDirectory()
         {
-            _logger.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
+            _logger?.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
             if (!ComparerHelper.CheckIfDirectoryExists(_comparerDirectory))
                 ComparerHelper.CreateDirectory(_comparerDirectory);
-            _logger.LogInformation("check if comparer file {GetComparerFilePath} exists", ComparerFilePath);
+            _logger?.LogInformation("check if comparer file {GetComparerFilePath} exists", ComparerFilePath);
             if (!ComparerHelper.CheckIfFileExists(ComparerFilePath))
                 ComparerHelper.CreateComparerFile(ComparerFilePath);
         }

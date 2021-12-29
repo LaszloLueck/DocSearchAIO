@@ -99,7 +99,7 @@
         "forIndexSuffix": "excel"
       },
       "MsgCleanupDocument": {
-        "active": false,
+        "active": true,
         "startDelay": 15,
         "runsEvery": 1800,
         "parallelism": 5,
