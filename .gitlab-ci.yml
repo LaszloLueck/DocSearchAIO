@@ -50,3 +50,21 @@ codeanalysis:
   allow_failure: true
   only:
     - master
+
+deploy:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://192.168.0.2:2375
+    DOCKER_PROJECT_NAME: docsearchaio
+    DOCKER_TAG: latest
+  before_script:
+    - echo $DOCKER_REGISTRY_PASSWORD | docker login -u $DOCKER_REGISTRY_USERNAME $DOCKER_REGISTRY:10500 --password-stdin
+  after_script:
+    - docker logout $DOCKER_REGISTRY:10500
+  script:
+    - docker rmi --force $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
+    - docker build --file ./$SOURCE_CODE_PATH/Dockerfile -t $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG ./$SOURCE_CODE_PATH --no-cache
+    - docker push $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
