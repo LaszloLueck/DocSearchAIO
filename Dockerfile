@@ -1,22 +1,17 @@
-FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
-WORKDIR /src
-EXPOSE 5000
-ENV ASPNETCORE_URLS=http://+:5000
+FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-sdk:latest AS base
+WORKDIR /app
 
-FROM gitlab.gretzki.ddns.net/laszlo/alpine-dotnet-sdk:latest as build AS build
 COPY DocSearchAIO.sln .
 COPY DocSearchAIO ./DocSearchAIO/
-COPY DocSearchAIO_Test ./DocSearchAIO_Test/
+
+RUN dotnet --version
 RUN dotnet restore
-RUN dotnet build -c Release -o /app/build
 
-#FROM build as test
-RUN dotnet test --verbosity normal
+RUN dotnet publish -c Release -o /app/out
 
-FROM build AS publish
-RUN dotnet publish -c Release -o /app/publish
-
-FROM base AS final
+FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-runtime:latest
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build-env /app/out .
+ENV ASPNETCORE_URLS=http://+:5000
+RUN dotnet --list-runtimes
 ENTRYPOINT ["dotnet", "DocSearchAIO.dll"]
