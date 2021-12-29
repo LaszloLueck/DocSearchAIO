@@ -1,12 +1,13 @@
-FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-sdk:latest AS base
+FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-sdk:latest AS build-env
 WORKDIR /app
 
-COPY DocSearchAIO.sln .
-COPY DocSearchAIO ./DocSearchAIO/
+COPY ./DocSearchAIO/DocSearchAIO.csproj ./
 
 RUN dotnet --version
 RUN dotnet restore
 
+COPY . ./
+RUN dotnet build
 RUN dotnet publish -c Release -o /app/out
 
 FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-runtime:latest
