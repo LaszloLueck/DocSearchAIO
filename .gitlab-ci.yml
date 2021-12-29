@@ -66,5 +66,5 @@ deploy:
     - docker logout $DOCKER_REGISTRY:10500
   script:
     - docker rmi --force $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
-    - docker build --file ./Dockerfile -t $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG ./$SOURCE_CODE_PATH --no-cache
+    - docker build --file ./Dockerfile -t $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG . --no-cache
     - docker push $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
