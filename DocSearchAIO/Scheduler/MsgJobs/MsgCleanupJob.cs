@@ -44,7 +44,7 @@ namespace DocSearchAIO.Scheduler.MsgJobs
             await Task.Run(async () =>
             {
                 _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                if (_cleanUpEntry.Active)
+                if (!_cleanUpEntry.Active)
                 {
                     await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
                         _cfg.CleanupGroupName,
