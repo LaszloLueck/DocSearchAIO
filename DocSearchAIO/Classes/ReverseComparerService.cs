@@ -76,7 +76,7 @@ namespace DocSearchAIO.Classes
             _allFileCount = new InterlockedCounter();
             _removedFileCount = new InterlockedCounter();
             _lazyCache = new ConcurrentDictionary<string, ComparerObject>();
-            ComparerHelper.FillConcurrentDictionary(_comparerFile);
+            ComparerHelper.FillConcurrentDictionary(_comparerFile, _logger);
         }
 
         public async Task Process(string indexName)

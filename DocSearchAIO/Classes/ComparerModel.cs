@@ -26,7 +26,7 @@ namespace DocSearchAIO.Classes
             _logger = loggerFactory.CreateLogger<ComparerModel>();
             _comparerDirectory = comparerDirectory;
             CheckAndCreateComparerDirectory();
-            _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath);
+            _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath, _logger);
         }
 
         protected ComparerModel(string comparerDirectory)

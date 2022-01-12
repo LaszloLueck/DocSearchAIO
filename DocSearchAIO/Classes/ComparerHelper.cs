@@ -9,6 +9,7 @@ using Akka;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
 {
@@ -35,18 +36,26 @@ namespace DocSearchAIO.Classes
             return cpo;
         };
 
-        public static readonly Func<string, ConcurrentDictionary<string, ComparerObject>> FillConcurrentDictionary =
-            path =>
+        public static readonly Func<string, ILogger, ConcurrentDictionary<string, ComparerObject>> FillConcurrentDictionary =
+            (path, logger) =>
             {
-                var retDictionary = File
-                    .ReadAllLines(path)
-                    .AsParallel()
-                    .WithDegreeOfParallelism(10)
-                    .Select(ConvertLine)
-                    .Values()
-                    .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
-                    .ToDictionary();
-                return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
+                if (File.Exists(path))
+                {
+                    var retDictionary = File
+                        .ReadAllLines(path)
+                        .AsParallel()
+                        .WithDegreeOfParallelism(10)
+                        .Select(ConvertLine)
+                        .Values()
+                        .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
+                        .ToDictionary();
+                    return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
+                }
+                else
+                {
+                    logger.LogWarning("Cannot read Comparer file <{Path}> it does not exist, gave up", path);
+                    return new ConcurrentDictionary<string, ComparerObject>();
+                }
             };
 
         public static void RemoveComparerFile(string fileName)

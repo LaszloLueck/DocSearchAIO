@@ -6,14 +6,10 @@ RUN dotnet --version
 
 RUN dotnet clean
 RUN dotnet nuget locals all --clear
-RUN dotnet add package Newtonsoft.Json -v 13.0.1
 RUN dotnet restore
-
 
 RUN dotnet build --configuration Release
 RUN dotnet publish -c Release -o /app/out
-
-RUN ls -lah /app/out
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
