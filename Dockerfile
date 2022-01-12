@@ -6,7 +6,7 @@ COPY ./DocSearchAIO/DocSearchAIO.csproj ./
 RUN dotnet --version
 RUN dotnet restore
 
-COPY . ./
+COPY ./DocSearchAIO ./
 RUN dotnet build
 RUN dotnet publish -c Release -o /app/out
 
