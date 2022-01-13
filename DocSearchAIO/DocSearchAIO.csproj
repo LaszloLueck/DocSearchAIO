@@ -75,16 +75,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Remove="quartz.config" />
-      <Content Include="Docker\.config\config.json">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </Content>
-      <None Include="Resources\config\config.json" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Folder Include="Resources\statistics" />
     </ItemGroup>
 
