@@ -1,58 +1,58 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using DocSearchAIO.DocSearch.TOs;
-using Newtonsoft.Json;
 
 namespace DocSearchAIO.Configuration
 {
     public class ConfigurationObject
     {
-        [JsonProperty("elasticEndpoints")] public List<string> ElasticEndpoints { get; set; } = new();
+        [JsonPropertyName("elasticEndpoints")] public List<string> ElasticEndpoints { get; set; } = new();
 
-        [JsonProperty("scanPath")] public string ScanPath { get; set; } = "";
+        [JsonPropertyName("scanPath")] public string ScanPath { get; set; } = "";
 
-        [JsonProperty("indexName")] public string IndexName { get; set; } = "";
+        [JsonPropertyName("indexName")] public string IndexName { get; set; } = "";
 
-        [JsonProperty("actorSystemName")] public string ActorSystemName { get; set; } = "";
+        [JsonPropertyName("actorSystemName")] public string ActorSystemName { get; set; } = "";
 
-        [JsonProperty("schedulerName")] public string SchedulerName { get; set; } = "";
+        [JsonPropertyName("schedulerName")] public string SchedulerName { get; set; } = "";
 
-        [JsonProperty("schedulerId")] public string SchedulerId { get; set; } = "";
+        [JsonPropertyName("schedulerId")] public string SchedulerId { get; set; } = "";
 
-        [JsonProperty("uriReplacement")] public string UriReplacement { get; set; } = "";
+        [JsonPropertyName("uriReplacement")] public string UriReplacement { get; set; } = "";
 
-        [JsonProperty("processing")]
+        [JsonPropertyName("processing")]
         public Dictionary<string, SchedulerEntry> Processing { get; set; } = new();
 
-        [JsonProperty("cleanup")]
+        [JsonPropertyName("cleanup")]
         public Dictionary<string, CleanUpEntry> Cleanup { get; set; } = new();
 
-        [JsonProperty("schedulerGroupName")] public string SchedulerGroupName { get; set; } = "";
+        [JsonPropertyName("schedulerGroupName")] public string SchedulerGroupName { get; set; } = "";
 
-        [JsonProperty("cleanupGroupName")] public string CleanupGroupName { get; set; } = "";
+        [JsonPropertyName("cleanupGroupName")] public string CleanupGroupName { get; set; } = "";
 
-        [JsonProperty("comparerDirectory")] public string ComparerDirectory { get; set; } = "";
+        [JsonPropertyName("comparerDirectory")] public string ComparerDirectory { get; set; } = "";
 
-        [JsonProperty("statisticsDirectory")] public string StatisticsDirectory { get; set; } = "";
+        [JsonPropertyName("statisticsDirectory")] public string StatisticsDirectory { get; set; } = "";
     }
 
 
     public class CleanUpEntry
     {
-        [JsonProperty("active")] public bool Active { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; }
 
-        [JsonProperty("startDelay")] public int StartDelay { get; set; }
+        [JsonPropertyName("startDelay")] public int StartDelay { get; set; }
 
-        [JsonProperty("runsEvery")] public int RunsEvery { get; set; }
+        [JsonPropertyName("runsEvery")] public int RunsEvery { get; set; }
 
-        [JsonProperty("parallelism")] public int Parallelism { get; set; }
+        [JsonPropertyName("parallelism")] public int Parallelism { get; set; }
 
-        [JsonProperty("jobName")] public string JobName { get; set; } = "";
+        [JsonPropertyName("jobName")] public string JobName { get; set; } = "";
 
-        [JsonProperty("triggerName")] public string TriggerName { get; set; } = "";
+        [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = "";
 
-        [JsonProperty("forComparerName")] public string ForComparerName { get; set; } = "";
+        [JsonPropertyName("forComparerName")] public string ForComparerName { get; set; } = "";
 
-        [JsonProperty("forIndexSuffix")] public string ForIndexSuffix { get; set; } = "";
+        [JsonPropertyName("forIndexSuffix")] public string ForIndexSuffix { get; set; } = "";
 
         public static implicit operator CleanUpEntry(CleanupConfiguration cleanupConfiguration) => new()
         {
@@ -69,23 +69,23 @@ namespace DocSearchAIO.Configuration
 
     public class SchedulerEntry
     {
-        [JsonProperty("active")] public bool Active { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; }
 
-        [JsonProperty("startDelay")] public int StartDelay { get; set; }
+        [JsonPropertyName("startDelay")] public int StartDelay { get; set; }
 
-        [JsonProperty("runsEvery")] public int RunsEvery { get; set; }
+        [JsonPropertyName("runsEvery")] public int RunsEvery { get; set; }
 
-        [JsonProperty("parallelism")] public int Parallelism { get; set; }
+        [JsonPropertyName("parallelism")] public int Parallelism { get; set; }
 
-        [JsonProperty("jobName")] public string JobName { get; set; } = "";
+        [JsonPropertyName("jobName")] public string JobName { get; set; } = "";
 
-        [JsonProperty("triggerName")] public string TriggerName { get; set; } = "";
+        [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = "";
 
-        [JsonProperty("excludeFilter")] public string ExcludeFilter { get; set; } = "";
+        [JsonPropertyName("excludeFilter")] public string ExcludeFilter { get; set; } = "";
 
-        [JsonProperty("fileExtension")] public string FileExtension { get; set; } = "";
+        [JsonPropertyName("fileExtension")] public string FileExtension { get; set; } = "";
 
-        [JsonProperty("indexSuffix")] public string IndexSuffix { get; set; } = "";
+        [JsonPropertyName("indexSuffix")] public string IndexSuffix { get; set; } = "";
 
         public static implicit operator SchedulerEntry(ProcessorConfiguration processorConfiguration) => new()
         {

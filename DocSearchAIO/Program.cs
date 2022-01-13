@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Text.Json;
+using DocSearchAIO.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +19,7 @@ namespace DocSearchAIO
         {
             CreateHostBuilder(args).Build().Run();
         }
-
+        
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostingContext, config) =>

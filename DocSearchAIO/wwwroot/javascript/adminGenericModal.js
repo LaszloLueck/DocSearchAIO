@@ -116,7 +116,7 @@ let renderAdminGenericModal = (result) => {
     mainContent += '</div>';
 
     $.each(result.processorConfigurations, function(key, value){
-        mainContent += '<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="processorType_"' + key + '">';
+        mainContent += '<div class="form-row ml-1 mr-1 mt-2 mb-2 w-100 border rounded border-color-gray" id="processorType_' + key + '">';
         mainContent += '    <div class="input-group input-group-sm m-2">';
         mainContent += '        <div class="h6 mr-2">';
         mainContent += '        <span>';

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.Utilities;
-using Newtonsoft.Json;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks
 {
@@ -13,8 +13,11 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
         public static async Task UpdateConfigurationObject(ConfigurationObject configuration, bool withBackup = false)
         {
             var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
-            
-            var str = JsonConvert.SerializeObject(outer, Formatting.Indented);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            var str = JsonSerializer.Serialize(outer, options);
 
             if (withBackup)
                 File.Copy("./Resources/config/config.json",
@@ -25,7 +28,7 @@ namespace DocSearchAIO.DocSearch.ServiceHooks
 
         private sealed class OuterConfigurationObject
         {
-            [JsonProperty("configurationObject")] public ConfigurationObject ConfigurationObject { get; set; } = new();
+            [JsonPropertyName("configurationObject")] public ConfigurationObject ConfigurationObject { get; set; } = new();
         }
     }
 }

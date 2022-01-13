@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace DocSearchAIO.Utilities
 {
@@ -30,20 +30,24 @@ namespace DocSearchAIO.Utilities
                 };
             };
 
-        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelWord>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+                StatisticUtilities<StatisticModelWord>>
             WordStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelWord>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelPowerpoint>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+                StatisticUtilities<StatisticModelPowerpoint>>
             PowerpointStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelPowerpoint>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelPdf>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+                StatisticUtilities<StatisticModelPdf>>
             PdfStatisticUtility =
                 (loggerFactory, statisticsDirectory, statisticsFile) =>
                     new StatisticUtilities<StatisticModelPdf>(loggerFactory, statisticsDirectory, statisticsFile);
 
-        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelExcel>>
+        public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+                StatisticUtilities<StatisticModelExcel>>
             ExcelStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
                 new StatisticUtilities<StatisticModelExcel>(loggerFactory, statisticDirectory, statisticsFile);
     }
@@ -56,7 +60,8 @@ namespace DocSearchAIO.Utilities
         private readonly InterlockedCounter _changedDocuments;
         private readonly string _filePath;
 
-        public StatisticUtilities(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory, TypedFileNameString statisticsFile)
+        public StatisticUtilities(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory,
+            TypedFileNameString statisticsFile)
         {
             _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
             _entireDocuments = new InterlockedCounter();
@@ -94,7 +99,11 @@ namespace DocSearchAIO.Utilities
 
         public void AddJobStatisticToDatabase(ProcessingJobStatistic jobStatistic)
         {
-            var json = JsonConvert.SerializeObject(jobStatistic, Formatting.Indented);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            var json = JsonSerializer.Serialize(jobStatistic, options);
             File.WriteAllText(_filePath, json);
         }
     }
