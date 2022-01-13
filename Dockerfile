@@ -16,7 +16,5 @@ COPY --from=build-env /app/out .
 EXPOSE 5000
 ENV ASPNETCORE_URLS=http://+:5000
 
-RUN ls -lah Resources/config
-
 RUN dotnet --list-runtimes
 ENTRYPOINT ["dotnet", "DocSearchAIO.dll"]
