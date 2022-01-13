@@ -37,7 +37,6 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly EncryptionService _encryptionService;
 
         public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -54,7 +53,6 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelWord().StatisticFileName);
             _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
-            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -111,8 +109,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
                                 .CreateSource(configEntry.FileExtension)
                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                 .CountEntireDocs(_statisticUtilities)
-                                .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                    _logger, _encryptionService)
+                                .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                 .WithMaybeFilter()
@@ -156,16 +153,15 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
         public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger,
-            EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
+                f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
         }
 
         private static async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
-            ILogger logger, EncryptionService encryptionService)
+            ILogger logger)
         {
             try
             {
@@ -204,7 +200,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
                         .Replace(@"\", "/");
 
                     var id = await StaticHelpers.CreateHashString(
-                        new TypedHashedInputString(currentFile), encryptionService);
+                        new TypedHashedInputString(currentFile));
 
 
                     static IEnumerable<OfficeDocumentComment> CommentArray(
@@ -255,7 +251,7 @@ namespace DocSearchAIO.Scheduler.OfficeWordJobs
 
                     var elementsHash = await (
                             StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                        .ContentHashString(encryptionService);
+                        .ContentHashString();
 
                     var completionField = commentsArray
                         .StringFromCommentsArray()

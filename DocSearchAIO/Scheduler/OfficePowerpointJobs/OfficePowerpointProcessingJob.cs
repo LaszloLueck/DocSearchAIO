@@ -38,7 +38,6 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly EncryptionService _encryptionService;
 
         public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -54,7 +53,6 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPowerpoint().StatisticFileName);
             _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
-            _encryptionService = new EncryptionService();
             _jobStateMemoryCache =
                 JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
@@ -114,7 +112,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                 .CountEntireDocs(_statisticUtilities)
                                 .ProcessPowerpointDocumentAsync(configEntry, _cfg,
-                                    _statisticUtilities, _logger, _encryptionService)
+                                    _statisticUtilities, _logger)
                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                 .WithMaybeFilter()
@@ -158,16 +156,15 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
         public static Source<Maybe<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger,
-            EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
+                f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
         }
 
         private static async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelPowerpoint> statisticUtilities,
-            ILogger logger, EncryptionService encryptionService)
+            ILogger logger)
         {
             try
             {
@@ -201,8 +198,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                         .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                         .Replace(@"\", "/");
 
-                    var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile),
-                        encryptionService);
+                    var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile));
                     var slideCount = presentaionPart
                         .SlideParts
                         .Count();
@@ -230,7 +226,7 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs
                         lastModifiedBy);
 
                     var elementsHash = await (
-                        StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString(encryptionService);
+                        StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
 
                     static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
                         string contentString) =>

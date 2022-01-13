@@ -37,7 +37,6 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly EncryptionService _encryptionService;
 
         public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
             ActorSystem actorSystem, IElasticSearchService elasticSearchService,
@@ -54,7 +53,6 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelExcel().StatisticFileName);
             _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
-            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -112,7 +110,7 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                 .CountEntireDocs(_statisticUtilities)
                                 .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                    _logger, _encryptionService)
+                                    _logger)
                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                 .WithMaybeFilter()
@@ -154,16 +152,15 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
     {
         public static Source<Maybe<ExcelElasticDocument>, NotUsed> ProcessExcelDocumentAsync(
             this Source<string, NotUsed> source, SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger,
-            EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger)
         {
             return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
-                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
+                f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
         }
 
         private static async Task<Maybe<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
             ConfigurationObject configurationObject, StatisticUtilities<StatisticModelExcel> statisticUtilities,
-            ILogger logger, EncryptionService encryptionService)
+            ILogger logger)
         {
             try
             {
@@ -198,7 +195,7 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
                     .Replace(@"\", "/");
 
                 var id = await StaticHelpers.CreateHashString(
-                    new TypedHashedInputString(currentFile), encryptionService);
+                    new TypedHashedInputString(currentFile));
 
                 static IEnumerable<OfficeDocumentComment>
                     CommentArray(WorkbookPart workbookPart) =>
@@ -229,7 +226,7 @@ namespace DocSearchAIO.Scheduler.OfficeExcelJobs
 
                 var elementsHash = await (
                         StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                    .ContentHashString(encryptionService);
+                    .ContentHashString();
 
                 var completionField = commentsArray
                     .StringFromCommentsArray()

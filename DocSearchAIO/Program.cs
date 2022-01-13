@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Text.Json;
-using DocSearchAIO.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -14,12 +9,11 @@ namespace DocSearchAIO
 {
     public static class Program
     {
-
         public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
         }
-        
+
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostingContext, config) =>
@@ -31,7 +25,7 @@ namespace DocSearchAIO
                     builder.Add("array:entries:3", "value3");
                     builder.Add("array:entries:4", "value4");
                     builder.Add("array:entries:5", "value5");
-                    
+
                     config.AddInMemoryCollection(builder.ToImmutable());
                     config.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);

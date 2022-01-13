@@ -39,7 +39,6 @@ namespace DocSearchAIO.Scheduler.PdfJobs
         private readonly ComparerModel _comparerModel;
         private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
         private readonly ElasticUtilities _elasticUtilities;
-        private readonly EncryptionService _encryptionService;
 
         public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
             IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
@@ -55,7 +54,6 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                 new TypedDirectoryPathString(_cfg.StatisticsDirectory),
                 new StatisticModelPdf().StatisticFileName);
             _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
-            _encryptionService = new EncryptionService();
             _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
             _jobStateMemoryCache.RemoveCacheEntry();
         }
@@ -110,8 +108,7 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                                 .CreateSource(configEntry.FileExtension)
                                 .UseExcludeFileFilter(configEntry.ExcludeFilter)
                                 .CountEntireDocs(_statisticUtilities)
-                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger,
-                                    _encryptionService)
+                                .ProcessPdfDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
                                 .FilterExistingUnchangedAsync(configEntry, _comparerModel)
                                 .GroupedWithin(50, TimeSpan.FromSeconds(10))
                                 .WithMaybeFilter()
@@ -153,17 +150,15 @@ namespace DocSearchAIO.Scheduler.PdfJobs
         public static Source<Maybe<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
             this Source<string, NotUsed> source,
             SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger,
-            EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
         {
             return source.SelectAsync(schedulerEntry.Parallelism,
-                f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger, encryptionService));
+                f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger));
         }
 
         private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName,
             ConfigurationObject configurationObject,
-            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger,
-            EncryptionService encryptionService)
+            StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
         {
             return await Task.Run(async () =>
             {
@@ -202,7 +197,7 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                         .Replace(@"\", "/");
 
                     var fileNameHash =
-                        await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName), encryptionService);
+                        await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName));
 
                     var elasticDoc = new PdfElasticDocument
                     {
@@ -236,8 +231,7 @@ namespace DocSearchAIO.Scheduler.PdfJobs
                     };
                     elasticDoc.Content = contentString;
                     elasticDoc.ContentHash =
-                        (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()),
-                            encryptionService)).Value;
+                        (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()))).Value;
 
                     return Maybe<PdfElasticDocument>.From(elasticDoc);
                 }

@@ -1,4 +1,3 @@
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,25 +5,14 @@ using System.Threading.Tasks;
 
 namespace DocSearchAIO.Utilities
 {
-    public class EncryptionService
+    public static class EncryptionService
     {
-        private readonly SHA256 _sha256;
-        public EncryptionService()
+        public static async Task<byte[]> ComputeHashAsync(string input)
         {
-            _sha256 = SHA256.Create();
+            return await Task.Run(() => SHA256.HashData(Encoding.UTF8.GetBytes(input)));
         }
 
-        public byte[] ComputeHashSync(string input)
-        {
-            return _sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-        }
-
-        public async Task<byte[]> ComputeHashAsync(string input)
-        {
-            return await _sha256.ComputeHashAsync(new MemoryStream(Encoding.UTF8.GetBytes(input)));
-        }
-
-        public string ConvertToStringFromByteArray(byte[] array)
+        public static string ConvertToStringFromByteArray(byte[] array)
         {
             return array.Select(bt => bt.ToString("x2")).Concat();
         }

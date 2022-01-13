@@ -3,11 +3,12 @@ WORKDIR /app
 COPY ./DocSearchAIO ./
 
 RUN dotnet --version
+RUN dotnet restore
 
 RUN dotnet clean
-RUN dotnet nuget locals all --clear
+#RUN dotnet nuget locals all --clear
 
-RUN dotnet build --configuration Release
+RUN dotnet build
 RUN dotnet publish -c Release -o out
 
 FROM nexus.gretzki.ddns.net:10501/alpine-dotnet-runtime:latest

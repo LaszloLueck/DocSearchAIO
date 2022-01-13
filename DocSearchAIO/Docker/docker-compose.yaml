@@ -37,9 +37,9 @@ services:
       - elasticsearch
     volumes:
       - "e:/bcmw:/app/data"
-      - .comparer:/app/Resources/comparer
-      - .config:/app/Resources/config
-      - .statistics:/app/Resources/statistic
+      - .comparer:/Resources/comparer
+      - .config:/Resources/config
+      - .statistics:/Resources/statistic
     restart: always
 networks:
   app_net:

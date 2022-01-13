@@ -1,4 +1,3 @@
-using System;
 using Akka.Actor;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using Microsoft.AspNetCore.Builder;
@@ -26,7 +25,9 @@ namespace DocSearchAIO
             services.AddElasticSearch(Configuration);
             services.AddMemoryCache();
             services.AddQuartzScheduler(Configuration);
-            services.AddSingleton( _ => ActorSystem.Create("DocSearchAIOActorSystem"));
+            var ass = ActorSystem.Create("DocSearchAIOActorSystem");
+            services.AddSingleton(_ => ass);
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "DocSearchAIO", Version = "v1" });

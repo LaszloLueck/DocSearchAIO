@@ -31,11 +31,11 @@ namespace DocSearchAIO.Utilities
                 where assemblyType.IsSubclassOf(typeof(TIn))
                 select assemblyType;
 
-        public static readonly Func<TypedHashedInputString, EncryptionService, Task<TypedHashedString>> CreateHashString =
-            async (stringValue, encryptionService) =>
+        public static readonly Func<TypedHashedInputString, Task<TypedHashedString>> CreateHashString =
+            async (stringValue) =>
             {
-                var res1 = await encryptionService.ComputeHashAsync(stringValue.Value);
-                return new TypedHashedString(encryptionService.ConvertToStringFromByteArray(res1));
+                var res1 = await EncryptionService.ComputeHashAsync(stringValue.Value);
+                return new TypedHashedString(EncryptionService.ConvertToStringFromByteArray(res1));
             };
 
         private static readonly Func<ConfigurationObject, string[], string, bool>
@@ -145,9 +145,9 @@ namespace DocSearchAIO.Utilities
 
         [Pure]
         public static async Task<TypedHashedString> ContentHashString(this (List<string> listElementsToHash,
-            IEnumerable<OfficeDocumentComment> commentsArray) kv, EncryptionService encryptionService) =>
+            IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
             await CreateHashString(
-                new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()), encryptionService);
+                new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()));
 
 
         [Pure]
