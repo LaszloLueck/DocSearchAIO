@@ -15,14 +15,14 @@ services:
     volumes:
       - .elasticData:/usr/share/elasticsearch/data
     ports:
-      - 9200:9200
+      - "9200:9200"
     networks:
       app_net:
         ipv4_address: 192.168.19.4
     restart: always  
   docsearchaio:
     container_name: docsearchaio
-    image: docsearchaio/docsearchaio:latest
+    image: nexus.gretzki.ddns.net:10501/docsearchaio:latest
     networks:
       app_net:
         ipv4_address: 192.168.19.3
@@ -32,7 +32,9 @@ services:
         max-size: "10k"
         max-file: "20"
     ports:
-      - 5000:5000
+      - "5000:5000"
+    depends_on:
+      - elasticsearch
     volumes:
       - "e:/bcmw:/app/data"
       - .comparer:/app/Resources/comparer
@@ -44,4 +46,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: "192.168.19.0/24"
+        - subnet: 192.168.19.0/24
