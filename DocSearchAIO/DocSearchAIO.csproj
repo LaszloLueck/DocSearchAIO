@@ -16,7 +16,7 @@
         <PackageReference Include="MsgReader" Version="4.3.1" />
         <PackageReference Include="NEST" Version="7.16.0" />
         <PackageReference Include="Quartz.AspNetCore" Version="3.3.3" />
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.33.0.40503">
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="8.34.0.42011">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
