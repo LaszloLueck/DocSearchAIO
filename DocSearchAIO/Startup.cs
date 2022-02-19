@@ -22,6 +22,7 @@ namespace DocSearchAIO
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddCors();
             services.AddElasticSearch(Configuration);
             services.AddMemoryCache();
             services.AddQuartzScheduler(Configuration);
@@ -30,7 +31,7 @@ namespace DocSearchAIO
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "DocSearchAIO", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo {Title = "DocSearchAIO", Version = "v1"});
             });
         }
 
@@ -41,6 +42,12 @@ namespace DocSearchAIO
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
+                app.UseCors(x =>
+                    x.AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .SetIsOriginAllowed(origin => true)
+                        .AllowCredentials()
+                );
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "DocSearchAIO v1"));
             }
 
