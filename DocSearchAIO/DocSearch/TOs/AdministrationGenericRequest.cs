@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DocSearchAIO.Configuration;
 
@@ -7,8 +8,11 @@ namespace DocSearchAIO.DocSearch.TOs
         string SchedulerName, string SchedulerId, string ActorSystemName, string ProcessorGroupName,
         string CleanupGroupName, string UriReplacement, string ComparerDirectory, string StatisticsDirectory)
     {
-        public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; } = new();
-        public Dictionary<string, CleanupConfiguration> CleanupConfigurations { get; set; } = new();
+        public IEnumerable<Tuple<string, ProcessorConfiguration>> ProcessorConfigurations { get; set; } =
+            Array.Empty<Tuple<string, ProcessorConfiguration>>();
+
+        public IEnumerable<Tuple<string, CleanupConfiguration>> CleanupConfigurations { get; set; } =
+            Array.Empty<Tuple<string, CleanupConfiguration>>();
         
         public static implicit operator AdministrationGenericRequest(ConfigurationObject configurationObject) => new(
             configurationObject.ScanPath, configurationObject.ElasticEndpoints, configurationObject.IndexName,

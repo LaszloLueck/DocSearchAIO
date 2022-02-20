@@ -178,13 +178,13 @@ namespace DocSearchAIO.DocSearch.Services
 
                 _configurationObject.Processing = request
                     .ProcessorConfigurations
-                    .SelectKv((key, value) => new KeyValuePair<string, SchedulerEntry>(key, value))
+                    .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Item1, kv.Item2))
                     .ToDictionary();
 
                 _configurationObject.Cleanup = request
                     .CleanupConfigurations
-                    .SelectKv((key, value) =>
-                        new KeyValuePair<string, CleanUpEntry>(key, value))
+                    .Select(kv =>
+                        new KeyValuePair<string, CleanUpEntry>(kv.Item1, kv.Item2))
                     .ToDictionary();
 
                 await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
@@ -296,14 +296,13 @@ namespace DocSearchAIO.DocSearch.Services
             adminGenModel.ProcessorConfigurations = _configurationObject
                 .Processing
                 .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-                .SelectKv((key, value) => new KeyValuePair<string, ProcessorConfiguration>(key, value))
-                .ToDictionary();
+                .SelectKv((key, value) => Tuple.Create(key, (ProcessorConfiguration) value));
+           
             adminGenModel.CleanupConfigurations = _configurationObject
                 .Cleanup
                 .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
                 .SelectKv((key, value) =>
-                    new KeyValuePair<string, CleanupConfiguration>(key, value))
-                .ToDictionary();
+                    Tuple.Create(key, (CleanupConfiguration) value));
             return adminGenModel;
         }
 
