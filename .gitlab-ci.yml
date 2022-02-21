@@ -19,7 +19,7 @@ before_script:
 build:
   stage: build
   script:
-    - 'apk add --update nodejs'
+    - 'apk add --update npm'
     - 'dotnet build --no-restore'
 
 tests:
