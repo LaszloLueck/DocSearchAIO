@@ -14,7 +14,6 @@ cache:
   policy: pull-push
 
 before_script:
-  - 'apk add --update npm'
   - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
 
 build:
@@ -66,7 +65,6 @@ deploy:
   after_script:
     - docker logout $DOCKER_REGISTRY:10500
   script:
-    - 'apk add --update npm'
     - docker rmi --force $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
     - docker build --file ./Dockerfile -t $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG . --no-cache
     - docker push $DOCKER_REGISTRY:10500/$DOCKER_PROJECT_NAME:$DOCKER_TAG
