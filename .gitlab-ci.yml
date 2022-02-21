@@ -14,7 +14,6 @@ cache:
   policy: pull-push
 
 before_script:
-  - 'apk add --update npm'
   - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
 
 build:
