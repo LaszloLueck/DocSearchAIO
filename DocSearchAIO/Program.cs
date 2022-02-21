@@ -1,49 +1,67 @@
 using System.Collections.Immutable;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Akka.Actor;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using Microsoft.Extensions.Logging.Console;
 
-namespace DocSearchAIO
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.ConfigureLogging(logging =>
 {
-    public static class Program
-    {
-        public static void Main(string[] args)
+    logging
+        .AddSimpleConsole(options =>
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            options.IncludeScopes = false;
+            options.SingleLine = true;
+            options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
+            options.ColorBehavior = LoggerColorBehavior.Enabled;
+        })
+        .AddFilter("*", LogLevel.Information);
+});
 
-        private static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration((hostingContext, config) =>
-                {
-                    var builder = ImmutableDictionary.CreateBuilder<string, string>();
-                    builder.Add("array:entries:0", "value0");
-                    builder.Add("array:entries:1", "value1");
-                    builder.Add("array:entries:2", "value2");
-                    builder.Add("array:entries:3", "value3");
-                    builder.Add("array:entries:4", "value4");
-                    builder.Add("array:entries:5", "value5");
+// Add services to the container.
+var builder1 = ImmutableDictionary.CreateBuilder<string, string>();
+builder1.Add("array:entries:0", "value0");
+builder1.Add("array:entries:1", "value1");
+builder1.Add("array:entries:2", "value2");
+builder1.Add("array:entries:3", "value3");
+builder1.Add("array:entries:4", "value4");
+builder1.Add("array:entries:5", "value5");
+builder.Configuration.AddInMemoryCollection(builder1.ToImmutable());
+builder.Configuration.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
 
-                    config.AddInMemoryCollection(builder.ToImmutable());
-                    config.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
-                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-                    config.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
-                    config.AddCommandLine(args);
-                })
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); })
-                .ConfigureLogging(logging =>
-                {
-                    logging
-                        .AddSimpleConsole(options =>
-                        {
-                            options.IncludeScopes = false;
-                            options.SingleLine = true;
-                            options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
-                            options.ColorBehavior = LoggerColorBehavior.Enabled;
-                        })
-                        .AddFilter("*", LogLevel.Information);
-                });
-    }
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddElasticSearch(builder.Configuration);
+builder.Services.AddQuartzScheduler(builder.Configuration);
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.Lifetime.ApplicationStarted.Register(() => app.Services.GetService<ActorSystem>());
+app.Lifetime.ApplicationStopping.Register(() => app.Services.GetService<ActorSystem>()?.Terminate().Wait());
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.UseStaticFiles();
+app.UseRouting();
+app.MapControllers();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller}/{action=Index}/{id?}");
+
+app.MapFallbackToFile("index.html");
+
+app.Run();

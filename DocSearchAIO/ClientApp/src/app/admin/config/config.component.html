@@ -1,0 +1,196 @@
+<div class="container">
+  <ng-container *ngIf="form">
+    <form [formGroup]="form" (ngSubmit)="saveForm()">
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col justify-content-end">
+          <div class="btn-toolbar">
+            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid">
+              Speichern
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" (click)="doCancel()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Scan-Pfad</span>
+          <input formControlName="scanPath" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <h5>Elasticsearch Endpunkte</h5>
+        <ng-container *ngFor="let endpoint of elasticEndpoints.controls; index as i">
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Node {{i}}</span>
+            <input type="text" class="form-control" [formControl]='endpoint | formControlConverter'>
+            <button type="button" [disabled]="returnFalseIfIndexLimit(elasticEndpoints.controls.length, i)"
+                    (click)="removeElasticInstance(i)" class="btn btn-danger btn-sm">Entfernen
+            </button>
+          </div>
+        </ng-container>
+        <div class="mb-2">
+          <button type="button" (click)="addNewElasticInstance()" class="btn btn-success btn-sm float-end">Node
+            hinzufügen
+          </button>
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Index-Name (Prefix)</span>
+          <input formControlName="indexName" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Scheduler-Name</span>
+          <input formControlName="schedulerName" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Scheduler-Id</span>
+          <input formControlName="schedulerId" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Actorsystem-Name</span>
+          <input formControlName="actorSystemName" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Schedulerprozess Gruppenname</span>
+          <input formControlName="processorGroupName" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Cleanupprozess Gruppenname</span>
+          <input formControlName="cleanupGroupName" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Url-Ersetzung</span>
+          <input formControlName="uriReplacement" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Comparer-Verzeichnis</span>
+          <input formControlName="comparerDirectory" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col">
+          <span class="input-group-text">Statistik-Verzeichnis</span>
+          <input formControlName="statisticsDirectory" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <h5>Prozess-Konfiguration</h5>
+        <ng-container *ngFor="let npc of proc | keyvalue">
+          <h6>{{npc.key}}</h6>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Start alle</span>
+            <input [formControl]="npc.value.get('runsEvery') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Sekunden</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Startverzögerung</span>
+            <input [formControl]="npc.value.get('startDelay') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Sekunden</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Parallelität</span>
+            <input [formControl]="npc.value.get('parallelism') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Dateiendung</span>
+            <input [formControl]="npc.value.get('fileExtension') | formControlConverter" type="text" class="form-control">
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Ausschlussfilter</span>
+            <input [formControl]="npc.value.get('excludeFilter') | formControlConverter" type="text" class="form-control">
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Jobname</span>
+            <input [formControl]="npc.value.get('jobName') | formControlConverter" type="text" class="form-control">
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Triggername</span>
+            <input [formControl]="npc.value.get('triggerName') | formControlConverter" type="text" class="form-control">
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Index-Suffix</span>
+            <input [formControl]="npc.value.get('indexSuffix') | formControlConverter" type="text" class="form-control">
+          </div>
+        </ng-container>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <h5>Cleanup-Konfiguration</h5>
+        <ng-container *ngFor="let clean of cleanup | keyvalue">
+          <h6>{{clean.key}}</h6>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Start alle</span>
+            <input [formControl]="clean.value.get('runsEvery') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Sekunden</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Startverzögerung</span>
+            <input [formControl]="clean.value.get('startDelay') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Sekunden</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Parallelität</span>
+            <input [formControl]="clean.value.get('parallelism') | formControlConverter" type="number" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Prozess-Comparer Dateiname</span>
+            <input [formControl]="clean.value.get('forComparer') | formControlConverter" type="text" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Prozess-Indexname</span>
+            <input [formControl]="clean.value.get('forIndexSuffix') | formControlConverter" type="text" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Jobname</span>
+            <input [formControl]="clean.value.get('jobName') | formControlConverter" type="text" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+          <div class="input-group input-group-sm mb-2 mt-2">
+            <span class="input-group-text">Triggername</span>
+            <input [formControl]="clean.value.get('triggerName') | formControlConverter" type="text" class="form-control">
+            <span class="input-group-text">Tasks</span>
+          </div>
+        </ng-container>
+      </div>
+      <div class="row border rounded border-color-gray mb-2">
+        <div class="input-group input-group-sm mb-2 mt-2 col justify-content-end">
+          <div class="btn-toolbar">
+            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid">
+              Speichern
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" (click)="doCancel()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+</div>
+
+<ng-container *ngIf="alternateReturn && alternateReturn.hasError">
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <div class="alert alert-danger" role="alert">
+        Ein Fehler ist aufgetreten!<br>
+        {{alternateReturn.errorMessage}}
+      </div>
+    </div>
+  </div>
+</ng-container>
