@@ -6,6 +6,9 @@ import {AlternateReturn} from "./interfaces/AlternateReturn";
 import {FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {Router} from "@angular/router";
 import {catchError, take} from "rxjs/operators";
+import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
+import {ProcessorConfiguration} from "./interfaces/ProcessorConfiguration";
+import {CleanupConfiguration} from "./interfaces/CleanupConfiguration";
 
 @Component({
   selector: 'app-config',
@@ -34,14 +37,21 @@ export class ConfigComponent implements OnInit {
   }
 
   saveForm(): void {
-    console.log(this.form.value);
-    console.log(this.elasticEndpoints.value);
-    this.proc.forEach((v, k) => {
-      console.log(k);
-      Object.keys(v.controls).forEach(key => {
-        console.log(v.controls[key]);
-      });
-    })
+    let returnValue: DocSearchConfiguration = this.form.value;
+    returnValue.elasticEndpoints = this.elasticEndpoints.value;
+    returnValue.processorConfigurations = [];
+    returnValue.cleanupConfigurations = [];
+
+    this.proc.forEach((formGroup, key) => {
+      let fg: ProcessorConfiguration = formGroup.value;
+      returnValue.processorConfigurations.push({item1: key, item2: fg});
+    });
+
+    this.cleanup.forEach((formGroup, key) => {
+      let fg: CleanupConfiguration = formGroup.value;
+      returnValue.cleanupConfigurations.push({item1: key, item2: fg});
+    });
+    console.log(returnValue);
   }
 
   doCancel(): void {
