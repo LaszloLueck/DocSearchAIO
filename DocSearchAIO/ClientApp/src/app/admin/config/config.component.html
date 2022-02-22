@@ -16,9 +16,9 @@
           <span class="input-group-text">Scan-Pfad</span>
           <input formControlName="scanPath" id="scanPath" type="text" class="form-control">
         </div>
-        <div *ngIf="form.controls['scanPath'].invalid && (form.controls['scanPath'].dirty || form.controls['scanPath'].touched)" class="text-danger">
+        <div *ngIf="form.controls['scanPath'] | formControlValidator" class="text-danger">
           <small *ngIf="form.controls['scanPath'].errors?.['required']">
-            Der Wert für Scan-Pfad muss ausgefüllt sein!
+            Das Feld Scan-Pfad muss ausgefüllt sein!
           </small>
         </div>
       </div>
@@ -44,11 +44,21 @@
           <span class="input-group-text">Index-Name (Prefix)</span>
           <input formControlName="indexName" type="text" class="form-control">
         </div>
+        <div *ngIf="form.controls['indexName'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['indexName'].errors?.['required']">
+            Das Feld Index-Name (Prefix) muss ausgefüllt sein!
+          </small>
+        </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col">
           <span class="input-group-text">Scheduler-Name</span>
           <input formControlName="schedulerName" type="text" class="form-control">
+        </div>
+        <div *ngIf="form.controls['schedulerName'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['schedulerName'].errors?.['required']">
+            Das Feld Scheduler-Name muss ausgefüllt sein!
+          </small>
         </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
@@ -56,11 +66,21 @@
           <span class="input-group-text">Scheduler-Id</span>
           <input formControlName="schedulerId" type="text" class="form-control">
         </div>
+        <div *ngIf="form.controls['schedulerId'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['schedulerId'].errors?.['required']">
+            Das Feld Scheduler-Id muss ausgefüllt sein!
+          </small>
+        </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col">
           <span class="input-group-text">Actorsystem-Name</span>
           <input formControlName="actorSystemName" type="text" class="form-control">
+        </div>
+        <div *ngIf="form.controls['actorSystemName'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['actorSystemName'].errors?.['required']">
+            Das Feld Actorsystem-Name muss ausgefüllt sein!
+          </small>
         </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
@@ -68,11 +88,21 @@
           <span class="input-group-text">Schedulerprozess Gruppenname</span>
           <input formControlName="processorGroupName" type="text" class="form-control">
         </div>
+        <div *ngIf="form.controls['processorGroupName'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['processorGroupName'].errors?.['required']">
+            Das Feld Schedulerprozess Gruppenname muss ausgefüllt sein!
+          </small>
+        </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col">
           <span class="input-group-text">Cleanupprozess Gruppenname</span>
           <input formControlName="cleanupGroupName" type="text" class="form-control">
+        </div>
+        <div *ngIf="form.controls['cleanupGroupName'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['cleanupGroupName'].errors?.['required']">
+            Das Feld Cleanupprozess Gruppenname muss ausgefüllt sein!
+          </small>
         </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
@@ -80,11 +110,21 @@
           <span class="input-group-text">Url-Ersetzung</span>
           <input formControlName="uriReplacement" type="text" class="form-control">
         </div>
+        <div *ngIf="form.controls['uriReplacement'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['uriReplacement'].errors?.['required']">
+            Das Feld Url-Ersetzung muss ausgefüllt sein!
+          </small>
+        </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col">
           <span class="input-group-text">Comparer-Verzeichnis</span>
           <input formControlName="comparerDirectory" type="text" class="form-control">
+        </div>
+        <div *ngIf="form.controls['comparerDirectory'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['comparerDirectory'].errors?.['required']">
+            Das Feld Comparer-Verzeichnis muss ausgefüllt sein!
+          </small>
         </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
@@ -92,45 +132,106 @@
           <span class="input-group-text">Statistik-Verzeichnis</span>
           <input formControlName="statisticsDirectory" type="text" class="form-control">
         </div>
+        <div *ngIf="form.controls['statisticsDirectory'] | formControlValidator" class="text-danger">
+          <small *ngIf="form.controls['statisticsDirectory'].errors?.['required']">
+            Das Feld Statistik-Verzeichnis muss ausgefüllt sein!
+          </small>
+        </div>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <h5>Prozess-Konfiguration</h5>
         <ng-container *ngFor="let npc of proc | keyvalue">
           <h6>{{npc.key}}</h6>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Start alle</span>
-            <input [formControl]="npc.value.get('runsEvery') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Sekunden</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Start alle</span>
+              <input [formControl]="npc.value.get('runsEvery') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Sekunden</span>
+            </div>
+            <div *ngIf="npc.value.get('runsEvery') | formControlValidator" class="text-danger">
+              <small *ngIf="npc.value.get('runsEvery')?.errors?.['required']">
+                Das Feld "Start alle x Sekunden" muss ausgefüllt sein!
+              </small>
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Startverzögerung</span>
-            <input [formControl]="npc.value.get('startDelay') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Sekunden</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Startverzögerung</span>
+              <input [formControl]="npc.value.get('startDelay') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Sekunden</span>
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Parallelität</span>
-            <input [formControl]="npc.value.get('parallelism') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div *ngIf="npc.value.get('startDelay') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('startDelay')?.errors?.['required']">
+              Das Feld "Startverzögerung x Sekunden" muss ausgefüllt sein!
+            </small>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Dateiendung</span>
-            <input [formControl]="npc.value.get('fileExtension') | formControlConverter" type="text" class="form-control">
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Parallelität</span>
+              <input [formControl]="npc.value.get('parallelism') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
+          </div>
+          <div *ngIf="npc.value.get('parallelism') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('parallelism')?.errors?.['required']">
+              Das Feld "Parallelität x Tasks" muss ausgefüllt sein!
+            </small>
+          </div>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Dateiendung</span>
+              <input [formControl]="npc.value.get('fileExtension') | formControlConverter" type="text"
+                     class="form-control">
+            </div>
+          </div>
+          <div *ngIf="npc.value.get('fileExtension') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('fileExtension')?.errors?.['required']">
+              Das Feld Dateiendung muss ausgefüllt sein!
+            </small>
           </div>
           <div class="input-group input-group-sm mb-2 mt-2">
             <span class="input-group-text">Ausschlussfilter</span>
-            <input [formControl]="npc.value.get('excludeFilter') | formControlConverter" type="text" class="form-control">
+            <input [formControl]="npc.value.get('excludeFilter') | formControlConverter" type="text"
+                   class="form-control">
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Jobname</span>
-            <input [formControl]="npc.value.get('jobName') | formControlConverter" type="text" class="form-control">
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Jobname</span>
+              <input [formControl]="npc.value.get('jobName') | formControlConverter" type="text" class="form-control">
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Triggername</span>
-            <input [formControl]="npc.value.get('triggerName') | formControlConverter" type="text" class="form-control">
+          <div *ngIf="npc.value.get('jobName') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('jobName')?.errors?.['required']">
+              Das Feld Jobname muss ausgefüllt sein!
+            </small>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Index-Suffix</span>
-            <input [formControl]="npc.value.get('indexSuffix') | formControlConverter" type="text" class="form-control">
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Triggername</span>
+              <input [formControl]="npc.value.get('triggerName') | formControlConverter" type="text"
+                     class="form-control">
+            </div>
+          </div>
+          <div *ngIf="npc.value.get('triggerName') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('triggerName')?.errors?.['required']">
+              Das Feld Triggername muss ausgefüllt sein!
+            </small>
+          </div>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Index-Suffix</span>
+              <input [formControl]="npc.value.get('indexSuffix') | formControlConverter" type="text"
+                     class="form-control">
+            </div>
+          </div>
+          <div *ngIf="npc.value.get('indexSuffix') | formControlValidator" class="text-danger">
+            <small *ngIf="npc.value.get('indexSuffix')?.errors?.['required']">
+              Das Feld Index-Suffix muss ausgefüllt sein!
+            </small>
           </div>
         </ng-container>
       </div>
@@ -138,40 +239,95 @@
         <h5>Cleanup-Konfiguration</h5>
         <ng-container *ngFor="let clean of cleanup | keyvalue">
           <h6>{{clean.key}}</h6>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Start alle</span>
-            <input [formControl]="clean.value.get('runsEvery') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Sekunden</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Start alle</span>
+              <input [formControl]="clean.value.get('runsEvery') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Sekunden</span>
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Startverzögerung</span>
-            <input [formControl]="clean.value.get('startDelay') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Sekunden</span>
+          <div *ngIf="clean.value.get('runsEvery') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('runsEvery')?.errors?.['required']">
+              Das Feld "Start alle x Sekunden" muss ausgefüllt sein!
+            </small>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Parallelität</span>
-            <input [formControl]="clean.value.get('parallelism') | formControlConverter" type="number" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Startverzögerung</span>
+              <input [formControl]="clean.value.get('startDelay') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Sekunden</span>
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Prozess-Comparer Dateiname</span>
-            <input [formControl]="clean.value.get('forComparer') | formControlConverter" type="text" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div *ngIf="clean.value.get('startDelay') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('startDelay')?.errors?.['required']">
+              Das Feld "Startverzögerung x Sekunden" muss ausgefüllt sein!
+            </small>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Prozess-Indexname</span>
-            <input [formControl]="clean.value.get('forIndexSuffix') | formControlConverter" type="text" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Parallelität</span>
+              <input [formControl]="clean.value.get('parallelism') | formControlConverter" type="number"
+                     class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Jobname</span>
-            <input [formControl]="clean.value.get('jobName') | formControlConverter" type="text" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div *ngIf="clean.value.get('parallelism') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('parallelism')?.errors?.['required']">
+              Das Feld "Parallelität x Tasks" muss ausgefüllt sein!
+            </small>
           </div>
-          <div class="input-group input-group-sm mb-2 mt-2">
-            <span class="input-group-text">Triggername</span>
-            <input [formControl]="clean.value.get('triggerName') | formControlConverter" type="text" class="form-control">
-            <span class="input-group-text">Tasks</span>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Prozess-Comparer Dateiname</span>
+              <input [formControl]="clean.value.get('forComparer') | formControlConverter" type="text"
+                     class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
+          </div>
+          <div *ngIf="clean.value.get('forComparer') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('forComparer')?.errors?.['required']">
+              Das Feld "Prozess-Comparer Dateiname" muss ausgefüllt sein!
+            </small>
+          </div>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Prozess-Indexname</span>
+              <input [formControl]="clean.value.get('forIndexSuffix') | formControlConverter" type="text"
+                     class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
+          </div>
+          <div *ngIf="clean.value.get('forIndexSuffix') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('forIndexSuffix')?.errors?.['required']">
+              Das Feld "Prozess-Indexname" muss ausgefüllt sein!
+            </small>
+          </div>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Jobname</span>
+              <input [formControl]="clean.value.get('jobName') | formControlConverter" type="text" class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
+          </div>
+          <div *ngIf="clean.value.get('jobName') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('jobName')?.errors?.['required']">
+              Das Feld "Jobname" muss ausgefüllt sein!
+            </small>
+          </div>
+          <div>
+            <div class="input-group input-group-sm mb-2 mt-2">
+              <span class="input-group-text">Triggername</span>
+              <input [formControl]="clean.value.get('triggerName') | formControlConverter" type="text"
+                     class="form-control">
+              <span class="input-group-text">Tasks</span>
+            </div>
+          </div>
+          <div *ngIf="clean.value.get('triggerName') | formControlValidator" class="text-danger">
+            <small *ngIf="clean.value.get('triggerName')?.errors?.['required']">
+              Das Feld "Triggername" muss ausgefüllt sein!
+            </small>
           </div>
         </ng-container>
       </div>

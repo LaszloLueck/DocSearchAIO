@@ -8,6 +8,7 @@ import { StatisticsComponent } from './statistics/statistics.component';
 import { ActionsComponent } from './actions/actions.component';
 import {ReactiveFormsModule} from "@angular/forms";
 import {FormControlConverterPipe} from "../pipes/formcontrolconverter.pipe";
+import {FormControlValidatorPipe} from "../pipes/fomcontrolvalidator.pipe";
 
 
 @NgModule({
@@ -16,7 +17,8 @@ import {FormControlConverterPipe} from "../pipes/formcontrolconverter.pipe";
     SchedulerComponent,
     StatisticsComponent,
     ActionsComponent,
-    FormControlConverterPipe
+    FormControlConverterPipe,
+    FormControlValidatorPipe
   ],
     imports: [
         CommonModule,

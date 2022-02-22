@@ -3,7 +3,7 @@ import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
 import {EMPTY, Subscription} from "rxjs";
 import {AlternateReturn} from "./interfaces/AlternateReturn";
-import {FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
+import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {Router} from "@angular/router";
 import {catchError, take} from "rxjs/operators";
 import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
