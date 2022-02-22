@@ -4,7 +4,7 @@
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col justify-content-end">
           <div class="btn-toolbar">
-            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid">
+            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid" #submitForm>
               Speichern
             </button>
             <button type="button" class="btn btn-warning btn-sm" (click)="doCancel()">Abbrechen</button>
@@ -27,10 +27,15 @@
         <ng-container *ngFor="let endpoint of elasticEndpoints.controls; index as i">
           <div class="input-group input-group-sm mb-2 mt-2">
             <span class="input-group-text">Node {{i}}</span>
-            <input type="text" class="form-control" [formControl]='endpoint | formControlConverter'>
+            <input type="text" class="form-control" [formControl]='endpoint | formControlConverter' required>
             <button type="button" [disabled]="returnFalseIfIndexLimit(elasticEndpoints.controls.length, i)"
                     (click)="removeElasticInstance(i)" class="btn btn-danger btn-sm">Entfernen
             </button>
+          </div>
+          <div *ngIf="endpoint | formControlValidator" class="text-danger">
+            <small *ngIf="endpoint.errors?.['required']">
+              Das Feld für eine Node darf nicht leer sein
+            </small>
           </div>
         </ng-container>
         <div class="mb-2">
@@ -334,7 +339,7 @@
       <div class="row border rounded border-color-gray mb-2">
         <div class="input-group input-group-sm mb-2 mt-2 col justify-content-end">
           <div class="btn-toolbar">
-            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid">
+            <button type="submit" style="margin-right: 0.5em" class="btn btn-primary btn-sm" [disabled]="form.invalid" #submitForm>
               Speichern
             </button>
             <button type="button" class="btn btn-warning btn-sm" (click)="doCancel()">Abbrechen</button>

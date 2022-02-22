@@ -51,7 +51,14 @@ export class ConfigComponent implements OnInit, OnDestroy {
       const fg: CleanupConfiguration = formGroup.value;
       returnValue.cleanupConfigurations.push({item1: key, item2: fg});
     });
-    console.log(returnValue);
+
+    this.configApiService.setConfiguration(returnValue)
+      .pipe(
+        take(1)
+      ).subscribe(ret => {
+        if(ret)
+          this.doCancel();
+    })
   }
 
   doCancel(): void {
@@ -88,9 +95,9 @@ export class ConfigComponent implements OnInit, OnDestroy {
         });
 
         m.processorConfigurations.forEach(tuple => {
-          let key = tuple.item1;
-          let value = tuple.item2;
-          let fg = new FormGroup({});
+          const key = tuple.item1;
+          const value = tuple.item2;
+          const fg = new FormGroup({});
 
           fg.addControl('runsEvery', new FormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
           fg.addControl('startDelay', new FormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
@@ -105,9 +112,9 @@ export class ConfigComponent implements OnInit, OnDestroy {
         });
 
         m.cleanupConfigurations.forEach(tuple => {
-          let key = tuple.item1;
-          let value = tuple.item2;
-          let fg = new FormGroup({});
+          const key = tuple.item1;
+          const value = tuple.item2;
+          const fg = new FormGroup({});
 
           fg.addControl('runsEvery', new FormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
           fg.addControl('startDelay', new FormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));

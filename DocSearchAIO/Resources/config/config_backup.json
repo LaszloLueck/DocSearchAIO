@@ -1,0 +1,147 @@
+﻿{
+  "configurationObject": {
+    "elasticEndpoints": [
+      "http://127.0.0.1:9200"
+    ],
+    "scanPath": "e:\\bcmw\\",
+    "indexName": "officedocuments",
+    "actorSystemName": "actorSystem",
+    "schedulerName": "DocSearchScheduler",
+    "schedulerId": "DocSearchScheduler_001",
+    "uriReplacement": "https://risprepository:8800/svns/PNR/extern/",
+    "processing": {
+      "EmlElasticDocument": {
+        "active": false,
+        "startDelay": 3,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "emlProcessingJob",
+        "triggerName": "emlProcessingTrigger",
+        "excludeFilter": "",
+        "fileExtension": "*.eml",
+        "indexSuffix": "eml"
+      },
+      "ExcelElasticDocument": {
+        "active": false,
+        "startDelay": 3,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "excelProcessingJob",
+        "triggerName": "excelProcessingTrigger",
+        "excludeFilter": "~$",
+        "fileExtension": "*.xlsx",
+        "indexSuffix": "excel"
+      },
+      "MsgElasticDocument": {
+        "active": false,
+        "startDelay": 4,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "msgProcessingJob",
+        "triggerName": "msgProcessingTrigger",
+        "excludeFilter": "",
+        "fileExtension": "*.msg",
+        "indexSuffix": "msg"
+      },
+      "PdfElasticDocument": {
+        "active": false,
+        "startDelay": 7,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "pdfProcessingJob",
+        "triggerName": "pdfProcessingTrigger",
+        "excludeFilter": "",
+        "fileExtension": "*.pdf",
+        "indexSuffix": "pdf"
+      },
+      "PowerpointElasticDocument": {
+        "active": false,
+        "startDelay": 5,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "powerpointProcessingJob",
+        "triggerName": "powerpointProcessingTrigger",
+        "excludeFilter": "~$",
+        "fileExtension": "*.pptx",
+        "indexSuffix": "powerpoint"
+      },
+      "WordElasticDocument": {
+        "active": false,
+        "startDelay": 1,
+        "runsEvery": 3600,
+        "parallelism": 10,
+        "jobName": "wordProcessingJob",
+        "triggerName": "wordProcessingTrigger",
+        "excludeFilter": "~$",
+        "fileExtension": "*.docx",
+        "indexSuffix": "word"
+      }
+    },
+    "cleanup": {
+      "EmlCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "emlCleanupJob",
+        "triggerName": "emlCleanupTrigger",
+        "forComparerName": "ComparerModelEml",
+        "forIndexSuffix": "eml"
+      },
+      "ExcelCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "excelCleanupJob",
+        "triggerName": "excelCleanupTrigger",
+        "forComparerName": "ComparerModelExcel",
+        "forIndexSuffix": "excel"
+      },
+      "MsgCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "msgCleanupJob",
+        "triggerName": "msgCleanupTrigger",
+        "forComparerName": "ComparerModelMsg",
+        "forIndexSuffix": "msg"
+      },
+      "PdfCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "pdfCleanupJob",
+        "triggerName": "pdfCleanupTrigger",
+        "forComparerName": "ComparerModelPdf",
+        "forIndexSuffix": "pdf"
+      },
+      "PowerpointCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "powerpointCleanupJob",
+        "triggerName": "powerpointCleanupTrigger",
+        "forComparerName": "ComparerModelPowerpoint",
+        "forIndexSuffix": "powerpoint"
+      },
+      "WordCleanupDocument": {
+        "active": false,
+        "startDelay": 15,
+        "runsEvery": 1800,
+        "parallelism": 5,
+        "jobName": "wordCleanupJob",
+        "triggerName": "wordCleanupTrigger",
+        "forComparerName": "ComparerModelWord",
+        "forIndexSuffix": "word"
+      }
+    },
+    "schedulerGroupName": "docSearch_Processing",
+    "cleanupGroupName": "docSearch_Cleanup",
+    "comparerDirectory": "./Resources/comparer",
+    "statisticsDirectory": "./Resources/statistics"
+  }
+}
