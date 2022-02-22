@@ -1,9 +1,9 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
 import {EMPTY, Subscription} from "rxjs";
 import {AlternateReturn} from "./interfaces/AlternateReturn";
-import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
+import {FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {Router} from "@angular/router";
 import {catchError, take} from "rxjs/operators";
 import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
@@ -15,7 +15,7 @@ import {CleanupConfiguration} from "./interfaces/CleanupConfiguration";
   templateUrl: './config.component.html',
   styleUrls: ['./config.component.scss']
 })
-export class ConfigComponent implements OnInit {
+export class ConfigComponent implements OnInit, OnDestroy {
   private configSubscription!: Subscription;
   alternateReturn: AlternateReturn = new AlternateReturn(false, "");
   form!: FormGroup;
@@ -37,18 +37,18 @@ export class ConfigComponent implements OnInit {
   }
 
   saveForm(): void {
-    let returnValue: DocSearchConfiguration = this.form.value;
+    const returnValue: DocSearchConfiguration = this.form.value;
     returnValue.elasticEndpoints = this.elasticEndpoints.value;
     returnValue.processorConfigurations = [];
     returnValue.cleanupConfigurations = [];
 
     this.proc.forEach((formGroup, key) => {
-      let fg: ProcessorConfiguration = formGroup.value;
+      const fg: ProcessorConfiguration = formGroup.value;
       returnValue.processorConfigurations.push({item1: key, item2: fg});
     });
 
     this.cleanup.forEach((formGroup, key) => {
-      let fg: CleanupConfiguration = formGroup.value;
+      const fg: CleanupConfiguration = formGroup.value;
       returnValue.cleanupConfigurations.push({item1: key, item2: fg});
     });
     console.log(returnValue);
@@ -82,7 +82,7 @@ export class ConfigComponent implements OnInit {
           this.alternateReturn = new AlternateReturn(true, err.message());
           return EMPTY;
         })
-      ).subscribe(m => {
+      ).subscribe((m: DocSearchConfiguration) => {
         m.elasticEndpoints.forEach(entry => {
           this.elasticEndpoints.push(new FormControl(entry))
         });
