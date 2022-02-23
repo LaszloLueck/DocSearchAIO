@@ -57,24 +57,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
         take(1)
       ).subscribe(ret => {
         if(ret)
-          this.doCancel();
+          this.router.navigate(['/home']);
     })
-  }
-
-  doCancel(): void {
-    this.router.navigate(['/home']);
-  }
-
-  removeElasticInstance(index: number): void {
-    this.elasticEndpoints.removeAt(index);
-  }
-
-  addNewElasticInstance(): void {
-    this.elasticEndpoints.push(new FormControl(''))
-  }
-
-  returnFalseIfIndexLimit(indexLength: number, currentIndex: number) {
-    return indexLength == 1 && currentIndex == 0
   }
 
   ngOnInit(): void {

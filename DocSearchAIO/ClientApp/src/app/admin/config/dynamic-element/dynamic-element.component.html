@@ -1,0 +1,19 @@
+<div>
+  <div class="input-group input-group-sm mb-2 mt-2">
+    <ng-container *ngIf="namePrefix.length > 0">
+      <span class="input-group-text">{{namePrefix}}</span>
+    </ng-container>
+    <input [formControl]="formGroup.get(internalId) | formControlConverter" [type]="fieldType"
+           class="form-control">
+    <ng-container *ngIf="nameSuffix.length > 0">
+      <span class="input-group-text">{{nameSuffix}}</span>
+    </ng-container>
+  </div>
+  <ng-container *ngIf="validateField">
+    <div *ngIf="formGroup.get(internalId) | formControlValidator" class="text-danger">
+      <small *ngIf="formGroup.get(internalId)?.errors?.['required']">
+        Das Feld {{namePrefix}} {{nameSuffix}} muss ausgefüllt sein!
+      </small>
+    </div>
+  </ng-container>
+</div>
