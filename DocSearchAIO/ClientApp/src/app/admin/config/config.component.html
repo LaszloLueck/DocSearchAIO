@@ -1,7 +1,7 @@
 <div class="container">
   <ng-container *ngIf="form">
     <form [formGroup]="form" (ngSubmit)="saveForm()">
-      <app-button-bar [invalidForm]="form.invalid"></app-button-bar>
+      <app-button-bar [invalidForm]="form.invalid || !externalControlsValid"></app-button-bar>
       <app-static-element name="Scan-Pfad" id="scanPath" [formGroup]="form"></app-static-element>
       <app-index-configuration [elasticEndpoints]="elasticEndpoints"></app-index-configuration>
       <app-static-element name="Index-Name (Prefix)" id="indexName" [formGroup]="form"></app-static-element>
@@ -18,27 +18,27 @@
         <h5>Prozess-Konfiguration</h5>
         <ng-container *ngFor="let npc of proc | keyvalue">
           <h6>{{npc.key}}</h6>
-          <app-dynamic-element [formGroup]="npc.value" internalId="runsEvery" namePrefix="Start alle" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="startDelay" namePrefix="Startverzögerung" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="parallelism" namePrefix="Parallelität" nameSuffix="Tasks" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="fileExtension" namePrefix="Dateiendung" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="excludeFilter" namePrefix="Ausschlussfilter" nameSuffix="" fieldType="text" [validateField]="false"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="jobName" namePrefix="Jobname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="triggerName" namePrefix="Triggername" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="npc.value" internalId="indexSuffix" namePrefix="Index-Suffix" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('runsEvery') | formControlConverter" namePrefix="Start alle" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('startDelay') | formControlConverter" namePrefix="Startverzögerung" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('parallelism') | formControlConverter" namePrefix="Parallelität" nameSuffix="Tasks" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('fileExtension') | formControlConverter" namePrefix="Dateiendung" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('excludeFilter') | formControlConverter" namePrefix="Ausschlussfilter" nameSuffix="" fieldType="text" [validateField]="false"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('jobName') | formControlConverter" namePrefix="Jobname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('triggerName') | formControlConverter" namePrefix="Triggername" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="npc.value.get('indexSuffix') | formControlConverter" namePrefix="Index-Suffix" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
         </ng-container>
       </div>
       <div class="row border rounded border-color-gray mb-2">
         <h5>Cleanup-Konfiguration</h5>
         <ng-container *ngFor="let clean of cleanup | keyvalue">
           <h6>{{clean.key}}</h6>
-          <app-dynamic-element [formGroup]="clean.value" internalId="runsEvery" namePrefix="Start alle" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="startDelay" namePrefix="Startverzögerung" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="parallelism" namePrefix="Parallelität" nameSuffix="Tasks" fieldType="number" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="forComparer" namePrefix="Prozess-Comparer Dateiname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="forIndexSuffix" namePrefix="Prozess-Indexname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="jobName" namePrefix="Jobname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
-          <app-dynamic-element [formGroup]="clean.value" internalId="triggerName" namePrefix="Triggername" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('runsEvery') | formControlConverter" namePrefix="Start alle" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('startDelay') | formControlConverter" namePrefix="Startverzögerung" nameSuffix="Sekunden" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('parallelism') | formControlConverter" namePrefix="Parallelität" nameSuffix="Tasks" fieldType="number" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('forComparer') | formControlConverter" namePrefix="Prozess-Comparer Dateiname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('forIndexSuffix') | formControlConverter" namePrefix="Prozess-Indexname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('jobName') | formControlConverter" namePrefix="Jobname" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
+          <app-dynamic-element (fieldIsValid)="checkIfValidEvent($event)" [formControlInternal]="clean.value.get('triggerName') | formControlConverter" namePrefix="Triggername" nameSuffix="" fieldType="text" [validateField]="true"></app-dynamic-element>
         </ng-container>
       </div>
       <app-button-bar [invalidForm]="form.invalid"></app-button-bar>

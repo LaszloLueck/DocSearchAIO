@@ -1,5 +1,6 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {FormGroup} from "@angular/forms";
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {FormControl, FormGroup} from "@angular/forms";
+import {FormControlValidatorPipe} from "../../../pipes/fomcontrolvalidator.pipe";
 
 @Component({
   selector: 'app-dynamic-element',
@@ -8,16 +9,26 @@ import {FormGroup} from "@angular/forms";
 })
 export class DynamicElementComponent implements OnInit {
 
-  @Input() formGroup!: FormGroup
-  @Input() internalId!: string
+  @Input() formControlInternal!: FormControl;
   @Input() namePrefix!: string;
   @Input() nameSuffix!: string;
   @Input() fieldType!: string;
   @Input() validateField!: boolean;
+  @Output() fieldIsValid: EventEmitter<boolean> = new EventEmitter<boolean>();
 
-  constructor() { }
+  constructor(private validatorPipe: FormControlValidatorPipe) { }
+
+  checkFieldIsValid(): void {
+    if(this.formControlInternal.value.length == 0){
+      this.fieldIsValid.emit(false);
+    } else {
+      this.fieldIsValid.emit(this.validatorPipe.transform(this.formControlInternal));
+    }
+  }
+
 
   ngOnInit(): void {
+
   }
 
 }

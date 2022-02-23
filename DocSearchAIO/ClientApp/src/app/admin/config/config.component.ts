@@ -22,6 +22,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
   elasticEndpoints: FormArray;
   proc: Map<string, FormGroup>;
   cleanup: Map<string, FormGroup>;
+  externalControlsValid: boolean = true;
 
   constructor(private formBuilder: FormBuilder,
               private commonDataService: CommonDataService,
@@ -34,6 +35,10 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.configSubscription?.unsubscribe();
+  }
+
+  checkIfValidEvent(event: boolean): void{
+    this.externalControlsValid = event;
   }
 
   saveForm(): void {

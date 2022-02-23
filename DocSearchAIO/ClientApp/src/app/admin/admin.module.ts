@@ -32,7 +32,10 @@ import { ButtonBarComponent } from './config/button-bar/button-bar.component';
         CommonModule,
         AdminRoutingModule,
         ReactiveFormsModule
-    ]
+    ],
+  providers: [
+    FormControlValidatorPipe
+  ]
 })
 export class AdminModule {
 }
