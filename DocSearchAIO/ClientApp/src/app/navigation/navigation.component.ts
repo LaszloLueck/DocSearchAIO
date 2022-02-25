@@ -1,6 +1,6 @@
-import {Component, OnInit} from '@angular/core';
 import {CommonDataService} from "../services/CommonDataService";
 import {Subscription} from "rxjs";
+import {Component, OnInit} from "@angular/core";
 
 @Component({
   selector: 'app-navigation',
@@ -10,8 +10,6 @@ import {Subscription} from "rxjs";
 export class NavigationComponent implements OnInit {
   foo!: Subscription;
   title!: string;
-  progressVisible: boolean = false;
-  progressValue: number = 0;
 
   constructor(private commonDataService: CommonDataService) {
 

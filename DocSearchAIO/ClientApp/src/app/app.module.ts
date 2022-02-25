@@ -1,15 +1,12 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
-import {FormsModule} from '@angular/forms';
-import {HttpClientModule} from '@angular/common/http';
-
 import {AppComponent} from './app.component';
 import {NavigationComponent} from "./navigation/navigation.component";
 import {AppRoutingModule} from "./app-routing.module";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {CommonDataService} from "./services/CommonDataService";
-import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
-import {MaterialModule} from "./material.module";
+import {NgModule} from "@angular/core";
+import {HttpClientModule} from "@angular/common/http";
+import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
@@ -22,9 +19,7 @@ import {MaterialModule} from "./material.module";
     HttpClientModule,
     FormsModule,
     AppRoutingModule,
-    NgbModule,
-    BrowserAnimationsModule,
-    MaterialModule
+    NgbModule
   ],
   providers: [CommonDataService],
   bootstrap: [AppComponent]

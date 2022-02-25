@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+
 import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
 import {EMPTY, Subscription} from "rxjs";
@@ -9,6 +9,7 @@ import {catchError, take} from "rxjs/operators";
 import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
 import {ProcessorConfiguration} from "./interfaces/ProcessorConfiguration";
 import {CleanupConfiguration} from "./interfaces/CleanupConfiguration";
+import {Component, OnDestroy, OnInit} from "@angular/core";
 
 @Component({
   selector: 'app-config',
