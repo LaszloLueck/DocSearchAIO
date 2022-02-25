@@ -12,7 +12,7 @@
     "processing": {
       "EmlElasticDocument": {
         "active": false,
-        "startDelay": 3,
+        "startDelay": 5,
         "runsEvery": 3600,
         "parallelism": 10,
         "jobName": "emlProcessingJob",

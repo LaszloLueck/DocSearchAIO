@@ -8,6 +8,8 @@ import {NavigationComponent} from "./navigation/navigation.component";
 import {AppRoutingModule} from "./app-routing.module";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {CommonDataService} from "./services/CommonDataService";
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {MaterialModule} from "./material.module";
 
 
 @NgModule({
@@ -20,7 +22,9 @@ import {CommonDataService} from "./services/CommonDataService";
     HttpClientModule,
     FormsModule,
     AppRoutingModule,
-    NgbModule
+    NgbModule,
+    BrowserAnimationsModule,
+    MaterialModule
   ],
   providers: [CommonDataService],
   bootstrap: [AppComponent]
