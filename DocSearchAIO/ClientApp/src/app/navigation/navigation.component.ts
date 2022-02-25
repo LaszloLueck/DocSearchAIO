@@ -10,6 +10,8 @@ import {Subscription} from "rxjs";
 export class NavigationComponent implements OnInit {
   foo!: Subscription;
   title!: string;
+  progressVisible: boolean = false;
+  progressValue: number = 0;
 
   constructor(private commonDataService: CommonDataService) {
 
