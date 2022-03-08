@@ -58,7 +58,7 @@ deploy:
     - docker:dind
   variables:
     PROJECT_NAME: docsearchaio
-    DOCKER_TAG: latest
+    TAG: latest
   before_script:
     - docker login -u $DOCKER_IO_USER -p $DOCKER_IO_TOKEN
   after_script:
