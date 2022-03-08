@@ -64,5 +64,5 @@ deploy:
   after_script:
     - docker logout
   script:
-    - docker build --file docker/Dockerfile -t $DOCKER_IO_USER/$PROJECT_NAME:$TAG .
+    - docker build --file Dockerfile -t $DOCKER_IO_USER/$PROJECT_NAME:$TAG .
     - docker push $DOCKER_IO_USER/$PROJECT_NAME:$TAG
