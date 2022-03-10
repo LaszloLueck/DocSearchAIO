@@ -1,10 +1,6 @@
-using System;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Statistics;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
 {

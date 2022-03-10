@@ -1,10 +1,7 @@
-﻿using System.Threading.Tasks;
-using DocSearchAIO.DocSearch.Services;
+﻿using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Controllers
 {

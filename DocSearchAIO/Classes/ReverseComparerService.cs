@@ -1,19 +1,12 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Classes
 {

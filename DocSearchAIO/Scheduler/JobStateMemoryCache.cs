@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Scheduler
 {

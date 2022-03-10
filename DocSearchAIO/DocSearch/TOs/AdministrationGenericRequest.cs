@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using DocSearchAIO.Configuration;
 
 namespace DocSearchAIO.DocSearch.TOs

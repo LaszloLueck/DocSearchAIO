@@ -1,13 +1,9 @@
-using System.Collections.Generic;
 using System.Net.Mime;
-using System.Threading.Tasks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Controllers
 {

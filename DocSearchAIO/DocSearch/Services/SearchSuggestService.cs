@@ -1,12 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace DocSearchAIO.DocSearch.TOs
 {
     public record ElementsToHash(string Category, DateTime Created,

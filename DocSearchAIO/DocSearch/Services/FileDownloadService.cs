@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Web;
+﻿using System.Web;
 using DocSearchAIO.DocSearch.TOs;
 
 namespace DocSearchAIO.DocSearch.Services

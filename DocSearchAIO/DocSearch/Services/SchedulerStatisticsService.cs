@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
 

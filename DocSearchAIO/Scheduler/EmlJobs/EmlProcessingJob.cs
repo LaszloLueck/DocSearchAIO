@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler.EmlJobs

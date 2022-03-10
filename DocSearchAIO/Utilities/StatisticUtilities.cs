@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Utilities
 {

@@ -1,8 +1,5 @@
-using System;
-using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Services;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.Utilities
 {

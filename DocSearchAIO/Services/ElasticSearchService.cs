@@ -1,10 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using DocSearchAIO.Classes;
+﻿using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using Elasticsearch.Net;
-using Microsoft.Extensions.Logging;
 using Nest;
 
 namespace DocSearchAIO.Services

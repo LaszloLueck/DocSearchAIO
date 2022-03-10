@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
+﻿using CSharpFunctionalExtensions;
 using Quartz;
 using Quartz.Impl;
 

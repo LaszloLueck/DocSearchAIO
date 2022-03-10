@@ -1,6 +1,4 @@
-﻿using System;
-using DocSearchAIO.Configuration;
-using DocSearchAIO.Scheduler;
+﻿using DocSearchAIO.Configuration;
 using DocSearchAIO.Scheduler.EmlJobs;
 using DocSearchAIO.Scheduler.MsgJobs;
 using DocSearchAIO.Scheduler.OfficeExcelJobs;
@@ -8,8 +6,6 @@ using DocSearchAIO.Scheduler.OfficePowerpointJobs;
 using DocSearchAIO.Scheduler.OfficeWordJobs;
 using DocSearchAIO.Scheduler.PdfJobs;
 using DocSearchAIO.Utilities;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Nest;
+﻿using Nest;
 
 namespace DocSearchAIO.DocSearch.TOs
 {

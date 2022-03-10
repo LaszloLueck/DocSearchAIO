@@ -1,13 +1,8 @@
-using System.Linq;
-using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace DocSearchAIO.DocSearch.Services
 {

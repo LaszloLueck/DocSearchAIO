@@ -1,5 +1,4 @@
-﻿using System;
-using DocSearchAIO.Scheduler;
+﻿using DocSearchAIO.Scheduler;
 using DocSearchAIO.Statistics;
 
 namespace DocSearchAIO.DocSearch.TOs

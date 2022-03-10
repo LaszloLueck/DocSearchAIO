@@ -8,7 +8,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
-using DocumentFormat.OpenXml.Office2019.Excel.RichData;
 using FluentAssertions;
 using Xunit;
 

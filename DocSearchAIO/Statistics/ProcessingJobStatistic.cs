@@ -1,5 +1,3 @@
-using System;
-
 namespace DocSearchAIO.Statistics
 {
     public class ProcessingJobStatistic

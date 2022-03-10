@@ -1,12 +1,9 @@
-using System.Threading.Tasks;
 using Akka.Actor;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace DocSearchAIO.Scheduler.OfficePowerpointJobs

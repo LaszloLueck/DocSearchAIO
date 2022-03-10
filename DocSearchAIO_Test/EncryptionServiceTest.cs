@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using DocSearchAIO.Scheduler;
 using DocSearchAIO.Utilities;
 using FluentAssertions;
 using Xunit;

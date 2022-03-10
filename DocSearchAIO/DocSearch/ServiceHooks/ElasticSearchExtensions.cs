@@ -1,10 +1,6 @@
-﻿using System;
-using System.Linq;
-using DocSearchAIO.Configuration;
+﻿using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using Elasticsearch.Net;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Nest;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks

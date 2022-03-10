@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
@@ -12,8 +8,6 @@ using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Nest;
 using Quartz;
 using JobState = DocSearchAIO.Scheduler.JobState;

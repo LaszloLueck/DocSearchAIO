@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DocSearchAIO.DocSearch.TOs
+﻿namespace DocSearchAIO.DocSearch.TOs
 {
     public record SchedulerTriggerStatisticElement(string TriggerName, string GroupName, DateTime NextFireTime,
         DateTime StartTime, DateTime LastFireTime, string TriggerState,
