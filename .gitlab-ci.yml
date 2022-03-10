@@ -42,14 +42,18 @@ codeanalysis:
     paths:
       - .sonar/cache  
   script:
-      - "apk add --update nodejs"
-      - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
-      - "dotnet build"
-      - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
-      - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
-  allow_failure: true
+    - sonar-scanner
   only:
+    - merge_requests
     - master
+    - develop
+  #script:
+  #    - "apk add --update nodejs"
+  #    - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
+  #    - "dotnet build"
+  #    - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
+  #    - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
+  allow_failure: true
 
 deploy:
   stage: deploy
