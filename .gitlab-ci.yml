@@ -47,7 +47,7 @@ codeanalysis:
     - develop
   script:
       - "apk add --update nodejs"
-      - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
+      - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" /d:\"sonar.organization=$SONAR_ORGANIZATION\" "
       - "dotnet build"
       - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
       - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
