@@ -1,1 +1,9 @@
-<p>stats-counter works!</p>
+<div class="w-50 mx-auto d-flex justify-content-center">
+  <ng-container *ngIf="docCount===0">
+    <span>Keine Ergebnisse vorhanden ({{searchTime}} ms)</span>
+  </ng-container>
+  <ng-container *ngIf="docCount>0">
+    <span>{{docCount}} Dokumente</span><span class="mr-1 ml-1">|</span><span>Suchzeit {{searchTime}} ms</span>
+  </ng-container>
+</div>
+

@@ -6,7 +6,8 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./stats-counter.component.scss']
 })
 export class StatsCounterComponent implements OnInit {
-
+  docCount: number = 0;
+  searchTime: number = 0;
   constructor() { }
 
   ngOnInit(): void {

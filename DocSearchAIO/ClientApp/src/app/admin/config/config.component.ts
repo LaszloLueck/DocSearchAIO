@@ -1,7 +1,7 @@
 
 import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
-import {EMPTY, Subscription} from "rxjs";
+import {EMPTY, Subscription, tap} from "rxjs";
 import {AlternateReturn} from "./interfaces/AlternateReturn";
 import {FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {Router} from "@angular/router";
@@ -74,6 +74,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
       .getConfiguration()
       .pipe(
         take(1),
+        tap(_ => console.log('fetching configuration')),
         catchError((err) => {
           console.error(err);
           this.alternateReturn = new AlternateReturn(true, err.message());
