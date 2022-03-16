@@ -8,6 +8,7 @@ import { Component, OnInit } from '@angular/core';
 export class StatsCounterComponent implements OnInit {
   docCount: number = 0;
   searchTime: number = 0;
+  isVisible: boolean = false;
   constructor() { }
 
   ngOnInit(): void {

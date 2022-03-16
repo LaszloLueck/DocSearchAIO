@@ -1,4 +1,4 @@
-<div class="w-50 mx-auto d-flex justify-content-center">
+<div class="w-50 mx-auto d-flex justify-content-center" *ngIf="isVisible">
   <ng-container *ngIf="docCount===0">
     <span>Keine Ergebnisse vorhanden ({{searchTime}} ms)</span>
   </ng-container>
