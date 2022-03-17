@@ -3,6 +3,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Utilities;
+using Nest;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -22,7 +23,8 @@ namespace DocSearchAIO.DocSearch.Services
         }
 
         private static readonly Func<IScheduler, SchedulerStatistics> StatisticsObject = scheduler =>
-            new SchedulerStatistics(scheduler.SchedulerName, scheduler.SchedulerInstanceId, CalculateStateCheck(scheduler));
+            new SchedulerStatistics(scheduler.SchedulerName, scheduler.SchedulerInstanceId,
+                CalculateStateCheck(scheduler));
 
         private static string CalculateStateCheck(IScheduler scheduler)
         {
@@ -70,6 +72,13 @@ namespace DocSearchAIO.DocSearch.Services
                 await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName.Value));
 
 
+        private static async IAsyncEnumerable<SchedulerTriggerStatisticElement> CalculateSchedulerTriggerStatisticsElements(
+            IReadOnlyCollection<TriggerKey> triggerKeys, ConfigurationObject configurationObject, IScheduler scheduler)
+        {
+            foreach (var triggerKey in triggerKeys)
+                yield return await SchedulerTriggerStatisticElement(Tuples(configurationObject), triggerKey, scheduler);
+        }
+
         private static readonly Func<ConfigurationObject, TypedGroupNameString, ILogger, Task<SchedulerStatistics>>
             SchedulerStatistic =
                 async (configurationObject, groupName, logger) =>
@@ -80,16 +89,13 @@ namespace DocSearchAIO.DocSearch.Services
                             async scheduler =>
                             {
                                 var statistics = StatisticsObject(scheduler);
-                                var innerResultTasks = (await TriggerKeys(scheduler, groupName))
-                                    .Select(async trigger =>
-                                        await SchedulerTriggerStatisticElement(Tuples(configurationObject), trigger,
-                                            scheduler));
+                                var triggerKeys = await TriggerKeys(scheduler, groupName);
+                                var innerResultTasks =
+                                    CalculateSchedulerTriggerStatisticsElements(triggerKeys, configurationObject,
+                                        scheduler);
 
-                                var results = (await innerResultTasks.WhenAll()).ToArray();
-
-                                statistics.TriggerElements = results;
-
-                                results.ForEach(result =>
+                                statistics.TriggerElements = innerResultTasks.ToEnumerable();
+                                statistics.TriggerElements.ForEach(result =>
                                 {
                                     logger.LogInformation(
                                         "TriggerState: {TriggerState} : {TriggerName} : {TriggerGroup}",
