@@ -3,7 +3,6 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Utilities;
-using Nest;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -109,23 +108,25 @@ namespace DocSearchAIO.DocSearch.Services
                     return await t;
                 };
 
-        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerStatistics()
+        public  IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerStatistics()
         {
             var source = new List<TypedGroupNameString>
             {
                 new(_configurationObject.SchedulerGroupName),
                 new(_configurationObject.CleanupGroupName)
             };
+            return CalculateSchedulerStatistics(source);
+        }
 
-            var resultTasks = source
-                .Select(async groupNameSource =>
-                {
-                    var schedulerStatistic =
-                        await SchedulerStatistic(_configurationObject, groupNameSource, _logger);
-                    return new KeyValuePair<string, SchedulerStatistics>(groupNameSource.Value, schedulerStatistic);
-                });
-
-            return (await resultTasks.WhenAll()).ToDictionary();
+        private async IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> CalculateSchedulerStatistics(
+            List<TypedGroupNameString> source)
+        {
+            foreach (var groupNameString in source)
+            {
+                var schedulerStatistic =
+                    await SchedulerStatistic(_configurationObject, groupNameString, _logger);
+                yield return new KeyValuePair<string, SchedulerStatistics>(groupNameString.Value, schedulerStatistic);
+            }
         }
     }
 }

@@ -36,10 +36,10 @@ namespace DocSearchAIO.Controllers
         
         [Route("getSchedulerStatistics")]
         [HttpGet]
-        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerStatistics()
+        public  IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerStatistics()
         {
             _logger.LogInformation("method getSchedulerStatistics called");
-            return await _schedulerStatisticsService.SchedulerStatistics();
+            return  _schedulerStatisticsService.SchedulerStatistics();
         }
 
         [Route("pauseTrigger")]
@@ -101,10 +101,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("getSchedulerContentData")]
         [HttpGet]
-        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerContentData()
+        public IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerContentData()
         {
             _logger.LogInformation("method getSchedulerContentData called");
-            return await _administrationService.SchedulerContent();
+            return _administrationService.SchedulerContent();
         }
 
         [Route("getStatisticsContentData")]
@@ -117,10 +117,10 @@ namespace DocSearchAIO.Controllers
 
         [Route("getActionContentData")]
         [HttpGet]
-        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContentData()
+        public IAsyncEnumerable<KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContentData()
         {
             _logger.LogInformation("method getActionContentData called");
-            return await _administrationService.ActionContent();
+            return _administrationService.ActionContent();
         }
     }
 }

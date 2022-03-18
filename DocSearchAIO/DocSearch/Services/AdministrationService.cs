@@ -300,9 +300,9 @@ namespace DocSearchAIO.DocSearch.Services
             return adminGenModel;
         }
 
-        public async Task<Dictionary<string, SchedulerStatistics>> SchedulerContent()
+        public IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerContent()
         {
-            return await _schedulerStatisticsService.SchedulerStatistics();
+            return _schedulerStatisticsService.SchedulerStatistics();
         }
 
         public async Task<IndexStatistic> StatisticsContent()
@@ -413,18 +413,17 @@ namespace DocSearchAIO.DocSearch.Services
                 .Values()
                 .TryFirst();
 
-        public async Task<Dictionary<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
+        public IAsyncEnumerable<KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
         {
             var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
-            var groupedSchedulerModels = (await _schedulerStatisticsService.SchedulerStatistics())
-                .SelectKv((groupName, schedulerStatisticsArray) =>
+            var groupedSchedulerModels = _schedulerStatisticsService.SchedulerStatistics()
+                .Select(kv =>
                 {
-                    var state = CalculateJobState(schedulerStatisticsArray, memoryCacheStates);
-                    var model = ConvertToActionModel(schedulerStatisticsArray, state);
-                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(groupName,
+                    var state = CalculateJobState(kv.Value, memoryCacheStates);
+                    var model = ConvertToActionModel(kv.Value, state);
+                    return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(kv.Key,
                         new[] { model });
-                })
-                .ToDictionary();
+                });
             return groupedSchedulerModels;
         }
     }
