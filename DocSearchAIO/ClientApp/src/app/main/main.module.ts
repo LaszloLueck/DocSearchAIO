@@ -7,6 +7,7 @@ import { StatsCounterComponent } from './stats-counter/stats-counter.component';
 import { SearchbarComponent } from './searchbar/searchbar.component';
 import { PaginationComponent } from './pagination/pagination.component';
 import { ResultpageComponent } from './resultpage/resultpage.component';
+import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import { ResultpageComponent } from './resultpage/resultpage.component';
   ],
   imports: [
     CommonModule,
-    MainRoutingModule
+    MainRoutingModule,
+    FormsModule
   ]
 })
 export class MainModule { }

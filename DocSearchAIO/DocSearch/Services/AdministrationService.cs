@@ -305,6 +305,12 @@ namespace DocSearchAIO.DocSearch.Services
             return _schedulerStatisticsService.SchedulerStatistics();
         }
 
+        private static async IAsyncEnumerable<IndicesStatsResponse> CalculateIndicesStatsResponse(IEnumerable<string> indices, IElasticSearchService elasticSearchService)
+        {
+            foreach (var index in indices)
+                yield return await elasticSearchService.IndexStatistics(index);
+        }
+
         public async Task<IndexStatistic> StatisticsContent()
         {
             async Task<GetIndexResponse> IndicesResponse(string indexName) =>
@@ -315,12 +321,9 @@ namespace DocSearchAIO.DocSearch.Services
                 .Indices
                 .Keys
                 .Select(index => index.Name);
-
-            var indexStatsResponses =
-                await (await KnownIndices(_configurationObject.IndexName))
-                    .Select(async index =>
-                        await _elasticSearchService.IndexStatistics(index))
-                    .WhenAll();
+            
+            var knownIndices = await KnownIndices(_configurationObject.IndexName);
+            var indexStatsResponses = CalculateIndicesStatsResponse(knownIndices, _elasticSearchService);
 
             static RunnableStatistic
                 ConvertToRunnableStatistic(ProcessingJobStatistic doc, Func<MemoryCacheModel> fn)
@@ -363,20 +366,32 @@ namespace DocSearchAIO.DocSearch.Services
                 .Values()
                 .ToDictionary();
 
-            static IEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(IEnumerable<IndicesStatsResponse> responses) =>
+            static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(IAsyncEnumerable<IndicesStatsResponse> responses) =>
                 responses.Select(index => (IndexStatisticModel)index);
 
 
-            static IndexStatistic ResponseModel(IEnumerable<IndicesStatsResponse> indexStatsResponses,
+            static async Task<IndexStatistic> ResponseModel(IAsyncEnumerable<IndicesStatsResponse> indexStatsResponses,
                 Dictionary<string, RunnableStatistic> runtimeStatistic)
             {
                 var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
-                return new IndexStatistic(convertedModel, runtimeStatistic, convertedModel.Sum(d => d.DocCount), convertedModel.Sum(a => a.SizeInBytes));
+                // ReSharper disable once PossibleMultipleEnumeration
+                var entireDocCount = await CalculateEntireDocCount(convertedModel);
+                // ReSharper disable once PossibleMultipleEnumeration
+                var entireSizeInBytes = await CalculateEntireIndexSize(convertedModel);
+                // ReSharper disable once PossibleMultipleEnumeration
+                return new IndexStatistic(convertedModel, runtimeStatistic, entireDocCount, entireSizeInBytes);
             }
-
-
-            return ResponseModel(indexStatsResponses, runtimeStatistic);
+            return await ResponseModel(indexStatsResponses, runtimeStatistic);
         }
+
+
+
+        private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<long>>
+            CalculateEntireDocCount =
+                model => model.SumAsync(d => d.DocCount);
+
+        private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<double>>
+            CalculateEntireIndexSize = model => model.SumAsync(d => d.SizeInBytes);
 
         private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Maybe<JobState>,
             IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =

@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using Akka.Streams.Dsl;
 using CSharpFunctionalExtensions;
+using DocSearchAIO.DocSearch.TOs;
+using DocumentFormat.OpenXml.Office2010.Drawing;
 
 namespace DocSearchAIO.Utilities
 {

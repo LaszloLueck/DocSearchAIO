@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
+import {SearchStatistic} from "../interfaces/SearchResponse";
 
 @Component({
   selector: 'app-stats-counter',
@@ -6,9 +7,7 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./stats-counter.component.scss']
 })
 export class StatsCounterComponent implements OnInit {
-  docCount: number = 0;
-  searchTime: number = 0;
-  isVisible: boolean = false;
+  @Input() statistic!: SearchStatistic
   constructor() { }
 
   ngOnInit(): void {

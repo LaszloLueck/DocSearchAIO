@@ -2,8 +2,8 @@
   <div id="logo" class="w-50 mx-auto d-flex justify-content-center">
     <img src="/assets/images/docsearch.png" alt="Logo"/>
   </div>
-  <app-stats-counter></app-stats-counter>
-  <app-searchbar></app-searchbar>
+  <app-stats-counter [statistic]="statistic"></app-stats-counter>
+  <app-searchbar (statistic)="handleStatistic($event)"></app-searchbar>
   <app-pagination></app-pagination>
   <app-resultpage></app-resultpage>
 </div>

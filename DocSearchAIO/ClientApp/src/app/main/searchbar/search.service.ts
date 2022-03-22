@@ -1,22 +1,20 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {Observable, of, throwError} from "rxjs";
-import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration"
+import {EMPTY, Observable, of, throwError} from "rxjs";
+import {DoSearchRequest} from "../interfaces/DoSearchRequest";
+import {SearchResponse} from "../interfaces/SearchResponse";
 import {catchError, take} from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
 })
-export class ConfigApiService {
+export class SearchService {
   baseUrl: string;
-
   httpOptions = {
-  headers: new HttpHeaders({
-    'Content-Type':  'application/json'
-  })
-  };
+    headers: new HttpHeaders({'Content-Type': 'application/json'})
+  }
 
-  private handleError(error: HttpErrorResponse) {
+  private handleError(error: HttpErrorResponse){
     if (error.status === 0) {
       // A client-side or network error occurred. Handle it accordingly.
       console.error('An error occurred:', error.error);
@@ -30,19 +28,14 @@ export class ConfigApiService {
     return throwError(() => new Error('Something bad happened; please try again later.'));
   }
 
-  getConfiguration(): Observable<DocSearchConfiguration>{
-    return this.httpClient.get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContentData`)
-  }
-
-  setConfiguration(document: DocSearchConfiguration) : Observable<boolean> {
+  doSearch(searchRequest: DoSearchRequest): Observable<SearchResponse> {
     return this
       .httpClient
-      .post<boolean>(`${this.baseUrl}api/administration/setGenericContent`, document, this.httpOptions)
+      .post<SearchResponse>(`${this.baseUrl}api/search/doSearch`, searchRequest, this.httpOptions)
       .pipe(
-        take(1),
         catchError(err => {
           this.handleError(err)
-          return of(false);
+          return EMPTY;
         })
       )
   }
