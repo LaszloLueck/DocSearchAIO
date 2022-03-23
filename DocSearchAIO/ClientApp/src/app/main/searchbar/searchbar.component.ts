@@ -1,7 +1,7 @@
-import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {SearchService} from "./search.service";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
-import {SearchResponse, SearchStatistic} from "../interfaces/SearchResponse";
+import {NavigationResult, SearchResponse, SearchStatistic} from "../interfaces/SearchResponse";
 import {catchError, take} from "rxjs/operators";
 import {EMPTY, Observable, Subscription, tap} from "rxjs";
 
@@ -15,6 +15,7 @@ export class SearchbarComponent implements OnInit, OnDestroy {
   searchTerm!: string
 
   @Output() statistic: EventEmitter<SearchStatistic> = new EventEmitter<SearchStatistic>()
+  @Output() navigation: EventEmitter<NavigationResult> = new EventEmitter<NavigationResult>()
 
   constructor(private doSearchService: SearchService) {
 
@@ -46,8 +47,9 @@ export class SearchbarComponent implements OnInit, OnDestroy {
       .pipe(
         take(1),
         tap(ewa => {
-          console.log(ewa)
+          console.log("Response: " + JSON.stringify(ewa.searchResult))
           this.statistic.emit(ewa.statistics);
+          this.navigation.emit(ewa.searchResult);
         }),
         catchError(err => {
           console.error(err)

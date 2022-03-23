@@ -1,4 +1,5 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
+import {NavigationResult} from "../interfaces/SearchResponse";
 
 @Component({
   selector: 'app-pagination',
@@ -6,31 +7,36 @@ import {Component, OnInit} from '@angular/core';
   styleUrls: ['./pagination.component.scss']
 })
 export class PaginationComponent implements OnInit {
-  documentCount: number = 0;
-  pageSize: number = 50;
-  currentPage: number = 1;
-  searchPhrase: string = "";
+  @Input() navigation!: NavigationResult;
+
+  // documentCount: number = 0;
+  // pageSize: number = 50;
+  // currentPage: number = 1;
+  // searchPhrase: string = "";
 
   getNgForCounter(count: number): number[] {
     return new Array(count);
   }
 
   getCurrentPageNumber(): number {
-    return this.pageSize === 0 ? 1 : Math.round(this.currentPage / this.pageSize + 1);
+    return this.navigation.currentPageSize === 0 ? 1 : Math.round(this.navigation.currentPage / this.navigation.currentPageSize + 1);
   }
 
   getModResult():number {
-    return (this.documentCount % this.pageSize === 0) ? 0 : 1;
+    return (this.navigation.docCount % this.navigation.currentPageSize === 0) ? 0 : 1;
   }
 
   getPagingCount(): number {
-    return this.documentCount <= this.pageSize ? 0 : Math.round((this.documentCount - this.documentCount % this.pageSize) / this.pageSize) + this.getModResult();
+    return this.navigation.docCount <= this.navigation.currentPageSize ? 0 : Math.round((this.navigation.docCount - this.navigation.docCount % this.navigation.currentPageSize) / this.navigation.currentPageSize) + this.getModResult();
   }
 
   constructor() {
   }
 
   ngOnInit(): void {
+    if(this.navigation){
+      console.log("Navigation:" + this.navigation)
+    }
   }
 
 }

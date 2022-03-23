@@ -1,4 +1,4 @@
-<div class="input-group rounded w-50 mx-auto d-flex justify-content-center mt-2" *ngIf="documentCount > 0">
+<div class="input-group rounded w-50 mx-auto d-flex justify-content-center mt-2" *ngIf="navigation">
   <nav aria-label="Main-Navigation">
     <ul class="pagination">
       <ng-container *ngIf="(getCurrentPageNumber() > 1 && this.getPagingCount() > 1); else noLeftLink">
@@ -16,7 +16,7 @@
           </div>
         </li>
       </ng-template>
-      <ng-container *ngIf="documentCount === 0 || documentCount <= pageSize">
+      <ng-container *ngIf="navigation.docCount === 0 || navigation.docCount <= navigation.currentPageSize">
         <li class="page-item disabled">
           <div class="page-link" tabindex="-1">
             <span aria-hidden="true">&laquo;</span><span class="sr-only">Zurück</span>
@@ -27,7 +27,7 @@
       <ng-container *ngFor="let e of getNgForCounter(getPagingCount()); let x = index">
         <ng-container *ngIf="getPagingCount() > 12; else pagingCountElse">
           <ng-container *ngIf="x + 1 === 1 || x + 1 >= getPagingCount(); else ngInnerElse">
-            <ng-container *ngIf="x * pageSize === currentPage || (x + 1) === currentPage ; else pagerElsePart">
+            <ng-container *ngIf="x * navigation.currentPageSize === navigation.currentPage || (x + 1) === navigation.currentPage ; else pagerElsePart">
               <li class="page-item active">
                 <div class="page-link"><span aria-hidden="true">{{x + 1}}</span></div>
               </li>
@@ -41,7 +41,7 @@
               <li class="page-item">
                 <div class="page-link"><span aria-hidden="true">&nbsp;</span></div>
               </li>
-              <ng-container *ngIf="x * pageSize === currentPage; else pagerElsePart">
+              <ng-container *ngIf="x * navigation.currentPageSize === navigation.currentPage; else pagerElsePart">
                 <li class="page-item active">
                   <div class="page-link"><span aria-hidden="true">{{x + 1}}</span></div>
                 </li>
@@ -52,7 +52,7 @@
             </ng-container>
             <ng-container
               *ngIf="x + 1 === getCurrentPageNumber() || x + 1 === getCurrentPageNumber() - 1 || x + 1 === getCurrentPageNumber() + 1">
-              <ng-container *ngIf="x * pageSize === currentPage; else pagerElsePart">
+              <ng-container *ngIf="x * navigation.currentPageSize === navigation.currentPage; else pagerElsePart">
                 <li class="page-item active">
                   <div class="page-link"><span aria-hidden="true">{{x + 1}}</span></div>
                 </li>
@@ -62,7 +62,7 @@
               </ng-template>
             </ng-container>
             <ng-container *ngIf="x + 1 === getCurrentPageNumber() + 2">
-              <ng-container *ngIf="x * pageSize === currentPage; else pagerElsePart">
+              <ng-container *ngIf="x * navigation.currentPageSize === navigation.currentPage; else pagerElsePart">
                 <li class="page-item active">
                   <div class="page-link"><span aria-hidden="true">{{x + 1}}</span></div>
                 </li>
@@ -77,7 +77,7 @@
           </ng-template>
         </ng-container>
         <ng-template #pagingCountElse>
-          <ng-container *ngIf="x * pageSize === currentPage; else pagerElsePart">
+          <ng-container *ngIf="x * navigation.currentPageSize === navigation.currentPage; else pagerElsePart">
             <li class="page-item active">
               <div class="page-link"><span aria-hidden="true">{{x + 1}}</span></div>
             </li>
