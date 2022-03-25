@@ -123,7 +123,7 @@ let renderAdminActionModal = (result) => {
     mainContent += '    </div>';
     mainContent += '</div>';
 
-    $.each(result, (key, values) => mainContent += calculateStatistics(key, values));
+    $.each(result, (key, values) => mainContent += calculateStatistics(values.key, values.value));
 
     return mainContent;
 }

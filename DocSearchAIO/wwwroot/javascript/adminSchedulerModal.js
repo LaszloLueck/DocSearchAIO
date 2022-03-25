@@ -7,44 +7,43 @@ let renderAdminSchedulerModal = (result) => {
     mainContent += '         </div>';
     mainContent += '     </div>';
     $.each(result, function (key, schedulerStatistics) {
-
         mainContent += '         <div class="container mt-2 border rounded border-color-gray">';
         mainContent += '             <div class="row">';
         mainContent += '                 <div class="col-12">';
-        mainContent += '                     <span class="h5">Gruppe ' + key + '</span>';
+        mainContent += '                     <span class="h5">Gruppe ' + schedulerStatistics.key + '</span>';
         mainContent += '                 </div>';
         mainContent += '             </div>';
         let badge = '<span class="badge badge-secondary">Unknown state</span>';
-        switch (schedulerStatistics.state.toLowerCase()) {
+        switch (schedulerStatistics.value.state.toLowerCase()) {
             case "gestartet":
-                badge = '<span class="badge badge-success">' + schedulerStatistics.state + '</span>';
+                badge = '<span class="badge badge-success">' + schedulerStatistics.value.state + '</span>';
                 break;
             case "gestoppt":
-                badge = '<span class="badge badge-danger">' + schedulerStatistics.state + '</span>';
+                badge = '<span class="badge badge-danger">' + schedulerStatistics.value.state + '</span>';
                 break;
             case "pausiert":
-                badge = '<span class="badge badge-warning">' + schedulerStatistics.state + '</span>';
+                badge = '<span class="badge badge-warning">' + schedulerStatistics.value.state + '</span>';
                 break;
             case "unbekannt":
-                badge = '<span class="badge badge-secondary">' + schedulerStatistics.state + '</span>';
+                badge = '<span class="badge badge-secondary">' + schedulerStatistics.value.state + '</span>';
                 break;
         }
         mainContent += '             <div class="row">';
         mainContent += '             <div class="col-3">';
-        mainContent += '             <span class="h6">' + schedulerStatistics.schedulerName + '</span>';
+        mainContent += '             <span class="h6">' + schedulerStatistics.value.schedulerName + '</span>';
         mainContent += '             </div>';
         mainContent += '             <div class="col-9">' + badge + '</div>';
         mainContent += '             </div>';
         mainContent += '             <div class="row mb-2">';
         mainContent += '             <div class="col-3">Instance-Id</div>';
-        mainContent += '             <div class="col-9">' + schedulerStatistics.schedulerInstanceId + '</div>';
+        mainContent += '             <div class="col-9">' + schedulerStatistics.value.schedulerInstanceId + '</div>';
         mainContent += '             </div>';
         mainContent += '             <div class="row">';
         mainContent += '             <div class="col-12">';
         mainContent += '             <span class="h5">Trigger</span>';
         mainContent += '             </div>';
         mainContent += '             </div>';
-        schedulerStatistics.triggerElements.forEach(trigger => {
+        schedulerStatistics.value.triggerElements.forEach(trigger => {
             let triggerBatch = '<span class="badge badge-secondary">Unbekannt</span>"';
             switch (trigger.triggerState.toLowerCase()) {
                 case "blocked":

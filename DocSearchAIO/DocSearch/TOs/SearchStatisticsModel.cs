@@ -1,4 +1,9 @@
-﻿namespace DocSearchAIO.DocSearch.TOs
+﻿using System.Text.Json.Serialization;
+
+namespace DocSearchAIO.DocSearch.TOs
 {
-    public record SearchStatisticsModel(long SearchTime, long DocCount);
+    public record SearchStatisticsModel(
+        [property: JsonPropertyName("searchTime")] long SearchTime, 
+        [property: JsonPropertyName("docCount")] long DocCount
+        );
 }

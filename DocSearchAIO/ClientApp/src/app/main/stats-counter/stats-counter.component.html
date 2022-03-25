@@ -1,9 +1,0 @@
-<div class="w-50 mx-auto d-flex justify-content-center" *ngIf="statistic">
-  <ng-container *ngIf="statistic.docCount===0">
-    <span>Keine Ergebnisse vorhanden ({{statistic.searchTime}} ms)</span>
-  </ng-container>
-  <ng-container *ngIf="statistic.docCount>0">
-    <span>{{statistic.docCount}} Dokumente</span><span class="mr-1 ml-1">|</span><span>Suchzeit {{statistic.searchTime}} ms</span>
-  </ng-container>
-</div>
-

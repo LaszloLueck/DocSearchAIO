@@ -1,29 +1,71 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
-import {NavigationResult, SearchStatistic} from "../interfaces/SearchResponse";
+import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
+import {DoSearchRequest} from "../interfaces/DoSearchRequest";
+import {Subscription} from "rxjs";
+import {SearchService} from "../services/search.service";
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss']
 })
-export class MainComponent implements OnInit {
+export class MainComponent implements OnInit, OnDestroy {
   docCount!: number;
-  statistic!: SearchStatistic;
-  navigation!: NavigationResult;
+  searchResponse!: Subscription;
+  searchTerm!: string;
+  response!: SearchResponse;
 
-  constructor(private commonDataService: CommonDataService) { }
+  constructor(private commonDataService: CommonDataService, private doSearchService: SearchService) { }
 
-  handleStatistic(eventHandler: SearchStatistic){
-    this.statistic = eventHandler;
-  }
-
-  handleNavigation(eventHandler: NavigationResult){
-    this.navigation = eventHandler;
+  ngOnDestroy(): void {
+    if(this.searchResponse)
+      this.searchResponse.unsubscribe();
   }
 
   ngOnInit(): void {
     this.commonDataService.sendData('Startseite');
   }
+
+  getNgForCounter(count: number): number[] {
+    return new Array(count);
+  }
+
+  getCurrentPageNumber(navigation: NavigationResult): number {
+    return navigation.currentPageSize === 0 ? 1 : Math.round(navigation.currentPage / navigation.currentPageSize + 1);
+  }
+
+  getModResult(navigation: NavigationResult):number {
+    return (navigation.docCount % navigation.currentPageSize === 0) ? 0 : 1;
+  }
+
+  getPagingCount(navigation: NavigationResult): number {
+    return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
+  }
+
+  doSearch(page: number){
+    const from = this.response?.searchResult ? this.response.searchResult.currentPageSize * page : 0;
+    if(!this.searchTerm || this.searchTerm.length == 0)
+      this.searchTerm = '*';
+
+    console.log('searchTerm: ' + this.searchTerm);
+    console.log('searchPage: ' + from);
+    const searchRequest: DoSearchRequest = {
+      searchPhrase: this.searchTerm,
+      from: from,
+      size: 50,
+      filterWord: true,
+      filterExcel: true,
+      filterPowerpoint: true,
+      filterPdf: true,
+      filterMsg: true,
+      filterEml: true
+    }
+    this.searchResponse = this
+      .doSearchService
+      .doSearch(searchRequest)
+      .subscribe(searchResponse => this.response = searchResponse);
+  }
+
 
 }

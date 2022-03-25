@@ -1,6 +1,6 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {EMPTY, Observable, of, throwError} from "rxjs";
+import {EMPTY, Observable, of, tap, throwError} from "rxjs";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {SearchResponse} from "../interfaces/SearchResponse";
 import {catchError, take} from "rxjs/operators";
@@ -34,6 +34,7 @@ export class SearchService {
       .post<SearchResponse>(`${this.baseUrl}api/search/doSearch`, searchRequest, this.httpOptions)
       .pipe(
         catchError(err => {
+          console.log("An error occured");
           this.handleError(err)
           return EMPTY;
         })
