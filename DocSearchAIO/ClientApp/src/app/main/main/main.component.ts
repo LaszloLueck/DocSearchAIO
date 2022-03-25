@@ -1,9 +1,10 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {Subscription} from "rxjs";
 import {SearchService} from "../services/search.service";
+import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
   selector: 'app-main',
@@ -15,9 +16,9 @@ export class MainComponent implements OnInit, OnDestroy {
   searchResponse!: Subscription;
   searchTerm!: string;
   response!: SearchResponse;
+  closed: boolean = false;
 
   constructor(private commonDataService: CommonDataService, private doSearchService: SearchService) { }
-
   ngOnDestroy(): void {
     if(this.searchResponse)
       this.searchResponse.unsubscribe();

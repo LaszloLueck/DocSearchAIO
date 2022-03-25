@@ -11,6 +11,10 @@ export class ResultpageComponent implements OnInit {
 
   constructor() { }
 
+  openDetailModal(id:string){
+    console.log(id);
+  }
+
   ngOnInit(): void {
   }
 

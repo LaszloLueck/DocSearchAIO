@@ -153,16 +153,16 @@
     </nav>
   </div>
 
-  <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mt-2" *ngIf="response">
+  <div class="col-12 mt-4" *ngIf="response">
     <ng-container *ngIf="response.searchResults.length > 0; else noResults">
       <ng-container *ngFor="let result of response.searchResults">
         <app-resultpage [searchResult]="result"></app-resultpage>
       </ng-container>
     </ng-container>
     <ng-template #noResults>
-      <div class="alert alert-warning" role="alert">
-        Kein Ergebnis für den Suchbegriff {{searchTerm}} gefunden!
-      </div>
+      <ngb-alert type="warning" *ngIf="!closed" (close)="closed=true">
+        Kein Ergebnis für den Suchbegriff <strong>{{searchTerm}}</strong> gefunden
+      </ngb-alert>
     </ng-template>
   </div>
 </div>

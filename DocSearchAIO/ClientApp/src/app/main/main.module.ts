@@ -4,6 +4,7 @@ import { MainRoutingModule } from './main-routing.module';
 import { MainComponent } from './main/main.component';
 import { ResultpageComponent } from './resultpage/resultpage.component';
 import {FormsModule} from "@angular/forms";
+import {NgbAlertModule} from "@ng-bootstrap/ng-bootstrap";
 
 
 @NgModule({
@@ -14,7 +15,8 @@ import {FormsModule} from "@angular/forms";
   imports: [
     CommonModule,
     MainRoutingModule,
-    FormsModule
+    FormsModule,
+    NgbAlertModule
   ]
 })
 export class MainModule { }

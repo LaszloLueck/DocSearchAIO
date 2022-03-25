@@ -1,1 +1,21 @@
-<p>resultpage works!</p>
+<div class="w-100 mb-2" *ngIf="searchResult">
+  <h5 class="mb-0">
+    <img class="me-1" src="assets{{searchResult.programIcon.replace('./images','/images')}}" height="35" width="35" alt="ProgramIcon" />
+    <img class="me-1" style="cursor: pointer" src="assets/images/info.svg" alt="info" height="32" width="32" (click)="openDetailModal(searchResult.id)" />
+    <a href="{{searchResult.relativeUrl}}" target="_blank"><small class="fs-6 text">{{searchResult.relativeUrl}}</small></a>
+  </h5>
+  <h6>
+    <small class="me-1">Download</small>
+    <a href="#">{{searchResult.absoluteUrl}}</a>
+  </h6>
+  <div class="mb-1">
+    <div>
+      <small class="text-muted">Inhalt</small>
+    </div>
+    <ul class="list-group" *ngFor="let content of searchResult.contents">
+      <li class="list-group-item py-2 mb-1">
+        <small [innerHTML]="content.contentText"></small>
+      </li>
+    </ul>
+  </div>
+</div>
