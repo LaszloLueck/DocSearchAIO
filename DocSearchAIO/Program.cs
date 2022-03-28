@@ -58,6 +58,13 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapControllers();
 
+app.UseCors(x =>
+    x.AllowAnyMethod()
+        .AllowAnyHeader()
+        .SetIsOriginAllowed(origin => true)
+        .AllowCredentials()
+);
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action=Index}/{id?}");

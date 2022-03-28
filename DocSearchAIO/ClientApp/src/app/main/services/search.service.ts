@@ -1,9 +1,10 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {EMPTY, Observable, of, tap, throwError} from "rxjs";
+import {EMPTY, Observable, of, retry, tap, throwError} from "rxjs";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {SearchResponse} from "../interfaces/SearchResponse";
 import {catchError, take} from "rxjs/operators";
+import {environment} from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,12 @@ import {catchError, take} from "rxjs/operators";
 export class SearchService {
   baseUrl: string;
   httpOptions = {
-    headers: new HttpHeaders({'Content-Type': 'application/json'})
+    headers: new HttpHeaders(
+      {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      }
+    )
   }
 
   private handleError(error: HttpErrorResponse){
@@ -31,7 +37,7 @@ export class SearchService {
   doSearch(searchRequest: DoSearchRequest): Observable<SearchResponse> {
     return this
       .httpClient
-      .post<SearchResponse>(`${this.baseUrl}api/search/doSearch`, searchRequest, this.httpOptions)
+      .post<SearchResponse>(`${environment.apiUrl}api/search/doSearch`, searchRequest, this.httpOptions)
       .pipe(
         catchError(err => {
           console.log("An error occured");

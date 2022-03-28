@@ -1,0 +1,18 @@
+<div class="modal-header">
+  <h4 class="modal-title">Download Link</h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body">
+  <p>{{link}}</p>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-primary" (click)="copyToClipBoard()">In Zwischenablage kopieren</button>
+ <ng-container *ngIf="fileType==='pdf';else defaultFileType">
+   <button type="button" class="btn btn-outline-primary" (click)="downloadFile(link, fileType)">PDF-Datei in neuem Fenster öffnen</button>
+ </ng-container>
+ <ng-template #defaultFileType>
+   <button type="button" class="btn btn-outline-primary" (click)="downloadFile(link, fileType)">Download Datei</button>
+ </ng-template>
+  <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Schließen</button>
+</div>

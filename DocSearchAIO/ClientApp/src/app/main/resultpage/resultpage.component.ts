@@ -15,6 +15,10 @@ export class ResultpageComponent implements OnInit {
     console.log(id);
   }
 
+  getFileName(path: string): string {
+    return path.substring(path.lastIndexOf("/") + 1);
+  }
+
   ngOnInit(): void {
   }
 

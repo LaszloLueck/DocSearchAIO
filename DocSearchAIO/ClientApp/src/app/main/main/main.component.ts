@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
-import {Subscription} from "rxjs";
+import {Observable, Subscription} from "rxjs";
 import {SearchService} from "../services/search.service";
 import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
 
@@ -13,15 +13,15 @@ import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
 })
 export class MainComponent implements OnInit, OnDestroy {
   docCount!: number;
-  searchResponse!: Subscription;
+  searchResponse!: Observable<SearchResponse>;
   searchTerm!: string;
-  response!: SearchResponse;
+  //response!: SearchResponse;
   closed: boolean = false;
 
   constructor(private commonDataService: CommonDataService, private doSearchService: SearchService) { }
   ngOnDestroy(): void {
-    if(this.searchResponse)
-      this.searchResponse.unsubscribe();
+    // if(this.searchResponse)
+    //   this.searchResponse.unsubscribe();
   }
 
   ngOnInit(): void {
@@ -44,8 +44,9 @@ export class MainComponent implements OnInit, OnDestroy {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
   }
 
-  doSearch(page: number){
-    const from = this.response?.searchResult ? this.response.searchResult.currentPageSize * page : 0;
+  doSearch(page: number, currentPageSize: number){
+    //const from = this.response?.searchResult ? this.response.searchResult.currentPageSize * page : 0;
+    const from = currentPageSize * page;
     if(!this.searchTerm || this.searchTerm.length == 0)
       this.searchTerm = '*';
 
@@ -64,8 +65,8 @@ export class MainComponent implements OnInit, OnDestroy {
     }
     this.searchResponse = this
       .doSearchService
-      .doSearch(searchRequest)
-      .subscribe(searchResponse => this.response = searchResponse);
+      .doSearch(searchRequest);
+      //.subscribe(searchResponse => this.response = searchResponse);
   }
 
 

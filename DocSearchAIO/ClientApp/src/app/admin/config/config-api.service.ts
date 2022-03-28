@@ -3,6 +3,7 @@ import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
 import {Observable, of, throwError} from "rxjs";
 import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration"
 import {catchError, take} from "rxjs/operators";
+import {environment} from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +38,7 @@ export class ConfigApiService {
   setConfiguration(document: DocSearchConfiguration) : Observable<boolean> {
     return this
       .httpClient
-      .post<boolean>(`${this.baseUrl}api/administration/setGenericContent`, document, this.httpOptions)
+      .post<boolean>(`${environment.apiUrl}api/administration/setGenericContent`, document, this.httpOptions)
       .pipe(
         take(1),
         catchError(err => {

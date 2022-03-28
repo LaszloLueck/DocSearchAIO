@@ -28,36 +28,9 @@ namespace DocSearchAIO.Controllers
                 new DocumentDetailService(elasticSearchService, loggerFactory);
         }
 
-        // [Route("doSearch")]
-        // [HttpPost]
-        // public async Task<IActionResult> Index(DoSearchRequest doSearchRequest)
-        // {
-        //     var httpContext = this.HttpContext;
-        //     var response = httpContext.Response;
-        //     _logger.LogInformation("Search request received");
-        //     var returnValue = await _doSearchService.DoSearch(doSearchRequest);
-        //     httpContext.Response.ContentType = "text/json";
-        //     var jsonString = JsonSerializer.Serialize(returnValue);
-        //     var b = Encoding.UTF8.GetBytes(jsonString);
-        //     response.Headers.Add("Content-Length", b.Length.ToString());
-        //     try
-        //     {
-        //         await response.Body.WriteAsync(b);
-        //         await response.Body.FlushAsync();
-        //         response.Body.Close();
-        //         return new EmptyResult();
-        //     }
-        //     catch (Exception exception)
-        //     {
-        //         _logger.LogError(exception, "An error occured");
-        //         return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-        //     }
-        //
-        // }
-
         [Route("doSearch")]
         [HttpPost]
-        public async Task<DoSearchResponse> Index(DoSearchRequest doSearchRequest)
+        public async Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest)
         {
             _logger.LogInformation("Search request received");
             return await _doSearchService.DoSearch(doSearchRequest);

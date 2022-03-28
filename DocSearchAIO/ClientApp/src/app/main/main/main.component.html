@@ -2,21 +2,12 @@
   <div id="logo" class="w-50 mx-auto d-flex justify-content-center">
     <img src="/assets/images/docsearch.png" alt="Logo"/>
   </div>
-  <div class="w-50 mx-auto d-flex justify-content-center mb-2" *ngIf="response">
-    <ng-container *ngIf="response.statistics.docCount===0">
-      <span>Keine Ergebnisse vorhanden ({{response.statistics.searchTime}} ms)</span>
-    </ng-container>
-    <ng-container *ngIf="response.statistics.docCount>0">
-      <span>{{response.statistics.docCount}} Dokumente</span><span
-      class="ms-1 me-1">|</span><span>Suchzeit {{response.statistics.searchTime}} ms</span>
-    </ng-container>
-  </div>
   <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mb-2">
     <div class="input-group">
       <span class="input-group-text" id="basic-addon1"><em class="bi bi-search"></em></span>
       <input class="form-control" id="searchField" placeholder="Suchtext" type="text" [(ngModel)]="searchTerm">
       <div class="ms-2">
-        <button class="btn btn-secondary" type="button" (click)="doSearch(0)">
+        <button class="btn btn-secondary" type="button" (click)="doSearch(0, 50)">
           <em class="bi bi-search"></em> Suchen
         </button>
       </div>
@@ -27,6 +18,18 @@
       </div>
     </div>
   </div>
+</div>
+
+<div class="container" *ngIf="searchResponse | async as response">
+  <div class="w-50 mx-auto d-flex justify-content-center mb-2" *ngIf="response">
+    <ng-container *ngIf="response.statistics.docCount===0">
+      <span>Keine Ergebnisse vorhanden ({{response.statistics.searchTime}} ms)</span>
+    </ng-container>
+    <ng-container *ngIf="response.statistics.docCount>0">
+      <span>{{response.statistics.docCount}} Dokumente</span><span
+      class="ms-1 me-1">|</span><span>Suchzeit {{response.statistics.searchTime}} ms</span>
+    </ng-container>
+  </div>
 
   <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mt-2" *ngIf="response">
     <nav aria-label="Main-Navigation">
@@ -34,11 +37,11 @@
         <ng-container
           *ngIf="(getCurrentPageNumber(response.searchResult) > 1 && this.getPagingCount(response.searchResult) > 1); else noLeftLink">
           <li class="page-item">
-            <a class="page-link" href="javascript:void(0)"
-               (click)="doSearch(getCurrentPageNumber(response.searchResult) - 2)" aria-label="Zurück">
+            <div class="page-link" style="cursor: pointer"
+               (click)="doSearch(getCurrentPageNumber(response.searchResult) - 2, response.searchResult.currentPageSize)" aria-label="Zurück">
               <span aria-hidden="true">&laquo;</span>
               <span class="sr-only">Zurück</span>
-            </a>
+            </div>
           </li>
         </ng-container>
         <ng-template #noLeftLink>
@@ -67,7 +70,7 @@
                 </li>
               </ng-container>
               <ng-template #pagerElsePart>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" (click)="doSearch(x)">{{x + 1}}</a>
+                <li class="page-item"><div class="page-link" style="cursor: pointer" (click)="doSearch(x, response.searchResult.currentPageSize)">{{x + 1}}</div>
                 </li>
               </ng-template>
             </ng-container>
@@ -83,8 +86,8 @@
                   </li>
                 </ng-container>
                 <ng-template #pagerElsePart>
-                  <li class="page-item"><a class="page-link" href="javascript:void(0)"
-                                           (click)="doSearch(x)">{{x + 1}}</a></li>
+                  <li class="page-item"><div class="page-link" style="cursor: pointer"
+                                           (click)="doSearch(x, response.searchResult.currentPageSize)">{{x + 1}}</div></li>
                 </ng-template>
               </ng-container>
               <ng-container
@@ -96,8 +99,8 @@
                   </li>
                 </ng-container>
                 <ng-template #pagerElsePart>
-                  <li class="page-item"><a class="page-link" href="javascript:void(0)"
-                                           (click)="doSearch(x)">{{x + 1}}</a></li>
+                  <li class="page-item"><div class="page-link" style="cursor:pointer"
+                                           (click)="doSearch(x, response.searchResult.currentPageSize)">{{x + 1}}</div></li>
                 </ng-template>
               </ng-container>
               <ng-container *ngIf="x + 1 === getCurrentPageNumber(response.searchResult) + 2">
@@ -108,8 +111,8 @@
                   </li>
                 </ng-container>
                 <ng-template #pagerElsePart>
-                  <li class="page-item"><a class="page-link" href="javascript:void(0)"
-                                           (click)="doSearch(x)">{{x + 1}}</a></li>
+                  <li class="page-item"><div class="page-link" style="cursor: pointer"
+                                           (click)="doSearch(x, response.searchResult.currentPageSize)">{{x + 1}}</div></li>
                 </ng-template>
                 <li class="page-item">
                   <div class="page-link"><span aria-hidden="true">&nbsp;</span></div>
@@ -125,7 +128,7 @@
               </li>
             </ng-container>
             <ng-template #pagerElsePart>
-              <li class="page-item"><a class="page-link" href="javascript:void(0)" (click)="doSearch(x)">{{x + 1}}</a>
+              <li class="page-item"><div class="page-link" style="cursor: pointer" (click)="doSearch(x, response.searchResult.currentPageSize)">{{x + 1}}</div>
               </li>
             </ng-template>
           </ng-template>
@@ -134,11 +137,11 @@
         <ng-container
           *ngIf="(getCurrentPageNumber(response.searchResult) < getPagingCount(response.searchResult)); else noRightLink">
           <li class="page-item">
-            <a class="page-link" href="javascript:void(0)"
-               (click)="doSearch(getCurrentPageNumber(response.searchResult))" aria-label="Vor">
+            <div class="page-link" style="cursor: pointer"
+               (click)="doSearch(getCurrentPageNumber(response.searchResult), response.searchResult.currentPageSize)" aria-label="Vor">
               <span class="sr-only">Vor</span>
               <span aria-hidden="true">&raquo;</span>
-            </a>
+            </div>
           </li>
         </ng-container>
         <ng-template #noRightLink>
