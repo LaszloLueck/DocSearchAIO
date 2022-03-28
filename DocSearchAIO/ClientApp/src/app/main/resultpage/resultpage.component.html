@@ -1,7 +1,7 @@
 <div class="w-100 mb-2" *ngIf="searchResult">
   <h5 class="mb-0">
     <img class="me-1" src="assets{{searchResult.programIcon.replace('./images','/images')}}" height="35" width="35" alt="ProgramIcon" />
-    <img class="me-1" style="cursor: pointer" src="assets/images/info.svg" alt="info" height="32" width="32" (click)="openDetailModal(searchResult.id)" />
+    <documentInformation-modal-component [informationId]="searchResult.id"></documentInformation-modal-component>
     <small>{{getFileName(searchResult.relativeUrl)}}</small>
   </h5>
   <h6>

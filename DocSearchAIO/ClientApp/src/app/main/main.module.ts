@@ -7,6 +7,7 @@ import {FormsModule} from "@angular/forms";
 import {NgbAlertModule, NgbModule, NgbPaginationModule, NgbPopoverModule} from "@ng-bootstrap/ng-bootstrap";
 import {RisprepositorylinkComponent, RisprepositorylinkContent} from "./modals/risprepositorylink-component";
 import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-component";
+import {DocumentInformationComponent, DocumentInformationContent} from "./modals/documentInformation-component";
 
 
 @NgModule({
@@ -16,7 +17,9 @@ import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-
     RisprepositorylinkComponent,
     RisprepositorylinkContent,
     DownloadLinkComponent,
-    DownloadlinkContent
+    DownloadlinkContent,
+    DocumentInformationComponent,
+    DocumentInformationContent
   ],
   imports: [
     CommonModule,
@@ -29,11 +32,13 @@ import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-
   ],
   exports: [
     RisprepositorylinkComponent,
-    DownloadLinkComponent
+    DownloadLinkComponent,
+    DocumentInformationComponent
   ],
   bootstrap: [
     RisprepositorylinkComponent,
-    DownloadLinkComponent
+    DownloadLinkComponent,
+    DocumentInformationComponent
   ]
 })
 export class MainModule { }
