@@ -11,18 +11,14 @@ import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss']
 })
-export class MainComponent implements OnInit, OnDestroy {
+export class MainComponent implements OnInit {
   docCount!: number;
   searchResponse!: Observable<SearchResponse>;
   searchTerm!: string;
-  //response!: SearchResponse;
   closed: boolean = false;
 
   constructor(private commonDataService: CommonDataService, private doSearchService: SearchService) { }
-  ngOnDestroy(): void {
-    // if(this.searchResponse)
-    //   this.searchResponse.unsubscribe();
-  }
+
 
   ngOnInit(): void {
     this.commonDataService.sendData('Startseite');
@@ -44,7 +40,7 @@ export class MainComponent implements OnInit, OnDestroy {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
   }
 
-  doSearch(page: number, currentPageSize: number){
+  doSearch(page: number, currentPageSize: number): void{
     //const from = this.response?.searchResult ? this.response.searchResult.currentPageSize * page : 0;
     const from = currentPageSize * page;
     if(!this.searchTerm || this.searchTerm.length == 0)
@@ -66,7 +62,6 @@ export class MainComponent implements OnInit, OnDestroy {
     this.searchResponse = this
       .doSearchService
       .doSearch(searchRequest);
-      //.subscribe(searchResponse => this.response = searchResponse);
   }
 
 

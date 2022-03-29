@@ -1,5 +1,9 @@
 import {Component, Input} from "@angular/core";
 import {NgbActiveModal, NgbModal} from "@ng-bootstrap/ng-bootstrap";
+import {DocumentdetailService} from "../services/documentdetail.service";
+import {DocumentDetailRequest} from "../interfaces/DocumentDetailRequest";
+import {Observable} from "rxjs";
+import {DocumentDetailResponse} from "../interfaces/DocumentDetailResponse";
 
 
 @Component({
@@ -8,10 +12,10 @@ import {NgbActiveModal, NgbModal} from "@ng-bootstrap/ng-bootstrap";
 })
 export class DocumentInformationContent {
   @Input() informationId!: string;
-
+  closed: boolean = false;
+  documentDetailResponse!: Observable<DocumentDetailResponse>;
   constructor(public activeModal: NgbActiveModal) {
   }
-
 }
 
 
@@ -20,14 +24,24 @@ export class DocumentInformationContent {
   templateUrl: './documentInformation-component.html'
 })
 export class DocumentInformationComponent {
-
   @Input() informationId!: string;
 
-  constructor(private modalService: NgbModal) {}
+  constructor(private modalService: NgbModal, private documentDetailService: DocumentdetailService) {}
 
   open():void {
     const modalRef = this.modalService.open(DocumentInformationContent, {size: 'lg'});
     modalRef.componentInstance.informationId = this.informationId;
+    modalRef.componentInstance.documentDetailResponse = this.fetchData(this.informationId);
+  }
+
+
+  fetchData(documentId: string): Observable<DocumentDetailResponse>{
+    const request: DocumentDetailRequest = {
+      id: documentId
+    }
+    console.log(documentId);
+    return this.documentDetailService.documentDetail(request);
+
   }
 
 }

@@ -1,15 +1,16 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {EMPTY, Observable, of, retry, tap, throwError} from "rxjs";
-import {DoSearchRequest} from "../interfaces/DoSearchRequest";
-import {SearchResponse} from "../interfaces/SearchResponse";
-import {catchError, take} from "rxjs/operators";
+import {EMPTY, Observable, throwError} from "rxjs";
+import {B} from "@angular/cdk/keycodes";
+import {DocumentDetailRequest} from "../interfaces/DocumentDetailRequest";
+import {DocumentDetailResponse} from "../interfaces/DocumentDetailResponse";
 import {environment} from "../../../environments/environment";
+import {catchError, take} from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
 })
-export class SearchService {
+export class DocumentdetailService {
   baseUrl: string;
   httpOptions = {
     headers: new HttpHeaders(
@@ -18,6 +19,23 @@ export class SearchService {
         'Cache-Control': 'no-cache'
       }
     )
+  }
+  constructor(private httpClient: HttpClient, @Inject('BASE_URL') baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  documentDetail(documentDetailRequest: DocumentDetailRequest): Observable<DocumentDetailResponse>{
+    return this
+      .httpClient
+      .post<DocumentDetailResponse>(`${environment.apiUrl}api/search/documentDetailData`, documentDetailRequest, this.httpOptions)
+      .pipe(
+        take(1),
+        catchError(err => {
+          console.log("An error occured");
+          this.handleError(err)
+          return EMPTY;
+        })
+      )
   }
 
   private handleError(error: HttpErrorResponse){
@@ -34,21 +52,5 @@ export class SearchService {
     return throwError(() => new Error('Something bad happened; please try again later.'));
   }
 
-  doSearch(searchRequest: DoSearchRequest): Observable<SearchResponse> {
-    return this
-      .httpClient
-      .post<SearchResponse>(`${environment.apiUrl}api/search/doSearch`, searchRequest, this.httpOptions)
-      .pipe(
-        take(1),
-        catchError(err => {
-          console.log("An error occured");
-          this.handleError(err)
-          return EMPTY;
-        })
-      )
-  }
 
-  constructor(private httpClient: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
 }

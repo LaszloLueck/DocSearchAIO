@@ -4,6 +4,15 @@
 </div>
 <div class="modal-body">
   <p>{{informationId}}</p>
+  <div *ngIf="documentDetailResponse | async as response; else responseError">
+    {{response.lastModified}}
+  </div>
+
+  <ng-template #responseError>
+    <ngb-alert type="warning" *ngIf="!closed" (close)="closed=true">
+      Keine Dokumentendetails für die Dokumenten-Id <strong>{{informationId}}</strong> gefunden
+    </ngb-alert>
+  </ng-template>
 </div>
 
 <div class="modal-footer">

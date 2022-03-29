@@ -8,13 +8,41 @@
     <risprepositorylink-modal-component [content]="searchResult.relativeUrl"></risprepositorylink-modal-component>
     <downloadlink-modal-component [link]="searchResult.absoluteUrl" [fileType]="searchResult.documentType"></downloadlink-modal-component>
   </h6>
-  <div class="mb-1">
+  <div class="mb-1" *ngIf="searchResult.contents && searchResult.contents.length > 0">
     <div>
       <small class="text-muted">Inhalt</small>
     </div>
     <ul class="list-group" *ngFor="let content of searchResult.contents">
       <li class="list-group-item py-2 mb-1">
         <small [innerHTML]="content.contentText"></small>
+      </li>
+    </ul>
+  </div>
+  <div class="mb-1" *ngIf="searchResult.comments && searchResult.comments.length > 0">
+    <div>
+      <small class="text-muted">Kommentar</small>
+    </div>
+    <ul class="list-group" *ngFor="let comment of searchResult.comments">
+      <li class="list-group-item py-2 mb-1">
+        <div class="row row-cols-auto">
+          <div class="col" *ngIf="comment.id && comment.id.length > 0">
+            <small class="text-muted">Id: {{comment.id}}</small>
+          </div>
+          <div class="col" *ngIf="comment.author && comment.author.length > 0">
+            <small class="text-muted">Autor: {{comment.author}}</small>
+          </div>
+          <div class="col" *ngIf="comment.initials">
+            <small class="text-muted">Initiale: {{comment.initials}}</small>
+          </div>
+          <div class="col" *ngIf="comment.date">
+            <small class="text-muted">Datum: {{comment.date}}</small>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <small [innerHTML]="comment.commentText"></small>
+          </div>
+        </div>
       </li>
     </ul>
   </div>
