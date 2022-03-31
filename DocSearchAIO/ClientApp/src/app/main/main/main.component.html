@@ -19,7 +19,7 @@
     </div>
   </div>
 </div>
-
+<ngbd-alert-selfclosing></ngbd-alert-selfclosing>
 <div class="container" *ngIf="searchResponse | async as response">
   <div class="w-50 mx-auto d-flex justify-content-center mb-2" *ngIf="response">
     <ng-container *ngIf="response.statistics.docCount===0">
@@ -163,9 +163,7 @@
       </ng-container>
     </ng-container>
     <ng-template #noResults>
-      <ngb-alert type="warning" *ngIf="!closed" (close)="closed=true">
-        Kein Ergebnis für den Suchbegriff <strong>{{searchTerm}}</strong> gefunden
-      </ngb-alert>
+      <ngbd-alert-selfclosing [timeout]="3000" message="Keine Treffer für die Suchanfrage <b>{{response.searchResult.searchPhrase}}</b> gefunden"></ngbd-alert-selfclosing>
     </ng-template>
   </div>
 </div>

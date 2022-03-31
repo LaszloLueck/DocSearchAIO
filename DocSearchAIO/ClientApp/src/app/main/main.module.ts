@@ -8,6 +8,7 @@ import {NgbAlertModule, NgbModule, NgbPaginationModule, NgbPopoverModule} from "
 import {RisprepositorylinkComponent, RisprepositorylinkContent} from "./modals/risprepositorylink-component";
 import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-component";
 import {DocumentInformationComponent, DocumentInformationContent} from "./modals/documentInformation-component";
+import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import {DocumentInformationComponent, DocumentInformationContent} from "./modals
     DownloadLinkComponent,
     DownloadlinkContent,
     DocumentInformationComponent,
-    DocumentInformationContent
+    DocumentInformationContent,
+    NgbdAlertSelfclosing
   ],
   imports: [
     CommonModule,
@@ -33,12 +35,14 @@ import {DocumentInformationComponent, DocumentInformationContent} from "./modals
   exports: [
     RisprepositorylinkComponent,
     DownloadLinkComponent,
-    DocumentInformationComponent
+    DocumentInformationComponent,
+    NgbdAlertSelfclosing
   ],
   bootstrap: [
     RisprepositorylinkComponent,
     DownloadLinkComponent,
-    DocumentInformationComponent
+    DocumentInformationComponent,
+    NgbdAlertSelfclosing
   ]
 })
 export class MainModule { }
