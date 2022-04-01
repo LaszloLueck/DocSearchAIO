@@ -1,12 +1,13 @@
 export interface DocumentDetailResponse {
   creator: string,
-  created: string,
+  created: Date,
   lastModifiedBy: string,
-  lastModified: string,
+  lastModified: Date,
   title: string,
   subject: string,
   version: string,
   revision: string,
-  lastPrinted: string,
-  id: string
+  lastPrinted: Date,
+  id: string,
+  fileName: string
 }

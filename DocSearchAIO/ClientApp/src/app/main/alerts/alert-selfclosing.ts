@@ -11,6 +11,7 @@ export class NgbdAlertSelfclosing implements OnInit{
   @ViewChild('selfClosingAlert', {static: false}) selfClosingAlert!: NgbAlert;
 
   ngOnInit(): void {
-    setTimeout(() => this.selfClosingAlert.close(), this.timeout);
+    if(this.message)
+      setTimeout(() => this.selfClosingAlert.close(), this.timeout);
   }
 }

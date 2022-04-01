@@ -29,7 +29,7 @@ export class DocumentInformationComponent {
   constructor(private modalService: NgbModal, private documentDetailService: DocumentdetailService) {}
 
   open():void {
-    const modalRef = this.modalService.open(DocumentInformationContent, {size: 'lg'});
+    const modalRef = this.modalService.open(DocumentInformationContent, {size: 'xl'});
     modalRef.componentInstance.informationId = this.informationId;
     modalRef.componentInstance.documentDetailResponse = this.fetchData(this.informationId);
   }

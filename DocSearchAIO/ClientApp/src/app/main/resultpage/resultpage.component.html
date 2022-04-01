@@ -35,7 +35,7 @@
             <small class="text-muted">Initiale: {{comment.initials}}</small>
           </div>
           <div class="col" *ngIf="comment.date">
-            <small class="text-muted">Datum: {{comment.date}}</small>
+            <small class="text-muted">Datum: {{comment.date | date:'dd.MM.yyyy hh:mm:ss '}}</small>
           </div>
         </div>
         <div class="row">
@@ -45,6 +45,11 @@
         </div>
       </li>
     </ul>
+  </div>
+  <div class="mb-1">
+    <div>
+      <small class="text-muted">Letzte Indexierung: {{searchResult.processTime | date:'dd.MM.yyyy hh:mm:ss '}} | Id: {{searchResult.id}}</small>
+    </div>
   </div>
 </div>
 

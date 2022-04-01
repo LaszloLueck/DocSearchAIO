@@ -45,15 +45,15 @@ namespace DocSearchAIO.DocSearch.Services
                             source.Id = hit.Id;
                             return source;
                         },
-                        () => new DocumentDetailModel(string.Empty, string.Empty, string.Empty, string.Empty,
-                            string.Empty, string.Empty, string.Empty, string.Empty, string.Empty)
+                        () => new DocumentDetailModel(string.Empty, new DateTime(1970,01,01,0,0,0), string.Empty, new DateTime(1970,01,01,0,0,0),
+                            string.Empty, string.Empty, string.Empty, string.Empty, new DateTime(1970,01,01,0,0,0), string.Empty, new DateTime(1970,01,01,0,0,0))
                     );
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, "An error occured");
-                return new DocumentDetailModel(string.Empty, string.Empty, string.Empty, string.Empty,
-                    string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+                return new DocumentDetailModel(string.Empty, new DateTime(1970,01,01,0,0,0), string.Empty, new DateTime(1970,01,01,0,0,0),
+                    string.Empty, string.Empty, string.Empty, string.Empty, new DateTime(1970,01,01,0,0,0), string.Empty, new DateTime(1970,01,01,0,0,0));
             }
         }
     }

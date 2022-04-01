@@ -14,7 +14,8 @@ export interface SearchResult {
   contents: Content[],
   comments: Comment[],
   relevance: number,
-  programIcon: string
+  programIcon: string,
+  processTime: Date
 }
 
 export interface Content {

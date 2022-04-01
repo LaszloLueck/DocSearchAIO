@@ -7,7 +7,8 @@ namespace DocSearchAIO.DocSearch.TOs
 {
     public record DoSearchResultContainer(
         [property: JsonPropertyName("relativeUrl")] string RelativeUrl, 
-        [property: JsonPropertyName("id")] string Id, 
+        [property: JsonPropertyName("id")] string Id,
+        [property: JsonPropertyName("processTime")] DateTime ProcessTime,
         [property: JsonPropertyName("absoluteUrl")] string AbsoluteUrl, 
         [property: JsonPropertyName("documentType")] string DocumentType
         )
@@ -18,6 +19,6 @@ namespace DocSearchAIO.DocSearch.TOs
         [property: JsonPropertyName("programIcon")] public string ProgramIcon { get; set; } = string.Empty;
 
         public static implicit operator DoSearchResultContainer(ElasticDocument document) =>
-            new(document.UriFilePath, document.Id, document.OriginalFilePath, document.ContentType);
+            new(document.UriFilePath, document.Id,document.ProcessTime, document.OriginalFilePath, document.ContentType);
     }
 }
