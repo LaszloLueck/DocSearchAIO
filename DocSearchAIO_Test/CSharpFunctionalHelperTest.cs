@@ -11,268 +11,267 @@ using DocSearchAIO.Utilities;
 using FluentAssertions;
 using Xunit;
 
-namespace DocSearchAIO_Test
+namespace DocSearchAIO_Test;
+
+public class CSharpFunctionalHelperTest
 {
-    public class CSharpFunctionalHelperTest
+    [Fact]
+    public void Match_Test_With_KeyValuePair_Deconstruction_On_Some_And_Return_Value()
     {
-        [Fact]
-        public void Match_Test_With_KeyValuePair_Deconstruction_On_Some_And_Return_Value()
-        {
-            var tValue =
-                Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
+        var tValue =
+            Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
 
-            var returnValue = tValue.Match(
-                (intValue, stringValue) => (intValue, stringValue),
-                () => throw new FieldAccessException("value is none")
-            );
+        var returnValue = tValue.Match(
+            (intValue, stringValue) => (intValue, stringValue),
+            () => throw new FieldAccessException("value is none")
+        );
 
-            returnValue.Item1.Should().Be(42);
-            returnValue.Item2.Should().Be("Matrix");
-        }
-
-        [Fact]
-        public void Match_Test_With_KeyValuePair_Deconstruction_On_None_And_Return_None_Value()
-        {
-            var tValue = Maybe<KeyValuePair<int, string>>.None;
-            var returnValue = tValue.Match(
-                (_, _) => throw new FieldAccessException("value is none"),
-                () => (-1, "No Matrix")
-            );
-
-            returnValue.Item1.Should().Be(-1);
-            returnValue.Item2.Should().Be("No Matrix");
-        }
-
-        [Fact]
-        public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_Some()
-        {
-            var tValue =
-                Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
-
-            tValue.Match(
-                (intValue, stringValue) =>
-                {
-                    intValue.Should().Be(42);
-                    stringValue.Should().Be("Matrix");
-                },
-                () => throw new FieldAccessException("value is none")
-            );
-        }
-
-        [Fact]
-        public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_None()
-        {
-            var tValue = Maybe<KeyValuePair<int, string>>.None;
-
-            tValue.Match(
-                (_, _) => throw new FieldAccessException("value should be none"),
-                () => Assert.True(true)
-            );
-        }
-
-        [Fact]
-        public void Check_if_a_dictionary_contains_key_and_process_the_result()
-        {
-            var kv1 = new KeyValuePair<int, string>(1, "A");
-            var kv2 = new KeyValuePair<int, string>(2, "B");
-            IDictionary<int, string> tDictionary = new Dictionary<int, string>();
-            tDictionary.Add(kv1);
-            tDictionary.Add(kv2);
-
-            tDictionary.DictionaryKeyExistsAction(1, (intKey, stringValue) =>
-            {
-                1.Should().Be(intKey);
-                "A".Should().Be(stringValue);
-            });
-        }
-
-        [Fact]
-        public void Check_if_a_dictionary_contains_not_a_key_and_do_nothing()
-        {
-            var kv1 = new KeyValuePair<int, string>(1, "A");
-            var kv2 = new KeyValuePair<int, string>(2, "B");
-            IDictionary<int, string> tDictionary = new Dictionary<int, string>();
-            tDictionary.Add(kv1);
-            tDictionary.Add(kv2);
-
-            tDictionary.DictionaryKeyExistsAction(3, (_, _) => throw new FieldAccessException("value should be none"));
-
-            Assert.True(true);
-        }
-
-        [Fact]
-        public async Task Check_WhenAll_Function()
-        {
-            var taskA = Task.Run(() => "A");
-            var taskB = Task.Run(() => "B");
-            var taskC = Task.Run(() => "C");
-
-            var testList = new List<Task<string>> { taskA, taskB, taskC };
-
-            var resultList = await testList.WhenAll();
-            var result = string.Join(" ", resultList);
-            "A B C".Should().Match(result);
-        }
-
-        [Fact]
-        public void Check_IfTrueFalse_of_any_way()
-        {
-            var retVal = true.IfTrueFalse(() => throw new FieldAccessException("The expected result should be true"),
-                () => true);
-
-            Assert.True(retVal);
-        }
-
-        [Fact]
-        public void Create_a_dictionary_from_IEnumerable()
-        {
-            var list = new List<KeyValuePair<string, string>>
-                { KeyValuePair.Create("a", "a"), KeyValuePair.Create("b", "b") };
-
-            var dic = list.ToDictionary();
-
-            dic.Keys.Count.Should().Be(2);
-            dic.Keys.First().Should().Be("a");
-            dic.Keys.Last().Should().Be("b");
-        }
-
-        [Fact]
-        public void Resolve_Nullable_With_Value()
-        {
-            var toTest = "the quick brown fox jumps over the lazy dog";
-#nullable enable
-            static string GenerateNullable(string toTest)
-            {
-                return toTest;
-            }
-#nullable disable
-
-            var result = GenerateNullable(toTest).ResolveNullable("alternative", (a, _) => a);
-
-            result.Should().Be(toTest);
-        }
-
-        [Fact]
-        public void Resolve_Nullable_With_Alternative()
-        {
-#nullable enable
-            static string? GenerateNullable()
-            {
-                return null;
-            }
-#nullable disable
-
-            var result = GenerateNullable().ResolveNullable("alternative", (a, _) => a);
-
-            result.Should().Be("alternative");
-        }
-
-        [Fact]
-        public void Filter_Maybe_None_from_IEnumerable_wrapped_on_Source()
-        {
-            var materializer = ActorMaterializer.Create(ActorSystem.Create("testActorsystem"));
-            IEnumerable<Maybe<int>> list = new[]
-                { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
-
-            Source<IEnumerable<Maybe<int>>, NotUsed> source = Source.From(new List<IEnumerable<Maybe<int>>> { list });
-
-            var result = source
-                .WithMaybeFilter()
-                .RunWith(Sink.Seq<IEnumerable<int>>(), materializer)
-                .Result
-                .SelectMany(x => x);
-
-            materializer.Dispose();
-
-            result.Count().Should().Be(3);
-            result.First().Should().Be(8);
-            result.Last().Should().Be(1);
-        }
-
-        [Fact]
-        public void Get_element_from_Dictionary_and_process_an_action()
-        {
-            var dic = new List<KeyValuePair<int, int>>
-                { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
-
-            var result = dic.SelectKv((k, v) => k + v);
-
-            result.Count().Should().Be(3);
-            result.First().Should().Be(2);
-            result.Last().Should().Be(3);
-        }
-
-        [Fact]
-        public void Get_element_from_List_of_tuples_and_process_an_action()
-        {
-            var dic = new List<Tuple<int, int>> { Tuple.Create(1, 1), Tuple.Create(2, 2), Tuple.Create(0, 3) };
-
-            var result = dic.SelectTuple((k, v) => k + v);
-
-            result.Count().Should().Be(3);
-            result.First().Should().Be(2);
-            result.Last().Should().Be(3);
-        }
-
-        [Fact]
-        public void Filter_out_Maybe_None_from_IEnumerable()
-        {
-            IEnumerable<Maybe<int>> list = new[]
-                { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
-
-            var result = list.Values();
-
-
-            result.Count().Should().Be(3);
-            result.First().Should().Be(8);
-            result.Last().Should().Be(1);
-        }
-
-        [Fact]
-        public void Test_ForEach_on_KeyValuePair()
-        {
-            IEnumerable<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>
-                { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(3, 3) };
-
-            var result = 0;
-
-            list.ForEach((k, v) => { result += k; });
-
-            result.Should().Be(6);
-        }
-
-        [Fact]
-        public void Test_ForEach_on_Tuple()
-        {
-            IEnumerable<(int, int)> list = new List<(int, int)>
-                { (1, 1), (2, 2), (3, 3) };
-
-            var result = 0;
-            list.ForEach((t1, t2) => { result += t1; });
-
-            result.Should().Be(6);
-        }
-
-        [Fact]
-        public void Test_IfTrueFalse_with_positive_value_and_return_value()
-        {
-            var result = true.IfTrueFalse(
-                () => throw new FieldAccessException("The expected result should be true"),
-                () => "trueValue");
-
-            "trueValue".Should().Be(result);
-        }
-
-        [Fact]
-        public void Test_IfTrueFalse_with_negative_value_and_return_value()
-        {
-            var result = false.IfTrueFalse(
-                () => "falseValue",
-                () => throw new FieldAccessException("The expected result should be false")
-            );
-
-            "falseValue".Should().Be(result);
-        }
-
+        returnValue.Item1.Should().Be(42);
+        returnValue.Item2.Should().Be("Matrix");
     }
+
+    [Fact]
+    public void Match_Test_With_KeyValuePair_Deconstruction_On_None_And_Return_None_Value()
+    {
+        var tValue = Maybe<KeyValuePair<int, string>>.None;
+        var returnValue = tValue.Match(
+            (_, _) => throw new FieldAccessException("value is none"),
+            () => (-1, "No Matrix")
+        );
+
+        returnValue.Item1.Should().Be(-1);
+        returnValue.Item2.Should().Be("No Matrix");
+    }
+
+    [Fact]
+    public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_Some()
+    {
+        var tValue =
+            Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
+
+        tValue.Match(
+            (intValue, stringValue) =>
+            {
+                intValue.Should().Be(42);
+                stringValue.Should().Be("Matrix");
+            },
+            () => throw new FieldAccessException("value is none")
+        );
+    }
+
+    [Fact]
+    public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_None()
+    {
+        var tValue = Maybe<KeyValuePair<int, string>>.None;
+
+        tValue.Match(
+            (_, _) => throw new FieldAccessException("value should be none"),
+            () => Assert.True(true)
+        );
+    }
+
+    [Fact]
+    public void Check_if_a_dictionary_contains_key_and_process_the_result()
+    {
+        var kv1 = new KeyValuePair<int, string>(1, "A");
+        var kv2 = new KeyValuePair<int, string>(2, "B");
+        IDictionary<int, string> tDictionary = new Dictionary<int, string>();
+        tDictionary.Add(kv1);
+        tDictionary.Add(kv2);
+
+        tDictionary.DictionaryKeyExistsAction(1, (intKey, stringValue) =>
+        {
+            1.Should().Be(intKey);
+            "A".Should().Be(stringValue);
+        });
+    }
+
+    [Fact]
+    public void Check_if_a_dictionary_contains_not_a_key_and_do_nothing()
+    {
+        var kv1 = new KeyValuePair<int, string>(1, "A");
+        var kv2 = new KeyValuePair<int, string>(2, "B");
+        IDictionary<int, string> tDictionary = new Dictionary<int, string>();
+        tDictionary.Add(kv1);
+        tDictionary.Add(kv2);
+
+        tDictionary.DictionaryKeyExistsAction(3, (_, _) => throw new FieldAccessException("value should be none"));
+
+        Assert.True(true);
+    }
+
+    [Fact]
+    public async Task Check_WhenAll_Function()
+    {
+        var taskA = Task.Run(() => "A");
+        var taskB = Task.Run(() => "B");
+        var taskC = Task.Run(() => "C");
+
+        var testList = new List<Task<string>> { taskA, taskB, taskC };
+
+        var resultList = await testList.WhenAll();
+        var result = string.Join(" ", resultList);
+        "A B C".Should().Match(result);
+    }
+
+    [Fact]
+    public void Check_IfTrueFalse_of_any_way()
+    {
+        var retVal = true.IfTrueFalse(() => throw new FieldAccessException("The expected result should be true"),
+            () => true);
+
+        Assert.True(retVal);
+    }
+
+    [Fact]
+    public void Create_a_dictionary_from_IEnumerable()
+    {
+        var list = new List<KeyValuePair<string, string>>
+            { KeyValuePair.Create("a", "a"), KeyValuePair.Create("b", "b") };
+
+        var dic = list.ToDictionary();
+
+        dic.Keys.Count.Should().Be(2);
+        dic.Keys.First().Should().Be("a");
+        dic.Keys.Last().Should().Be("b");
+    }
+
+    [Fact]
+    public void Resolve_Nullable_With_Value()
+    {
+        var toTest = "the quick brown fox jumps over the lazy dog";
+#nullable enable
+        static string GenerateNullable(string toTest)
+        {
+            return toTest;
+        }
+#nullable disable
+
+        var result = GenerateNullable(toTest).ResolveNullable("alternative", (a, _) => a);
+
+        result.Should().Be(toTest);
+    }
+
+    [Fact]
+    public void Resolve_Nullable_With_Alternative()
+    {
+#nullable enable
+        static string? GenerateNullable()
+        {
+            return null;
+        }
+#nullable disable
+
+        var result = GenerateNullable().ResolveNullable("alternative", (a, _) => a);
+
+        result.Should().Be("alternative");
+    }
+
+    [Fact]
+    public void Filter_Maybe_None_from_IEnumerable_wrapped_on_Source()
+    {
+        var materializer = ActorMaterializer.Create(ActorSystem.Create("testActorsystem"));
+        IEnumerable<Maybe<int>> list = new[]
+            { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+
+        Source<IEnumerable<Maybe<int>>, NotUsed> source = Source.From(new List<IEnumerable<Maybe<int>>> { list });
+
+        var result = source
+            .WithMaybeFilter()
+            .RunWith(Sink.Seq<IEnumerable<int>>(), materializer)
+            .Result
+            .SelectMany(x => x);
+
+        materializer.Dispose();
+
+        result.Count().Should().Be(3);
+        result.First().Should().Be(8);
+        result.Last().Should().Be(1);
+    }
+
+    [Fact]
+    public void Get_element_from_Dictionary_and_process_an_action()
+    {
+        var dic = new List<KeyValuePair<int, int>>
+            { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
+
+        var result = dic.SelectKv((k, v) => k + v);
+
+        result.Count().Should().Be(3);
+        result.First().Should().Be(2);
+        result.Last().Should().Be(3);
+    }
+
+    [Fact]
+    public void Get_element_from_List_of_tuples_and_process_an_action()
+    {
+        var dic = new List<Tuple<int, int>> { Tuple.Create(1, 1), Tuple.Create(2, 2), Tuple.Create(0, 3) };
+
+        var result = dic.SelectTuple((k, v) => k + v);
+
+        result.Count().Should().Be(3);
+        result.First().Should().Be(2);
+        result.Last().Should().Be(3);
+    }
+
+    [Fact]
+    public void Filter_out_Maybe_None_from_IEnumerable()
+    {
+        IEnumerable<Maybe<int>> list = new[]
+            { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+
+        var result = list.Values();
+
+
+        result.Count().Should().Be(3);
+        result.First().Should().Be(8);
+        result.Last().Should().Be(1);
+    }
+
+    [Fact]
+    public void Test_ForEach_on_KeyValuePair()
+    {
+        IEnumerable<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>
+            { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(3, 3) };
+
+        var result = 0;
+
+        list.ForEach((k, v) => { result += k; });
+
+        result.Should().Be(6);
+    }
+
+    [Fact]
+    public void Test_ForEach_on_Tuple()
+    {
+        IEnumerable<(int, int)> list = new List<(int, int)>
+            { (1, 1), (2, 2), (3, 3) };
+
+        var result = 0;
+        list.ForEach((t1, t2) => { result += t1; });
+
+        result.Should().Be(6);
+    }
+
+    [Fact]
+    public void Test_IfTrueFalse_with_positive_value_and_return_value()
+    {
+        var result = true.IfTrueFalse(
+            () => throw new FieldAccessException("The expected result should be true"),
+            () => "trueValue");
+
+        "trueValue".Should().Be(result);
+    }
+
+    [Fact]
+    public void Test_IfTrueFalse_with_negative_value_and_return_value()
+    {
+        var result = false.IfTrueFalse(
+            () => "falseValue",
+            () => throw new FieldAccessException("The expected result should be false")
+        );
+
+        "falseValue".Should().Be(result);
+    }
+
 }

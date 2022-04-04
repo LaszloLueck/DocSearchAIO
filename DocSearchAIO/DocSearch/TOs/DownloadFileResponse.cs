@@ -1,4 +1,3 @@
-﻿namespace DocSearchAIO.DocSearch.TOs
-{
-    public record DownloadFileResponse(Stream DownloadFileStream, string ReturnFileName, string ContentType);
-}
+﻿namespace DocSearchAIO.DocSearch.TOs;
+
+public record DownloadFileResponse(Stream DownloadFileStream, string ReturnFileName, string ContentType);

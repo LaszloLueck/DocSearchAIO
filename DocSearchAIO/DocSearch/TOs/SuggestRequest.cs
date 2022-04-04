@@ -1,4 +1,3 @@
-namespace DocSearchAIO.DocSearch.TOs
-{
-    public record SuggestRequest(string SearchPhrase);
-}
+namespace DocSearchAIO.DocSearch.TOs;
+
+public record SuggestRequest(string SearchPhrase);

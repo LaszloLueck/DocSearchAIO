@@ -1,7 +1,6 @@
-namespace DocSearchAIO.Classes
+namespace DocSearchAIO.Classes;
+
+public class MsgElasticDocument : ElasticDocument
 {
-    public class MsgElasticDocument : ElasticDocument
-    {
         
-    }
 }

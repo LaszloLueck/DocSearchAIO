@@ -1,5 +1,3 @@
-﻿namespace DocSearchAIO.DocSearch.TOs
-{
-    public record JobStatusRequest(string JobName, string GroupId);
+﻿namespace DocSearchAIO.DocSearch.TOs;
 
-}
+public record JobStatusRequest(string JobName, string GroupId);

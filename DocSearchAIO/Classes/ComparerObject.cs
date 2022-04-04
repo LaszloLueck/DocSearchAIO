@@ -1,4 +1,3 @@
-namespace DocSearchAIO.Classes
-{
-    public record ComparerObject(string PathHash, string DocumentHash, string OriginalPath);
-}
+namespace DocSearchAIO.Classes;
+
+public record ComparerObject(string PathHash, string DocumentHash, string OriginalPath);

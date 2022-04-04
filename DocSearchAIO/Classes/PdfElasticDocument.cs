@@ -1,10 +1,9 @@
 ﻿using Nest;
 
-namespace DocSearchAIO.Classes
+namespace DocSearchAIO.Classes;
+
+public class PdfElasticDocument : ElasticDocument
 {
-    public class PdfElasticDocument : ElasticDocument
-    {
-        [Number(Name = "pageCount")] public int PageCount { get; set; }
+    [Number(Name = "pageCount")] public int PageCount { get; set; }
         
-    }
 }

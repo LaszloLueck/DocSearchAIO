@@ -1,14 +1,13 @@
 ﻿using DocSearchAIO.Scheduler;
 
-namespace DocSearchAIO.DocSearch.TOs
+namespace DocSearchAIO.DocSearch.TOs;
+
+public record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
+    string JobName)
 {
-    public record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
-        string JobName)
-    {
-        public JobState JobState { get; set; } = JobState.Undefined;
+    public JobState JobState { get; set; } = JobState.Undefined;
         
-        public static implicit operator AdministrationActionTriggerModel(SchedulerTriggerStatisticElement statisticElement) =>
-            new(statisticElement.TriggerName, statisticElement.GroupName, statisticElement.TriggerState,
-                statisticElement.JobName);
-    }
+    public static implicit operator AdministrationActionTriggerModel(SchedulerTriggerStatisticElement statisticElement) =>
+        new(statisticElement.TriggerName, statisticElement.GroupName, statisticElement.TriggerState,
+            statisticElement.JobName);
 }

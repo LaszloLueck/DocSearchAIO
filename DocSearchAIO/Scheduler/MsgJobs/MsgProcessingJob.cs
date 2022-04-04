@@ -1,12 +1,11 @@
 using Quartz;
 
-namespace DocSearchAIO.Scheduler.MsgJobs
+namespace DocSearchAIO.Scheduler.MsgJobs;
+
+public class MsgProcessingJob : IJob
 {
-    public class MsgProcessingJob : IJob
+    public Task Execute(IJobExecutionContext context)
     {
-        public Task Execute(IJobExecutionContext context)
-        {
-            throw new System.NotImplementedException();
-        }
+        throw new System.NotImplementedException();
     }
 }

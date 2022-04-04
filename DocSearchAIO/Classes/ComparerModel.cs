@@ -3,193 +3,192 @@ using System.Diagnostics;
 using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
 
-namespace DocSearchAIO.Classes
+namespace DocSearchAIO.Classes;
+
+public abstract class ComparerModel
 {
-    public abstract class ComparerModel
+    private readonly ILogger? _logger;
+
+    protected abstract string DerivedModelName { get; }
+
+    private readonly string _comparerDirectory;
+
+    private string ComparerFileName => $"cmp_{DerivedModelName}.cmp";
+
+    public string ComparerFilePath => $"{_comparerDirectory}/{ComparerFileName}";
+
+    private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects = new();
+
+    protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
     {
-        private readonly ILogger? _logger;
+        _logger = loggerFactory.CreateLogger<ComparerModel>();
+        _comparerDirectory = comparerDirectory;
+        CheckAndCreateComparerDirectory();
+        _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath, _logger);
+    }
 
-        protected abstract string DerivedModelName { get; }
+    protected ComparerModel(string comparerDirectory)
+    {
+        _comparerDirectory = comparerDirectory;
+    }
 
-        private readonly string _comparerDirectory;
+    public void CleanDictionaryAndRemoveComparerFile()
+    {
+        _logger?.LogInformation("cleanup comparer dictionary before removing the file");
+        _comparerObjects.Clear();
+        RemoveComparerFile();
+        CheckAndCreateComparerDirectory();
+    }
 
-        private string ComparerFileName => $"cmp_{DerivedModelName}.cmp";
+    public void RemoveComparerFile()
+    {
+        _logger?.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
+            ComparerFilePath, DerivedModelName);
+        ComparerHelper.RemoveComparerFile(ComparerFilePath);
+    }
 
-        public string ComparerFilePath => $"{_comparerDirectory}/{ComparerFileName}";
-
-        private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects = new();
-
-        protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
+    public async Task WriteAllLinesAsync()
+    {
+        _logger?.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
+        var sw = Stopwatch.StartNew();
+        try
         {
-            _logger = loggerFactory.CreateLogger<ComparerModel>();
-            _comparerDirectory = comparerDirectory;
-            CheckAndCreateComparerDirectory();
-            _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath, _logger);
+            await ComparerHelper.WriteAllLinesAsync(_comparerObjects, ComparerFilePath);
         }
-
-        protected ComparerModel(string comparerDirectory)
+        finally
         {
-            _comparerDirectory = comparerDirectory;
+            sw.Stop();
+            _logger?.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
         }
+    }
 
-        public void CleanDictionaryAndRemoveComparerFile()
-        {
-            _logger?.LogInformation("cleanup comparer dictionary before removing the file");
-            _comparerObjects.Clear();
-            RemoveComparerFile();
-            CheckAndCreateComparerDirectory();
-        }
+    private void CheckAndCreateComparerDirectory()
+    {
+        _logger?.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
+        if (!ComparerHelper.CheckIfDirectoryExists(_comparerDirectory))
+            ComparerHelper.CreateDirectory(_comparerDirectory);
+        _logger?.LogInformation("check if comparer file {GetComparerFilePath} exists", ComparerFilePath);
+        if (!ComparerHelper.CheckIfFileExists(ComparerFilePath))
+            ComparerHelper.CreateComparerFile(ComparerFilePath);
+    }
 
-        public void RemoveComparerFile()
+    public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)
+        where TModel : ElasticDocument
+    {
+        return await Task.Run(() =>
         {
-            _logger?.LogInformation("remove comparer file {GetComparerFilePath} for key {DerivedModelName}",
-                ComparerFilePath, DerivedModelName);
-            ComparerHelper.RemoveComparerFile(ComparerFilePath);
-        }
-
-        public async Task WriteAllLinesAsync()
-        {
-            _logger?.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
-            var sw = Stopwatch.StartNew();
-            try
+            var opt = document.Bind(doc =>
             {
-                await ComparerHelper.WriteAllLinesAsync(_comparerObjects, ComparerFilePath);
-            }
-            finally
-            {
-                sw.Stop();
-                _logger?.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
-            }
-        }
+                var contentHash = doc.ContentHash;
+                var pathHash = doc.Id;
+                var originalFilePath = doc.OriginalFilePath;
+                return _comparerObjects
+                    .TryGetValue(pathHash, out var comparerObject)
+                    .IfTrueFalse(
+                        () =>
+                        {
+                            var innerDoc = new ComparerObject(pathHash, contentHash, originalFilePath);
+                            _comparerObjects.AddOrUpdate(pathHash, innerDoc, (_, _) => innerDoc);
+                            return Maybe<TModel>.From(doc);
+                        },
+                        () =>
+                        {
+                            if (comparerObject == null) return Maybe<TModel>.None;
 
-        private void CheckAndCreateComparerDirectory()
-        {
-            _logger?.LogInformation("check if directory {ComparerDirectory} exists", _comparerDirectory);
-            if (!ComparerHelper.CheckIfDirectoryExists(_comparerDirectory))
-                ComparerHelper.CreateDirectory(_comparerDirectory);
-            _logger?.LogInformation("check if comparer file {GetComparerFilePath} exists", ComparerFilePath);
-            if (!ComparerHelper.CheckIfFileExists(ComparerFilePath))
-                ComparerHelper.CreateComparerFile(ComparerFilePath);
-        }
-
-        public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)
-            where TModel : ElasticDocument
-        {
-            return await Task.Run(() =>
-            {
-                var opt = document.Bind(doc =>
-                {
-                    var contentHash = doc.ContentHash;
-                    var pathHash = doc.Id;
-                    var originalFilePath = doc.OriginalFilePath;
-                    return _comparerObjects
-                        .TryGetValue(pathHash, out var comparerObject)
-                        .IfTrueFalse(
-                            () =>
-                            {
-                                var innerDoc = new ComparerObject(pathHash, contentHash, originalFilePath);
-                                _comparerObjects.AddOrUpdate(pathHash, innerDoc, (_, _) => innerDoc);
-                                return Maybe<TModel>.From(doc);
-                            },
-                            () =>
-                            {
-                                if (comparerObject == null) return Maybe<TModel>.None;
-
-                                if (comparerObject.DocumentHash == contentHash)
-                                    return Maybe<TModel>.None;
-                                var comparerObjectCopy = new ComparerObject(comparerObject.PathHash, contentHash,
-                                    comparerObject.OriginalPath);
-                                _comparerObjects.AddOrUpdate(pathHash, comparerObjectCopy,
-                                    (_, _) => comparerObjectCopy);
-                                return Maybe<TModel>.From(doc);
-                            });
-                });
-                return opt;
+                            if (comparerObject.DocumentHash == contentHash)
+                                return Maybe<TModel>.None;
+                            var comparerObjectCopy = new ComparerObject(comparerObject.PathHash, contentHash,
+                                comparerObject.OriginalPath);
+                            _comparerObjects.AddOrUpdate(pathHash, comparerObjectCopy,
+                                (_, _) => comparerObjectCopy);
+                            return Maybe<TModel>.From(doc);
+                        });
             });
-        }
+            return opt;
+        });
+    }
+}
+
+public class ComparerModelWord : ComparerModel
+{
+    protected override string DerivedModelName => GetType().Name;
+
+    public ComparerModelWord(string comparerDirectory) : base(comparerDirectory)
+    {
     }
 
-    public class ComparerModelWord : ComparerModel
+    public ComparerModelWord(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
-        protected override string DerivedModelName => GetType().Name;
+    }
+}
 
-        public ComparerModelWord(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
+public class ComparerModelPowerpoint : ComparerModel
+{
+    protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelWord(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-            comparerDirectory)
-        {
-        }
+    public ComparerModelPowerpoint(string comparerDirectory) : base(comparerDirectory)
+    {
     }
 
-    public class ComparerModelPowerpoint : ComparerModel
+    public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
-        protected override string DerivedModelName => GetType().Name;
+    }
+}
 
-        public ComparerModelPowerpoint(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
+public class ComparerModelPdf : ComparerModel
+{
+    protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-            comparerDirectory)
-        {
-        }
+    public ComparerModelPdf(string comparerDirectory) : base(comparerDirectory)
+    {
     }
 
-    public class ComparerModelPdf : ComparerModel
+    public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
-        protected override string DerivedModelName => GetType().Name;
+    }
+}
 
-        public ComparerModelPdf(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
+public class ComparerModelExcel : ComparerModel
+{
+    protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-            comparerDirectory)
-        {
-        }
+    public ComparerModelExcel(string comparerDirectory) : base(comparerDirectory)
+    {
     }
 
-    public class ComparerModelExcel : ComparerModel
+    public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
-        protected override string DerivedModelName => GetType().Name;
+    }
+}
 
-        public ComparerModelExcel(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
+public class ComparerModelMsg : ComparerModel
+{
+    protected override string DerivedModelName => GetType().Name;
 
-        public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-            comparerDirectory)
-        {
-        }
+    public ComparerModelMsg(string comparerDirectory) : base(comparerDirectory)
+    {
     }
 
-    public class ComparerModelMsg : ComparerModel
+    public ComparerModelMsg(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
-        protected override string DerivedModelName => GetType().Name;
-
-        public ComparerModelMsg(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
-
-        public ComparerModelMsg(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-            comparerDirectory)
-        {
-        }
+    }
         
-    }
+}
 
-    public class ComparerModelEml : ComparerModel
+public class ComparerModelEml : ComparerModel
+{
+    public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
     {
-        public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
-        {
-        }
-
-        public ComparerModelEml(string comparerDirectory) : base(comparerDirectory)
-        {
-        }
-
-        protected override string DerivedModelName => GetType().Name;
     }
+
+    public ComparerModelEml(string comparerDirectory) : base(comparerDirectory)
+    {
+    }
+
+    protected override string DerivedModelName => GetType().Name;
 }
