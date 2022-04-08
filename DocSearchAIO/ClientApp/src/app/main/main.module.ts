@@ -9,6 +9,8 @@ import {RisprepositorylinkComponent, RisprepositorylinkContent} from "./modals/r
 import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-component";
 import {DocumentInformationComponent, DocumentInformationContent} from "./modals/documentInformation-component";
 import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
+import {OptionModalComponent, OptionModalContent} from "./modals/optionmodal-component";
+import {LocalStorageService} from "../services/localStorageService";
 
 
 @NgModule({
@@ -21,7 +23,9 @@ import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
     DownloadlinkContent,
     DocumentInformationComponent,
     DocumentInformationContent,
-    NgbdAlertSelfclosing
+    NgbdAlertSelfclosing,
+    OptionModalComponent,
+    OptionModalContent
   ],
   imports: [
     CommonModule,
@@ -36,13 +40,18 @@ import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
     RisprepositorylinkComponent,
     DownloadLinkComponent,
     DocumentInformationComponent,
+    OptionModalComponent,
     NgbdAlertSelfclosing
   ],
   bootstrap: [
     RisprepositorylinkComponent,
     DownloadLinkComponent,
     DocumentInformationComponent,
+    OptionModalComponent,
     NgbdAlertSelfclosing
+  ],
+  providers: [
+    LocalStorageService
   ]
 })
 export class MainModule { }

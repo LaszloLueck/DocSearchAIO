@@ -1,16 +1,14 @@
-import {Inject, Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
+import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
 import {EMPTY, Observable, throwError} from "rxjs";
-import {DocumentDetailRequest} from "../interfaces/DocumentDetailRequest";
-import {DocumentDetailResponse} from "../interfaces/DocumentDetailResponse";
 import {environment} from "../../../environments/environment";
 import {catchError, take} from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
 })
-export class DocumentdetailService {
-  baseUrl: string;
+export class InitService {
   httpOptions = {
     headers: new HttpHeaders(
       {
@@ -19,19 +17,17 @@ export class DocumentdetailService {
       }
     )
   }
-  constructor(private httpClient: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
+  constructor(private httpClient: HttpClient) { }
 
-  documentDetail(documentDetailRequest: DocumentDetailRequest): Observable<DocumentDetailResponse>{
+  init(localStorageDataSet: LocalStorageDataset): Observable<LocalStorageDataset>{
     return this
       .httpClient
-      .post<DocumentDetailResponse>(`${environment.apiUrl}api/search/documentDetailData`, documentDetailRequest, this.httpOptions)
+      .post<LocalStorageDataset>(`${environment.apiUrl}api/base/init`, localStorageDataSet, this.httpOptions)
       .pipe(
         take(1),
         catchError(err => {
           console.log("An error occured");
-          this.handleError(err)
+          this.handleError(err);
           return EMPTY;
         })
       )
@@ -50,6 +46,5 @@ export class DocumentdetailService {
     // Return an observable with a user-facing error message.
     return throwError(() => new Error('Something bad happened; please try again later.'));
   }
-
 
 }

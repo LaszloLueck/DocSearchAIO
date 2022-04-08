@@ -5,23 +5,48 @@ import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {Observable, Subscription} from "rxjs";
 import {SearchService} from "../services/search.service";
 import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
+import {InitService} from "../services/init.service";
+import {LocalStorageService} from "../../services/localStorageService";
+import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
+import {LocalStorageDefaultDataset} from "../interfaces/LocalStorageDefaultDataset";
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss']
 })
-export class MainComponent implements OnInit {
+export class MainComponent implements OnInit, OnDestroy {
   docCount!: number;
   searchResponse!: Observable<SearchResponse>;
   searchTerm!: string;
   closed: boolean = false;
+  localStorageDataset!: LocalStorageDataset
+  localStorageSubscription!: Subscription
 
-  constructor(private commonDataService: CommonDataService, private doSearchService: SearchService) { }
+  constructor(private commonDataService: CommonDataService, private doSearchService: SearchService, private initService: InitService, private localStorageService: LocalStorageService) { }
+
+  ngOnDestroy(): void {
+    if(this.localStorageSubscription)
+      this.localStorageSubscription.unsubscribe()
+  }
+
 
 
   ngOnInit(): void {
     this.commonDataService.sendData('Startseite');
+    if(!this.localStorageService.getData()){
+      this.localStorageDataset = new LocalStorageDefaultDataset();
+    } else {
+      this.localStorageDataset = this.localStorageService.getData()??new LocalStorageDefaultDataset();
+    }
+    this.localStorageSubscription = this
+      .initService
+      .init(this.localStorageDataset)
+      .subscribe(dataset => {
+          this.localStorageDataset = dataset;
+          this.localStorageService.setData(dataset);
+        }
+      );
   }
 
   getNgForCounter(count: number): number[] {
@@ -41,7 +66,6 @@ export class MainComponent implements OnInit {
   }
 
   doSearch(page: number, currentPageSize: number): void{
-    //const from = this.response?.searchResult ? this.response.searchResult.currentPageSize * page : 0;
     const from = currentPageSize * page;
     if(!this.searchTerm || this.searchTerm.length == 0)
       this.searchTerm = '*';
@@ -51,13 +75,13 @@ export class MainComponent implements OnInit {
     const searchRequest: DoSearchRequest = {
       searchPhrase: this.searchTerm,
       from: from,
-      size: 50,
-      filterWord: true,
-      filterExcel: true,
-      filterPowerpoint: true,
-      filterPdf: true,
-      filterMsg: true,
-      filterEml: true
+      size: this.localStorageDataset.itemsPerPage,
+      filterWord: this.localStorageDataset.wordFilterActive && this.localStorageDataset.filterWord,
+      filterExcel: this.localStorageDataset.excelFilterActive && this.localStorageDataset.filterExcel,
+      filterPowerpoint: this.localStorageDataset.powerpointFilterActive && this.localStorageDataset.filterPowerpoint,
+      filterPdf: this.localStorageDataset.pdfFilterActive && this.localStorageDataset.filterPdf,
+      filterMsg: this.localStorageDataset.msgFilterActive && this.localStorageDataset.filterMsg,
+      filterEml: this.localStorageDataset.emlFilterActive && this.localStorageDataset.filterEml
     }
     this.searchResponse = this
       .doSearchService
