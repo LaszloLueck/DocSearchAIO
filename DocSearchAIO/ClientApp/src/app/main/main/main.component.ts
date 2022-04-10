@@ -4,7 +4,6 @@ import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {Observable, Subscription} from "rxjs";
 import {SearchService} from "../services/search.service";
-import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
 import {InitService} from "../services/init.service";
 import {LocalStorageService} from "../../services/localStorageService";
 import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
@@ -30,10 +29,12 @@ export class MainComponent implements OnInit, OnDestroy {
       this.localStorageSubscription.unsubscribe()
   }
 
-
-
   ngOnInit(): void {
     this.commonDataService.sendData('Startseite');
+    this.init();
+  }
+
+  init(): void {
     if(!this.localStorageService.getData()){
       this.localStorageDataset = new LocalStorageDefaultDataset();
     } else {
