@@ -1,16 +1,8 @@
-import {Component, Input, OnInit} from "@angular/core";
+import {Component, Input} from "@angular/core";
 import {NgbActiveModal, NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
 import {LocalStorageService} from "../../services/localStorageService";
-
-export enum DocumentType {
-  Word,
-  Excel,
-  Powerpoint,
-  Pdf,
-  Eml,
-  Msg,
-}
+import {DocumentType} from "../enums/document-type";
 
 @Component({
   selector: 'optionmodal-content',
@@ -18,9 +10,10 @@ export enum DocumentType {
 })
 export class OptionModalContent {
   @Input() localStorageDataSet!: LocalStorageDataset;
-  docType = DocumentType;
+  docType: typeof DocumentType;
 
   constructor(public activeModal: NgbActiveModal, private localStorageService: LocalStorageService) {
+    this.docType = DocumentType;
   }
 
   disableItemWhileCondition(docType: DocumentType): boolean {
