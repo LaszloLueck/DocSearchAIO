@@ -16,7 +16,7 @@ import {DocumentInformationComponent, DocumentInformationContent} from "./modals
 import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
 import {OptionModalComponent, OptionModalContent} from "./modals/optionmodal-component";
 import {LocalStorageService} from "../services/localStorageService";
-
+import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +30,8 @@ import {LocalStorageService} from "../services/localStorageService";
     DocumentInformationContent,
     NgbdAlertSelfclosing,
     OptionModalComponent,
-    OptionModalContent
+    OptionModalContent,
+    OffcanvasComponent
   ],
   imports: [
     CommonModule,
