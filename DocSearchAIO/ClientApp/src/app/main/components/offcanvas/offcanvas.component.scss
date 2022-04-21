@@ -20,11 +20,56 @@
   transition: 0.3s;
 }
 
+.sidenav-option-in {
+  width: 15%;
+  box-shadow: 10px 0 15px 0 #bebebe;
+  border-right: #bebebe 1px solid;
+  transition-delay: 0s;
+}
+
+.sidenav-option-out {
+  width: 0;
+  box-shadow: none;
+  border-right: none;
+  transition-delay: 0.5s;
+}
+
+.fade-out {
+  animation-name: fadeOutOpacity;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+  animation-duration: 0.5s;
+  opacity: 1;
+}
+
+@keyframes fadeOutOpacity {
+  100% {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation-delay: 0.5s;
+  animation-name: fadeInOpacity;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  animation-duration: 0.5s;
+  opacity: 0;
+}
+
+@keyframes fadeInOpacity {
+  100% {
+    opacity: 1;
+  }
+}
+
 .sidenav a:hover {
   color: #f1f1f1;
 }
 
-.sidenav .closebtn {
+.sidenav .closeButton {
   position: absolute;
   top: 0;
   right: 0;

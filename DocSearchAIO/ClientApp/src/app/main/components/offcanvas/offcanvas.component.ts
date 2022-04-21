@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
+import {LocalStorageDataset} from "../../interfaces/LocalStorageDataset";
 
 @Component({
   selector: 'app-offcanvas',
@@ -7,7 +8,7 @@ import { Component, OnInit } from '@angular/core';
 })
 export class OffcanvasComponent implements OnInit {
   isOpen: boolean = false;
-
+  @Input() localStorageDataSet!: LocalStorageDataset;
 
   constructor() { }
 
@@ -17,10 +18,13 @@ export class OffcanvasComponent implements OnInit {
   openNav(): void {
     if(!this.isOpen) {
       if (document.getElementById('mySidenav')) {
-        document.getElementById("mySidenav")!.style.width = "15%";
-        document.getElementById("mySidenav")!.style.boxShadow = "10px 0 15px 0 #bebebe";
-        document.getElementById("mySidenav")!.style.borderRight = "#bebebe 1px solid";
+        document.getElementById("mySidenav")!.classList.add("sidenav-option-in");
+        document.getElementById("mySidenav")!.classList.remove("sidenav-option-out")
       }
+
+      if(document.getElementById("fader"))
+        document.getElementById("fader")!.className = "fade-in";
+
       if (document.getElementById("main"))
         document.getElementById("main")!.style.marginLeft = "15%";
     }
@@ -31,10 +35,12 @@ export class OffcanvasComponent implements OnInit {
 
   closeNav(): void {
     if(document.getElementById("mySidenav")) {
-      document.getElementById("mySidenav")!.style.width = "0";
-      document.getElementById("mySidenav")!.style.boxShadow = "none";
-      document.getElementById("mySidenav")!.style.borderRight = "none";
+      document.getElementById("mySidenav")!.classList.add("sidenav-option-out");
+      document.getElementById("mySidenav")!.classList.remove("sidenav-option-in");
     }
+    if(document.getElementById("fader"))
+      document.getElementById("fader")!.className="fade-out";
+
     if(document.getElementById("main"))
       document.getElementById("main")!.style.marginLeft = "0";
 
