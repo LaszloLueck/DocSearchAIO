@@ -71,8 +71,15 @@
 
 .sidenav .closeButton {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 0.5em;
+  right: 0.5em;
+  font-size: 14px;
+  margin-left: 0;
+}
+
+.sidenav .searchButton {
+  position: absolute;
+  right: 0.5em;
   font-size: 14px;
   margin-left: 0;
 }

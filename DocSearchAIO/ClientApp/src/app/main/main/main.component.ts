@@ -35,6 +35,10 @@ export class MainComponent implements OnInit, OnDestroy {
   }
 
   init(): void {
+    if(document.getElementById("searchField"))
+      document.getElementById("searchField")!.focus();
+
+
     if(!this.localStorageService.getData()){
       this.localStorageDataset = new LocalStorageDefaultDataset();
     } else {
@@ -52,6 +56,10 @@ export class MainComponent implements OnInit, OnDestroy {
 
   getNgForCounter(count: number): number[] {
     return new Array(count);
+  }
+
+  handleExternalSearch(eventHandler: any){
+    this.doSearch(0, this.localStorageDataset.itemsPerPage);
   }
 
   getCurrentPageNumber(navigation: NavigationResult): number {

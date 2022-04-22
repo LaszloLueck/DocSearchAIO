@@ -5,14 +5,14 @@
   <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mb-2">
     <div class="input-group">
       <span class="input-group-text" id="basic-addon1"><em class="bi bi-search"></em></span>
-      <input class="form-control" id="searchField" placeholder="Suchtext" type="text" [(ngModel)]="searchTerm">
+      <input class="form-control" id="searchField" placeholder="Suchtext" type="text" (keydown.enter)="doSearch(0, localStorageDataset.itemsPerPage)" [(ngModel)]="searchTerm">
       <div class="ms-2">
-        <button class="btn btn-secondary" type="button" (click)="doSearch(0, 50)">
+        <button class="btn btn-secondary" type="button" (click)="doSearch(0, localStorageDataset.itemsPerPage)">
           <em class="bi bi-search"></em> Suchen
         </button>
       </div>
       <div class="ms-2">
-        <app-offcanvas [localStorageDataSet]="localStorageDataset"></app-offcanvas>
+        <app-offcanvas (doSearchEvent)="handleExternalSearch($event)" [localStorageDataSet]="localStorageDataset"></app-offcanvas>
       </div>
     </div>
   </div>
