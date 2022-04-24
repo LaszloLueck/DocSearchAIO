@@ -14,7 +14,6 @@ import {RisprepositorylinkComponent, RisprepositorylinkContent} from "./modals/r
 import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-component";
 import {DocumentInformationComponent, DocumentInformationContent} from "./modals/documentInformation-component";
 import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
-import {OptionModalComponent, OptionModalContent} from "./modals/optionmodal-component";
 import {LocalStorageService} from "../services/localStorageService";
 import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
 
@@ -29,8 +28,6 @@ import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
     DocumentInformationComponent,
     DocumentInformationContent,
     NgbdAlertSelfclosing,
-    OptionModalComponent,
-    OptionModalContent,
     OffcanvasComponent
   ],
   imports: [
@@ -47,14 +44,12 @@ import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
     RisprepositorylinkComponent,
     DownloadLinkComponent,
     DocumentInformationComponent,
-    OptionModalComponent,
     NgbdAlertSelfclosing
   ],
   bootstrap: [
     RisprepositorylinkComponent,
     DownloadLinkComponent,
     DocumentInformationComponent,
-    OptionModalComponent,
     NgbdAlertSelfclosing
   ],
   providers: [

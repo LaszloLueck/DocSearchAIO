@@ -101,20 +101,6 @@ public class CSharpFunctionalHelperTest
     }
 
     [Fact]
-    public async Task Check_WhenAll_Function()
-    {
-        var taskA = Task.Run(() => "A");
-        var taskB = Task.Run(() => "B");
-        var taskC = Task.Run(() => "C");
-
-        var testList = new List<Task<string>> { taskA, taskB, taskC };
-
-        var resultList = await testList.WhenAll();
-        var result = string.Join(" ", resultList);
-        "A B C".Should().Match(result);
-    }
-
-    [Fact]
     public void Check_IfTrueFalse_of_any_way()
     {
         var retVal = true.IfTrueFalse(() => throw new FieldAccessException("The expected result should be true"),

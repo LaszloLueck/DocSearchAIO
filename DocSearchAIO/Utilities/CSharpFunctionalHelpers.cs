@@ -7,10 +7,6 @@ namespace DocSearchAIO.Utilities;
 
 public static class CSharpFunctionalHelpers
 {
-    [Pure]
-    public static async Task<IEnumerable<TResult>> WhenAll<TResult>(this IEnumerable<Task<TResult>> source) =>
-        await Task.WhenAll(source);
-
     public static void ForEach<TIn>(this IEnumerable<TIn> source, Action<TIn> action)
     {
         foreach (var value in source)

@@ -17,40 +17,44 @@
 
       <div class="form-check mt-2 mb-2 border-2 border-bottom border-light">
         <div class="ms-2 mt-2 mb-2">Dokumente durchsuchen</div>
-        <div class="form-check ms-2">
-          <input class="form-check-input mb-2" type="checkbox" value="" id="wordFilter"
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-2" type="checkbox" value="" id="wordFilter"
                  [(ngModel)]="localStorageDataSet.filterWord"
                  (change)="clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.wordFilterActive && localStorageDataSet.filterWord"
                  [disabled]="disableItemWhileCondition(docType.Word)">
+          <img src="assets/images/word.svg" alt="Word" style="width: 35px">
           <label class="form-check-label ms-2" for="wordFilter">Word</label>
         </div>
-        <div class="form-check ms-2">
-          <input class="form-check-input mb-2" type="checkbox" value="" id="excelFilter"
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-2" type="checkbox" value="" id="excelFilter"
                  [(ngModel)]="localStorageDataSet.filterExcel"
                  (change)="clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.excelFilterActive && localStorageDataSet.filterExcel"
                  [disabled]="disableItemWhileCondition(docType.Excel)">
+          <img src="assets/images/excel.svg" style="width: 35px" alt="Excel">
           <label class="form-check-label ms-2" for="excelFilter">
             Excel
           </label>
         </div>
-        <div class="form-check ms-2">
-          <input class="form-check-input mb-2" type="checkbox" value="" id="powerpointFilter"
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-2" type="checkbox" value="" id="powerpointFilter"
                  [(ngModel)] = "localStorageDataSet.filterPowerpoint"
                  (change) = "clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.powerpointFilterActive && localStorageDataSet.filterPowerpoint"
                  [disabled]="disableItemWhileCondition(docType.Powerpoint)">
+          <img src="assets/images/powerpoint.svg" style="width: 35px" alt="Powerpoint">
           <label class="form-check-label ms-2" for="powerpointFilter">
             Powerpoint
           </label>
         </div>
-        <div class="form-check ms-2">
-          <input class="form-check-input mb-2" type="checkbox" value="" id="pdfFilter"
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-3" type="checkbox" value="" id="pdfFilter"
                  [(ngModel)] = "localStorageDataSet.filterPdf"
                  (change)= "clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.pdfFilterActive && localStorageDataSet.filterPdf"
                  [disabled]="disableItemWhileCondition(docType.Pdf)">
+          <img src="assets/images/pdf.svg" style="width: 30px" alt="Pdf">
           <label class="form-check-label ms-2" for="pdfFilter">
             Pdf
           </label>
