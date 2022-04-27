@@ -1,10 +1,19 @@
 import {Injectable} from "@angular/core";
 import {LocalStorageDataset} from "../main/interfaces/LocalStorageDataset";
+import {Observable, of, throwError} from "rxjs";
 
 
 @Injectable()
 export class LocalStorageService {
   localStorageKey: string = 'localStorageItems';
+
+  getDataAsync(): Observable<LocalStorageDataset>{
+    const data = this.getData();
+    if(data){
+      return of(data)
+    }
+    return new Observable<LocalStorageDataset>();
+  }
 
   getData(): LocalStorageDataset | undefined {
     const returnItemAsString = localStorage.getItem(this.localStorageKey);
