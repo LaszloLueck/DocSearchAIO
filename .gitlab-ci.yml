@@ -1,4 +1,4 @@
-image: laszlo/alpine-dotnet-sdk:latest
+image: laszlo/containerruntimeglobal-build-full:latest
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
