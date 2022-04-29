@@ -30,6 +30,7 @@ tests:
 securityanalysis:
   stage: test
   script:
+    - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
 
 codeanalysis:
@@ -40,16 +41,17 @@ codeanalysis:
   cache:
     key: "${CI_JOB_NAME}"
     paths:
-      - .sonar/cache  
+      - .sonar/cache
   only:
     - merge_requests
     - master
     - develop
   script:
-      - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" /o:\"$SONAR_ORGANIZATION\" "
-      - "dotnet build"
-      - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
-      - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
+    - "RUN dotnet tool install --global dotnet-sonarscanner"
+    - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" /o:\"$SONAR_ORGANIZATION\" "
+    - "dotnet build"
+    - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
+    - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
   allow_failure: true
 
 deploy:
