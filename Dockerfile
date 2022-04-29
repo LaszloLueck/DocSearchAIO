@@ -1,4 +1,4 @@
-FROM laszlo/containerruntimeglobal-build:latest AS build-env
+FROM laszlo/containerruntimeglobal-build-full:latest AS build-env
 WORKDIR /app
 COPY ./DocSearchAIO ./
 
@@ -9,7 +9,7 @@ RUN dotnet clean
 RUN dotnet build --no-restore
 RUN dotnet publish --no-restore -c Release -o out
 
-FROM laszlo/containerruntimeglobal-runtime:latest
+FROM laszlo/containerruntimeglobal-runtime-full:latest
 WORKDIR /app
 COPY --from=build-env /app/out .
 EXPOSE 5000
