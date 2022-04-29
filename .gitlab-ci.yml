@@ -32,9 +32,6 @@ tests:
 
 securityanalysis:
   stage: test
-  cache:
-    key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
-    policy: pull
   script:
     - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
@@ -63,9 +60,6 @@ codeanalysis:
 deploy:
   stage: deploy
   image: docker:stable
-  cache:
-    key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
-    policy: pull
   services:
     - docker:dind
   variables:
