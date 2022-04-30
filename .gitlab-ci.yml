@@ -14,6 +14,7 @@ cache:
     - '$SOURCE_CODE_PATH/$OBJECTS_DIRECTORY/*.csproj.nuget.*'
     - '$NUGET_PACKAGES_DIRECTORY'
     - '$SOURCE_CODE_PATH/$CLIENT_APP_DIRECTORY/$NODE_MODULES'
+    - '.npm/'
   policy: pull-push
 
 before_script:
