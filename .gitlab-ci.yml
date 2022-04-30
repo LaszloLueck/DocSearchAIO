@@ -50,6 +50,9 @@ codeanalysis:
     - master
     - develop
   script:
+    - "apt-get update"
+    - "apt-get install -y openjdk-11-jre"
+    - "java --version"
     - "dotnet tool install --global dotnet-sonarscanner"
     - "dotnet sonarscanner begin /k:\"$SONAR_PROJECT_KEY\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" /o:\"$SONAR_ORGANIZATION\" "
     - "dotnet build"
