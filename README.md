@@ -24,6 +24,9 @@ Allright, go here and use it:
 
 `docker push laszlo/docsearchaio:latest`
 
+## And the api?
+Yes, you can write you own frontend or whatelse to use the backend. The api is fully documented with swagger / open api. You need some other backend integration? Write a controller and publish this thing. Ready. It is open source.
+
 
 ## Why CSharp and not super dooper trooper hipster language?
 - I like it very much (coding since 20 years with it)
