@@ -13,9 +13,24 @@ There is a simple main searchform (like google) and some forms for configuration
 
 Currently the ui is written in plain html, javascript (with jQuery) and css, i switch the whole thing to angular.
 
+## Running?
+Let this thing run where you want.
+
+Native everywhere where dotnet core could be run (windows, mac, linux, wsl, arm, x86, ...)
+
+Or in a docker container. You don't want to build up the whole docker stuff?
+
+Allright, go here and use it:
+
+`docker push laszlo/docsearchaio:latest`
+
+## And the api?
+Yes, you can write you own frontend or whatelse to use the backend. The api is fully documented with swagger / open api. You need some other backend integration? Write a controller and publish this thing. Ready. It is open source.
+
+
 ## Why CSharp and not super dooper trooper hipster language?
 - I like it very much (coding since 20 years with it)
-- I write C# in a very functional manner, sometimes it is harder to read.
+- I write C# in a very functional manner, sometimes it is harder to read but hey, thats a challenge!
 - Extensibility - With method extensions i can structure the code much cleaner
 - Very funny lambdas
 - LinQ
