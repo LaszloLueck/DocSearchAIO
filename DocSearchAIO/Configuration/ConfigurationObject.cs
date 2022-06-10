@@ -7,6 +7,10 @@ public class ConfigurationObject
 {
     [JsonPropertyName("elasticEndpoints")] public List<string> ElasticEndpoints { get; set; } = new();
 
+    [JsonPropertyName("elasticUser")] public string ElasticUser { get; set; } = "";
+
+    [JsonPropertyName("elasticPassword")] public string ElasticPassword { get; set; } = "";
+
     [JsonPropertyName("scanPath")] public string ScanPath { get; set; } = "";
 
     [JsonPropertyName("indexName")] public string IndexName { get; set; } = "";

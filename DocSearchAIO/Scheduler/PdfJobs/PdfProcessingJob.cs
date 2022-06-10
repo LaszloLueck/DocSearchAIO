@@ -5,7 +5,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
@@ -14,6 +13,8 @@ using DocSearchAIO.Utilities;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
@@ -58,8 +59,8 @@ public class PdfProcessingJob : IJob
         await Task.Run(async () =>
         {
             var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdfCleanup());
-            if (!cacheEntryOpt.HasNoValue &&
-                (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+            if (cacheEntryOpt.IsSome &&
+                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
                 _logger.LogInformation(
                     "cannot execute scanning and processing documents, opponent job cleanup running");
@@ -140,7 +141,7 @@ public class PdfProcessingJob : IJob
 
 internal static class PdfProcessingHelper
 {
-    public static Source<Maybe<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
+    public static Source<Option<PdfElasticDocument>, NotUsed> ProcessPdfDocumentAsync(
         this Source<string, NotUsed> source,
         SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
         StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
@@ -149,7 +150,7 @@ internal static class PdfProcessingHelper
             f => ProcessPdfDocument(f, configurationObject, statisticUtilities, logger));
     }
 
-    private static async Task<Maybe<PdfElasticDocument>> ProcessPdfDocument(this string fileName,
+    private static async Task<Option<PdfElasticDocument>> ProcessPdfDocument(this string fileName,
         ConfigurationObject configurationObject,
         StatisticUtilities<StatisticModelPdf> statisticUtilities, ILogger logger)
     {
@@ -226,13 +227,13 @@ internal static class PdfProcessingHelper
                 elasticDoc.ContentHash =
                     (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()))).Value;
 
-                return Maybe<PdfElasticDocument>.From(elasticDoc);
+                return elasticDoc;
             }
             catch (Exception exception)
             {
                 logger.LogError(exception, "An error occured");
                 statisticUtilities.AddToFailedDocuments();
-                return Maybe<PdfElasticDocument>.None;
+                return Option<PdfElasticDocument>.None;
             }
         });
     }

@@ -3,7 +3,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
@@ -13,6 +12,8 @@ using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 
@@ -57,8 +58,8 @@ public class OfficeExcelProcessingJob : IJob
         await Task.Run(async () =>
         {
             var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelExcelCleanup());
-            if (!cacheEntryOpt.HasNoValue &&
-                (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+            if (cacheEntryOpt.IsSome &&
+                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
                 _logger.LogInformation(
                     "cannot execute scanning and processing documents, opponent job cleanup running");
@@ -143,7 +144,7 @@ public class OfficeExcelProcessingJob : IJob
 
 internal static class ExcelProcessingHelper
 {
-    public static Source<Maybe<ExcelElasticDocument>, NotUsed> ProcessExcelDocumentAsync(
+    public static Source<Option<ExcelElasticDocument>, NotUsed> ProcessExcelDocumentAsync(
         this Source<string, NotUsed> source, SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
         StatisticUtilities<StatisticModelExcel> statisticUtilities, ILogger logger)
     {
@@ -151,21 +152,21 @@ internal static class ExcelProcessingHelper
             f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
     }
 
-    private static async Task<Maybe<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
+    private static async Task<Option<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelExcel> statisticUtilities,
         ILogger logger)
     {
         try
         {
             var wdOpt = SpreadsheetDocument.Open(currentFile, false);
-            Maybe<WorkbookPart> workBookPartOpt = wdOpt.WorkbookPart!;
+            Option<WorkbookPart> workBookPartOpt = wdOpt.WorkbookPart!;
 
-            if (workBookPartOpt.HasNoValue)
+            if (workBookPartOpt.IsNone)
             {
-                return Maybe<ExcelElasticDocument>.None;
+                return Option<ExcelElasticDocument>.None;
             }
 
-            var mainWorkbookPart = workBookPartOpt.Value;
+            var mainWorkbookPart = workBookPartOpt.ValueUnsafe();
             var fInfo = wdOpt.PackageProperties;
             var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
             var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
@@ -254,13 +255,13 @@ internal static class ExcelProcessingHelper
                 UriFilePath = uriPath,
                 Comments = commentsArray
             };
-            return Maybe<ExcelElasticDocument>.From(returnValue);
+            return returnValue;
         }
         catch (Exception e)
         {
             logger.LogError(e, "an error while creating a indexing object");
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Maybe<ExcelElasticDocument>.None);
+            return await Task.Run(() => Option<ExcelElasticDocument>.None);
         }
     }
 

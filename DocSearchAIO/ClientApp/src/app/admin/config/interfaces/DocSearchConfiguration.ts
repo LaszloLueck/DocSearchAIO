@@ -4,6 +4,8 @@ import {ProcessorConfiguration} from "./ProcessorConfiguration";
 export interface DocSearchConfiguration {
   scanPath: string;
   elasticEndpoints: string[];
+  elasticUser: string;
+  elasticPassword: string;
   indexName: string;
   schedulerName: string;
   schedulerId: string;

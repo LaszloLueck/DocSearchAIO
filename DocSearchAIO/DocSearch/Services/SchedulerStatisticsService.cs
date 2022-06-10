@@ -1,5 +1,4 @@
-﻿using CSharpFunctionalExtensions;
-using DocSearchAIO.Classes;
+﻿using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Utilities;
@@ -62,7 +61,7 @@ public class SchedulerStatisticsService
                     .Where(r => r.TriggerName == trigger.Name)
                     .Select(d => d.Active)
                     .TryFirst()
-                    .GetValueOrDefault(), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
+                    .GetValueOrDefault(false), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
             );
         };
 

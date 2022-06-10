@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup} from "@angular/forms";
+import {UntypedFormControl, FormGroup} from "@angular/forms";
 import {FormControlValidatorPipe} from "../../../pipes/fomcontrolvalidator.pipe";
 
 @Component({
@@ -9,7 +9,7 @@ import {FormControlValidatorPipe} from "../../../pipes/fomcontrolvalidator.pipe"
 })
 export class DynamicElementComponent implements OnInit {
 
-  @Input() formControlInternal!: FormControl;
+  @Input() formControlInternal!: UntypedFormControl;
   @Input() namePrefix!: string;
   @Input() nameSuffix!: string;
   @Input() fieldType!: string;

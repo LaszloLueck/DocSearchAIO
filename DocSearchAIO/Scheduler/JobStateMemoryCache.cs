@@ -1,5 +1,5 @@
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
+using LanguageExt;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DocSearchAIO.Scheduler;
@@ -89,12 +89,12 @@ public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
     }
 
 
-    public Maybe<CacheEntry> CacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
+    public Option<CacheEntry> CacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
     {
         _logger.LogInformation("try to get cache entry for model {ModelName}", model.GetType().Name);
         return _memoryCache.TryGetValue(model, out CacheEntry cacheEntry)
-            ? Maybe<CacheEntry>.From(cacheEntry)
-            : Maybe<CacheEntry>.None;
+            ? cacheEntry
+            : Option<CacheEntry>.None;
     }
 
 

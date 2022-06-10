@@ -3,7 +3,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
@@ -13,6 +12,8 @@ using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
@@ -57,8 +58,8 @@ public class OfficePowerpointProcessingJob : IJob
         await Task.Run(async () =>
         {
             var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
-            if (!cacheEntryOpt.HasNoValue &&
-                (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+            if (cacheEntryOpt.IsSome &&
+                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
                 _logger.LogInformation(
                     "cannot execute scanning and processing documents, opponent job cleanup running");
@@ -146,7 +147,7 @@ public class OfficePowerpointProcessingJob : IJob
 
 public static class PowerpointProcessingHelper
 {
-    public static Source<Maybe<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
+    public static Source<Option<PowerpointElasticDocument>, NotUsed> ProcessPowerpointDocumentAsync(
         this Source<string, NotUsed> source,
         SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
         StatisticUtilities<StatisticModelPowerpoint> statisticUtilities, ILogger logger)
@@ -155,7 +156,7 @@ public static class PowerpointProcessingHelper
             f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
     }
 
-    private static async Task<Maybe<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
+    private static async Task<Option<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelPowerpoint> statisticUtilities,
         ILogger logger)
     {
@@ -165,11 +166,11 @@ public static class PowerpointProcessingHelper
             {
                 var wdOpt = PresentationDocument.Open(currentFile, false);
 
-                Maybe<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
-                if (presentationPartOpt.HasNoValue)
-                    return Maybe<PowerpointElasticDocument>.None;
+                Option<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
+                if (presentationPartOpt.IsNone)
+                    return Option<PowerpointElasticDocument>.None;
 
-                var presentaionPart = presentationPartOpt.Value;
+                var presentaionPart = presentationPartOpt.ValueUnsafe();
                 var fInfo = wdOpt.PackageProperties;
                 var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
                 var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
@@ -259,14 +260,14 @@ public static class PowerpointProcessingHelper
                     Comments = commentsArray
                 };
 
-                return Maybe<PowerpointElasticDocument>.From(returnValue);
+                return returnValue;
             });
         }
         catch (Exception e)
         {
             logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Maybe<PowerpointElasticDocument>.None);
+            return await Task.Run(() => Option<PowerpointElasticDocument>.None);
         }
     }
 

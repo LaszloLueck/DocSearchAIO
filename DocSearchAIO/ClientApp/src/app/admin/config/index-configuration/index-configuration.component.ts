@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {AbstractControl, FormArray, FormControl} from "@angular/forms";
+import {AbstractControl, UntypedFormArray, UntypedFormControl} from "@angular/forms";
 
 @Component({
   selector: 'app-index-configuration',
@@ -7,7 +7,7 @@ import {AbstractControl, FormArray, FormControl} from "@angular/forms";
   styleUrls: ['./index-configuration.component.scss']
 })
 export class IndexConfigurationComponent implements OnInit {
-  @Input() elasticEndpoints!: FormArray
+  @Input() elasticEndpoints!: UntypedFormArray
 
   constructor() { }
 
@@ -19,7 +19,7 @@ export class IndexConfigurationComponent implements OnInit {
   }
 
   addNewElasticInstance(): void {
-    this.elasticEndpoints.push(new FormControl(''))
+    this.elasticEndpoints.push(new UntypedFormControl(''))
   }
 
   returnFalseIfIndexLimit(indexLength: number, currentIndex: number) {

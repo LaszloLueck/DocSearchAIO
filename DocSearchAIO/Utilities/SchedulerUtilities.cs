@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using LanguageExt;
+using LanguageExt.SomeHelp;
 using Quartz;
 using Quartz.Impl;
 
@@ -41,10 +42,10 @@ public class SchedulerUtilities
         }
     }
         
-    public static async Task<Maybe<IScheduler>> StdSchedulerByName(string schedulerName)
+    public static async Task<Option<IScheduler>> StdSchedulerByName(string schedulerName)
     {
         var schedulerFactory = new StdSchedulerFactory();
         var schedulerOpt = await schedulerFactory.GetScheduler(schedulerName);
-        return schedulerOpt == null ? Maybe<IScheduler>.None : Maybe<IScheduler>.From(schedulerOpt); 
+        return schedulerOpt?.ToSome() ?? Option<IScheduler>.None; 
     }
 }

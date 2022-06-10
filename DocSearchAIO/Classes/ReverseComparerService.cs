@@ -4,15 +4,15 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
+using LanguageExt;
 
 namespace DocSearchAIO.Classes;
 
 internal static class ReverseComparerServiceHelper
 {
-    public static Source<Maybe<ComparerObject>, NotUsed> CheckCacheEntry(
+    public static Source<Option<ComparerObject>, NotUsed> CheckCacheEntry(
         this Source<ComparerObject, NotUsed> source,
         InterlockedCounter allFileCount)
     {
@@ -20,7 +20,7 @@ internal static class ReverseComparerServiceHelper
         {
             allFileCount.Increment();
             return File.Exists(compObj.OriginalPath)
-                ? Maybe<ComparerObject>.None
+                ? Option<ComparerObject>.None
                 : compObj;
         });
     }
@@ -79,12 +79,11 @@ public class ReverseComparerService<T> where T : ComparerModel
         var sw = Stopwatch.StartNew();
         try
         {
-            await ComparerHelper
-                .GetComparerObjectSource(_comparerFile)
-                .CheckCacheEntry(_allFileCount)
-                .GroupedWithin(200, TimeSpan.FromSeconds(2))
-                .WithMaybeFilter()
-                .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName)
+            await ReverseComparerServiceHelper.RemoveFromIndexById(ComparerHelper
+                    .GetComparerObjectSource(_comparerFile)
+                    .CheckCacheEntry(_allFileCount)
+                    .GroupedWithin(200, TimeSpan.FromSeconds(2))
+                    .WithMaybeFilter(), _removedFileCount, _elasticSearchService, _logger, indexName)
                 .RemoveFromCache(_lazyCache)
                 .RunIgnore(_actorSystem.Materializer());
 

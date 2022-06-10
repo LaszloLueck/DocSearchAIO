@@ -1,6 +1,6 @@
 using System.Text.Json;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Statistics;
+using LanguageExt;
 
 namespace DocSearchAIO.Classes;
 
@@ -22,7 +22,7 @@ public abstract class StatisticModel
     {
     }
 
-    public Maybe<ProcessingJobStatistic> LatestJobStatisticByModel()
+    public Option<ProcessingJobStatistic> LatestJobStatisticByModel()
     {
         var filePath = $"{StatisticsDirectory}/{StatisticFileName}";
         _logger?.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}",
@@ -30,7 +30,7 @@ public abstract class StatisticModel
             DerivedModelName);
         var content = File.ReadAllText(filePath);
         if (!content.Any())
-            return Maybe<ProcessingJobStatistic>.None;
+            return Option<ProcessingJobStatistic>.None;
         try
         {
             var model = JsonSerializer.Deserialize<ProcessingJobStatistic>(content);
@@ -39,7 +39,7 @@ public abstract class StatisticModel
         catch (Exception e)
         {
             _logger?.LogError(e, "error occured while converting statistic json to model");
-            return Maybe<ProcessingJobStatistic>.None;
+            return Option<ProcessingJobStatistic>.None;
         }
     }
 }

@@ -1,4 +1,4 @@
-import {FormGroup} from "@angular/forms";
+import {UntypedFormGroup} from "@angular/forms";
 import {Component, Input, OnInit} from "@angular/core";
 
 @Component({
@@ -7,9 +7,10 @@ import {Component, Input, OnInit} from "@angular/core";
   styleUrls: ['./static-element.component.scss']
 })
 export class StaticElementComponent implements OnInit {
-  @Input() formGroup!: FormGroup
+  @Input() formGroup!: UntypedFormGroup
   @Input() name!: string
   @Input() id!: string
+  @Input() type: string = "text"
 
   constructor() { }
 

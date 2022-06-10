@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 
 namespace DocSearchAIO.Utilities;
 
@@ -14,7 +15,29 @@ public static class CSharpFunctionalHelpers
             action.Invoke(value);
         }
     }
+    
+    public static Option<T> TryFirst<T>(this IEnumerable<T> source)
+    {
+        return source.Any() ? source.First() : Option<T>.None;
+    }
 
+    public static Option<T> TryFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+    {
+        var firstOrEmpty = source.Where(predicate).Take(1).ToList();
+        if (firstOrEmpty.Any())
+        {
+            return firstOrEmpty[0];
+        }
+
+        return Option<T>.None;
+    }
+    
+
+    public static T GetValueOrDefault<T>(this Option<T> source, T alternative)
+    {
+        return source.IsNone ? alternative : source.ValueUnsafe();
+    }
+    
     public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
         Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
 
@@ -50,7 +73,7 @@ public static class CSharpFunctionalHelpers
 
     [Pure]
     public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
-        this Source<IEnumerable<Maybe<TSource>>, TMat> source) => source.Select(Values);
+        this Source<IEnumerable<Option<TSource>>, TMat> source) => source.Select(d => d.Somes());
 
     [Pure]
     public static IEnumerable<TOut> SelectKv<TKey, TValue, TOut>(this IEnumerable<KeyValuePair<TKey, TValue>> dic,
@@ -60,10 +83,5 @@ public static class CSharpFunctionalHelpers
     public static IEnumerable<TOut> SelectTuple<TKey, TValue, TOut>(
         this IEnumerable<Tuple<TKey, TValue>> source, Func<TKey, TValue, TOut> action) =>
         source.Select(tuple => action.Invoke(tuple.Item1, tuple.Item2));
-
-    [Pure]
-    public static IEnumerable<TSource> Values<TSource>(this IEnumerable<Maybe<TSource>> source) =>
-        source
-            .Where(filtered => filtered.HasValue)
-            .Select(selected => selected.Value);
+    
 }

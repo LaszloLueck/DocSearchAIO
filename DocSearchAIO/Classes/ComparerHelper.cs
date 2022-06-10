@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using Akka;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
+using LanguageExt;
 
 namespace DocSearchAIO.Classes;
 
@@ -12,8 +12,8 @@ public static class ComparerHelper
         .ReadAllLines(path)
         .AsParallel()
         .WithDegreeOfParallelism(10)
-        .Select(ConvertLine!)
-        .Values()
+        .Map(ConvertLine)
+        .Somes()
         .AsAkkaSource();
 
     private static Source<TIn, NotUsed> AsAkkaSource<TIn>(this IEnumerable<TIn> ieNumerable)
@@ -21,35 +21,36 @@ public static class ComparerHelper
         return Source.From(ieNumerable);
     }
 
-    private static readonly Func<string, Maybe<ComparerObject>> ConvertLine = line =>
+    private static readonly Func<string, Option<ComparerObject>> ConvertLine = line =>
     {
         var spl = line.Split(";");
-        if (spl.Length != 3) return Maybe<ComparerObject>.None;
+        if (spl.Length != 3) return Option<ComparerObject>.None;
         var cpo = new ComparerObject(spl[1], spl[0], spl[2]);
         return cpo;
     };
 
-    public static readonly Func<string, ILogger, ConcurrentDictionary<string, ComparerObject>> FillConcurrentDictionary =
-        (path, logger) =>
-        {
-            if (File.Exists(path))
+    public static readonly Func<string, ILogger, ConcurrentDictionary<string, ComparerObject>>
+        FillConcurrentDictionary =
+            (path, logger) =>
             {
-                var retDictionary = File
-                    .ReadAllLines(path)
-                    .AsParallel()
-                    .WithDegreeOfParallelism(10)
-                    .Select(ConvertLine)
-                    .Values()
-                    .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
-                    .ToDictionary();
-                return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
-            }
-            else
-            {
-                logger.LogWarning("Cannot read Comparer file <{Path}> it does not exist, gave up", path);
-                return new ConcurrentDictionary<string, ComparerObject>();
-            }
-        };
+                if (File.Exists(path))
+                {
+                    var retDictionary = File
+                        .ReadAllLines(path)
+                        .AsParallel()
+                        .WithDegreeOfParallelism(10)
+                        .Select(ConvertLine)
+                        .Somes()
+                        .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
+                        .ToDictionary();
+                    return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
+                }
+                else
+                {
+                    logger.LogWarning("Cannot read Comparer file <{Path}> it does not exist, gave up", path);
+                    return new ConcurrentDictionary<string, ComparerObject>();
+                }
+            };
 
     public static void RemoveComparerFile(string fileName)
     {

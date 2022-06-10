@@ -13,7 +13,9 @@ public static class ElasticSearchExtensions
         configuration.GetSection("configurationObject").Bind(cfg);
         var uriList = cfg.ElasticEndpoints.Select(e => new Uri(e));
         var pool = new StaticConnectionPool(uriList);
-        var settings = new ConnectionSettings(pool).DefaultIndex(cfg.IndexName);
+        var settings = new ConnectionSettings(pool)
+            .DefaultIndex(cfg.IndexName)
+            .BasicAuthentication(cfg.ElasticUser, cfg.ElasticPassword);
         var client = new ElasticClient(settings);
         var elasticSearchService = new ElasticSearchService(client);
         services.AddSingleton<IElasticSearchService>(elasticSearchService);

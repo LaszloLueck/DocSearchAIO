@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
+using LanguageExt;
 
 namespace DocSearchAIO.Classes;
 
@@ -72,7 +72,7 @@ public abstract class ComparerModel
             ComparerHelper.CreateComparerFile(ComparerFilePath);
     }
 
-    public async Task<Maybe<TModel>> FilterExistingUnchanged<TModel>(Maybe<TModel> document)
+    public async Task<Option<TModel>> FilterExistingUnchanged<TModel>(Option<TModel> document)
         where TModel : ElasticDocument
     {
         return await Task.Run(() =>
@@ -89,19 +89,19 @@ public abstract class ComparerModel
                         {
                             var innerDoc = new ComparerObject(pathHash, contentHash, originalFilePath);
                             _comparerObjects.AddOrUpdate(pathHash, innerDoc, (_, _) => innerDoc);
-                            return Maybe<TModel>.From(doc);
+                            return doc;
                         },
                         () =>
                         {
-                            if (comparerObject == null) return Maybe<TModel>.None;
+                            if (comparerObject == null) return Option<TModel>.None;
 
                             if (comparerObject.DocumentHash == contentHash)
-                                return Maybe<TModel>.None;
+                                return Option<TModel>.None;
                             var comparerObjectCopy = new ComparerObject(comparerObject.PathHash, contentHash,
                                 comparerObject.OriginalPath);
                             _comparerObjects.AddOrUpdate(pathHash, comparerObjectCopy,
                                 (_, _) => comparerObjectCopy);
-                            return Maybe<TModel>.From(doc);
+                            return doc;
                         });
             });
             return opt;

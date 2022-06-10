@@ -1,4 +1,3 @@
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
@@ -7,6 +6,8 @@ using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
@@ -162,6 +163,8 @@ public class AdministrationService
             _configurationObject.ElasticEndpoints = request.ElasticEndpoints;
             _configurationObject.SchedulerGroupName = request.ProcessorGroupName;
             _configurationObject.IndexName = request.IndexName;
+            _configurationObject.ElasticUser = request.ElasticUser;
+            _configurationObject.ElasticPassword = request.ElasticPassword;
             _configurationObject.ScanPath = request.ScanPath;
             _configurationObject.SchedulerId = request.SchedulerId;
             _configurationObject.SchedulerName = request.SchedulerName;
@@ -192,7 +195,7 @@ public class AdministrationService
         }
     }
 
-    private Maybe<ComparerModel> ComparerBaseFromParameter(string parameter)
+    private Option<ComparerModel> ComparerBaseFromParameter(string parameter)
     {
         try
         {
@@ -209,12 +212,12 @@ public class AdministrationService
                 _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
                     $"cannot cast from parameter {parameter}")
             };
-            return Maybe<ComparerModel>.From(comparerBase);
+            return comparerBase;
         }
         catch (Exception exception)
         {
             _logger.LogError(exception, "an error while converting a base parameter occured");
-            return Maybe<ComparerModel>.None;
+            return Option<ComparerModel>.None;
         }
     }
 
@@ -229,8 +232,11 @@ public class AdministrationService
                     .Where(d => d.Value.JobName == jobStatusRequest.JobName)
                     .TryFirst()
                     .Match(
-                        async (key, value) =>
+                        async kv =>
                         {
+                            var key = kv.Key;
+                            var value = kv.Value;
+
                             var indexName = _elasticUtilities.CreateIndexName(_configurationObject.IndexName,
                                 value.IndexSuffix);
 
@@ -330,8 +336,8 @@ public class AdministrationService
         {
             RunnableStatistic ret = doc;
             var cacheEntryOpt = fn.Invoke().CacheEntry();
-            if (cacheEntryOpt.HasValue)
-                ret.CacheEntry = cacheEntryOpt.Value;
+            if (cacheEntryOpt.IsSome)
+                ret.CacheEntry = cacheEntryOpt.ValueUnsafe();
             return ret;
         }
 
@@ -357,13 +363,12 @@ public class AdministrationService
                     {
                         return jobStateMemoryCaches
                             .Where(d => d.Item1.DerivedModelName == processorBase.DerivedModelName)
-                            .TryFirst()
                             .Map(jobState => KeyValuePair.Create(processorBase.ShortName,
                                 ConvertToRunnableStatistic(doc, jobState.Item2)));
                     });
             })
-            .Values()
-            .Values()
+            .Somes()
+            .Flatten()
             .ToDictionary();
 
         static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(IAsyncEnumerable<IndicesStatsResponse> responses) =>
@@ -384,8 +389,6 @@ public class AdministrationService
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
     }
 
-
-
     private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<long>>
         CalculateEntireDocCount =
             model => model.SumAsync(d => d.DocCount);
@@ -393,7 +396,7 @@ public class AdministrationService
     private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<double>>
         CalculateEntireIndexSize = model => model.SumAsync(d => d.SizeInBytes);
 
-    private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Maybe<JobState>,
+    private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Option<JobState>,
         IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =
         (triggerElements, jobStateOpt) => triggerElements.Select(trigger =>
         {
@@ -402,7 +405,7 @@ public class AdministrationService
             return triggerElement;
         });
 
-    private static readonly Func<SchedulerStatistics, Maybe<JobState>, AdministrationActionSchedulerModel>
+    private static readonly Func<SchedulerStatistics, Option<JobState>, AdministrationActionSchedulerModel>
         ConvertToActionModel =
             (scheduler, jobStateOpt) => new AdministrationActionSchedulerModel(scheduler.SchedulerName,
                 ConvertTriggerElements(scheduler.TriggerElements, jobStateOpt));
@@ -419,14 +422,15 @@ public class AdministrationService
                 ))
             .ToDictionary();
 
-    private static readonly Func<string, Dictionary<string, JobState>, Maybe<JobState>> FilterMemoryCacheState =
-        (jobName, memoryCacheStates) => memoryCacheStates.TryGetValue(jobName, out var value) ? Maybe<JobState>.From(value) : Maybe<JobState>.None;
+    private static readonly Func<string, Dictionary<string, JobState>, Option<JobState>> FilterMemoryCacheState =
+        (jobName, memoryCacheStates) => memoryCacheStates.TryGetValue(jobName, out var value) ? value : Option<JobState>.None;
 
-    private static readonly Func<SchedulerStatistics, Dictionary<string, JobState>, Maybe<JobState>>
+    private static readonly Func<SchedulerStatistics, Dictionary<string, JobState>, Option<JobState>>
         CalculateJobState = (schedulerStatisticsArray, memoryCacheStates) => schedulerStatisticsArray
-            .TriggerElements.Select(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
-            .Values()
-            .TryFirst();
+            .TriggerElements
+            .Select(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
+            .Somes()
+            .First();
 
     public IAsyncEnumerable<KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
     {

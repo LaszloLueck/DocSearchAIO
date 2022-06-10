@@ -1,74 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Utilities;
 using FluentAssertions;
+using LanguageExt;
+using LanguageExt.SomeHelp;
 using Xunit;
 
 namespace DocSearchAIO_Test;
 
 public class CSharpFunctionalHelperTest
 {
-    [Fact]
-    public void Match_Test_With_KeyValuePair_Deconstruction_On_Some_And_Return_Value()
-    {
-        var tValue =
-            Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
 
-        var returnValue = tValue.Match(
-            (intValue, stringValue) => (intValue, stringValue),
-            () => throw new FieldAccessException("value is none")
-        );
-
-        returnValue.Item1.Should().Be(42);
-        returnValue.Item2.Should().Be("Matrix");
-    }
-
-    [Fact]
-    public void Match_Test_With_KeyValuePair_Deconstruction_On_None_And_Return_None_Value()
-    {
-        var tValue = Maybe<KeyValuePair<int, string>>.None;
-        var returnValue = tValue.Match(
-            (_, _) => throw new FieldAccessException("value is none"),
-            () => (-1, "No Matrix")
-        );
-
-        returnValue.Item1.Should().Be(-1);
-        returnValue.Item2.Should().Be("No Matrix");
-    }
-
-    [Fact]
-    public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_Some()
-    {
-        var tValue =
-            Maybe<KeyValuePair<int, string>>.From(new KeyValuePair<int, string>(42, "Matrix"));
-
-        tValue.Match(
-            (intValue, stringValue) =>
-            {
-                intValue.Should().Be(42);
-                stringValue.Should().Be("Matrix");
-            },
-            () => throw new FieldAccessException("value is none")
-        );
-    }
-
-    [Fact]
-    public void Match_Test_With_KeyValuePair_Deconstruction_With_Void_Return_On_None()
-    {
-        var tValue = Maybe<KeyValuePair<int, string>>.None;
-
-        tValue.Match(
-            (_, _) => throw new FieldAccessException("value should be none"),
-            () => Assert.True(true)
-        );
-    }
 
     [Fact]
     public void Check_if_a_dictionary_contains_key_and_process_the_result()
@@ -157,10 +104,10 @@ public class CSharpFunctionalHelperTest
     public void Filter_Maybe_None_from_IEnumerable_wrapped_on_Source()
     {
         var materializer = ActorMaterializer.Create(ActorSystem.Create("testActorsystem"));
-        IEnumerable<Maybe<int>> list = new[]
-            { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
+        IEnumerable<Option<int>> list = new[]
+            { 8.ToSome(), Option<int>.None, 5.ToSome(), 1.ToSome(), Option<int>.None };
 
-        Source<IEnumerable<Maybe<int>>, NotUsed> source = Source.From(new List<IEnumerable<Maybe<int>>> { list });
+        Source<IEnumerable<Option<int>>, NotUsed> source = Source.From(new List<IEnumerable<Option<int>>> { list });
 
         var result = source
             .WithMaybeFilter()
@@ -198,20 +145,6 @@ public class CSharpFunctionalHelperTest
         result.Count().Should().Be(3);
         result.First().Should().Be(2);
         result.Last().Should().Be(3);
-    }
-
-    [Fact]
-    public void Filter_out_Maybe_None_from_IEnumerable()
-    {
-        IEnumerable<Maybe<int>> list = new[]
-            { Maybe<int>.From(8), Maybe<int>.None, Maybe<int>.From(5), Maybe<int>.From(1), Maybe<int>.None };
-
-        var result = list.Values();
-
-
-        result.Count().Should().Be(3);
-        result.First().Should().Be(8);
-        result.Last().Should().Be(1);
     }
 
     [Fact]

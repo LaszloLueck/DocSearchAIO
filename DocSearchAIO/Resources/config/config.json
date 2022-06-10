@@ -1,8 +1,10 @@
 ﻿{
   "configurationObject": {
     "elasticEndpoints": [
-      "http://127.0.0.1:9200"
+      "http://127.0.0.1:50766"
     ],
+    "elasticUser": "elastic",
+    "elasticPassword" : "8USt79lz2UEkPs3q",
     "scanPath": "/Users/laszlo/Documents/bva/02_Chefdesign",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",

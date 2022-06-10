@@ -5,13 +5,16 @@ using System.Text.RegularExpressions;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Wordprocessing;
+using LanguageExt;
 using Nest;
+using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO.Utilities;
 
@@ -192,12 +195,12 @@ public static class StaticHelpers
         {
             switch (element)
             {
-                case DocumentFormat.OpenXml.Wordprocessing.Paragraph p when p.InnerText.Any():
+                case Paragraph p when p.InnerText.Any():
                     sb.Append(' ');
                     ExtractTextFromElement(element.ChildElements, sb);
                     sb.Append(' ');
                     break;
-                case DocumentFormat.OpenXml.Wordprocessing.Text { HasChildren: false } wText:
+                case Text { HasChildren: false } wText:
                     if (wText.Text.Any())
                         sb.Append(wText.Text);
                     break;
@@ -209,7 +212,7 @@ public static class StaticHelpers
                     if (dText.Text.Any())
                         sb.Append(dText.Text);
                     break;
-                case DocumentFormat.OpenXml.Presentation.TextBody { HasChildren: false } tText:
+                case TextBody { HasChildren: false } tText:
                     if (tText.TextFromParagraph().Any())
                         sb.Append(' ' + tText.TextFromParagraph() + ' ');
                     break;
@@ -222,13 +225,13 @@ public static class StaticHelpers
                     if (pText.Text.Any())
                         sb.Append(pText.Text);
                     break;
-                case DocumentFormat.OpenXml.Wordprocessing.FieldChar
+                case FieldChar
                 {
-                    FieldCharType: { Value: DocumentFormat.OpenXml.Wordprocessing.FieldCharValues.Separate }
+                    FieldCharType: { Value: FieldCharValues.Separate }
                 }:
                     sb.Append(' ');
                     break;
-                case DocumentFormat.OpenXml.Wordprocessing.Break:
+                case Break:
                     sb.Append(Environment.NewLine);
                     break;
                 default:
@@ -283,8 +286,8 @@ public static class StaticHelpers
     }
 
     [Pure]
-    public static Source<Maybe<TDocument>, NotUsed> FilterExistingUnchangedAsync<TDocument>(
-        this Source<Maybe<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
+    public static Source<Option<TDocument>, NotUsed> FilterExistingUnchangedAsync<TDocument>(
+        this Source<Option<TDocument>, NotUsed> source, SchedulerEntry schedulerEntry,
         ComparerModel comparerModel) where TDocument : ElasticDocument
     {
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism, comparerModel.FilterExistingUnchanged);

@@ -4,6 +4,8 @@
       <app-button-bar [invalidForm]="form.invalid || !externalControlsValid"></app-button-bar>
       <app-static-element name="Scan-Pfad" id="scanPath" [formGroup]="form"></app-static-element>
       <app-index-configuration [elasticEndpoints]="elasticEndpoints"></app-index-configuration>
+      <app-static-element name="ElasticUser" id="elasticUser" [formGroup]="form"></app-static-element>
+      <app-static-element name="ElasticPassword" id="elasticPassword" [formGroup]="form" type="password"></app-static-element>
       <app-static-element name="Index-Name (Prefix)" id="indexName" [formGroup]="form"></app-static-element>
       <app-static-element name="Scheduler-Name" id="schedulerName" [formGroup]="form"></app-static-element>
       <app-static-element name="Scheduler-Id" id="schedulerId" [formGroup]="form"></app-static-element>

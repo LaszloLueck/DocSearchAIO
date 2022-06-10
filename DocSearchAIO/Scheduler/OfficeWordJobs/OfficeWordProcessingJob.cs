@@ -3,7 +3,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
@@ -13,6 +12,8 @@ using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using LanguageExt;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 
@@ -55,8 +56,8 @@ public class OfficeWordProcessingJob : IJob
         await Task.Run(async () =>
         {
             var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelWordCleanup());
-            if (!cacheEntryOpt.HasNoValue &&
-                (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+            if (cacheEntryOpt.IsSome &&
+                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
                 _logger.LogInformation(
                     "cannot execute scanning and processing documents, opponent job cleanup running");
@@ -143,7 +144,7 @@ public class OfficeWordProcessingJob : IJob
 
 internal static class WordProcessingHelper
 {
-    public static Source<Maybe<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
+    public static Source<Option<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
         this Source<string, NotUsed> source,
         SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
         StatisticUtilities<StatisticModelWord> statisticUtilities, ILogger logger)
@@ -152,7 +153,7 @@ internal static class WordProcessingHelper
             f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
     }
 
-    private static async Task<Maybe<WordElasticDocument>> ProcessWordDocument(string currentFile,
+    private static async Task<Option<WordElasticDocument>> ProcessWordDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
         ILogger logger)
     {
@@ -162,11 +163,11 @@ internal static class WordProcessingHelper
             {
                 var wdOpt = WordprocessingDocument.Open(currentFile, false);
 
-                Maybe<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
-                if (mainDocumentPartOpt.HasNoValue)
-                    return Maybe<WordElasticDocument>.None;
+                Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
+                if (mainDocumentPartOpt.IsNone)
+                    return Option<WordElasticDocument>.None;
 
-                var mainDocumentPart = mainDocumentPartOpt.Value;
+                var mainDocumentPart = mainDocumentPartOpt.ValueUnsafe();
                 var fInfo = wdOpt.PackageProperties;
                 var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
                 var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1),
@@ -280,14 +281,14 @@ internal static class WordProcessingHelper
                     Comments = commentsArray
                 };
 
-                return Maybe<WordElasticDocument>.From(returnValue);
+                return returnValue;
             });
         }
         catch (Exception e)
         {
             logger.LogError(e, "an error while creating a indexing object");
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Maybe<WordElasticDocument>.None);
+            return await Task.Run(() => Option<WordElasticDocument>.None);
         }
     }
 

@@ -1,5 +1,5 @@
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Scheduler;
+using LanguageExt;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DocSearchAIO.Classes;
@@ -56,7 +56,7 @@ public abstract class MemoryCacheModel
     {
     }
 
-    public Maybe<CacheEntry> CacheEntry()
+    public Option<CacheEntry> CacheEntry()
     {
         _logger?.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
         _memoryCache.TryGetValue(DerivedModelName, out CacheEntry cacheEntry);

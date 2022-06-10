@@ -2,7 +2,7 @@ using DocSearchAIO.Configuration;
 
 namespace DocSearchAIO.DocSearch.TOs;
 
-public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName,
+public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName, string ElasticUser, string ElasticPassword,
     string SchedulerName, string SchedulerId, string ActorSystemName, string ProcessorGroupName,
     string CleanupGroupName, string UriReplacement, string ComparerDirectory, string StatisticsDirectory)
 {
@@ -13,7 +13,7 @@ public record AdministrationGenericRequest(string ScanPath, List<string> Elastic
         Array.Empty<Tuple<string, CleanupConfiguration>>();
         
     public static implicit operator AdministrationGenericRequest(ConfigurationObject configurationObject) => new(
-        configurationObject.ScanPath, configurationObject.ElasticEndpoints, configurationObject.IndexName,
+        configurationObject.ScanPath, configurationObject.ElasticEndpoints, configurationObject.IndexName, configurationObject.ElasticUser, configurationObject.ElasticPassword,
         configurationObject.SchedulerName, configurationObject.SchedulerId, configurationObject.ActorSystemName,
         configurationObject.SchedulerGroupName, configurationObject.CleanupGroupName,
         configurationObject.UriReplacement, configurationObject.ComparerDirectory, configurationObject

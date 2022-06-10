@@ -3,6 +3,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
+using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 
@@ -52,8 +53,8 @@ public class PdfCleanupJob : IJob
                 await Task.Run(async () =>
                 {
                     var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdf());
-                    if (!cacheEntryOpt.HasNoValue &&
-                        (!cacheEntryOpt.HasValue || cacheEntryOpt.Value.JobState != JobState.Stopped))
+                    if (cacheEntryOpt.IsSome &&
+                        (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
                     {
                         _logger.LogInformation(
                             "cannot execute cleanup documents, opponent job scanning and processing running");

@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
-using CSharpFunctionalExtensions;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
+using LanguageExt.UnsafeValueAccess;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 
@@ -146,11 +146,11 @@ public class DoSearchService
                         var prepText = p.Replace(highlight.PreTags.First(), "").Replace(highlight.PostTags.First(), "");
                         var commentObj = originalComments.Where(c => c.Comment.Contains(prepText)).TryFirst();
 
-                        var retVal = commentObj.HasValue
+                        var retVal = commentObj.IsSome
                             ? new CommentDetail(p)
                             {
-                                Author = commentObj.Value.Author, Date = commentObj.Value.Date, Id = commentObj.Value.Id,
-                                Initials = commentObj.Value.Initials
+                                Author = commentObj.ValueUnsafe().Author, Date = commentObj.ValueUnsafe().Date, Id = commentObj.ValueUnsafe().Id,
+                                Initials = commentObj.ValueUnsafe().Initials
                             }
                             : new CommentDetail(p);
 
