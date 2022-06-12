@@ -35,7 +35,7 @@ public class DownloadFileEndpoint : EndpointBaseAsync.WithRequest<FileDownloadRe
         if (!System.IO.File.Exists(request.Path))
             return Problem(detail: $"File <{request.Path}> does not exists", statusCode: 404, title: "File not exists");
 
-        var returnValue = await _fileDownloadService.DownloadFileStream(request.Path!, request.DocumentType!);
+        var returnValue = _fileDownloadService.DownloadFileStream(request.Path!, request.DocumentType!);
         var ms = new MemoryStream();
         await returnValue.DownloadFileStream.CopyToAsync(ms, cancellationToken);
         returnValue.DownloadFileStream.Close();

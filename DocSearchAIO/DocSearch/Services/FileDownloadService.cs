@@ -5,12 +5,12 @@ namespace DocSearchAIO.DocSearch.Services;
 
 public interface IFileDownloadService
 {
-    Task<DownloadFileResponse> DownloadFileStream(string path, string documentType);
+    DownloadFileResponse DownloadFileStream(string path, string documentType);
 }
 
 public class FileDownloadService: IFileDownloadService
 {
-    public async Task<DownloadFileResponse> DownloadFileStream(string path, string documentType)
+    public DownloadFileResponse DownloadFileStream(string path, string documentType)
     {
         static string ContentType(string documentType) => documentType switch
         {
