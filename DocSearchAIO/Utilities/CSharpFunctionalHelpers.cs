@@ -72,6 +72,10 @@ public static class CSharpFunctionalHelpers
         Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
 
     [Pure]
+    public static T OrElseIfNull<T>(this T? nullable, [DisallowNull, NotNull] T alternative) =>
+        nullable is not null ? nullable! : alternative;
+
+    [Pure]
     public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
         this Source<IEnumerable<Option<TSource>>, TMat> source) => source.Select(d => d.Somes());
 

@@ -1,7 +1,10 @@
 using System.Collections.Immutable;
 using Akka.Actor;
 using DocSearchAIO.DocSearch.ServiceHooks;
+using DocSearchAIO.DocSearch.Services;
+using DocSearchAIO.Services;
 using Microsoft.Extensions.Logging.Console;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,12 +34,18 @@ builder.Configuration.AddJsonFile("Resources/config/config.json", optional: fals
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v2", new OpenApiInfo{Title = "DocSearchAIO", Version = "v2"});
+    c.EnableAnnotations();
+});
 
 builder.Services.AddElasticSearch(builder.Configuration);
 builder.Services.AddQuartzScheduler(builder.Configuration);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
+builder.Services.AddScoped<IInitService>(x => new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
+builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
 
 var app = builder.Build();
 
@@ -45,8 +54,14 @@ if (app.Environment.IsDevelopment())
 {
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(c =>
+    {
+        c.SerializeAsV2 = true;
+    });
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v2/swagger.json", "DocSearchAIO");
+    });
 }
 
 app.Lifetime.ApplicationStarted.Register(() => app.Services.GetService<ActorSystem>());

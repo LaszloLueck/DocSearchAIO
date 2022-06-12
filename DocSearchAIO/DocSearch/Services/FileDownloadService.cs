@@ -3,9 +3,14 @@ using DocSearchAIO.DocSearch.TOs;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class FileDownloadService
+public interface IFileDownloadService
 {
-    public DownloadFileResponse DownloadFileStream(string path, string documentType)
+    Task<DownloadFileResponse> DownloadFileStream(string path, string documentType);
+}
+
+public class FileDownloadService: IFileDownloadService
+{
+    public async Task<DownloadFileResponse> DownloadFileStream(string path, string documentType)
     {
         static string ContentType(string documentType) => documentType switch
         {

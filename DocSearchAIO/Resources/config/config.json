@@ -1,7 +1,7 @@
 ﻿{
   "configurationObject": {
     "elasticEndpoints": [
-      "http://127.0.0.1:50766"
+      "http://127.0.0.1:9200"
     ],
     "elasticUser": "elastic",
     "elasticPassword" : "8USt79lz2UEkPs3q",

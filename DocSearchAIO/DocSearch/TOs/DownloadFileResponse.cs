@@ -1,3 +1,3 @@
 ﻿namespace DocSearchAIO.DocSearch.TOs;
 
-public record DownloadFileResponse(Stream DownloadFileStream, string ReturnFileName, string ContentType);
+public record DownloadFileResponse(FileStream DownloadFileStream, string ReturnFileName, string ContentType);

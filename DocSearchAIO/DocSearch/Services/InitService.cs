@@ -3,10 +3,16 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
+using Nest;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class InitService
+public interface IInitService
+{
+    public Task<InitResponseObject> Init(InitRequest initRequest);
+}
+
+public class InitService : IInitService
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ConfigurationObject _cfg;
@@ -22,23 +28,12 @@ public class InitService
     public async Task<InitResponseObject> Init(InitRequest initRequest)
     {
         var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
-        var indices = indicesResponse.Indices.Keys.Select(p => p.Name);
-        var enumerable = indices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
-        return new InitResponseObject
-        {
-            FilterExcel = StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, enumerable, initRequest.FilterExcel),
-            FilterWord = StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, enumerable, initRequest.FilterWord),
-            FilterPowerpoint = StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, enumerable, initRequest.FilterPowerpoint),
-            FilterPdf = StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, enumerable, initRequest.FilterPdf),
-            FilterMsg = StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, enumerable, initRequest.FilterMsg),
-            FilterEml = StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, enumerable, initRequest.FilterEml),
-            ItemsPerPage = initRequest.ItemsPerPage,
-            WordFilterActive = StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, enumerable),
-            ExcelFilterActive = StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, enumerable),
-            PowerpointFilterActive = StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, enumerable),
-            PdfFilterActive = StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, enumerable),
-            MsgFilterActive = StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, enumerable),
-            EmlFilterActive = StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, enumerable)
-        };
+        var indexNames = indicesResponse
+            .Indices
+            .OrElseIfNull(new Dictionary<IndexName, IndexState>())
+            .Map(kv => kv.Key.Name)
+            .ToArray();
+
+        return new InitResponseObject(_cfg, indexNames, initRequest);
     }
 }
