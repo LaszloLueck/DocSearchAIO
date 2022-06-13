@@ -25,7 +25,7 @@ public class DownloadFileEndpoint : EndpointBaseAsync.WithRequest<FileDownloadRe
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     public override async Task<ActionResult> HandleAsync([FromQuery] FileDownloadRequest request,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if ((request.Path is null || request.Path.Length == 0) ||
             (request.DocumentType is null || request.DocumentType.Length == 0))

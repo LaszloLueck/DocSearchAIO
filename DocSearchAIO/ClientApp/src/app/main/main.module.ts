@@ -16,6 +16,8 @@ import {DocumentInformationComponent, DocumentInformationContent} from "./modals
 import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
 import {LocalStorageService} from "../services/localStorageService";
 import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
+import { SuggestionComponent } from './components/suggestion/suggestion.component';
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
 
 @NgModule({
   declarations: [
@@ -28,18 +30,20 @@ import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
     DocumentInformationComponent,
     DocumentInformationContent,
     NgbdAlertSelfclosing,
-    OffcanvasComponent
+    OffcanvasComponent,
+    SuggestionComponent
   ],
-  imports: [
-    CommonModule,
-    MainRoutingModule,
-    FormsModule,
-    NgbAlertModule,
-    NgbPaginationModule,
-    NgbPopoverModule,
-    NgbDropdownModule,
-    NgbModule
-  ],
+    imports: [
+        CommonModule,
+        MainRoutingModule,
+        FormsModule,
+        NgbAlertModule,
+        NgbPaginationModule,
+        NgbPopoverModule,
+        NgbDropdownModule,
+        NgbModule,
+        MatAutocompleteModule
+    ],
   exports: [
     RisprepositorylinkComponent,
     DownloadLinkComponent,

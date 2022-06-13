@@ -46,6 +46,13 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
 builder.Services.AddScoped<IInitService>(x => new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
+builder.Services.AddScoped<IDoSearchService>(x =>
+    new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
+builder.Services.AddScoped<ISearchSuggestService>(x =>
+    new SearchSuggestService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
+        builder.Configuration));
+builder.Services.AddScoped<IDocumentDetailService>(x =>
+    new DocumentDetailService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>()));
 
 var app = builder.Build();
 

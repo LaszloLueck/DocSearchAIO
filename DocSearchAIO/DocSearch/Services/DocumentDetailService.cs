@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Detail;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using Nest;
@@ -8,7 +9,13 @@ using SourceFilter = Nest.SourceFilter;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class DocumentDetailService
+public interface IDocumentDetailService
+{
+    public Task<DocumentDetailModel> DocumentDetail(DocumentDetailRequest request);
+}
+
+
+public class DocumentDetailService : IDocumentDetailService
 {
     private readonly ILogger _logger;
     private readonly IElasticSearchService _elasticSearchService;

@@ -1,6 +1,6 @@
 using DocSearchAIO.Classes;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Detail;
 
 public record DocumentDetailModel(string Creator, DateTime Created, string LastModifiedBy, DateTime LastModified,
     string Title, string Subject, string Version, string Revision, DateTime LastPrinted, string FileName, DateTime LastProcessTime)

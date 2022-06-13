@@ -3,7 +3,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.Utilities;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Init;
 
 public class InitResponseObject
 {

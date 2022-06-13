@@ -2,6 +2,7 @@
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Search;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt.UnsafeValueAccess;
@@ -10,7 +11,13 @@ using SourceFilter = Nest.SourceFilter;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class DoSearchService
+public interface IDoSearchService
+{
+    public Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest);
+}
+
+
+public class DoSearchService : IDoSearchService
 {
     private readonly ILogger<DoSearchService> _logger;
     private readonly IElasticSearchService _elasticSearchService;

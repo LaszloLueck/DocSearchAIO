@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
@@ -8,6 +8,7 @@ import {InitService} from "../services/init.service";
 import {LocalStorageService} from "../../services/localStorageService";
 import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
 import {LocalStorageDefaultDataset} from "../interfaces/LocalStorageDefaultDataset";
+import {SuggestionComponent} from "../components/suggestion/suggestion.component";
 
 @Component({
   selector: 'app-main',
@@ -15,12 +16,15 @@ import {LocalStorageDefaultDataset} from "../interfaces/LocalStorageDefaultDatas
   styleUrls: ['./main.component.scss']
 })
 export class MainComponent implements OnInit, OnDestroy {
+  @ViewChild(SuggestionComponent, {static: true})
+  private suggestionComponent!:SuggestionComponent;
+
   docCount!: number;
   searchResponse!: Observable<SearchResponse>;
   searchTerm!: string;
   closed: boolean = false;
-  localStorageDataset!: LocalStorageDataset
-  localStorageSubscription!: Subscription
+  localStorageDataset!: LocalStorageDataset;
+  localStorageSubscription!: Subscription;
 
   constructor(private commonDataService: CommonDataService, private doSearchService: SearchService, private initService: InitService, private localStorageService: LocalStorageService) { }
 
@@ -72,6 +76,11 @@ export class MainComponent implements OnInit, OnDestroy {
 
   getPagingCount(navigation: NavigationResult): number {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
+  }
+
+  pressEscape(): void {
+    if(this.suggestionComponent)
+      this.suggestionComponent.escapePressed();
   }
 
   doSearch(page: number, currentPageSize: number): void{

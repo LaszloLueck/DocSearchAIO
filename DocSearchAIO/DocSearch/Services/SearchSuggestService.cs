@@ -2,13 +2,19 @@
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Suggest;
 using DocSearchAIO.Services;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class SearchSuggestService
+public interface ISearchSuggestService
+{
+    public Task<SuggestResult> Suggestions(string searchPhrase);
+}
+
+public class SearchSuggestService : ISearchSuggestService
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ILogger<SearchSuggestService> _logger;

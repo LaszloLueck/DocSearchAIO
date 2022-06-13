@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Init;
 
 public class InitRequest
 {

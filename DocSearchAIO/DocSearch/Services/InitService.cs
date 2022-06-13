@@ -1,6 +1,7 @@
 ﻿using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using Nest;

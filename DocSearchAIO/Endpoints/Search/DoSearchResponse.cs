@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using DocSearchAIO.DocSearch.TOs;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Search;
 
 public record DoSearchResponse(
     [property: JsonPropertyName("searchResults")] IEnumerable<DoSearchResultContainer> SearchResults, 
