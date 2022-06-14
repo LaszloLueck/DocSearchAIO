@@ -1,4 +1,4 @@
-image: laszlo/containerruntimeglobal-build-full:latest
+image: laszlo/containerruntimeglobal_build-full_x64:latest
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
