@@ -83,6 +83,12 @@ export class MainComponent implements OnInit, OnDestroy {
       this.suggestionComponent.escapePressed();
   }
 
+  keyPressed(arg: any): void {
+    if(this.suggestionComponent) {
+      this.suggestionComponent.keyPressed(arg);
+    }
+  }
+
   doSearch(page: number, currentPageSize: number): void{
     const from = currentPageSize * page;
     if(!this.searchTerm || this.searchTerm.length == 0)
