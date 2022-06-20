@@ -50,8 +50,8 @@ public class AdministrationService
             {
                 var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 var result = await ConfigurationTuple(_configurationObject)
-                    .Where(tpl => tpl.TriggerName == triggerKey.Name)
-                    .TryFirst()
+                    .Filter(tpl => tpl.TriggerName == triggerKey.Name)
+                    .ToOption()
                     .Match(
                         async currentSelected =>
                         {
@@ -89,9 +89,13 @@ public class AdministrationService
             configurationObject =>
             {
                 var processingTuples =
-                    configurationObject.Processing.SelectKv((key, value) => (key, value.TriggerName, "processing"));
+                    configurationObject
+                        .Processing
+                        .Map(kv => (kv.Key, kv.Value.TriggerName, "processing"));
                 var cleanupTuples =
-                    configurationObject.Cleanup.SelectKv((key, value) => (key, value.TriggerName, "cleanup"));
+                    configurationObject
+                        .Cleanup
+                        .Map(kv => (kv.Key, kv.Value.TriggerName, "cleanup"));
                 return processingTuples.Concat(cleanupTuples);
             };
 
@@ -103,8 +107,8 @@ public class AdministrationService
             {
                 var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
                 var result = await ConfigurationTuple(_configurationObject)
-                    .Where(tpl => tpl.TriggerName == triggerKey.Name)
-                    .TryFirst()
+                    .Filter(tpl => tpl.TriggerName == triggerKey.Name)
+                    .ToOption()
                     .Match(
                         async currentSelected =>
                         {
@@ -175,12 +179,12 @@ public class AdministrationService
 
             _configurationObject.Processing = request
                 .ProcessorConfigurations
-                .Select(kv => new KeyValuePair<string, SchedulerEntry>(kv.Item1, kv.Item2))
+                .Map(kv => new KeyValuePair<string, SchedulerEntry>(kv.Item1, kv.Item2))
                 .ToDictionary();
 
             _configurationObject.Cleanup = request
                 .CleanupConfigurations
-                .Select(kv =>
+                .Map(kv =>
                     new KeyValuePair<string, CleanUpEntry>(kv.Item1, kv.Item2))
                 .ToDictionary();
 
@@ -229,8 +233,8 @@ public class AdministrationService
             {
                 var boolReturn = await _configurationObject
                     .Processing
-                    .Where(d => d.Value.JobName == jobStatusRequest.JobName)
-                    .TryFirst()
+                    .Filter(d => d.Value.JobName == jobStatusRequest.JobName)
+                    .ToOption()
                     .Match(
                         async kv =>
                         {
@@ -295,14 +299,14 @@ public class AdministrationService
         AdministrationGenericRequest adminGenModel = _configurationObject;
         adminGenModel.ProcessorConfigurations = _configurationObject
             .Processing
-            .Where(d => processSubTypes.Select(st => st.Name).Contains(d.Key))
-            .SelectKv((key, value) => Tuple.Create(key, (ProcessorConfiguration) value));
-           
+            .Filter(d => processSubTypes.Map(st => st.Name).Contains(d.Key))
+            .Map(kv => Tuple.Create(kv.Key, (ProcessorConfiguration) kv.Value));
+
         adminGenModel.CleanupConfigurations = _configurationObject
             .Cleanup
-            .Where(d => cleanupSubTypes.Select(st => st.Name).Contains(d.Key))
-            .SelectKv((key, value) =>
-                Tuple.Create(key, (CleanupConfiguration) value));
+            .Filter(d => cleanupSubTypes.Map(st => st.Name).Contains(d.Key))
+            .Map(kv =>
+                Tuple.Create(kv.Key, (CleanupConfiguration) kv.Value));
         return adminGenModel;
     }
 
@@ -311,7 +315,8 @@ public class AdministrationService
         return _schedulerStatisticsService.SchedulerStatistics();
     }
 
-    private static async IAsyncEnumerable<IndicesStatsResponse> CalculateIndicesStatsResponse(IEnumerable<string> indices, IElasticSearchService elasticSearchService)
+    private static async IAsyncEnumerable<IndicesStatsResponse> CalculateIndicesStatsResponse(
+        IEnumerable<string> indices, IElasticSearchService elasticSearchService)
     {
         foreach (var index in indices)
             yield return await elasticSearchService.IndexStatistics(index);
@@ -326,8 +331,8 @@ public class AdministrationService
             (await IndicesResponse(indexName))
             .Indices
             .Keys
-            .Select(index => index.Name);
-            
+            .Map(index => index.Name);
+
         var knownIndices = await KnownIndices(_configurationObject.IndexName);
         var indexStatsResponses = CalculateIndicesStatsResponse(knownIndices, _elasticSearchService);
 
@@ -354,38 +359,39 @@ public class AdministrationService
 
         var jobStateMemoryCaches = JobStateMemoryCaches(_loggerFactory, _memoryCache);
         var runtimeStatistic = StatisticUtilities(_loggerFactory, _configurationObject)
-            .SelectTuple((processorBase, statisticModel) =>
+            .Map(kv =>
             {
-                return statisticModel
+                var (processorBase, statisticModel) = kv;
+                var foo = statisticModel
                     .Invoke()
                     .LatestJobStatisticByModel()
                     .Map(doc =>
                     {
                         return jobStateMemoryCaches
-                            .Where(d => d.Item1.DerivedModelName == processorBase.DerivedModelName)
+                            .Filter(d => d.Item1.DerivedModelName == processorBase.DerivedModelName)
                             .Map(jobState => KeyValuePair.Create(processorBase.ShortName,
                                 ConvertToRunnableStatistic(doc, jobState.Item2)));
                     });
+
+                return foo;
             })
             .Somes()
-            .Flatten()
-            .ToDictionary();
+            .Flatten();
 
-        static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(IAsyncEnumerable<IndicesStatsResponse> responses) =>
-            responses.Select(index => (IndexStatisticModel)index);
+        static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(
+            IAsyncEnumerable<IndicesStatsResponse> responses) =>
+            responses.Select(index => (IndexStatisticModel) index);
 
 
         static async Task<IndexStatistic> ResponseModel(IAsyncEnumerable<IndicesStatsResponse> indexStatsResponses,
-            Dictionary<string, RunnableStatistic> runtimeStatistic)
+            IEnumerable<KeyValuePair<string, RunnableStatistic>> runtimeStatistic)
         {
             var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
-            // ReSharper disable once PossibleMultipleEnumeration
             var entireDocCount = await CalculateEntireDocCount(convertedModel);
-            // ReSharper disable once PossibleMultipleEnumeration
             var entireSizeInBytes = await CalculateEntireIndexSize(convertedModel);
-            // ReSharper disable once PossibleMultipleEnumeration
             return new IndexStatistic(convertedModel, runtimeStatistic, entireDocCount, entireSizeInBytes);
         }
+
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
     }
 
@@ -398,10 +404,10 @@ public class AdministrationService
 
     private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Option<JobState>,
         IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =
-        (triggerElements, jobStateOpt) => triggerElements.Select(trigger =>
+        (triggerElements, jobStateOpt) => triggerElements.Map(trigger =>
         {
             AdministrationActionTriggerModel triggerElement = trigger;
-            triggerElement.JobState = jobStateOpt.GetValueOrDefault(JobState.Undefined);
+            triggerElement.JobState = jobStateOpt.IfNone(JobState.Undefined);
             return triggerElement;
         });
 
@@ -410,38 +416,50 @@ public class AdministrationService
             (scheduler, jobStateOpt) => new AdministrationActionSchedulerModel(scheduler.SchedulerName,
                 ConvertTriggerElements(scheduler.TriggerElements, jobStateOpt));
 
-    private static readonly Func<MemoryCacheModelProxy, Dictionary<string, JobState>> MemoryCacheStates =
+    private static readonly Func<MemoryCacheModelProxy, IEnumerable<KeyValuePair<string, JobState>>> MemoryCacheStates =
         memoryCacheModelProxy => memoryCacheModelProxy
             .Models()
-            .SelectTuple((key, value) => value
-                .Invoke()
-                .CacheEntry()
-                .Match(
-                    el => KeyValuePair.Create(key, el.JobState),
-                    () => KeyValuePair.Create(key, JobState.Undefined)
-                ))
-            .ToDictionary();
+            .Map(kv =>
+            {
+                var (key, value) = kv;
+                return value
+                    .Invoke()
+                    .CacheEntry()
+                    .Match(
+                        el => KeyValuePair.Create(key, el.JobState),
+                        () => KeyValuePair.Create(key, JobState.Undefined)
+                    );
+            });
 
-    private static readonly Func<string, Dictionary<string, JobState>, Option<JobState>> FilterMemoryCacheState =
-        (jobName, memoryCacheStates) => memoryCacheStates.TryGetValue(jobName, out var value) ? value : Option<JobState>.None;
+    private static readonly Func<string, IEnumerable<KeyValuePair<string, JobState>>, Option<JobState>>
+        FilterMemoryCacheState =
+            (jobName, memoryCacheStates) =>
+            {
+                return memoryCacheStates.Filter(d => d.Key == jobName)
+                    .ToTryOption()
+                    .Match(
+                        some => some.Value,
+                        () => Option<JobState>.None);
+            };
 
-    private static readonly Func<SchedulerStatistics, Dictionary<string, JobState>, Option<JobState>>
+    private static readonly Func<SchedulerStatistics, IEnumerable<KeyValuePair<string, JobState>>, Option<JobState>>
         CalculateJobState = (schedulerStatisticsArray, memoryCacheStates) => schedulerStatisticsArray
             .TriggerElements
-            .Select(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
-            .Somes()
-            .First();
+            .Map(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
+            .ToOption()
+            .Flatten();
 
     public IAsyncEnumerable<KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
-        var groupedSchedulerModels = _schedulerStatisticsService.SchedulerStatistics()
+        var groupedSchedulerModels = _schedulerStatisticsService
+            .SchedulerStatistics()
             .Select(kv =>
             {
                 var state = CalculateJobState(kv.Value, memoryCacheStates);
                 var model = ConvertToActionModel(kv.Value, state);
                 return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(kv.Key,
-                    new[] { model });
+                    new[] {model});
             });
         return groupedSchedulerModels;
     }

@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {NavigationResult, SearchResponse} from "../interfaces/SearchResponse";
 import {DoSearchRequest} from "../interfaces/DoSearchRequest";
@@ -17,7 +17,7 @@ import {SuggestionComponent} from "../components/suggestion/suggestion.component
 })
 export class MainComponent implements OnInit, OnDestroy {
   @ViewChild(SuggestionComponent, {static: true})
-  private suggestionComponent!:SuggestionComponent;
+  private suggestionComponent!: SuggestionComponent;
 
   docCount!: number;
   searchResponse!: Observable<SearchResponse>;
@@ -26,10 +26,12 @@ export class MainComponent implements OnInit, OnDestroy {
   localStorageDataset!: LocalStorageDataset;
   localStorageSubscription!: Subscription;
 
-  constructor(private commonDataService: CommonDataService, private doSearchService: SearchService, private initService: InitService, private localStorageService: LocalStorageService) { }
+
+  constructor(private commonDataService: CommonDataService, private doSearchService: SearchService, private initService: InitService, private localStorageService: LocalStorageService) {
+  }
 
   ngOnDestroy(): void {
-    if(this.localStorageSubscription)
+    if (this.localStorageSubscription)
       this.localStorageSubscription.unsubscribe()
   }
 
@@ -39,14 +41,14 @@ export class MainComponent implements OnInit, OnDestroy {
   }
 
   init(): void {
-    if(document.getElementById("searchField"))
+    if (document.getElementById("searchField"))
       document.getElementById("searchField")!.focus();
 
 
-    if(!this.localStorageService.getData()){
+    if (!this.localStorageService.getData()) {
       this.localStorageDataset = new LocalStorageDefaultDataset();
     } else {
-      this.localStorageDataset = this.localStorageService.getData()??new LocalStorageDefaultDataset();
+      this.localStorageDataset = this.localStorageService.getData() ?? new LocalStorageDefaultDataset();
     }
     this.localStorageSubscription = this
       .initService
@@ -62,7 +64,7 @@ export class MainComponent implements OnInit, OnDestroy {
     return new Array(count);
   }
 
-  handleExternalSearch(eventHandler: any){
+  handleExternalSearch(eventHandler: any) {
     this.doSearch(0, this.localStorageDataset.itemsPerPage);
   }
 
@@ -70,7 +72,7 @@ export class MainComponent implements OnInit, OnDestroy {
     return navigation.currentPageSize === 0 ? 1 : Math.round(navigation.currentPage / navigation.currentPageSize + 1);
   }
 
-  getModResult(navigation: NavigationResult):number {
+  getModResult(navigation: NavigationResult): number {
     return (navigation.docCount % navigation.currentPageSize === 0) ? 0 : 1;
   }
 
@@ -78,20 +80,31 @@ export class MainComponent implements OnInit, OnDestroy {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
   }
 
-  pressEscape(): void {
+  cursorDown(): void {
     if(this.suggestionComponent)
+      this.suggestionComponent.cursorDown();
+  }
+
+  cursorUp(): void {
+    if(this.suggestionComponent)
+      this.suggestionComponent.cursorUp();
+  }
+
+  pressEscape(): void {
+    if (this.suggestionComponent)
       this.suggestionComponent.escapePressed();
   }
 
   keyPressed(arg: any): void {
-    if(this.suggestionComponent) {
-      this.suggestionComponent.keyPressed(arg);
+    if (this.suggestionComponent) {
+      const value: string = arg;
+      this.suggestionComponent.keyPressed(value);
     }
   }
 
-  doSearch(page: number, currentPageSize: number): void{
+  doSearch(page: number, currentPageSize: number): void {
     const from = currentPageSize * page;
-    if(!this.searchTerm || this.searchTerm.length == 0)
+    if (!this.searchTerm || this.searchTerm.length == 0)
       this.searchTerm = '*';
 
     console.log('searchTerm: ' + this.searchTerm);

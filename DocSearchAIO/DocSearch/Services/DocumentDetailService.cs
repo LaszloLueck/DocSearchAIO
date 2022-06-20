@@ -44,7 +44,7 @@ public class DocumentDetailService : IDocumentDetailService
             _logger.LogInformation("find document detail in {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
             return result
                 .Hits
-                .TryFirst()
+                .ToOption()
                 .Match(
                     hit =>
                     {

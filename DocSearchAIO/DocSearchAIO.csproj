@@ -12,9 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.ApiEndpoints" Version="4.0.1" />
-    <PackageReference Include="LanguageExt.Core" Version="4.2.2" />
-    <PackageReference Include="LanguageExt.Transformers" Version="4.2.2" />
-    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.5" />
+    <PackageReference Include="LanguageExt.Core" Version="4.2.7" />
+    <PackageReference Include="LanguageExt.Transformers" Version="4.2.7" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.6" />
     <PackageReference Include="Akka.Streams" Version="1.4.39" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.16.0" />
     <PackageReference Include="itext7" Version="7.2.2" />

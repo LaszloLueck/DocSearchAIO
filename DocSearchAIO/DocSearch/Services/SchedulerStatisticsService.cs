@@ -2,6 +2,7 @@
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Utilities;
+using LanguageExt.SomeHelp;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -38,9 +39,15 @@ public class SchedulerStatisticsService
     private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
         configurationObject =>
         {
+            var foo = configurationObject.Processing.Map(kv => (kv.Value.TriggerName, kv.Value.Active));
+            
             var processing =
-                configurationObject.Processing.SelectKv((_, value) => (value.TriggerName, value.Active));
-            var cleanup = configurationObject.Cleanup.SelectKv((_, value) => (value.TriggerName, value.Active));
+                configurationObject
+                    .Processing
+                    .Map(kv => (kv.Value.TriggerName, kv.Value.Active));
+            var cleanup = configurationObject
+                .Cleanup
+                .Map(kv => (kv.Value.TriggerName, kv.Value.Active));
             return processing.Concat(cleanup);
         };
 
@@ -58,10 +65,10 @@ public class SchedulerStatisticsService
                 trg.ResolveNullable(DateTime.Now,
                     (v, a) => v.GetPreviousFireTimeUtc()?.UtcDateTime.ToLocalTime() ?? a), triggerState.ToString(),
                 trg.ResolveNullable(string.Empty, (v, a) => v.Description ?? a), tuples
-                    .Where(r => r.TriggerName == trigger.Name)
-                    .Select(d => d.Active)
-                    .TryFirst()
-                    .GetValueOrDefault(false), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
+                    .Filter(r => r.TriggerName == trigger.Name)
+                    .Map(d => d.Active)
+                    .ToOption()
+                    .IfNone(false), trg.ResolveNullable(string.Empty, (v, _) => v.JobKey.Name)
             );
         };
 
@@ -107,7 +114,7 @@ public class SchedulerStatisticsService
                 return await t;
             };
 
-    public  IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerStatistics()
+    public IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerStatistics()
     {
         var source = new List<TypedGroupNameString>
         {

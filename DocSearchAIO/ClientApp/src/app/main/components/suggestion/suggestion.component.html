@@ -1,1 +1,7 @@
-
+<div id="search_suggest" class="dropdown-menu show w-50 mx-auto d-flex justify-content-left suggestNav ps-2 suggest-close">
+<div class="w-100">
+  <a style="text-overflow: ellipsis" (click)="setToSearch(suggest.label)" class="dropdown-item" *ngFor="let suggest of (results | async)?.suggests">
+    {{suggest.label}}
+  </a>
+</div>
+</div>

@@ -93,7 +93,7 @@ public static class StaticHelpers
     [Pure]
     public static TypedCommentString StringFromCommentsArray(
         this IEnumerable<OfficeDocumentComment> commentsArray) =>
-        new(commentsArray.Select(d => d.Comment).Join(" "));
+        new(commentsArray.Map(d => d.Comment).Join(" "));
 
 
     private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ ";
@@ -102,7 +102,7 @@ public static class StaticHelpers
     public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
         TypedContentString contentString) => new(Repl(commentString.Value + " " + contentString.Value) ?? "");
 
-    private static readonly Func<string, string?> Repl = input => input.Select(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
+    private static readonly Func<string, string?> Repl = input => input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
 
     [Pure]
     public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
@@ -111,8 +111,8 @@ public static class StaticHelpers
             .ToLower()
             .Split(" ")
             .Distinct()
-            .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-            .Where(d => d.Length > 2);
+            .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+            .Filter(d => d.Length > 2);
 
 
     [Pure]
@@ -124,7 +124,7 @@ public static class StaticHelpers
         commentsArray =>
         {
             return commentsArray
-                .Select(l => l.Comment.Split(" "))
+                .Map(l => l.Comment.Split(" "))
                 .Distinct();
         };
 
@@ -135,8 +135,8 @@ public static class StaticHelpers
                 return listElementsToHash
                     .Concat(
                         CommentsString(commentsArray)
-                            .Where(d => d.Any())
-                            .SelectMany(k => k)
+                            .Filter(d => d.Any())
+                            .Flatten()
                             .Distinct()
                     );
             };
@@ -175,7 +175,7 @@ public static class StaticHelpers
     public static string ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
     {
         return openXmlElementList
-            .Select(TextFromParagraph)
+            .Map(TextFromParagraph)
             .Join(" ");
     }
 
@@ -270,7 +270,7 @@ public static class StaticHelpers
     {
         return Source
             .From(Directory.GetFiles(scanPath.Value, fileExtension,
-                SearchOption.AllDirectories).Select(f => new TypedFilePathString(f)));
+                SearchOption.AllDirectories).Map(f => new TypedFilePathString(f)));
     }
 
     public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>

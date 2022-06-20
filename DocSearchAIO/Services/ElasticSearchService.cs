@@ -63,7 +63,7 @@ public class ElasticSearchService : IElasticSearchService
     {
         var bulkResponse =
             await _elasticClient.DeleteManyAsync(
-                toRemove.Select(id => new ElasticDocument {Id = id}), indexName);
+                toRemove.Map(id => new ElasticDocument {Id = id}), indexName);
         if (bulkResponse.IsValid)
         {
             _logger.LogInformation(

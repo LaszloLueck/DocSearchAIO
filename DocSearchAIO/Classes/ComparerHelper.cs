@@ -39,10 +39,9 @@ public static class ComparerHelper
                         .ReadAllLines(path)
                         .AsParallel()
                         .WithDegreeOfParallelism(10)
-                        .Select(ConvertLine)
+                        .Map(ConvertLine)
                         .Somes()
-                        .Select(cpo => KeyValuePair.Create(cpo.PathHash, cpo))
-                        .ToDictionary();
+                        .Map(cpo => KeyValuePair.Create(cpo.PathHash, cpo));
                     return new ConcurrentDictionary<string, ComparerObject>(retDictionary);
                 }
                 else
@@ -81,7 +80,7 @@ public static class ComparerHelper
         string fileName)
     {
         await File.WriteAllLinesAsync(fileName,
-            cacheObject.SelectKv((_, value) =>
-                $"{value.DocumentHash};{value.PathHash};{value.OriginalPath}"));
+            cacheObject.Map(kv =>
+                $"{kv.Value.DocumentHash};{kv.Value.PathHash};{kv.Value.OriginalPath}"));
     }
 }

@@ -170,30 +170,30 @@ public static class PowerpointProcessingHelper
                 if (presentationPartOpt.IsNone)
                     return Option<PowerpointElasticDocument>.None;
 
-                var presentaionPart = presentationPartOpt.ValueUnsafe();
+                var presentationPart = presentationPartOpt.ValueUnsafe();
                 var fInfo = wdOpt.PackageProperties;
-                var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
-                var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
-                var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
-                var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
-                var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
-                var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
-                var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
-                var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
-                var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
-                var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
-                var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
+                var category = fInfo.Category.IfNull(string.Empty);
+                var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
+                var creator = fInfo.Creator.IfNull(string.Empty);
+                var description = fInfo.Description.IfNull(string.Empty);
+                var identifier = fInfo.Identifier.IfNull(string.Empty);
+                var keywords = fInfo.Keywords.IfNull(string.Empty);
+                var language = fInfo.Language.IfNull(string.Empty);
+                var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+                var revision = fInfo.Revision.IfNull(string.Empty);
+                var subject = fInfo.Subject.IfNull(string.Empty);
+                var title = fInfo.Title.IfNull(string.Empty);
+                var version = fInfo.Version.IfNull(string.Empty);
+                var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
                 const string contentType = "pptx";
-                var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1), (v, a) => v ?? a);
-                var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
+                var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+                var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
                 var uriPath = currentFile
                     .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                     .Replace(@"\", "/");
 
                 var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile));
-                var slideCount = presentaionPart
+                var slideCount = presentationPart
                     .SlideParts
                     .Count();
 
@@ -201,7 +201,7 @@ public static class PowerpointProcessingHelper
                     CommentArray(PresentationPart presentationPart) =>
                     CommentsFromDocument(presentationPart.SlideParts);
 
-                var commentsArray = CommentArray(presentaionPart).ToArray();
+                var commentsArray = CommentArray(presentationPart).ToArray();
 
                 var toReplaced = new List<(string, string)>()
                 {
@@ -209,7 +209,7 @@ public static class PowerpointProcessingHelper
                     ("[ ]{2,}", " ")
                 };
 
-                var contentString = presentaionPart
+                var contentString = presentationPart
                     .Elements()
                     .ContentString()
                     .ReplaceSpecialStrings(toReplaced);
@@ -222,7 +222,7 @@ public static class PowerpointProcessingHelper
                 var elementsHash = await (
                     StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
 
-                static CompletionField GetCompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
+                static CompletionField CompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
                     string contentString) =>
                     commentsArray
                         .StringFromCommentsArray()
@@ -234,7 +234,7 @@ public static class PowerpointProcessingHelper
                 var returnValue = new PowerpointElasticDocument
                 {
                     Category = category,
-                    CompletionContent = GetCompletionField(commentsArray, contentString),
+                    CompletionContent = CompletionField(commentsArray, contentString),
                     Content = contentString,
                     ContentHash = elementsHash.Value,
                     ContentStatus = contentStatus,
@@ -274,7 +274,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Select(comment => OfficeDocumentComment((Comment)comment));
+        comments.Map(comment => OfficeDocumentComment((Comment)comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()
@@ -285,16 +285,16 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
-        .Select(part => part
+        .Map(part => part
             .SlideCommentsPart
             .ResolveNullable(Array.Empty<OfficeDocumentComment>(),
                 (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
         )
-        .SelectMany(p => p);
+        .Flatten();
 
     private static IEnumerable<OpenXmlElement> Elements(this PresentationPart presentationPart)
     {
         return presentationPart
-            .SlideParts.Select(p => p.Slide);
+            .SlideParts.Map(p => p.Slide);
     }
 }

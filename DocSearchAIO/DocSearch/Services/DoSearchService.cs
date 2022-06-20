@@ -5,6 +5,7 @@ using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Endpoints.Search;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
+using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
@@ -69,7 +70,7 @@ public class DoSearchService : IDoSearchService
 
             var indicesResponse =
                 await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
-            var knownIndices = indicesResponse.Indices.Keys.Select(index => index.Name);
+            var knownIndices = indicesResponse.Indices.Keys.Map(index => index.Name);
 
             var documentTypesAndFilters = new List<(Type, bool)>
             {
@@ -82,7 +83,11 @@ public class DoSearchService : IDoSearchService
             };
                 
             var selectedIndices = new List<string>();
-            var enumerable = knownIndices.ResolveNullable(Array.Empty<string>(), (v, _) => v.ToArray());
+            var enumerable = knownIndices
+                .ToOptionL()
+                .IfNone(Array.Empty<string>())
+                .ToArray();
+            
             documentTypesAndFilters.ForEach((filterType, requestFilter) => 
             {
                 if(StaticHelpers.TypedIndexKeyExistsAndFilter(filterType,_configurationObject, enumerable, requestFilter))
@@ -113,7 +118,7 @@ public class DoSearchService : IDoSearchService
             var paginationResult = new DoSearchResult(from, size, result.Total, searchPhrase);
             var statisticsModel = new SearchStatisticsModel(sw.ElapsedMilliseconds, result.Total);
 
-            var retCol = result.Hits.Select(hit =>
+            var retCol = result.Hits.Map(hit =>
             {
                 static string IconType(string contentType) => contentType switch
                 {
@@ -131,7 +136,7 @@ public class DoSearchService : IDoSearchService
 
                 if (hit.Highlight.ContainsKey("content"))
                 {
-                    highlightContent = hit.Highlight["content"].Select(p =>
+                    highlightContent = hit.Highlight["content"].Map(p =>
                         new ContentDetail(p));
                 }
                 else
@@ -148,10 +153,10 @@ public class DoSearchService : IDoSearchService
                 {
                     var originalComments = hit.Source.Comments;
 
-                    highlightComments = hit.Highlight["comments.comment"].Select(p =>
+                    highlightComments = hit.Highlight["comments.comment"].Map(p =>
                     {
                         var prepText = p.Replace(highlight.PreTags.First(), "").Replace(highlight.PostTags.First(), "");
-                        var commentObj = originalComments.Where(c => c.Comment.Contains(prepText)).TryFirst();
+                        var commentObj = originalComments.Filter(c => c.Comment.Contains(prepText)).ToOption();
 
                         var retVal = commentObj.IsSome
                             ? new CommentDetail(p)
@@ -169,7 +174,7 @@ public class DoSearchService : IDoSearchService
                 DoSearchResultContainer container = hit.Source;
                 container.Contents = highlightContent;
                 container.Comments = highlightComments;
-                container.Relevance = hit.Score.ResolveNullable(0d, (v, a) => v ?? a);
+                container.Relevance = hit.Score.IfNone(0d);
                 container.ProgramIcon = IconType(hit.Source.ContentType);
                 return container;
             });

@@ -11,7 +11,7 @@ public static class ElasticSearchExtensions
     {
         var cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(cfg);
-        var uriList = cfg.ElasticEndpoints.Select(e => new Uri(e));
+        var uriList = cfg.ElasticEndpoints.Map(e => new Uri(e));
         var pool = new StaticConnectionPool(uriList);
         var settings = new ConnectionSettings(pool)
             .DefaultIndex(cfg.IndexName)

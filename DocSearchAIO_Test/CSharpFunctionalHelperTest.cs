@@ -113,38 +113,13 @@ public class CSharpFunctionalHelperTest
             .WithMaybeFilter()
             .RunWith(Sink.Seq<IEnumerable<int>>(), materializer)
             .Result
-            .SelectMany(x => x);
+            .Flatten();
 
         materializer.Dispose();
 
         result.Count().Should().Be(3);
         result.First().Should().Be(8);
         result.Last().Should().Be(1);
-    }
-
-    [Fact]
-    public void Get_element_from_Dictionary_and_process_an_action()
-    {
-        var dic = new List<KeyValuePair<int, int>>
-            { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(0, 3) };
-
-        var result = dic.SelectKv((k, v) => k + v);
-
-        result.Count().Should().Be(3);
-        result.First().Should().Be(2);
-        result.Last().Should().Be(3);
-    }
-
-    [Fact]
-    public void Get_element_from_List_of_tuples_and_process_an_action()
-    {
-        var dic = new List<Tuple<int, int>> { Tuple.Create(1, 1), Tuple.Create(2, 2), Tuple.Create(0, 3) };
-
-        var result = dic.SelectTuple((k, v) => k + v);
-
-        result.Count().Should().Be(3);
-        result.First().Should().Be(2);
-        result.Last().Should().Be(3);
     }
 
     [Fact]

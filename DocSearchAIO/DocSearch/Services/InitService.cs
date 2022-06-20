@@ -31,7 +31,7 @@ public class InitService : IInitService
         var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
         var indexNames = indicesResponse
             .Indices
-            .OrElseIfNull(new Dictionary<IndexName, IndexState>())
+            .IfNull(new Dictionary<IndexName, IndexState>())
             .Map(kv => kv.Key.Name)
             .ToArray();
 

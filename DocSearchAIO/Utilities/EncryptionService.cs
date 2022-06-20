@@ -12,7 +12,7 @@ public static class EncryptionService
 
     public static string ConvertToStringFromByteArray(byte[] array)
     {
-        return array.Select(bt => bt.ToString("x2")).Concat();
+        return array.Map(bt => bt.ToString("x2")).Concat();
     }
         
 }

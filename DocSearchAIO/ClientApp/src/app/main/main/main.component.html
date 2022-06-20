@@ -2,11 +2,10 @@
   <div id="logo" class="w-50 mx-auto d-flex justify-content-center">
     <img src="/assets/images/docsearch.png" alt="Logo"/>
   </div>
-  <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mb-2">
+  <div class="input-group rounded w-50 mx-auto d-flex justify-content-center mb-1">
     <div class="input-group">
       <span class="input-group-text" id="basic-addon1"><em class="bi bi-search"></em></span>
-      <input class="form-control" id="searchField" placeholder="Suchtext" type="text" (ngModelChange)="keyPressed($event)" (keydown.escape)="pressEscape()" (keydown.enter)="doSearch(0, localStorageDataset.itemsPerPage)" [(ngModel)]="searchTerm">
-      <app-suggestion></app-suggestion>
+      <input class="form-control" id="searchField" placeholder="Suchtext" type="text" (ngModelChange)="keyPressed($event)" (keydown.arrowDown)="cursorDown()" (keydown.arrowUp)="cursorUp()" (keydown.escape)="pressEscape()" (keydown.enter)="doSearch(0, localStorageDataset.itemsPerPage)" [(ngModel)]="searchTerm">
       <div class="ms-2">
         <button class="btn btn-secondary" type="button" (click)="doSearch(0, localStorageDataset.itemsPerPage)">
           <em class="bi bi-search"></em> Suchen
@@ -16,6 +15,9 @@
         <app-offcanvas (doSearchEvent)="handleExternalSearch($event)" [localStorageDataSet]="localStorageDataset"></app-offcanvas>
       </div>
     </div>
+  </div>
+  <div class="input-group">
+    <app-suggestion></app-suggestion>
   </div>
 </div>
 <ngbd-alert-selfclosing></ngbd-alert-selfclosing>

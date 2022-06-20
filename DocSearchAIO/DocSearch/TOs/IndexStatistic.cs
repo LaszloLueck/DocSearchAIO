@@ -1,4 +1,4 @@
 ﻿namespace DocSearchAIO.DocSearch.TOs;
 
 public record IndexStatistic(IAsyncEnumerable<IndexStatisticModel> IndexStatisticModels,
-    Dictionary<string, RunnableStatistic> RuntimeStatistics, long EntireDocCount, double EntireSizeInBytes);
+    IEnumerable<KeyValuePair<string, RunnableStatistic>> RuntimeStatistics, long EntireDocCount, double EntireSizeInBytes);

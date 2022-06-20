@@ -207,14 +207,14 @@ internal static class PdfProcessingHelper
                     ContentType = "pdf"
                 };
 
-                var contentString = pdfPages.Select(p => p.PageText).Join(" ");
+                var contentString = pdfPages.Map(p => p.PageText).Join(" ");
                 var suggestedText = Regex.Replace(contentString, "[^a-zA-Zäöüß]", " ");
                 var searchAsYouTypeContent = suggestedText
                     .ToLower()
                     .Split(" ")
                     .Distinct()
-                    .Where(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                    .Where(d => d.Length > 2);
+                    .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+                    .Filter(d => d.Length > 2);
                 var completionField = new CompletionField { Input = searchAsYouTypeContent };
                 elasticDoc.CompletionContent = completionField;
 

@@ -169,25 +169,22 @@ internal static class WordProcessingHelper
 
                 var mainDocumentPart = mainDocumentPartOpt.ValueUnsafe();
                 var fInfo = wdOpt.PackageProperties;
-                var category = fInfo.Category.ResolveNullable(string.Empty, (v, _) => v);
-                var created = fInfo.Created.ResolveNullable(new DateTime(1970, 1, 1),
-                    (value, a) => value ?? a);
-                var creator = fInfo.Creator.ResolveNullable(string.Empty, (v, _) => v);
-                var description = fInfo.Description.ResolveNullable(string.Empty, (v, _) => v);
-                var identifier = fInfo.Identifier.ResolveNullable(string.Empty, (v, _) => v);
-                var keywords = fInfo.Keywords.ResolveNullable(string.Empty, (v, _) => v);
-                var language = fInfo.Language.ResolveNullable(string.Empty, (v, _) => v);
-                var modified = fInfo.Modified.ResolveNullable(new DateTime(1970, 1, 1),
-                    (value, a) => value ?? a);
-                var revision = fInfo.Revision.ResolveNullable(string.Empty, (v, _) => v);
-                var subject = fInfo.Subject.ResolveNullable(string.Empty, (v, _) => v);
-                var title = fInfo.Title.ResolveNullable(string.Empty, (v, _) => v);
-                var version = fInfo.Version.ResolveNullable(string.Empty, (v, _) => v);
-                var contentStatus = fInfo.ContentStatus.ResolveNullable(string.Empty, (v, _) => v);
+                var category = fInfo.Category.IfNull(string.Empty);
+                var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
+                var creator = fInfo.Creator.IfNull(string.Empty);
+                var description = fInfo.Description.IfNull(string.Empty);
+                var identifier = fInfo.Identifier.IfNull(string.Empty);
+                var keywords = fInfo.Keywords.IfNull(string.Empty);
+                var language = fInfo.Language.IfNull(string.Empty);
+                var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+                var revision = fInfo.Revision.IfNull(string.Empty);
+                var subject = fInfo.Subject.IfNull(string.Empty);
+                var title = fInfo.Title.IfNull(string.Empty);
+                var version = fInfo.Version.IfNull(string.Empty);
+                var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
                 const string contentType = "docx";
-                var lastPrinted = fInfo.LastPrinted.ResolveNullable(new DateTime(1970, 1, 1),
-                    (value, a) => value ?? a);
-                var lastModifiedBy = fInfo.LastModifiedBy.ResolveNullable(string.Empty, (v, _) => v);
+                var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+                var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
                 var uriPath = currentFile
                     .Replace(configurationObject.ScanPath,
                         configurationObject.UriReplacement)
@@ -204,20 +201,17 @@ internal static class WordProcessingHelper
                         .WordprocessingCommentsPart
                         .ResolveNullable(new Comments(), (v, _) => v.Comments);
 
-                    return comments.Select(comment =>
+                    return comments.Map(comment =>
                     {
-                        var d = (Comment)comment;
+                        var d = (Comment) comment;
+
                         var retValue = new OfficeDocumentComment
                         {
-                            Author = d.Author.ResolveNullable(string.Empty,
-                                (value, alternative) => value.Value ?? alternative),
+                            Author = d.Author?.Value ?? string.Empty,
                             Comment = d.InnerText,
-                            Date = d.Date.ResolveNullable(new DateTime(1970, 1, 1),
-                                (value, _) => value.Value),
-                            Id = d.Id.ResolveNullable(string.Empty,
-                                (value, alternative) => value.Value ?? alternative),
-                            Initials = d.Initials.ResolveNullable(string.Empty,
-                                (value, alternative) => value.Value ?? alternative)
+                            Date = d.Date?.Value ?? new DateTime(1970, 1, 1),
+                            Id = d.Id?.Value ?? string.Empty,
+                            Initials = d.Initials?.Value ?? string.Empty
                         };
                         return retValue;
                     });

@@ -42,7 +42,7 @@ internal static class ReverseComparerServiceHelper
             if (itemsArray.Length <= 0) return Array.Empty<ComparerObject>();
             logger.LogInformation("try to remove {Elements} from elastic index", itemsArray.Length);
             var resultCount =
-                await elasticSearchService.RemoveItemsById(indexName, itemsArray.Select(item => item.PathHash));
+                await elasticSearchService.RemoveItemsById(indexName, itemsArray.Map(item => item.PathHash));
             removedFileCount.Add(resultCount);
             return itemsArray.AsEnumerable();
         });
