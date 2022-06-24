@@ -36,7 +36,8 @@
     "run-script-os": "^1.1.6",
     "rxjs": "~7.5.4",
     "tslib": "^2.4.0",
-    "zone.js": "~0.11.6"
+    "zone.js": "~0.11.6",
+    "got": "~11.8.5"
   },
   "devDependencies": {
     "@angular/compiler-cli": "^14.0.3",
