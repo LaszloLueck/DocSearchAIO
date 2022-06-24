@@ -1,9 +1,10 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output, ViewChild} from '@angular/core';
 import {SuggestService} from "../../services/suggest.service";
 import {Observable, tap} from "rxjs";
 import {Suggest} from "../../interfaces/Suggest";
 import {SuggestResponse} from "../../interfaces/SuggestResponse";
 import {SuggestRequest} from "../../interfaces/SuggestRequest";
+import {MainComponent} from "../../main/main.component";
 
 @Component({
   selector: 'app-suggestion',
@@ -11,6 +12,11 @@ import {SuggestRequest} from "../../interfaces/SuggestRequest";
   styleUrls: ['./suggestion.component.scss']
 })
 export class SuggestionComponent implements OnInit {
+  @ViewChild(MainComponent, {static: true})
+  private mainComponent!: MainComponent;
+
+  @Output() externalSearchParam: EventEmitter<string> = new EventEmitter<string>();
+  @Output() doSearchEvent: EventEmitter<any> = new EventEmitter<any>();
   results!: Observable<SuggestResponse>;
   private isOpen: boolean = false;
   toSearch!: string;
@@ -42,15 +48,21 @@ export class SuggestionComponent implements OnInit {
 
   setToSearch(element: string): void {
     this.toSearch = element;
-    (<HTMLInputElement>document.getElementById("searchField")!).value = this.toSearch;
+    this.externalSearchParam.emit(this.toSearch);
+    this.doSearchEvent.emit();
+    this.escapePressed();
   }
 
   cursorUp() {
     console.log("Cursor Up")
   }
 
+  setFocus(){
+
+  }
+
   cursorDown() {
-    console.log("Cursor down")
+
   }
 
   doSuggest() {

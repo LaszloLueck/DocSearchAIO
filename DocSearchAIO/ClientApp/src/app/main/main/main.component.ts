@@ -64,6 +64,11 @@ export class MainComponent implements OnInit, OnDestroy {
     return new Array(count);
   }
 
+  handleExternalSearchParam(param: string){
+    this.searchTerm = param;
+
+  }
+
   handleExternalSearch(eventHandler: any) {
     this.doSearch(0, this.localStorageDataset.itemsPerPage);
   }
@@ -78,6 +83,10 @@ export class MainComponent implements OnInit, OnDestroy {
 
   getPagingCount(navigation: NavigationResult): number {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
+  }
+
+  tabDown(){
+    this.suggestionComponent.setFocus();
   }
 
   cursorDown(): void {

@@ -4,6 +4,7 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Endpoints.Suggest;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 
