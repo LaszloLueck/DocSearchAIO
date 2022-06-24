@@ -15,27 +15,18 @@ public class MemoryCacheModelProxy
         _memoryCache = memoryCache;
     }
 
-    public IEnumerable<Tuple<string, Func<MemoryCacheModel>>> Models()
+    public Seq<(string, Func<MemoryCacheModel>)> Models()
     {
-        return new List<Tuple<string, Func<MemoryCacheModel>>>
-        {
-            Tuple.Create<string, Func<MemoryCacheModel>>("wordProcessingJob",
-                () => new MemoryCacheModelWord(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("excelProcessingJob",
-                () => new MemoryCacheModelExcel(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("pdfProcessingJob",
-                () => new MemoryCacheModelPdf(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("powerpointProcessingJob",
-                () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("wordCleanupJob",
-                () => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("excelCleanupJob",
-                () => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("powerpointCleanupJob",
-                () => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache)),
-            Tuple.Create<string, Func<MemoryCacheModel>>("pdfCleanupJob",
-                () => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache))
-        };
+        return Seq<(string, Func<MemoryCacheModel>)>(
+            ("wordProcessingJob", () => new MemoryCacheModelWord(_loggerFactory, _memoryCache)),
+            ("excelProcessingJob", () => new MemoryCacheModelExcel(_loggerFactory, _memoryCache)),
+            ("pdfProcessingJob", () => new MemoryCacheModelPdf(_loggerFactory, _memoryCache)),
+            ("powerpointProcessingJob", () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
+            ("powerpointProcessingJob", () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
+            ("wordCleanupJob", () => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache)),
+            ("excelCleanupJob", () => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache)),
+            ("powerpointCleanupJob", () => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache)),
+            ("pdfCleanupJob", () => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache)));
     }
 }
 

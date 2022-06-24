@@ -179,7 +179,7 @@ internal static class PdfProcessingHelper
 
                 var creator = info.GetCreator();
                 var keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
-                    ? Array.Empty<string>()
+                    ? System.Array.Empty<string>()
                     : info.GetKeywords().Split(" ");
                 var subject = info.GetSubject();
                 var title = info.GetTitle();

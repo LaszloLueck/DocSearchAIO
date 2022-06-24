@@ -24,7 +24,7 @@ public class ElasticDocument
     [Text(Name = "createdBy")] 
     public string Creator { get; set; } = string.Empty;
 
-    [Text(Name = "keywords")] public string[] Keywords { get; set; } = Array.Empty<string>();
+    [Text(Name = "keywords")] public string[] Keywords { get; set; } = System.Array.Empty<string>();
         
     [Text(Name = "subject")] 
     public string Subject { get; set; } = string.Empty;
@@ -39,6 +39,6 @@ public class ElasticDocument
     public string ContentType { get; set; } = string.Empty;
         
     [Object(Name = "comments")]
-    public IEnumerable<OfficeDocumentComment> Comments { get; set; } = Array.Empty<OfficeDocumentComment>();
+    public IEnumerable<OfficeDocumentComment> Comments { get; set; } = System.Array.Empty<OfficeDocumentComment>();
 
 }

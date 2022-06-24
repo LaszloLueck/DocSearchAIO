@@ -1,9 +1,7 @@
 using System.Diagnostics;
 using DocSearchAIO.Classes;
-using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Endpoints.Detail;
 using DocSearchAIO.Services;
-using DocSearchAIO.Utilities;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 

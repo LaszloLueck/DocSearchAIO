@@ -282,7 +282,7 @@ internal static class ExcelProcessingHelper
         worksheets
             .Map(part =>
             {
-                var officeDocumentCommentsEmpty = Array.Empty<OfficeDocumentComment>();
+                var officeDocumentCommentsEmpty = System.Array.Empty<OfficeDocumentComment>();
                 return part
                     .WorksheetCommentsPart
                     .ResolveNullable(officeDocumentCommentsEmpty, (commentsPart, _) =>

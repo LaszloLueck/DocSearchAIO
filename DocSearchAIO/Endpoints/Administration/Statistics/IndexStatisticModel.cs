@@ -1,7 +1,9 @@
-﻿using Nest;
+﻿using LanguageExt;
+using Nest;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Administration.Statistics;
 
+[Record]
 public record IndexStatisticModel(string IndexName, long DocCount, double SizeInBytes, long FetchTimeMs,
     long FetchTotal, long QueryTimeMs, long QueryTotal, long SuggestTimeMs, long SuggestTotal)
 {

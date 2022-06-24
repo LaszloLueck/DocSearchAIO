@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Administration.GenericContent;
 
 namespace DocSearchAIO.Configuration;
 

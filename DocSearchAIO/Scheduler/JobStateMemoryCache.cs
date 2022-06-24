@@ -7,25 +7,22 @@ namespace DocSearchAIO.Scheduler;
 public static class JobStateMemoryCacheProxy
 {
     public static readonly Func<ILoggerFactory, IMemoryCache,
-            IEnumerable<Tuple<ProcessorBase, Func<MemoryCacheModel>>>>
+            Seq<(ProcessorBase, Func<MemoryCacheModel>)>>
         AsIEnumerable = (loggerFactory, memoryCache) =>
         {
-            return new[]
+            return new Seq<(ProcessorBase, Func<MemoryCacheModel>)>
             {
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
-                    new ProcessorBaseWord(),
+                (new ProcessorBaseWord(),
                     () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
-                    new ProcessorBasePowerpoint(),
+                (new ProcessorBasePowerpoint(),
                     () => new MemoryCacheModelPowerpoint(loggerFactory, memoryCache)),
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(
-                    new ProcessorBasePdf(),
+                (new ProcessorBasePdf(),
                     () => new MemoryCacheModelPdf(loggerFactory, memoryCache)),
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseExcel(),
+                (new ProcessorBaseExcel(),
                     () => new MemoryCacheModelExcel(loggerFactory, memoryCache)),
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseMsg(),
+                (new ProcessorBaseMsg(),
                     () => new MemoryCacheModelMsg(loggerFactory, memoryCache)),
-                Tuple.Create<ProcessorBase, Func<MemoryCacheModel>>(new ProcessorBaseEml(),
+                (new ProcessorBaseEml(),
                     () => new MemoryCacheModelEml(loggerFactory, memoryCache))
             };
         };
@@ -48,10 +45,12 @@ public static class JobStateMemoryCacheProxy
             new JobStateMemoryCache<MemoryCacheModelExcel>(loggerFactory, memoryCache);
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsg>>
-        GetMsgJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelMsg>(loggerFactory, memoryCache);
+        GetMsgJobStateMemoryCache = (loggerFactory, memoryCache) =>
+            new JobStateMemoryCache<MemoryCacheModelMsg>(loggerFactory, memoryCache);
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEml>>
-        GetEmlJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelEml>(loggerFactory, memoryCache);
+        GetEmlJobStateMemoryCache = (loggerFactory, memoryCache) =>
+            new JobStateMemoryCache<MemoryCacheModelEml>(loggerFactory, memoryCache);
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcelCleanup>>
         GetExcelCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
@@ -71,10 +70,12 @@ public static class JobStateMemoryCacheProxy
             new JobStateMemoryCache<MemoryCacheModelWordCleanup>(loggerFactory, memoryCache);
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsgCleanup>>
-        GetMsgCleanupJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelMsgCleanup>(loggerFactory, memoryCache);
+        GetMsgCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+            new JobStateMemoryCache<MemoryCacheModelMsgCleanup>(loggerFactory, memoryCache);
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEmlCleanup>>
-        GetEmlCleanupJobStateMemoryCache = (loggerFactory, memoryCache) => new JobStateMemoryCache<MemoryCacheModelEmlCleanup>(loggerFactory, memoryCache);
+        GetEmlCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
+            new JobStateMemoryCache<MemoryCacheModelEmlCleanup>(loggerFactory, memoryCache);
 }
 
 public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
@@ -107,7 +108,7 @@ public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
     public void SetCacheEntry(JobState jobState)
     {
         _logger.LogInformation("set cache entry to {JobState}", jobState);
-        var cacheEntry = new CacheEntry { CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState };
+        var cacheEntry = new CacheEntry {CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState};
         _memoryCache.Set(cacheEntry.CacheKey, cacheEntry);
     }
 }

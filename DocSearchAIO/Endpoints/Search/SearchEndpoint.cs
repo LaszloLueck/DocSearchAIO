@@ -1,6 +1,5 @@
 using Ardalis.ApiEndpoints;
 using DocSearchAIO.DocSearch.Services;
-using DocSearchAIO.DocSearch.TOs;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 

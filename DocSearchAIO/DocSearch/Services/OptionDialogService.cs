@@ -1,12 +1,17 @@
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Administration.Options;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class OptionDialogService
+public interface IOptionDialogService
+{
+    public Task<OptionDialogResponse> OptionDialog(OptionDialogRequest optionDialogRequest);
+}
+
+public class OptionDialogService : IOptionDialogService
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ConfigurationObject _cfg;

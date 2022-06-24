@@ -1,19 +1,21 @@
 using DocSearchAIO.Configuration;
+using LanguageExt;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Administration.GenericContent;
 
-public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName, string ElasticUser, string ElasticPassword,
+[Record]
+public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName,
+    string ElasticUser, string ElasticPassword,
     string SchedulerName, string SchedulerId, string ActorSystemName, string ProcessorGroupName,
     string CleanupGroupName, string UriReplacement, string ComparerDirectory, string StatisticsDirectory)
 {
-    public IEnumerable<Tuple<string, ProcessorConfiguration>> ProcessorConfigurations { get; set; } =
-        Array.Empty<Tuple<string, ProcessorConfiguration>>();
+    public Dictionary<string, ProcessorConfiguration> ProcessorConfigurations { get; set; } = new();
 
-    public IEnumerable<Tuple<string, CleanupConfiguration>> CleanupConfigurations { get; set; } =
-        Array.Empty<Tuple<string, CleanupConfiguration>>();
-        
+    public Dictionary<string, CleanupConfiguration> CleanupConfigurations { get; set; } = new();
+
     public static implicit operator AdministrationGenericRequest(ConfigurationObject configurationObject) => new(
-        configurationObject.ScanPath, configurationObject.ElasticEndpoints, configurationObject.IndexName, configurationObject.ElasticUser, configurationObject.ElasticPassword,
+        configurationObject.ScanPath, configurationObject.ElasticEndpoints, configurationObject.IndexName,
+        configurationObject.ElasticUser, configurationObject.ElasticPassword,
         configurationObject.SchedulerName, configurationObject.SchedulerId, configurationObject.ActorSystemName,
         configurationObject.SchedulerGroupName, configurationObject.CleanupGroupName,
         configurationObject.UriReplacement, configurationObject.ComparerDirectory, configurationObject

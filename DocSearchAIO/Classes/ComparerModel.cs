@@ -23,9 +23,15 @@ public abstract class ComparerModel
     {
         _logger = loggerFactory.CreateLogger<ComparerModel>();
         _comparerDirectory = comparerDirectory;
+        var cd = Convert(ComparerHelper
+            .FillConcurrentDictionary(ComparerFilePath, _logger).ToDictionary());
         CheckAndCreateComparerDirectory();
-        _comparerObjects = ComparerHelper.FillConcurrentDictionary(ComparerFilePath, _logger);
+        _comparerObjects = cd;
     }
+
+    private static readonly
+        Func<IReadOnlyDictionary<string, ComparerObject>, ConcurrentDictionary<string, ComparerObject>>
+        Convert = source => new ConcurrentDictionary<string, ComparerObject>(source);
 
     protected ComparerModel(string comparerDirectory)
     {
@@ -82,6 +88,8 @@ public abstract class ComparerModel
                 var contentHash = doc.ContentHash;
                 var pathHash = doc.Id;
                 var originalFilePath = doc.OriginalFilePath;
+
+
                 return _comparerObjects
                     .TryGetValue(pathHash, out var comparerObject)
                     .IfTrueFalse(
@@ -177,12 +185,12 @@ public class ComparerModelMsg : ComparerModel
         comparerDirectory)
     {
     }
-        
 }
 
 public class ComparerModelEml : ComparerModel
 {
-    public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory, comparerDirectory)
+    public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
+        comparerDirectory)
     {
     }
 

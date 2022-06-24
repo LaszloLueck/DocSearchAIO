@@ -1,8 +1,10 @@
+global using static LanguageExt.Prelude;
 using System.Collections.Immutable;
 using Akka.Actor;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.OpenApi.Models;
 
@@ -53,6 +55,14 @@ builder.Services.AddScoped<ISearchSuggestService>(x =>
         builder.Configuration));
 builder.Services.AddScoped<IDocumentDetailService>(x =>
     new DocumentDetailService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddScoped<IAdministrationService>(x =>
+    new AdministrationService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration,
+        x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<IMemoryCache>()));
+builder.Services.AddScoped<ISchedulerStatisticsService>(x =>
+    new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
+builder.Services.AddScoped<IOptionDialogService>(x =>
+    new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
+
 
 var app = builder.Build();
 

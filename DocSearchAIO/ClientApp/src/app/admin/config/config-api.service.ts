@@ -32,7 +32,7 @@ export class ConfigApiService {
   }
 
   getConfiguration(): Observable<DocSearchConfiguration>{
-    return this.httpClient.get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContentData`)
+    return this.httpClient.get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContent`)
   }
 
   setConfiguration(document: DocSearchConfiguration) : Observable<boolean> {

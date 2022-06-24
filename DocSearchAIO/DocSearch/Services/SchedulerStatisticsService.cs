@@ -1,14 +1,18 @@
 ﻿using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Administration.Scheduler;
 using DocSearchAIO.Utilities;
-using LanguageExt.SomeHelp;
 using Quartz;
 using Quartz.Impl.Matchers;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class SchedulerStatisticsService
+public interface ISchedulerStatisticsService
+{
+    public IAsyncEnumerable<(string key, SchedulerStatistics statistics)> SchedulerStatistics();
+}
+
+public class SchedulerStatisticsService : ISchedulerStatisticsService
 {
     private readonly ILogger _logger;
     private readonly ConfigurationObject _configurationObject;
@@ -40,7 +44,7 @@ public class SchedulerStatisticsService
         configurationObject =>
         {
             var foo = configurationObject.Processing.Map(kv => (kv.Value.TriggerName, kv.Value.Active));
-            
+
             var processing =
                 configurationObject
                     .Processing
@@ -99,7 +103,7 @@ public class SchedulerStatisticsService
                                 CalculateSchedulerTriggerStatisticsElements(triggerKeys, configurationObject,
                                     scheduler);
 
-                            statistics.TriggerElements = innerResultTasks.ToEnumerable();
+                            statistics.TriggerElements = innerResultTasks.ToEnumerable().ToSeq();
                             statistics.TriggerElements.ForEach(result =>
                             {
                                 logger.LogInformation(
@@ -114,7 +118,7 @@ public class SchedulerStatisticsService
                 return await t;
             };
 
-    public IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerStatistics()
+    public IAsyncEnumerable<(string key, SchedulerStatistics statistics)> SchedulerStatistics()
     {
         var source = new List<TypedGroupNameString>
         {
@@ -124,14 +128,14 @@ public class SchedulerStatisticsService
         return CalculateSchedulerStatistics(source);
     }
 
-    private async IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> CalculateSchedulerStatistics(
+    private async IAsyncEnumerable<(string, SchedulerStatistics)> CalculateSchedulerStatistics(
         List<TypedGroupNameString> source)
     {
         foreach (var groupNameString in source)
         {
             var schedulerStatistic =
                 await SchedulerStatistic(_configurationObject, groupNameString, _logger);
-            yield return new KeyValuePair<string, SchedulerStatistics>(groupNameString.Value, schedulerStatistic);
+            yield return (groupNameString.Value, schedulerStatistic);
         }
     }
 }

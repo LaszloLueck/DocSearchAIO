@@ -1,7 +1,10 @@
-﻿using DocSearchAIO.Scheduler;
+﻿using DocSearchAIO.Endpoints.Administration.Scheduler;
+using DocSearchAIO.Scheduler;
+using LanguageExt;
 
-namespace DocSearchAIO.DocSearch.TOs;
+namespace DocSearchAIO.Endpoints.Administration.ActionContent;
 
+[Record]
 public record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
     string JobName)
 {

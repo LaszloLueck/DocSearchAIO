@@ -1,4 +1,3 @@
-
 import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
 import {EMPTY, Subscription, tap} from "rxjs";
@@ -8,7 +7,6 @@ import {Router} from "@angular/router";
 import {catchError, take} from "rxjs/operators";
 import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
 import {ProcessorConfiguration} from "./interfaces/ProcessorConfiguration";
-import {CleanupConfiguration} from "./interfaces/CleanupConfiguration";
 import {Component, OnDestroy, OnInit} from "@angular/core";
 
 @Component({
@@ -45,17 +43,15 @@ export class ConfigComponent implements OnInit, OnDestroy {
   saveForm(): void {
     const returnValue: DocSearchConfiguration = this.form.value;
     returnValue.elasticEndpoints = this.elasticEndpoints.value;
-    returnValue.processorConfigurations = [];
-    returnValue.cleanupConfigurations = [];
+    returnValue.processorConfigurations = {};
+    returnValue.cleanupConfigurations = {};
 
     this.proc.forEach((formGroup, key) => {
-      const fg: ProcessorConfiguration = formGroup.value;
-      returnValue.processorConfigurations.push({item1: key, item2: fg});
+      returnValue.processorConfigurations[key] = formGroup.value;
     });
 
     this.cleanup.forEach((formGroup, key) => {
-      const fg: CleanupConfiguration = formGroup.value;
-      returnValue.cleanupConfigurations.push({item1: key, item2: fg});
+      returnValue.cleanupConfigurations[key] = formGroup.value;
     });
 
     this.configApiService.setConfiguration(returnValue)
@@ -85,9 +81,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
           this.elasticEndpoints.push(new UntypedFormControl(entry))
         });
 
-        m.processorConfigurations.forEach(tuple => {
-          const key = tuple.item1;
-          const value = tuple.item2;
+        for(const key in m.processorConfigurations){
+          const value = m.processorConfigurations[key];
           const fg = new UntypedFormGroup({});
 
           fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
@@ -100,11 +95,10 @@ export class ConfigComponent implements OnInit, OnDestroy {
           fg.addControl('indexSuffix', new UntypedFormControl(value.indexSuffix, [Validators.required]))
 
           this.proc.set(key, fg);
-        });
+        }
 
-        m.cleanupConfigurations.forEach(tuple => {
-          const key = tuple.item1;
-          const value = tuple.item2;
+        for(const key in m.cleanupConfigurations){
+          const value = m.cleanupConfigurations[key];
           const fg = new UntypedFormGroup({});
 
           fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
@@ -115,7 +109,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
           fg.addControl('triggerName', new UntypedFormControl(value.triggerName, [Validators.required]));
           fg.addControl('forIndexSuffix', new UntypedFormControl(value.forIndexSuffix, [Validators.required]));
           this.cleanup.set(key, fg);
-        });
+        }
 
         this.form = this.formBuilder.group({
           'scanPath': [m.scanPath, [Validators.required]],

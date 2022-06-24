@@ -54,7 +54,7 @@ public static class StaticHelpers
         $"{configurationObject.IndexName}-{configurationObject.Processing[type.Name].IndexSuffix}";
 
     public static readonly Func<string, string[]> KeywordsList = keywords =>
-        keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
+        keywords.Length == 0 ? System.Array.Empty<string>() : keywords.Split(",");
 
     [Pure]
     public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,

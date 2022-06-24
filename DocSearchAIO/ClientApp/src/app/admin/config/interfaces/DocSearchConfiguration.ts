@@ -15,6 +15,6 @@ export interface DocSearchConfiguration {
   uriReplacement: string;
   comparerDirectory: string;
   statisticsDirectory: string;
-  processorConfigurations: { item1: string, item2: ProcessorConfiguration }[];
-  cleanupConfigurations: { item1: string, item2: CleanupConfiguration }[];
+  processorConfigurations: { [item1: string] : ProcessorConfiguration };
+  cleanupConfigurations: { [item1: string] : CleanupConfiguration };
 }

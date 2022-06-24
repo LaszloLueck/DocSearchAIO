@@ -2,16 +2,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using Akka.Streams.Dsl;
 using LanguageExt;
-using LanguageExt.SomeHelp;
-using LanguageExt.UnsafeValueAccess;
 
 namespace DocSearchAIO.Utilities;
 
 public static class CSharpFunctionalHelpers
 {
-    [Pure]
-    public static Option<IEnumerable<T>> ToOptionL<T>(this IEnumerable<T>? self) => self.IsNull() ? Option<IEnumerable<T>>.None : self.ToSome();
-    
+
     [Pure]
     public static T IfNull<T>(this T? self, [NotNull, DisallowNull] T noneValue) => (self.IsNull() ? noneValue : self)!;
     
@@ -22,7 +18,7 @@ public static class CSharpFunctionalHelpers
             action.Invoke(value);
         }
     }
-    
+
     public static void ForEach<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> kvList,
         Action<TKey, TValue> action) => kvList.ForEach(kv => action.Invoke(kv.Key, kv.Value));
 
@@ -46,12 +42,17 @@ public static class CSharpFunctionalHelpers
         if (!source.ContainsKey(comparer)) return;
         action.Invoke(comparer, source[comparer]);
     }
-
+    
     [Pure]
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
         this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
         source.ToDictionary(d => d.Key, d => d.Value);
-
+    
+    [Pure]
+    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
+        this IEnumerable<ValueTuple<TKey, TValue>> source) where TKey : notnull =>
+        source.ToDictionary(d => d.Item1, d => d.Item2);
+    
     [Pure]
     public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull] [NotNull] TOut alternative,
         Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;

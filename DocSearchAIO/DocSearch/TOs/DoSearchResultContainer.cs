@@ -11,8 +11,8 @@ public record DoSearchResultContainer(
     [property: JsonPropertyName("documentType")] string DocumentType
 )
 {
-    [property: JsonPropertyName("contents")] public IEnumerable<ContentDetail> Contents { get; set; } = Array.Empty<ContentDetail>();
-    [property: JsonPropertyName("comments")] public IEnumerable<CommentDetail> Comments { get; set; } = Array.Empty<CommentDetail>();
+    [property: JsonPropertyName("contents")] public IEnumerable<ContentDetail> Contents { get; set; } = System.Array.Empty<ContentDetail>();
+    [property: JsonPropertyName("comments")] public IEnumerable<CommentDetail> Comments { get; set; } = System.Array.Empty<CommentDetail>();
     [property: JsonPropertyName("relevance")] public double Relevance { get; set; }
     [property: JsonPropertyName("programIcon")] public string ProgramIcon { get; set; } = string.Empty;
 

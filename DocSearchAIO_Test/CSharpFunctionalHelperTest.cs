@@ -57,19 +57,6 @@ public class CSharpFunctionalHelperTest
     }
 
     [Fact]
-    public void Create_a_dictionary_from_IEnumerable()
-    {
-        var list = new List<KeyValuePair<string, string>>
-            { KeyValuePair.Create("a", "a"), KeyValuePair.Create("b", "b") };
-
-        var dic = list.ToDictionary();
-
-        dic.Keys.Count.Should().Be(2);
-        dic.Keys.First().Should().Be("a");
-        dic.Keys.Last().Should().Be("b");
-    }
-
-    [Fact]
     public void Resolve_Nullable_With_Value()
     {
         var toTest = "the quick brown fox jumps over the lazy dog";
@@ -120,19 +107,6 @@ public class CSharpFunctionalHelperTest
         result.Count().Should().Be(3);
         result.First().Should().Be(8);
         result.Last().Should().Be(1);
-    }
-
-    [Fact]
-    public void Test_ForEach_on_KeyValuePair()
-    {
-        IEnumerable<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>
-            { KeyValuePair.Create(1, 1), KeyValuePair.Create(2, 2), KeyValuePair.Create(3, 3) };
-
-        var result = 0;
-
-        list.ForEach((k, v) => { result += k; });
-
-        result.Should().Be(6);
     }
 
     [Fact]

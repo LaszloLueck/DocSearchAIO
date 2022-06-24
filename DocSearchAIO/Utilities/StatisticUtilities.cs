@@ -1,30 +1,25 @@
 using System.Text.Json;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Statistics;
+using LanguageExt;
 
 namespace DocSearchAIO.Utilities;
 
-public static class StatisticUtilitiesProxy
+public static class   StatisticUtilitiesProxy
 {
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
-            IEnumerable<Tuple<ProcessorBase, Func<StatisticModel>>>>
-        AsIEnumerable = (loggerFactory, statisticsPath) =>
-        {
-            return new[]
-            {
-                Tuple.Create<ProcessorBase, Func<StatisticModel>>(
-                    new ProcessorBaseWord(),
-                    () => new StatisticModelWord(loggerFactory, statisticsPath)),
-                Tuple.Create<ProcessorBase, Func<StatisticModel>>(
-                    new ProcessorBasePowerpoint(),
-                    () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)),
-                Tuple.Create<ProcessorBase, Func<StatisticModel>>(
-                    new ProcessorBasePdf(),
-                    () => new StatisticModelPdf(loggerFactory, statisticsPath)),
-                Tuple.Create<ProcessorBase, Func<StatisticModel>>(new ProcessorBaseExcel(),
-                    () => new StatisticModelExcel(loggerFactory, statisticsPath))
-            };
-        };
+            Seq<(ProcessorBase, Func<StatisticModel>)>>
+        AsIEnumerable = (loggerFactory, statisticsPath) => Seq<(ProcessorBase, Func<StatisticModel>)>()
+            .Add((
+                new ProcessorBaseWord(),
+                () => new StatisticModelWord(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBasePowerpoint(),
+                () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)))
+            .Add((
+                new ProcessorBasePdf(),
+                () => new StatisticModelPdf(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBaseExcel(),
+                () => new StatisticModelExcel(loggerFactory, statisticsPath)));
 
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelWord>>

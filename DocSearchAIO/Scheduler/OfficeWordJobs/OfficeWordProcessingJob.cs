@@ -293,6 +293,6 @@ internal static class WordProcessingHelper
         return mainDocumentPart
             .Document
             .Body
-            .ResolveNullable(Array.Empty<OpenXmlElement>(), (v, _) => v.ChildElements.ToArray());
+            .ResolveNullable(System.Array.Empty<OpenXmlElement>(), (v, _) => v.ChildElements.ToArray());
     }
 }

@@ -1,6 +1,4 @@
-﻿using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.TOs;
+﻿using DocSearchAIO.Configuration;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;

@@ -2,6 +2,12 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
+using DocSearchAIO.Endpoints.Administration.ActionContent;
+using DocSearchAIO.Endpoints.Administration.GenericContent;
+using DocSearchAIO.Endpoints.Administration.Jobs;
+using DocSearchAIO.Endpoints.Administration.Scheduler;
+using DocSearchAIO.Endpoints.Administration.Statistics;
+using DocSearchAIO.Endpoints.Administration.Trigger;
 using DocSearchAIO.Scheduler;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
@@ -16,7 +22,29 @@ using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.DocSearch.Services;
 
-public class AdministrationService
+public interface IAdministrationService
+{
+    public Task<bool> PauseTriggerWithTriggerId(PauseTriggerRequest pauseTriggerRequest);
+    public Task<bool> ResumeTriggerWithTriggerId(ResumeTriggerRequest resumeTriggerRequest);
+
+    public Task<bool> InstantStartJobWithJobId(StartJobRequest startJobRequest);
+
+    public Task<bool> SetAdministrationGenericContent(AdministrationGenericRequest request);
+
+    public Task<bool> DeleteIndexAndStartJob(ReindexAndStartJobRequest reindexAndStartJobRequest);
+
+    public Task<string> TriggerStatusById(TriggerStatusRequest triggerS);
+
+    public AdministrationGenericRequest GenericContent();
+
+    public IAsyncEnumerable<(string, SchedulerStatistics)> SchedulerContent();
+
+    public Task<IndexStatistic> StatisticsContent();
+
+    public IAsyncEnumerable<(string, Seq<AdministrationActionSchedulerModel>)> ActionContent();
+}
+
+public class AdministrationService : IAdministrationService
 {
     private readonly ILogger _logger;
     private readonly ConfigurationObject _configurationObject;
@@ -42,13 +70,13 @@ public class AdministrationService
         _memoryCache = memoryCache;
     }
 
-    public async Task<bool> PauseTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
+    public async Task<bool> PauseTriggerWithTriggerId(PauseTriggerRequest pauseTriggerRequest)
     {
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
-                var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
+                var triggerKey = new TriggerKey(pauseTriggerRequest.TriggerId, pauseTriggerRequest.GroupId);
                 var result = await ConfigurationTuple(_configurationObject)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)
                     .ToOption()
@@ -99,13 +127,13 @@ public class AdministrationService
                 return processingTuples.Concat(cleanupTuples);
             };
 
-    public async Task<bool> ResumeTriggerWithTriggerId(TriggerStateRequest triggerStateRequest)
+    public async Task<bool> ResumeTriggerWithTriggerId(ResumeTriggerRequest resumeTriggerRequest)
     {
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
-                var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
+                var triggerKey = new TriggerKey(resumeTriggerRequest.TriggerId, resumeTriggerRequest.GroupId);
                 var result = await ConfigurationTuple(_configurationObject)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)
                     .ToOption()
@@ -140,15 +168,15 @@ public class AdministrationService
             });
     }
 
-    public async Task<bool> InstantStartJobWithJobId(JobStatusRequest jobStatusRequest)
+    public async Task<bool> InstantStartJobWithJobId(StartJobRequest startJobRequest)
     {
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
-                _logger.LogInformation("start job for job {Job} in group {Group}", jobStatusRequest.JobName,
-                    jobStatusRequest.GroupId);
-                var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
+                _logger.LogInformation("start job for job {Job} in group {Group}", startJobRequest.JobName,
+                    startJobRequest.GroupId);
+                var jobKey = new JobKey(startJobRequest.JobName, startJobRequest.GroupId);
                 await scheduler.TriggerJob(jobKey);
                 return true;
             },
@@ -179,14 +207,14 @@ public class AdministrationService
 
             _configurationObject.Processing = request
                 .ProcessorConfigurations
-                .Map(kv => new KeyValuePair<string, SchedulerEntry>(kv.Item1, kv.Item2))
+                .Map(kv => ValueTuple.Create<string, SchedulerEntry>(kv.Key, kv.Value))
                 .ToDictionary();
 
             _configurationObject.Cleanup = request
                 .CleanupConfigurations
-                .Map(kv =>
-                    new KeyValuePair<string, CleanUpEntry>(kv.Item1, kv.Item2))
+                .Map(kv => ValueTuple.Create<string, CleanUpEntry>(kv.Key, kv.Value))
                 .ToDictionary();
+
 
             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
             _logger.LogInformation("configuration successfully updated");
@@ -225,7 +253,7 @@ public class AdministrationService
         }
     }
 
-    public async Task<bool> DeleteIndexAndStartJob(JobStatusRequest jobStatusRequest)
+    public async Task<bool> DeleteIndexAndStartJob(ReindexAndStartJobRequest reindexAndStartJobRequest)
     {
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
         await schedulerOpt.Match(
@@ -233,7 +261,7 @@ public class AdministrationService
             {
                 var boolReturn = await _configurationObject
                     .Processing
-                    .Filter(d => d.Value.JobName == jobStatusRequest.JobName)
+                    .Filter(d => d.Value.JobName == reindexAndStartJobRequest.JobName)
                     .ToOption()
                     .Match(
                         async kv =>
@@ -254,8 +282,9 @@ public class AdministrationService
                                     () => _logger.LogWarning(
                                         "cannot determine correct comparer base from key {Key}", key));
 
-                            _logger.LogInformation("trigger job for name {JobName}", jobStatusRequest.JobName);
-                            var jobKey = new JobKey(jobStatusRequest.JobName, jobStatusRequest.GroupId);
+                            _logger.LogInformation("trigger job for name {JobName}", reindexAndStartJobRequest.JobName);
+                            var jobKey = new JobKey(reindexAndStartJobRequest.JobName,
+                                reindexAndStartJobRequest.GroupId);
                             await scheduler.TriggerJob(jobKey);
                             return await Task.Run(() => true);
                         },
@@ -275,13 +304,13 @@ public class AdministrationService
         return true;
     }
 
-    public async Task<string> TriggerStatusById(TriggerStateRequest triggerStateRequest)
+    public async Task<string> TriggerStatusById(TriggerStatusRequest triggerS)
     {
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
-                var triggerKey = new TriggerKey(triggerStateRequest.TriggerId, triggerStateRequest.GroupId);
+                var triggerKey = new TriggerKey(triggerS.TriggerId, triggerS.GroupId);
                 return (await scheduler.GetTriggerState(triggerKey)).ToString();
             },
             async () =>
@@ -300,17 +329,18 @@ public class AdministrationService
         adminGenModel.ProcessorConfigurations = _configurationObject
             .Processing
             .Filter(d => processSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv => Tuple.Create(kv.Key, (ProcessorConfiguration) kv.Value));
+            .Map(kv => (kv.Key, (ProcessorConfiguration) kv.Value))
+            .ToDictionary();
 
         adminGenModel.CleanupConfigurations = _configurationObject
             .Cleanup
             .Filter(d => cleanupSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv =>
-                Tuple.Create(kv.Key, (CleanupConfiguration) kv.Value));
+            .Map(kv => (kv.Key, (CleanupConfiguration) kv.Value))
+            .ToDictionary();
         return adminGenModel;
     }
 
-    public IAsyncEnumerable<KeyValuePair<string, SchedulerStatistics>> SchedulerContent()
+    public IAsyncEnumerable<(string, SchedulerStatistics)> SchedulerContent()
     {
         return _schedulerStatisticsService.SchedulerStatistics();
     }
@@ -327,11 +357,12 @@ public class AdministrationService
         async Task<GetIndexResponse> IndicesResponse(string indexName) =>
             await _elasticSearchService.IndicesWithPatternAsync($"{indexName}-*");
 
-        async Task<IEnumerable<string>> KnownIndices(string indexName) =>
+        async Task<Seq<string>> KnownIndices(string indexName) =>
             (await IndicesResponse(indexName))
             .Indices
             .Keys
-            .Map(index => index.Name);
+            .Map(index => index.Name)
+            .ToSeq();
 
         var knownIndices = await KnownIndices(_configurationObject.IndexName);
         var indexStatsResponses = CalculateIndicesStatsResponse(knownIndices, _elasticSearchService);
@@ -346,13 +377,13 @@ public class AdministrationService
             return ret;
         }
 
-        static IEnumerable<Tuple<ProcessorBase, Func<StatisticModel>>> StatisticUtilities(
+        static Seq<(ProcessorBase, Func<StatisticModel>)> StatisticUtilities(
             ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
             StatisticUtilitiesProxy
                 .AsIEnumerable(loggerFactory,
                     new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
 
-        static IEnumerable<Tuple<ProcessorBase, Func<MemoryCacheModel>>> JobStateMemoryCaches(
+        static Seq<(ProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(
             ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
             JobStateMemoryCacheProxy
                 .AsIEnumerable(loggerFactory, memoryCache);
@@ -369,7 +400,7 @@ public class AdministrationService
                     {
                         return jobStateMemoryCaches
                             .Filter(d => d.Item1.DerivedModelName == processorBase.DerivedModelName)
-                            .Map(jobState => KeyValuePair.Create(processorBase.ShortName,
+                            .Map(jobState => (processorBase.ShortName,
                                 ConvertToRunnableStatistic(doc, jobState.Item2)));
                     });
 
@@ -384,7 +415,7 @@ public class AdministrationService
 
 
         static async Task<IndexStatistic> ResponseModel(IAsyncEnumerable<IndicesStatsResponse> indexStatsResponses,
-            IEnumerable<KeyValuePair<string, RunnableStatistic>> runtimeStatistic)
+            Seq<(string, RunnableStatistic)> runtimeStatistic)
         {
             var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
             var entireDocCount = await CalculateEntireDocCount(convertedModel);
@@ -402,7 +433,7 @@ public class AdministrationService
     private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<double>>
         CalculateEntireIndexSize = model => model.SumAsync(d => d.SizeInBytes);
 
-    private static readonly Func<IEnumerable<SchedulerTriggerStatisticElement>, Option<JobState>,
+    private static readonly Func<Seq<SchedulerTriggerStatisticElement>, Option<JobState>,
         IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =
         (triggerElements, jobStateOpt) => triggerElements.Map(trigger =>
         {
@@ -416,7 +447,7 @@ public class AdministrationService
             (scheduler, jobStateOpt) => new AdministrationActionSchedulerModel(scheduler.SchedulerName,
                 ConvertTriggerElements(scheduler.TriggerElements, jobStateOpt));
 
-    private static readonly Func<MemoryCacheModelProxy, IEnumerable<KeyValuePair<string, JobState>>> MemoryCacheStates =
+    private static readonly Func<MemoryCacheModelProxy, Seq<(string, JobState)>> MemoryCacheStates =
         memoryCacheModelProxy => memoryCacheModelProxy
             .Models()
             .Map(kv =>
@@ -426,40 +457,39 @@ public class AdministrationService
                     .Invoke()
                     .CacheEntry()
                     .Match(
-                        el => KeyValuePair.Create(key, el.JobState),
-                        () => KeyValuePair.Create(key, JobState.Undefined)
+                        el => (key, el.JobState),
+                        () => (key, JobState.Undefined)
                     );
             });
 
-    private static readonly Func<string, IEnumerable<KeyValuePair<string, JobState>>, Option<JobState>>
+    private static readonly Func<string, Seq<(string, JobState)>, Option<JobState>>
         FilterMemoryCacheState =
             (jobName, memoryCacheStates) =>
             {
-                return memoryCacheStates.Filter(d => d.Key == jobName)
+                return memoryCacheStates.Filter(d => d.Item1 == jobName)
                     .ToTryOption()
                     .Match(
-                        some => some.Value,
+                        some => some.Item2,
                         () => Option<JobState>.None);
             };
 
-    private static readonly Func<SchedulerStatistics, IEnumerable<KeyValuePair<string, JobState>>, Option<JobState>>
+    private static readonly Func<SchedulerStatistics, Seq<(string, JobState)>, Option<JobState>>
         CalculateJobState = (schedulerStatisticsArray, memoryCacheStates) => schedulerStatisticsArray
             .TriggerElements
             .Map(keyElement => FilterMemoryCacheState(keyElement.JobName, memoryCacheStates))
             .ToOption()
             .Flatten();
 
-    public IAsyncEnumerable<KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>> ActionContent()
+    public IAsyncEnumerable<(string, Seq<AdministrationActionSchedulerModel>)> ActionContent()
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
         var groupedSchedulerModels = _schedulerStatisticsService
             .SchedulerStatistics()
             .Select(kv =>
             {
-                var state = CalculateJobState(kv.Value, memoryCacheStates);
-                var model = ConvertToActionModel(kv.Value, state);
-                return new KeyValuePair<string, IEnumerable<AdministrationActionSchedulerModel>>(kv.Key,
-                    new[] {model});
+                var state = CalculateJobState(kv.statistics, memoryCacheStates);
+                var model = ConvertToActionModel(kv.statistics, state);
+                return (kv.key, Seq<AdministrationActionSchedulerModel>().Add(model));
             });
         return groupedSchedulerModels;
     }

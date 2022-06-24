@@ -287,7 +287,7 @@ public static class PowerpointProcessingHelper
         CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
         .Map(part => part
             .SlideCommentsPart
-            .ResolveNullable(Array.Empty<OfficeDocumentComment>(),
+            .ResolveNullable(System.Array.Empty<OfficeDocumentComment>(),
                 (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
         )
         .Flatten();

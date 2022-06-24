@@ -83,9 +83,8 @@ public class DoSearchService : IDoSearchService
             };
                 
             var selectedIndices = new List<string>();
-            var enumerable = knownIndices
-                .ToOptionL()
-                .IfNone(Array.Empty<string>())
+            var enumerable = Some(knownIndices)
+                .IfNone(System.Array.Empty<string>())
                 .ToArray();
             
             documentTypesAndFilters.ForEach((filterType, requestFilter) => 
@@ -131,8 +130,8 @@ public class DoSearchService : IDoSearchService
                     _ => "./images/unknown.svg"
                 };
 
-                IEnumerable<ContentDetail> highlightContent = Array.Empty<ContentDetail>();
-                IEnumerable<CommentDetail> highlightComments = Array.Empty<CommentDetail>();
+                IEnumerable<ContentDetail> highlightContent = System.Array.Empty<ContentDetail>();
+                IEnumerable<CommentDetail> highlightComments = System.Array.Empty<CommentDetail>();
 
                 if (hit.Highlight.ContainsKey("content"))
                 {
@@ -184,7 +183,7 @@ public class DoSearchService : IDoSearchService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured");
-            return new DoSearchResponse(Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""), new SearchStatisticsModel(0, 0));
+            return new DoSearchResponse(System.Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""), new SearchStatisticsModel(0, 0));
         }
     }
 #pragma warning restore S3776
