@@ -1,7 +1,12 @@
-<div id="search_suggest" class="dropdown-menu show w-50 mx-auto d-flex justify-content-left suggestNav ps-2 suggest-close">
-<div class="w-100">
-  <a id="suggestitem_{{i}}" style="text-overflow: ellipsis; cursor: pointer" (click)="setToSearch(suggest.label)" class="dropdown-item" *ngFor="let suggest of (results | async)?.suggests; let i=index;">
+<div id="search_suggest" class="show w-50 mx-auto d-flex justify-content-left suggestNav ps-2 suggest-close">
+<ul class="list-group w-100">
+  <li id="suggestitem_{{i}}" style="cursor: pointer;" (mouseover)="hoverOver($event)" (mouseleave)="hoverOut($event)" (click)="setToSearch(suggest.label)" class="list-group-item d-flex justify-content-between align-items-center schnorke" *ngFor="let suggest of (results | async)?.suggests; let i=index;">
     {{suggest.label}}
-  </a>
-</div>
+    <div class="align-items-end">
+      <span *ngFor="let indexName of suggest.indexName;" style="font-size: 75%; color: dodgerblue">
+        {{indexName.replace("officedocuments-", " ")}}
+      </span>
+    </div>
+  </li>
+</ul>
 </div>

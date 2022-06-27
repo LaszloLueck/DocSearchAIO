@@ -1,3 +1,9 @@
 export interface SuggestRequest {
-  searchPhrase: string
+  searchPhrase: string,
+  suggestWord: boolean,
+  suggestExcel: boolean,
+  suggestPowerpoint: boolean,
+  suggestPdf: boolean,
+  suggestEml: boolean,
+  suggestMsg: boolean
 }

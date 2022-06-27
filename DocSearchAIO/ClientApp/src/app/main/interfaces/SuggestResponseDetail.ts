@@ -1,4 +1,4 @@
 export interface SuggestResponseDetail {
-  id: string,
-  label: string
+  label: string,
+  indexName: string[]
 }

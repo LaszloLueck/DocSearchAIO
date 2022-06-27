@@ -1,5 +1,6 @@
 using Ardalis.ApiEndpoints;
 using DocSearchAIO.DocSearch.Services;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -24,10 +25,10 @@ public class SuggestEndpoint : EndpointBaseAsync.WithRequest<SuggestRequest>.Wit
         Tags = new[] {"Suggest"}
     )]
     [ProducesResponseType(typeof(SuggestResult), 200)]
-    public override async Task<ActionResult<SuggestResult>> HandleAsync([FromBody] SuggestRequest request,
+    public override async Task<ActionResult<SuggestResult>> HandleAsync(SuggestRequest request,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("hit suggestResult with phrase {SearchPhrase}", request.SearchPhrase);
-        return await _searchSuggestService.Suggestions(request.SearchPhrase);
+        return await _searchSuggestService.Suggestions(request);
     }
 }
