@@ -9,11 +9,6 @@
 
     <ItemGroup>
         <PackageReference Include="Ardalis.ApiEndpoints" Version="4.0.1" />
-        <PackageReference Include="CodeGeneration.Roslyn" Version="0.6.1" />
-        <PackageReference Include="CodeGeneration.Roslyn.BuildTime" Version="0.6.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="coverlet.msbuild" Version="3.1.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
