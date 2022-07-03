@@ -25,6 +25,7 @@ export class MainComponent implements OnInit, OnDestroy {
   closed: boolean = false;
   localStorageDataset!: LocalStorageDataset;
   localStorageSubscription!: Subscription;
+  localStorageDatasetSubscription!: Subscription;
 
 
   constructor(private commonDataService: CommonDataService, private doSearchService: SearchService, private initService: InitService, private localStorageService: LocalStorageService) {
@@ -33,6 +34,9 @@ export class MainComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.localStorageSubscription)
       this.localStorageSubscription.unsubscribe()
+
+    if (this.localStorageDatasetSubscription)
+      this.localStorageDatasetSubscription.unsubscribe();
   }
 
   ngOnInit(): void {
@@ -44,17 +48,15 @@ export class MainComponent implements OnInit, OnDestroy {
     if (document.getElementById("searchField"))
       document.getElementById("searchField")!.focus();
 
+    this.localStorageDatasetSubscription = this
+      .localStorageService
+      .getDataAsync()
+      .subscribe(dataset => this.localStorageDataset = dataset);
 
-    if (!this.localStorageService.getData()) {
-      this.localStorageDataset = new LocalStorageDefaultDataset();
-    } else {
-      this.localStorageDataset = this.localStorageService.getData() ?? new LocalStorageDefaultDataset();
-    }
     this.localStorageSubscription = this
       .initService
       .init(this.localStorageDataset)
       .subscribe(dataset => {
-          this.localStorageDataset = dataset;
           this.localStorageService.setData(dataset);
         }
       );
@@ -64,7 +66,7 @@ export class MainComponent implements OnInit, OnDestroy {
     return new Array(count);
   }
 
-  handleExternalSearchParam(param: string){
+  handleExternalSearchParam(param: string) {
     this.searchTerm = param;
 
   }
@@ -85,17 +87,13 @@ export class MainComponent implements OnInit, OnDestroy {
     return navigation.docCount <= navigation.currentPageSize ? 0 : Math.round((navigation.docCount - navigation.docCount % navigation.currentPageSize) / navigation.currentPageSize) + this.getModResult(navigation);
   }
 
-  tabDown(){
-    this.suggestionComponent.setFocus();
-  }
-
   cursorDown(): void {
-    if(this.suggestionComponent)
+    if (this.suggestionComponent && this.suggestionComponent.isOpen)
       this.suggestionComponent.cursorDown();
   }
 
   cursorUp(): void {
-    if(this.suggestionComponent)
+    if (this.suggestionComponent && this.suggestionComponent.isOpen)
       this.suggestionComponent.cursorUp();
   }
 
@@ -112,6 +110,7 @@ export class MainComponent implements OnInit, OnDestroy {
   }
 
   doSearch(page: number, currentPageSize: number): void {
+    this.suggestionComponent.escapePressed();
     const from = currentPageSize * page;
     if (!this.searchTerm || this.searchTerm.length == 0)
       this.searchTerm = '*';

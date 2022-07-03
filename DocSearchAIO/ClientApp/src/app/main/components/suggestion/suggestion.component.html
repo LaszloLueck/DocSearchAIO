@@ -1,12 +1,24 @@
 <div id="search_suggest" class="show w-50 mx-auto d-flex justify-content-left suggestNav ps-2 suggest-close">
-<ul class="list-group w-100">
-  <li id="suggestitem_{{i}}" style="cursor: pointer;" (mouseover)="hoverOver($event)" (mouseleave)="hoverOut($event)" (click)="setToSearch(suggest.label)" class="list-group-item d-flex justify-content-between align-items-center schnorke" *ngFor="let suggest of (results | async)?.suggests; let i=index;">
-    {{suggest.label}}
-    <div class="align-items-end">
-      <span *ngFor="let indexName of suggest.indexName;" style="font-size: 75%; color: dodgerblue">
-        {{indexName.replace("officedocuments-", " ")}}
-      </span>
-    </div>
-  </li>
-</ul>
+  <div class="list-group w-100 ">
+    <ng-container *ngIf="responses else loadResults">
+      <ng-container *ngIf="responses.suggests.length > 0 else noResults">
+        <button type="button" id="suggestitem_{{i}}" (mouseover)="prepareHoverOver($event)"
+           (mouseleave)="prepareHoverOut($event)" (click)="setToSearch(suggest.label)"
+           class="list-group-item" [style]="setStyle(i)"
+           *ngFor="let suggest of responses.suggests; let i=index;">
+          {{suggest.label}}
+        </button>
+      </ng-container>
+    </ng-container>
+    <ng-template #loadResults>
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <strong>Lade Empfehlungen für {{toSearch}}</strong>
+      </div>
+    </ng-template>
+    <ng-template #noResults>
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <strong>Keine Empfehlungen für {{toSearch}} gefunden</strong>
+      </div>
+    </ng-template>
+  </div>
 </div>
