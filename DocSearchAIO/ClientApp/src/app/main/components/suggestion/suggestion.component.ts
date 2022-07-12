@@ -5,7 +5,7 @@ import {SuggestResponse} from "../../interfaces/SuggestResponse";
 import {SuggestRequest} from "../../interfaces/SuggestRequest";
 import {MainComponent} from "../../main/main.component";
 import {LocalStorageDataset} from "../../interfaces/LocalStorageDataset";
-import {LocalStorageService} from "../../../services/localStorageService";
+import {LocalStorageService} from "../../../services/LocalStorageService";
 
 @Component({
   selector: 'app-suggestion',
@@ -96,28 +96,28 @@ export class SuggestionComponent implements OnInit, OnDestroy {
     if (this.responses && this.localStorageDataset) {
       const current = this.responses.suggests[id];
       let currentStyle = '';
-      for (var i = 0; i < current.indexName.length; i++) {
-        if (current.indexName[i] === 'officedocuments-word' && this.localStorageDataset.filterWord) {
+      for (var i = 0; i < current.indexNames.length; i++) {
+        if (current.indexNames[i] === 'officedocuments-word' && this.localStorageDataset.filterWord) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
-        if (current.indexName[i] === 'officedocuments-excel' && this.localStorageDataset.filterExcel) {
+        if (current.indexNames[i] === 'officedocuments-excel' && this.localStorageDataset.filterExcel) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
-        if (current.indexName[i] === 'officedocuments-powerpoint' && this.localStorageDataset.filterPowerpoint) {
+        if (current.indexNames[i] === 'officedocuments-powerpoint' && this.localStorageDataset.filterPowerpoint) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
-        if (current.indexName[i] === 'officedocuments-pdf' && this.localStorageDataset.filterPdf) {
+        if (current.indexNames[i] === 'officedocuments-pdf' && this.localStorageDataset.filterPdf) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
-        if (current.indexName[i] === 'officedocuments-msg' && this.localStorageDataset.filterMsg) {
+        if (current.indexNames[i] === 'officedocuments-msg' && this.localStorageDataset.filterMsg) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
-        if (current.indexName[i] === 'officedocuments-eml' && this.localStorageDataset.filterEml) {
+        if (current.indexNames[i] === 'officedocuments-eml' && this.localStorageDataset.filterEml) {
           currentStyle = "color: #28a745; text-align: left";
           break;
         }
@@ -224,9 +224,6 @@ export class SuggestionComponent implements OnInit, OnDestroy {
       suggestEml: this.localStorageDataset.emlFilterActive,
       suggestMsg: this.localStorageDataset.msgFilterActive
     };
-    // this.results = this
-    //   .suggestService
-    //   .getSuggest(request);
 
     this.sub = this
       .suggestService

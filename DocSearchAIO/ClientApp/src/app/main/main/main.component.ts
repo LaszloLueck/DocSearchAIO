@@ -5,10 +5,9 @@ import {DoSearchRequest} from "../interfaces/DoSearchRequest";
 import {Observable, Subscription} from "rxjs";
 import {SearchService} from "../services/search.service";
 import {InitService} from "../services/init.service";
-import {LocalStorageService} from "../../services/localStorageService";
-import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
-import {LocalStorageDefaultDataset} from "../interfaces/LocalStorageDefaultDataset";
+import {LocalStorageService} from "../../services/LocalStorageService";
 import {SuggestionComponent} from "../components/suggestion/suggestion.component";
+import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
 
 @Component({
   selector: 'app-main',

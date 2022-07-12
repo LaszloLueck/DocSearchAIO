@@ -6,11 +6,11 @@ public abstract class GenericSource
 
 public abstract class GenericSource<T> : GenericSource
 {
-    public readonly T Value;
+    private readonly T _value;
 
     protected GenericSource(T value)
     {
-        Value = value;
+        _value = value;
     }
 }
 

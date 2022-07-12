@@ -14,10 +14,11 @@ import {RisprepositorylinkComponent, RisprepositorylinkContent} from "./modals/r
 import {DownloadLinkComponent, DownloadlinkContent} from "./modals/downloadlink-component";
 import {DocumentInformationComponent, DocumentInformationContent} from "./modals/documentInformation-component";
 import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
-import {LocalStorageService} from "../services/localStorageService";
 import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
 import { SuggestionComponent } from './components/suggestion/suggestion.component';
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {SuggestOrderPipe} from "./pipes/SuggestOrderPipe";
+import {LocalStorageService} from "../services/LocalStorageService";
 
 @NgModule({
   declarations: [
@@ -31,7 +32,8 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
     DocumentInformationContent,
     NgbdAlertSelfclosing,
     OffcanvasComponent,
-    SuggestionComponent
+    SuggestionComponent,
+    SuggestOrderPipe
   ],
     imports: [
         CommonModule,

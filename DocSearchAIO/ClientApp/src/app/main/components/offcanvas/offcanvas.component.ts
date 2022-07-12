@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {LocalStorageDataset} from "../../interfaces/LocalStorageDataset";
-import {LocalStorageService} from "../../../services/localStorageService";
 import {DocumentType} from "../../enums/document-type";
+import {LocalStorageService} from "../../../services/LocalStorageService";
 
 @Component({
   selector: 'app-offcanvas',

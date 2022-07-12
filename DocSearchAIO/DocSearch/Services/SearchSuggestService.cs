@@ -1,11 +1,9 @@
 ﻿using System.Diagnostics;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Endpoints.Suggest;
 using DocSearchAIO.Services;
 using LanguageExt;
-using LanguageExt.SomeHelp;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 
@@ -50,14 +48,14 @@ public class SearchSuggestService : ISearchSuggestService
         _logger.LogInformation("Build SuggestQuery. Raw query is:");
 
         var f = new SourceFilter {Excludes = "*"};
-        
+
 
         static Option<IndexName> CheckIndexName(string indexName, bool toCheck)
         {
-            return toCheck ? toIndexName(indexName) : Option<IndexName>.None;
+            static IndexName ToIndexName(string indexName) => indexName;
+            return toCheck ? ToIndexName(indexName) : Option<IndexName>.None;
         }
 
-        static IndexName toIndexName(string indexName) => indexName;
 
         var indices = Seq(
             CheckIndexName($"{_configurationObject.IndexName}-word", suggestRequest.SuggestWord),
@@ -66,41 +64,34 @@ public class SearchSuggestService : ISearchSuggestService
             CheckIndexName($"{_configurationObject.IndexName}-pdf", suggestRequest.SuggestPdf),
             CheckIndexName($"{_configurationObject.IndexName}-eml", suggestRequest.SuggestEml),
             CheckIndexName($"{_configurationObject.IndexName}-msg", suggestRequest.SuggestMsg)
-        ).Somes();
+        );
 
 
         var sw = Stopwatch.StartNew();
-        var resultsAsync = indices.Map(async index =>
-        {
-            var request = new SearchRequest(index) {Suggest = suggestQuery, Source = f};
-            var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
-            var entries = result.Suggest["searchfieldsuggest"].First();
-            return entries.Options.Map(entry => (entry.Text, entry.Index.Name));
-        });
+        var resultsAsync = await indices
+            .Somes()
+            .Map(async index =>
+            {
+                var request = new SearchRequest(index) {Suggest = suggestQuery, Source = f};
+                var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
+                var entries = result.Suggest["searchfieldsuggest"].First();
+                return entries.Options.Map(entry => (SuggestEntry: entry.Text.ToString(), IndexName: entry.Index.Name.ToString()));
+            })
+            .ResolveHelper(2);
 
-        var results = await Task.WhenAll(resultsAsync);
-
-        var grouped = results
+        var grouped = resultsAsync
             .Flatten()
-            .GroupBy(d => d.Text)
-            .Map(m => (m.Key, m.Select(d => d.Name)))
+            .GroupBy(d => d.SuggestEntry)
+            .Map(m => (m.Key, m.Select(d => d.IndexName)))
             .Map(t => new SuggestEntry(t.Key, t.Item2.ToArray()))
-            .Take(10)
-            .OrderBy(d => d.IndexName.Length)
-            .Rev();
-        
-        
-
-        //var request = new SearchRequest($"{_configurationObject.IndexName}-*") {Suggest = suggestQuery, Source = f};
-
-
+            .Take(10);
         sw.Stop();
-        //var suggestsEntries = result.Suggest["searchfieldsuggest"];
-        //var suggestResult = suggestsEntries.First();
-        //_logger.LogInformation("found {SuggestResultCount} suggests in {ElapsedTimeMs} ms",
-        //    suggestResult.Options.Count, sw.ElapsedMilliseconds);
-        //var suggests = suggestResult.Options.Map(d => new SuggestEntry(d.Id, d.Text, d.Index.Name));
-
         return new SuggestResult(suggestRequest.SearchPhrase, grouped);
     }
+}
+
+public static class SearchSuggestHelper
+{
+    public static async Task<IEnumerable<T>> ResolveHelper<T>(this IEnumerable<Task<T>> source, int parallelism) =>
+        await source.SequenceParallel(parallelism);
 }
