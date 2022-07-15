@@ -22,8 +22,8 @@
     <PackageReference Include="MsgReader" Version="4.4.5" />
     <PackageReference Include="NEST" Version="7.17.4" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.4.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.2" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
   </ItemGroup>

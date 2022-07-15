@@ -15,18 +15,44 @@ public class MemoryCacheModelProxy
         _memoryCache = memoryCache;
     }
 
-    public Seq<(string, Func<MemoryCacheModel>)> Models()
+    public Seq<(ProcessingJobType, Func<MemoryCacheModel>)> Models()
     {
-        return Seq<(string, Func<MemoryCacheModel>)>(
-            ("wordProcessingJob", () => new MemoryCacheModelWord(_loggerFactory, _memoryCache)),
-            ("excelProcessingJob", () => new MemoryCacheModelExcel(_loggerFactory, _memoryCache)),
-            ("pdfProcessingJob", () => new MemoryCacheModelPdf(_loggerFactory, _memoryCache)),
-            ("powerpointProcessingJob", () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
-            ("powerpointProcessingJob", () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
-            ("wordCleanupJob", () => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache)),
-            ("excelCleanupJob", () => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache)),
-            ("powerpointCleanupJob", () => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache)),
-            ("pdfCleanupJob", () => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache)));
+        return Seq<(ProcessingJobType, Func<MemoryCacheModel>)>(
+            (ProcessingJobType.WordProcessingJobType, () => new MemoryCacheModelWord(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.ExcelProcessingJobType, () => new MemoryCacheModelExcel(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.PdfProcessingJobType, () => new MemoryCacheModelPdf(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.PowerpointProcessingJobType,
+                () => new MemoryCacheModelPowerpoint(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.WordCleanupJobType, () => new MemoryCacheModelWordCleanup(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.ExcelCleanupJobType,
+                () => new MemoryCacheModelExcelCleanup(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.PowerpointCleanupJobType,
+                () => new MemoryCacheModelPowerpointCleanup(_loggerFactory, _memoryCache)),
+            (ProcessingJobType.PdfCleanupJobType, () => new MemoryCacheModelPdfCleanup(_loggerFactory, _memoryCache)));
+    }
+}
+
+public sealed class ProcessingJobType
+{
+    private readonly string _name;
+
+    private ProcessingJobType(string name)
+    {
+        _name = name;
+    }
+
+    public static readonly ProcessingJobType WordProcessingJobType = new("wordProcessingJob");
+    public static readonly ProcessingJobType ExcelProcessingJobType = new("excelProcessingJob");
+    public static readonly ProcessingJobType PowerpointProcessingJobType = new("powerpointProcessingJob");
+    public static readonly ProcessingJobType PdfProcessingJobType = new("pdfProcessingJob");
+    public static readonly ProcessingJobType WordCleanupJobType = new("wordCleanupJob");
+    public static readonly ProcessingJobType ExcelCleanupJobType = new("excelCleanupJob");
+    public static readonly ProcessingJobType PowerpointCleanupJobType = new("powerpointCleanupJob");
+    public static readonly ProcessingJobType PdfCleanupJobType = new("pdfCleanupJob");
+
+    public override string ToString()
+    {
+        return _name;
     }
 }
 
@@ -129,7 +155,8 @@ public class MemoryCacheModelMsg : MemoryCacheModel
 {
     protected override string DerivedModelName => GetType().Name;
 
-    public MemoryCacheModelMsg(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+    public MemoryCacheModelMsg(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
+        memoryCache)
     {
     }
 
@@ -140,7 +167,8 @@ public class MemoryCacheModelMsg : MemoryCacheModel
 
 public class MemoryCacheModelMsgCleanup : MemoryCacheModel
 {
-    public MemoryCacheModelMsgCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+    public MemoryCacheModelMsgCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
+        memoryCache)
     {
     }
 
@@ -155,7 +183,8 @@ public class MemoryCacheModelEml : MemoryCacheModel
 {
     protected override string DerivedModelName => GetType().Name;
 
-    public MemoryCacheModelEml(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+    public MemoryCacheModelEml(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
+        memoryCache)
     {
     }
 
@@ -166,7 +195,8 @@ public class MemoryCacheModelEml : MemoryCacheModel
 
 public class MemoryCacheModelEmlCleanup : MemoryCacheModel
 {
-    public MemoryCacheModelEmlCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory, memoryCache)
+    public MemoryCacheModelEmlCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
+        memoryCache)
     {
     }
 

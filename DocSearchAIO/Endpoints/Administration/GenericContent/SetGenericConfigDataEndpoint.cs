@@ -27,7 +27,7 @@ public class SetGenericConfigDataEndpoint : EndpointBaseAsync.WithRequest<Admini
     )]
     [ProducesResponseType(typeof(SetGenericContentResult), 200)]
     public override async Task<ActionResult<SetGenericContentResult>> HandleAsync(
-        [FromBody] AdministrationGenericRequest request, CancellationToken cancellationToken = new CancellationToken())
+        [FromBody] AdministrationGenericRequest request, CancellationToken cancellationToken = new())
     {
         _logger.LogInformation("method setGenericContent called");
         SetGenericContentResult result = await _administrationService.SetAdministrationGenericContent(request);

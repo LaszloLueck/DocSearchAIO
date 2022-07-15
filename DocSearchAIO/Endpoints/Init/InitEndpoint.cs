@@ -25,7 +25,7 @@ public class InitEndpoint : EndpointBaseAsync.WithRequest<InitRequest>.WithActio
     )]
     [ProducesResponseType(typeof(InitResponseObject), 200)]
     public override async Task<ActionResult<InitResponseObject>> HandleAsync([FromBody] InitRequest initRequest,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = new())
     {
         _logger.LogInformation("calling init");
         return await _initService.Init(initRequest);

@@ -457,8 +457,8 @@ public class AdministrationService : IAdministrationService
                     .Invoke()
                     .CacheEntry()
                     .Match(
-                        el => (key, el.JobState),
-                        () => (key, JobState.Undefined)
+                        el => (key.ToString(), el.JobState),
+                        () => (key.ToString(), JobState.Undefined)
                     );
             });
 
