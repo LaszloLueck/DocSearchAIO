@@ -16,7 +16,7 @@ public class SchedulerContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
         _administrationService = administrationService;
     }
 
-    [HttpPost("/api/administration/getSchedulerContentData")]
+    [HttpGet("/api/administration/getSchedulerContentData")]
     [SwaggerOperation(
         Summary = "receive scheduler content information",
         Description = "receive scheduler content information",

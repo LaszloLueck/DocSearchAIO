@@ -133,6 +133,7 @@
     }
   },
   "cli": {
+    "packageManager": "npm",
     "analytics": "eddf9354-5d58-45be-9a91-9a0f8af0aeec"
   }
 }

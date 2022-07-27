@@ -393,7 +393,7 @@ public class AdministrationService : IAdministrationService
             .Map(kv =>
             {
                 var (processorBase, statisticModel) = kv;
-                var foo = statisticModel
+                return statisticModel
                     .Invoke()
                     .LatestJobStatisticByModel()
                     .Map(doc =>
@@ -403,8 +403,6 @@ public class AdministrationService : IAdministrationService
                             .Map(jobState => (processorBase.ShortName,
                                 ConvertToRunnableStatistic(doc, jobState.Item2)));
                     });
-
-                return foo;
             })
             .Somes()
             .Flatten();
@@ -418,20 +416,19 @@ public class AdministrationService : IAdministrationService
             Seq<(string, RunnableStatistic)> runtimeStatistic)
         {
             var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
-            var entireDocCount = await CalculateEntireDocCount(convertedModel);
-            var entireSizeInBytes = await CalculateEntireIndexSize(convertedModel);
+            var entireDocCount = await CalculateEntireDocCount(ref convertedModel);
+            var entireSizeInBytes = await CalculateEntireIndexSize(ref convertedModel);
             return new IndexStatistic(convertedModel, runtimeStatistic, entireDocCount, entireSizeInBytes);
         }
 
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
     }
 
-    private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<long>>
-        CalculateEntireDocCount =
-            model => model.SumAsync(d => d.DocCount);
+    private static ValueTask<long> CalculateEntireDocCount(ref IAsyncEnumerable<IndexStatisticModel> model) =>
+        model.SumAsync(d => d.DocCount);
 
-    private static readonly Func<IAsyncEnumerable<IndexStatisticModel>, ValueTask<double>>
-        CalculateEntireIndexSize = model => model.SumAsync(d => d.SizeInBytes);
+    private static ValueTask<double> CalculateEntireIndexSize(ref IAsyncEnumerable<IndexStatisticModel> model) =>
+        model.SumAsync(d => d.SizeInBytes);
 
     private static readonly Func<Seq<SchedulerTriggerStatisticElement>, Option<JobState>,
         IEnumerable<AdministrationActionTriggerModel>> ConvertTriggerElements =

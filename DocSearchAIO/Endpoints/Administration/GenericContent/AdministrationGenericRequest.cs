@@ -3,7 +3,6 @@ using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Administration.GenericContent;
 
-[Record]
 public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName,
     string ElasticUser, string ElasticPassword,
     string SchedulerName, string SchedulerId, string ActorSystemName, string ProcessorGroupName,

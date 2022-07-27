@@ -1,3 +1,7 @@
 <div class="container">
-  <p>scheduler works!</p>
+  <div *ngIf="data">
+    <app-schedulerstatistic [response]="data.docSearch_Processing"></app-schedulerstatistic>
+    <br />
+    <app-schedulerstatistic [response]="data.docSearch_Cleanup"></app-schedulerstatistic>
+  </div>
 </div>

@@ -12,18 +12,22 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.ApiEndpoints" Version="4.0.1" />
-    <PackageReference Include="LanguageExt.CodeGen" Version="4.2.7" />
+    <PackageReference Include="CodeGeneration.Roslyn.Tool" Version="0.7.63">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="LanguageExt.CodeGen" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Core" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Transformers" Version="4.2.9" />
-    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.6" />
-    <PackageReference Include="Akka.Streams" Version="1.4.39" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.7" />
+    <PackageReference Include="Akka.Streams" Version="1.4.40" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.17.1" />
     <PackageReference Include="itext7" Version="7.2.3" />
-    <PackageReference Include="MsgReader" Version="4.4.5" />
+    <PackageReference Include="MsgReader" Version="4.4.6" />
     <PackageReference Include="NEST" Version="7.17.4" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.4.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.4.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
   </ItemGroup>
@@ -45,6 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ClientApp\src\app\admin\scheduler\services" />
     <Folder Include="ClientApp\src\app\interfaces" />
   </ItemGroup>
 

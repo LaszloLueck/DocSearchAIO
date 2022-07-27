@@ -13,6 +13,8 @@ import { StaticElementComponent } from './config/static-element/static-element.c
 import { DynamicElementComponent } from './config/dynamic-element/dynamic-element.component';
 import { IndexConfigurationComponent } from './config/index-configuration/index-configuration.component';
 import { ButtonBarComponent } from './config/button-bar/button-bar.component';
+import { SchedulerstatisticComponent } from './scheduler/schedulerstatistic/schedulerstatistic.component';
+import { TriggerElementComponent } from './scheduler/triggerelement/trigger-element.component';
 
 
 @NgModule({
@@ -26,7 +28,9 @@ import { ButtonBarComponent } from './config/button-bar/button-bar.component';
     StaticElementComponent,
     DynamicElementComponent,
     IndexConfigurationComponent,
-    ButtonBarComponent
+    ButtonBarComponent,
+    SchedulerstatisticComponent,
+    TriggerElementComponent
   ],
     imports: [
         CommonModule,

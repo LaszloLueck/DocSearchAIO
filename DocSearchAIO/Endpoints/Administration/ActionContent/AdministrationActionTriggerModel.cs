@@ -4,7 +4,7 @@ using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Administration.ActionContent;
 
-[Record]
+
 public record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
     string JobName)
 {
