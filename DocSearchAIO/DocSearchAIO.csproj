@@ -8,6 +8,7 @@
     <SpaProxyServerUrl>https://localhost:44435</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <ImplicitUsings>enable</ImplicitUsings>
+    <MSBuildWarningsAsMessages>CGR1002</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup>
