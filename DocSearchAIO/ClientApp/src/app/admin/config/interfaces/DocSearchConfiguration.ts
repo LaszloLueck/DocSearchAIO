@@ -1,6 +1,12 @@
 import {CleanupConfiguration} from "./CleanupConfiguration";
 import {ProcessorConfiguration} from "./ProcessorConfiguration";
 
+export interface BaseError {
+  errorMessage: string;
+  errorCode: number;
+  operation: string;
+}
+
 export interface DocSearchConfiguration {
   scanPath: string;
   elasticEndpoints: string[];

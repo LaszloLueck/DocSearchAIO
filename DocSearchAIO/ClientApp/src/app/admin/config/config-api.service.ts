@@ -1,9 +1,10 @@
 import {Inject, Injectable} from '@angular/core';
-import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
-import {Observable, of, throwError} from "rxjs";
-import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration"
+import {HttpClient, HttpHeaders} from "@angular/common/http";
+import {map, Observable, of} from "rxjs";
+import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration"
 import {catchError, take} from "rxjs/operators";
 import {environment} from "../../../environments/environment";
+import {Either, makeLeft, makeRight} from "./Either";
 
 @Injectable({
   providedIn: 'root'
@@ -17,22 +18,29 @@ export class ConfigApiService {
   })
   };
 
-  private handleError(error: HttpErrorResponse) {
-    if (error.status === 0) {
-      // A client-side or network error occurred. Handle it accordingly.
-      console.error('An error occurred:', error.error);
-    } else {
-      // The backend returned an unsuccessful response code.
-      // The response body may contain clues as to what went wrong.
-      console.error(
-        `Backend returned code ${error.status}, body was: `, error.error);
-    }
-    // Return an observable with a user-facing error message.
-    return throwError(() => new Error('Something bad happened; please try again later.'));
+  private handleError(operation = 'operation') {
+    return (error: any): Observable<Either<BaseError, DocSearchConfiguration>> => {
+      console.error(error); // log to console instead
+      const ret: BaseError = {
+        errorMessage: error.message,
+        errorCode: error.status,
+        operation: operation
+      }
+      return of(makeLeft(ret));
+    };
   }
 
-  getConfiguration(): Observable<DocSearchConfiguration>{
-    return this.httpClient.get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContent`)
+  getConfiguration(): Observable<Either<BaseError, DocSearchConfiguration>> {
+    return this
+      .httpClient
+      .get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContent`)
+      .pipe(
+        take(1),
+        map(result => {
+          return makeRight(result);
+        }),
+        catchError(this.handleError('getConfiguration'))
+      )
   }
 
   setConfiguration(document: DocSearchConfiguration) : Observable<boolean> {

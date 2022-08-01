@@ -1,10 +1,12 @@
 export class AlternateReturn{
-  hasError: boolean;
   errorMessage: string;
+  operation: string;
+  errorCode: number;
 
-  constructor(hasError: boolean, errorMessage: string) {
-    this.hasError = hasError;
+  constructor(errorMessage: string, operation: string, errorCode: number) {
     this.errorMessage = errorMessage;
+    this.operation = operation;
+    this.errorCode = errorCode;
   }
 
 }

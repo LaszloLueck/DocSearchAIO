@@ -25,19 +25,23 @@ build:
   script:
     - 'dotnet build --no-restore'
 
-tests:
+backend-test:
   stage: test
   script:
     - 'dotnet test --no-restore'
 
-
-securityanalysis:
+security-analysis:
   stage: test
   script:
     - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
+      
+frontend-test:
+  stage: test
+  script:
+    - 'npm run test'
 
-codeanalysis:
+code-analysis:
   stage: test
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache

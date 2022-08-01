@@ -1,13 +1,13 @@
 import {CommonDataService} from "../../services/CommonDataService";
 import {ConfigApiService} from "./config-api.service";
-import {EMPTY, Subscription, tap} from "rxjs";
+import {Subscription} from "rxjs";
 import {AlternateReturn} from "./interfaces/AlternateReturn";
 import {UntypedFormArray, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {Router} from "@angular/router";
-import {catchError, take} from "rxjs/operators";
-import {DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
-import {ProcessorConfiguration} from "./interfaces/ProcessorConfiguration";
+import {take} from "rxjs/operators";
+import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
 import {Component, OnDestroy, OnInit} from "@angular/core";
+import {Either, match} from "./Either";
 
 @Component({
   selector: 'app-config',
@@ -16,12 +16,13 @@ import {Component, OnDestroy, OnInit} from "@angular/core";
 })
 export class ConfigComponent implements OnInit, OnDestroy {
   private configSubscription!: Subscription;
-  alternateReturn: AlternateReturn = new AlternateReturn(false, "");
+  alternateReturn!: AlternateReturn;
   form!: UntypedFormGroup;
   elasticEndpoints: UntypedFormArray;
   proc: Map<string, UntypedFormGroup>;
   cleanup: Map<string, UntypedFormGroup>;
   externalControlsValid: boolean = true;
+  configuration!: DocSearchConfiguration;
 
   constructor(private formBuilder: UntypedFormBuilder,
               private commonDataService: CommonDataService,
@@ -36,7 +37,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
     this.configSubscription?.unsubscribe();
   }
 
-  checkIfValidEvent(event: boolean): void{
+  checkIfValidEvent(event: boolean): void {
     this.externalControlsValid = event;
   }
 
@@ -58,8 +59,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
       .pipe(
         take(1)
       ).subscribe(ret => {
-        if(ret)
-          this.router.navigate(['/home']);
+      if (ret)
+        this.router.navigate(['/home']);
     })
   }
 
@@ -68,63 +69,63 @@ export class ConfigComponent implements OnInit, OnDestroy {
     this.configSubscription = this
       .configApiService
       .getConfiguration()
-      .pipe(
-        take(1),
-        tap(_ => console.log('fetching configuration')),
-        catchError((err) => {
-          console.error(err);
-          this.alternateReturn = new AlternateReturn(true, err.message());
-          return EMPTY;
-        })
-      ).subscribe((m: DocSearchConfiguration) => {
-        m.elasticEndpoints.forEach(entry => {
-          this.elasticEndpoints.push(new UntypedFormControl(entry))
-        });
+      .subscribe((either: Either<BaseError, DocSearchConfiguration>) => {
 
-        for(const key in m.processorConfigurations){
-          const value = m.processorConfigurations[key];
-          const fg = new UntypedFormGroup({});
+        match(
+          either,
+          left => {
+            this.alternateReturn = new AlternateReturn(left.errorMessage, left.operation, left.errorCode);
+          }, right => {
+            this.configuration = right;
 
-          fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
-          fg.addControl('startDelay', new UntypedFormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
-          fg.addControl('parallelism', new UntypedFormControl(value.parallelism, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
-          fg.addControl('fileExtension', new UntypedFormControl(value.fileExtension, [Validators.required]))
-          fg.addControl('excludeFilter', new UntypedFormControl(value.excludeFilter))
-          fg.addControl('jobName', new UntypedFormControl(value.jobName, [Validators.required]))
-          fg.addControl('triggerName', new UntypedFormControl(value.triggerName, [Validators.required]))
-          fg.addControl('indexSuffix', new UntypedFormControl(value.indexSuffix, [Validators.required]))
+            this.configuration.elasticEndpoints.forEach(entry => {
+              this.elasticEndpoints.push(new UntypedFormControl(entry))
+            });
+            for (const key in this.configuration.processorConfigurations) {
+              const value = this.configuration.processorConfigurations[key];
+              const fg = new UntypedFormGroup({});
 
-          this.proc.set(key, fg);
-        }
+              fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
+              fg.addControl('startDelay', new UntypedFormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
+              fg.addControl('parallelism', new UntypedFormControl(value.parallelism, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]))
+              fg.addControl('fileExtension', new UntypedFormControl(value.fileExtension, [Validators.required]))
+              fg.addControl('excludeFilter', new UntypedFormControl(value.excludeFilter))
+              fg.addControl('jobName', new UntypedFormControl(value.jobName, [Validators.required]))
+              fg.addControl('triggerName', new UntypedFormControl(value.triggerName, [Validators.required]))
+              fg.addControl('indexSuffix', new UntypedFormControl(value.indexSuffix, [Validators.required]))
 
-        for(const key in m.cleanupConfigurations){
-          const value = m.cleanupConfigurations[key];
-          const fg = new UntypedFormGroup({});
+              this.proc.set(key, fg);
+            }
 
-          fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
-          fg.addControl('startDelay', new UntypedFormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
-          fg.addControl('parallelism', new UntypedFormControl(value.parallelism, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
-          fg.addControl('forComparer', new UntypedFormControl(value.forComparer, [Validators.required]));
-          fg.addControl('jobName', new UntypedFormControl(value.jobName, [Validators.required]));
-          fg.addControl('triggerName', new UntypedFormControl(value.triggerName, [Validators.required]));
-          fg.addControl('forIndexSuffix', new UntypedFormControl(value.forIndexSuffix, [Validators.required]));
-          this.cleanup.set(key, fg);
-        }
+            for (const key in this.configuration.cleanupConfigurations) {
+              const value = this.configuration.cleanupConfigurations[key];
+              const fg = new UntypedFormGroup({});
 
-        this.form = this.formBuilder.group({
-          'scanPath': [m.scanPath, [Validators.required]],
-          'indexName': [m.indexName, [Validators.required]],
-          'elasticUser': [m.elasticUser, []],
-          'elasticPassword': [m.elasticPassword, []],
-          'schedulerName': [m.schedulerName, [Validators.required]],
-          'schedulerId': [m.schedulerId, [Validators.required]],
-          'actorSystemName': [m.actorSystemName, [Validators.required]],
-          'processorGroupName': [m.processorGroupName, [Validators.required]],
-          'cleanupGroupName': [m.cleanupGroupName, [Validators.required]],
-          'uriReplacement': [m.uriReplacement, []],
-          'comparerDirectory': [m.comparerDirectory, [Validators.required]],
-          'statisticsDirectory': [m.statisticsDirectory, [Validators.required]],
-        });
+              fg.addControl('runsEvery', new UntypedFormControl(value.runsEvery, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
+              fg.addControl('startDelay', new UntypedFormControl(value.startDelay, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
+              fg.addControl('parallelism', new UntypedFormControl(value.parallelism, [Validators.required, Validators.pattern('/^-?(0|[1-9]\d*)?$/')]));
+              fg.addControl('forComparer', new UntypedFormControl(value.forComparer, [Validators.required]));
+              fg.addControl('jobName', new UntypedFormControl(value.jobName, [Validators.required]));
+              fg.addControl('triggerName', new UntypedFormControl(value.triggerName, [Validators.required]));
+              fg.addControl('forIndexSuffix', new UntypedFormControl(value.forIndexSuffix, [Validators.required]));
+              this.cleanup.set(key, fg);
+            }
+
+            this.form = this.formBuilder.group({
+              'scanPath': [this.configuration.scanPath, [Validators.required]],
+              'indexName': [this.configuration.indexName, [Validators.required]],
+              'elasticUser': [this.configuration.elasticUser, []],
+              'elasticPassword': [this.configuration.elasticPassword, []],
+              'schedulerName': [this.configuration.schedulerName, [Validators.required]],
+              'schedulerId': [this.configuration.schedulerId, [Validators.required]],
+              'actorSystemName': [this.configuration.actorSystemName, [Validators.required]],
+              'processorGroupName': [this.configuration.processorGroupName, [Validators.required]],
+              'cleanupGroupName': [this.configuration.cleanupGroupName, [Validators.required]],
+              'uriReplacement': [this.configuration.uriReplacement, []],
+              'comparerDirectory': [this.configuration.comparerDirectory, [Validators.required]],
+              'statisticsDirectory': [this.configuration.statisticsDirectory, [Validators.required]],
+            });
+          });
       });
   }
 
