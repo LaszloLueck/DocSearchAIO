@@ -39,7 +39,7 @@ security-analysis:
 frontend-test:
   stage: test
   script:
-    - 'ls -lah'
+    - 'cd DocsearchAIO/ClientApp'
     - 'npm run test'
 
 code-analysis:
