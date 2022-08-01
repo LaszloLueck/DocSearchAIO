@@ -39,6 +39,7 @@ security-analysis:
 frontend-test:
   stage: test
   script:
+    - 'ls -lah'
     - 'npm run test'
 
 code-analysis:
