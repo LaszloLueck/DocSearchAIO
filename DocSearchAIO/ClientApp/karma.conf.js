@@ -4,7 +4,7 @@
 module.exports = function (config) {
   config.set({
     customLaunchers: {
-      ChromeHeadless: {
+      'ChromeHeadless': {
         base: 'Chrome',
         flags: [
           '--no-sandbox',
@@ -19,6 +19,7 @@ module.exports = function (config) {
     plugins: [
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
+      require('karma-firefox-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
       require('@angular-devkit/build-angular/plugins/karma')
@@ -48,7 +49,7 @@ module.exports = function (config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    browsers: ['Chrome'],
+    browsers: ['FirefoxHeadless'],
     singleRun: true,
     restartOnFileChange: true
   });
