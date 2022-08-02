@@ -40,6 +40,7 @@ frontend-test:
   stage: test
   script:
     - 'cd ./DocSearchAIO/ClientApp'
+    - 'npm update'
     - 'npm run test'
 
 code-analysis:
