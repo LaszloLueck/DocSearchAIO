@@ -93,7 +93,7 @@ public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
     public Option<CacheEntry> CacheEntry<TCacheModel>(TCacheModel model) where TCacheModel : MemoryCacheModel
     {
         _logger.LogInformation("try to get cache entry for model {ModelName}", model.GetType().Name);
-        return _memoryCache.TryGetValue(model, out CacheEntry cacheEntry)
+        return _memoryCache.TryGetValue(model, out CacheEntry? cacheEntry)
             ? cacheEntry
             : Option<CacheEntry>.None;
     }

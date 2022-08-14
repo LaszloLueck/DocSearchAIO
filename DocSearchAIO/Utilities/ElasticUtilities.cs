@@ -3,7 +3,13 @@ using DocSearchAIO.Services;
 
 namespace DocSearchAIO.Utilities;
 
-public class ElasticUtilities
+public interface IElasticUtilities
+{
+    public Task CheckAndCreateElasticIndex<T>(string indexName) where T : ElasticDocument;
+    public string CreateIndexName(string mainName, string suffix);
+}
+
+public class ElasticUtilities : IElasticUtilities
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ILogger _logger;
@@ -25,5 +31,7 @@ public class ElasticUtilities
         }
     }
 
-    public readonly Func<string, string, string> CreateIndexName = (mainName, suffix) => $"{mainName}-{suffix}";
+    public string CreateIndexName(string mainName, string suffix) => _createIndexNameImpl(mainName, suffix);
+    
+    private readonly Func<string, string, string> _createIndexNameImpl = (mainName, suffix) => $"{mainName}-{suffix}";
 }

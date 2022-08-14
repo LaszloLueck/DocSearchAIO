@@ -1,9 +1,9 @@
 global using static LanguageExt.Prelude;
-using System.Collections.Immutable;
 using Akka.Actor;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Services;
+using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.OpenApi.Models;
@@ -24,21 +24,22 @@ builder.Host.ConfigureLogging(logging =>
 });
 
 // Add services to the container.
-var builder1 = ImmutableDictionary.CreateBuilder<string, string>();
-builder1.Add("array:entries:0", "value0");
-builder1.Add("array:entries:1", "value1");
-builder1.Add("array:entries:2", "value2");
-builder1.Add("array:entries:3", "value3");
-builder1.Add("array:entries:4", "value4");
-builder1.Add("array:entries:5", "value5");
-builder.Configuration.AddInMemoryCollection(builder1.ToImmutable());
+builder.Configuration.AddInMemoryCollection(new List<KeyValuePair<string, string?>>
+{
+    new("array:entries:0", "value0"),
+    new("array:entries:1", "value1"),
+    new("array:entries:2", "value2"),
+    new("array:entries:3", "value3"),
+    new("array:entries:4", "value4"),
+    new("array:entries:5", "value5")
+});
 builder.Configuration.AddJsonFile("Resources/config/config.json", optional: false, reloadOnChange: true);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v2", new OpenApiInfo{Title = "DocSearchAIO", Version = "v2"});
+    c.SwaggerDoc("v2", new OpenApiInfo {Title = "DocSearchAIO", Version = "v2"});
     c.EnableAnnotations();
 });
 
@@ -46,10 +47,12 @@ builder.Services.AddElasticSearch(builder.Configuration);
 builder.Services.AddQuartzScheduler(builder.Configuration);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
-builder.Services.AddScoped<IInitService>(x => new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
+builder.Services.AddScoped<IInitService>(x =>
+    new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
 builder.Services.AddScoped<IDoSearchService>(x =>
-    new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
+    new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
+        builder.Configuration));
 builder.Services.AddScoped<ISearchSuggestService>(x =>
     new SearchSuggestService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
         builder.Configuration));
@@ -62,7 +65,9 @@ builder.Services.AddScoped<ISchedulerStatisticsService>(x =>
     new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
 builder.Services.AddScoped<IOptionDialogService>(x =>
     new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
-
+builder.Services.AddScoped<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddScoped<IElasticUtilities>(x =>
+    new ElasticUtilities(x.GetRequiredService<ILoggerFactory>(), x.GetRequiredService<IElasticSearchService>()));
 
 var app = builder.Build();
 
@@ -71,14 +76,8 @@ if (app.Environment.IsDevelopment())
 {
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-    app.UseSwagger(c =>
-    {
-        c.SerializeAsV2 = true;
-    });
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v2/swagger.json", "DocSearchAIO");
-    });
+    app.UseSwagger(c => { c.SerializeAsV2 = true; });
+    app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v2/swagger.json", "DocSearchAIO"); });
 }
 
 app.Lifetime.ApplicationStarted.Register(() => app.Services.GetService<ActorSystem>());
@@ -93,7 +92,7 @@ app.MapControllers();
 app.UseCors(x =>
     x.AllowAnyMethod()
         .AllowAnyHeader()
-        .SetIsOriginAllowed(origin => true)
+        .SetIsOriginAllowed(_ => true)
         .AllowCredentials()
 );
 

@@ -26,25 +26,25 @@ public class OfficeWordProcessingJob : IJob
     private readonly ConfigurationObject _cfg;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly SchedulerUtilities _schedulerUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
     private readonly StatisticUtilities<StatisticModelWord> _statisticUtilities;
     private readonly ComparerModel _comparerModel;
     private readonly JobStateMemoryCache<MemoryCacheModelWord> _jobStateMemoryCache;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
 
     public OfficeWordProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
         ActorSystem actorSystem, IElasticSearchService elasticSearchService,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<OfficeWordProcessingJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerUtilities = schedulerUtilities;
+        _elasticUtilities = elasticUtilities;
         _statisticUtilities = StatisticUtilitiesProxy.WordStatisticUtility(loggerFactory,
-            new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
             new StatisticModelWord().StatisticFileName);
         _comparerModel = new ComparerModelWord(loggerFactory, _cfg.ComparerDirectory);
         _jobStateMemoryCache = JobStateMemoryCacheProxy.GetWordJobStateMemoryCache(loggerFactory, memoryCache);
@@ -99,7 +99,7 @@ public class OfficeWordProcessingJob : IJob
                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                         };
                         var sw = Stopwatch.StartNew();
-                        await new TypedFilePathString(_cfg.ScanPath)
+                        await TypedFilePathString.New(_cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
                             .CountEntireDocs(_statisticUtilities)
@@ -191,7 +191,7 @@ internal static class WordProcessingHelper
                     .Replace(@"\", "/");
 
                 var id = await StaticHelpers.CreateHashString(
-                    new TypedHashedInputString(currentFile));
+                    TypedHashedInputString.New(currentFile));
 
 
                 static IEnumerable<OfficeDocumentComment> CommentArray(
@@ -243,7 +243,7 @@ internal static class WordProcessingHelper
 
                 var completionField = commentsArray
                     .StringFromCommentsArray()
-                    .GenerateTextToSuggest(new TypedContentString(contentString))
+                    .GenerateTextToSuggest(TypedContentString.New(contentString))
                     .GenerateSearchAsYouTypeArray()
                     .WrapCompletionField();
 

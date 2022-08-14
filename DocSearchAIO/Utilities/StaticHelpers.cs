@@ -32,23 +32,26 @@ public static class StaticHelpers
     public static readonly Func<TypedHashedInputString, Task<TypedHashedString>> CreateHashString =
         async (stringValue) =>
         {
-            var res1 = await EncryptionService.ComputeHashAsync(stringValue.Value);
-            return new TypedHashedString(EncryptionService.ConvertToStringFromByteArray(res1));
+            var res1 = await EncryptionService.ComputeHashAsync(stringValue);
+            return TypedHashedString.New(EncryptionService.ConvertToStringFromByteArray(res1));
         };
 
     private static readonly Func<ConfigurationObject, string[], string, bool>
         IndexKeyExpressionFromConfiguration =
-            (configurationObject, indexNames, configurationKey) => configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
-                $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
+            (configurationObject, indexNames, configurationKey) =>
+                configurationObject.Processing.ContainsKey(configurationKey) && indexNames.Contains(
+                    $"{configurationObject.IndexName}-{configurationObject.Processing[configurationKey].IndexSuffix}");
 
     [Pure]
-    public static bool IndexKeyExpression<T>(ConfigurationObject configurationObject, string[] enumerable, bool filter = true) where T : ElasticDocument
+    public static bool IndexKeyExpression<T>(ConfigurationObject configurationObject, string[] enumerable,
+        bool filter = true) where T : ElasticDocument
     {
         return IndexKeyExpressionFromConfiguration(configurationObject, enumerable, typeof(T).Name) && filter;
     }
 
     public static readonly Func<Type, ConfigurationObject, string[], bool, bool> TypedIndexKeyExistsAndFilter =
-        (type, configurationObject, enumerable, filter) => IndexKeyExpressionFromConfiguration(configurationObject, enumerable, type.Name) && filter;
+        (type, configurationObject, enumerable, filter) =>
+            IndexKeyExpressionFromConfiguration(configurationObject, enumerable, type.Name) && filter;
 
     public static readonly Func<Type, ConfigurationObject, string> IndexNameByType = (type, configurationObject) =>
         $"{configurationObject.IndexName}-{configurationObject.Processing[type.Name].IndexSuffix}";
@@ -86,23 +89,25 @@ public static class StaticHelpers
         {
             var enumerable = e as TSource[] ?? e.ToArray();
             statisticUtilities.AddToChangedDocuments(enumerable.Length);
-            return (IEnumerable<TSource>)enumerable;
+            return (IEnumerable<TSource>) enumerable;
         });
     }
 
     [Pure]
     public static TypedCommentString StringFromCommentsArray(
         this IEnumerable<OfficeDocumentComment> commentsArray) =>
-        new(commentsArray.Map(d => d.Comment).Join(" "));
+        TypedCommentString.New(commentsArray.Map(d => d.Comment).Join(" "));
 
 
     private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ ";
 
     [Pure]
     public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
-        TypedContentString contentString) => new(Repl(commentString.Value + " " + contentString.Value) ?? "");
+        TypedContentString contentString) =>
+        TypedSuggestString.New(Repl(commentString.Value + " " + contentString.Value) ?? "");
 
-    private static readonly Func<string, string?> Repl = input => input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
+    private static readonly Func<string, string?> Repl = input =>
+        input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
 
     [Pure]
     public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
@@ -118,7 +123,7 @@ public static class StaticHelpers
     [Pure]
     public static CompletionField WrapCompletionField(this
         IEnumerable<string> searchAsYouTypeContent) =>
-        new() { Input = searchAsYouTypeContent };
+        new() {Input = searchAsYouTypeContent};
 
     private static readonly Func<IEnumerable<OfficeDocumentComment>, IEnumerable<string[]>> CommentsString =
         commentsArray =>
@@ -145,7 +150,10 @@ public static class StaticHelpers
     public static async Task<TypedHashedString> ContentHashString(this (List<string> listElementsToHash,
         IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
         await CreateHashString(
-            new TypedHashedInputString(BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()));
+            TypedHashedInputString.New(
+                BuildHashList(kv.listElementsToHash, kv.commentsArray).Concat()
+            )
+        );
 
 
     [Pure]
@@ -200,19 +208,19 @@ public static class StaticHelpers
                     ExtractTextFromElement(element.ChildElements, sb);
                     sb.Append(' ');
                     break;
-                case Text { HasChildren: false } wText:
+                case Text {HasChildren: false} wText:
                     if (wText.Text.Any())
                         sb.Append(wText.Text);
                     break;
-                case DocumentFormat.OpenXml.Spreadsheet.Text { HasChildren: false } sText:
+                case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
                     if (sText.Text.Any())
                         sb.Append(sText.Text);
                     break;
-                case DocumentFormat.OpenXml.Drawing.Text { HasChildren: false } dText:
+                case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
                     if (dText.Text.Any())
                         sb.Append(dText.Text);
                     break;
-                case TextBody { HasChildren: false } tText:
+                case TextBody {HasChildren: false} tText:
                     if (tText.TextFromParagraph().Any())
                         sb.Append(' ' + tText.TextFromParagraph() + ' ');
                     break;
@@ -221,13 +229,13 @@ public static class StaticHelpers
                     ExtractTextFromElement(drawParagraph.ChildElements, sb);
                     sb.Append(' ');
                     break;
-                case DocumentFormat.OpenXml.Presentation.Text { HasChildren: false } pText:
+                case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
                     if (pText.Text.Any())
                         sb.Append(pText.Text);
                     break;
                 case FieldChar
                 {
-                    FieldCharType: { Value: FieldCharValues.Separate }
+                    FieldCharType: {Value: FieldCharValues.Separate}
                 }:
                     sb.Append(' ');
                     break;
@@ -270,7 +278,7 @@ public static class StaticHelpers
     {
         return Source
             .From(Directory.GetFiles(scanPath.Value, fileExtension,
-                SearchOption.AllDirectories).Map(f => new TypedFilePathString(f)));
+                SearchOption.AllDirectories).Map(f => TypedFilePathString.New(f)));
     }
 
     public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>

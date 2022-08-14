@@ -5,7 +5,13 @@ using Quartz.Impl;
 
 namespace DocSearchAIO.Utilities;
 
-public class SchedulerUtilities
+public interface ISchedulerUtilities
+{
+    public Task SetTriggerStateByUserAction(IScheduler scheduler, string triggerName, string groupName,
+        TriggerState triggerState);
+}
+
+public class SchedulerUtilities : ISchedulerUtilities
 {
     private  readonly ILogger _logger;
 
@@ -18,7 +24,7 @@ public class SchedulerUtilities
     {
         var currentTriggerKey = new TriggerKey(triggerName, groupName);
         var currentTriggerState = await scheduler.GetTriggerState(currentTriggerKey);
-        _logger.LogInformation("current trigger state is {Triggerstate}", currentTriggerState);
+        _logger.LogInformation("current trigger state is {TriggerState}", currentTriggerState);
         _logger.LogInformation("set trigger state for trigger {TriggerName} to {TriggerState}", triggerState,
             triggerName);
         switch (triggerState)

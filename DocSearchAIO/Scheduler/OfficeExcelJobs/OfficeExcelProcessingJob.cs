@@ -26,25 +26,25 @@ public class OfficeExcelProcessingJob : IJob
     private readonly ConfigurationObject _cfg;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly SchedulerUtilities _schedulerUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
     private readonly StatisticUtilities<StatisticModelExcel> _statisticUtilities;
     private readonly ComparerModel _comparerModel;
     private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
 
     public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
         ActorSystem actorSystem, IElasticSearchService elasticSearchService,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<OfficeExcelProcessingJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerUtilities = schedulerUtilities;
+        _elasticUtilities = elasticUtilities;
         _statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(loggerFactory,
-            new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
             new StatisticModelExcel().StatisticFileName);
         _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
         _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
@@ -99,7 +99,7 @@ public class OfficeExcelProcessingJob : IJob
                         };
                         var sw = Stopwatch.StartNew();
 
-                        await new TypedFilePathString(_cfg.ScanPath)
+                        await TypedFilePathString.New(_cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
                             .CountEntireDocs(_statisticUtilities)
@@ -189,7 +189,7 @@ internal static class ExcelProcessingHelper
                 .Replace(@"\", "/");
 
             var id = await StaticHelpers.CreateHashString(
-                new TypedHashedInputString(currentFile));
+                TypedHashedInputString.New(currentFile));
 
             static IEnumerable<OfficeDocumentComment>
                 CommentArray(WorkbookPart workbookPart) =>
@@ -224,7 +224,7 @@ internal static class ExcelProcessingHelper
 
             var completionField = commentsArray
                 .StringFromCommentsArray()
-                .GenerateTextToSuggest(new TypedContentString(contentString))
+                .GenerateTextToSuggest(TypedContentString.New(contentString))
                 .GenerateSearchAsYouTypeArray()
                 .WrapCompletionField();
 
@@ -268,7 +268,7 @@ internal static class ExcelProcessingHelper
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments)
     {
-        return comments.ChildElements.Map(comment => OfficeDocumentComment((Comment)comment));
+        return comments.ChildElements.Map(comment => OfficeDocumentComment((Comment) comment));
     }
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>

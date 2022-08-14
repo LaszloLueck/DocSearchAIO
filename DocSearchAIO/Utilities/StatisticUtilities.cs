@@ -5,7 +5,7 @@ using LanguageExt;
 
 namespace DocSearchAIO.Utilities;
 
-public static class   StatisticUtilitiesProxy
+public static class StatisticUtilitiesProxy
 {
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
             Seq<(ProcessorBase, Func<StatisticModel>)>>

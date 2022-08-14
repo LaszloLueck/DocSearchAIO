@@ -1,93 +1,74 @@
-﻿namespace DocSearchAIO.Classes;
+﻿using LanguageExt;
 
-public abstract class GenericSource
-{
-}
+namespace DocSearchAIO.Classes;
 
-public abstract class GenericSource<T> : GenericSource
-{
-    private readonly T _value;
 
-    protected GenericSource(T value)
-    {
-        _value = value;
-    }
-}
-
-public abstract class GenericSourceString : GenericSource
-{
-    public readonly string Value;
-
-    protected GenericSourceString(string value)
-    {
-        Value = value;
-    }
-        
-    public override string ToString()
-    {
-        return Value;
-    }
-}
-
-public class TypedGroupNameString : GenericSourceString
+public class TypedGroupNameString : NewType<TypedGroupNameString, string>
 {
     public TypedGroupNameString(string value) : base(value)
     {
     }
 }
 
-public class TypedDirectoryPathString : GenericSourceString
+public class TypedDirectoryPathString : NewType<TypedDirectoryPathString, string>
 {
     public TypedDirectoryPathString(string value) : base(value)
     {
     }
 }
 
-public class TypedFileNameString : GenericSourceString
+public class TypedFileNameString : NewType<TypedFileNameString, string>
 {
     public TypedFileNameString(string value) : base(value)
     {
     }
 }
 
-public class TypedFilePathString : GenericSourceString
+public class TypedFilePathString : NewType<TypedFilePathString, string>
 {
     public TypedFilePathString(string value) : base(value)
     {
     }
 }
-    
-public class TypedCommentString : GenericSourceString
+
+public class TypedCommentString : NewType<TypedCommentString, string>
 {
     public TypedCommentString(string value) : base(value)
     {
     }
 }
 
-public class TypedContentString : GenericSourceString
+public class TypedContentString : NewType<TypedContentString, string>
 {
     public TypedContentString(string value) : base(value)
     {
     }
 }
 
-public class TypedSuggestString : GenericSourceString
+public class TypedSuggestString : NewType<TypedSuggestString, string>
 {
     public TypedSuggestString(string value) : base(value)
     {
     }
 }
 
-public class TypedHashedString : GenericSourceString
+public class TypedHashedString : NewType<TypedHashedString, string>
 {
     public TypedHashedString(string value) : base(value)
     {
     }
 }
 
-public class TypedHashedInputString : GenericSourceString
+public class TypedHashedInputString : NewType<TypedHashedInputString, string>
 {
     public TypedHashedInputString(string value) : base(value)
+    {
+    }
+}
+
+public class TypedIndexNameString : NewType<TypedIndexNameString, string>
+{
+    public TypedIndexNameString(string value) : base(value)
     {
     }
 }

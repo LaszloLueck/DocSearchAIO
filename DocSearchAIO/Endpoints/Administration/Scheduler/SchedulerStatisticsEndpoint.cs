@@ -32,6 +32,6 @@ public class
     {
         _logger.LogInformation("method getSchedulerStatistics called");
         var result = _schedulerStatisticsService.SchedulerStatistics();
-        return await result.ToDictionaryAsync(d => d.key, d => d.statistics, cancellationToken: cancellationToken);
+        return await result.ToDictionaryAsync(d => d.key.Value, d => d.statistics, cancellationToken: cancellationToken);
     }
 }

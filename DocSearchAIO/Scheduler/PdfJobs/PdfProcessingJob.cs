@@ -28,24 +28,25 @@ public class PdfProcessingJob : IJob
     private readonly ConfigurationObject _cfg;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly SchedulerUtilities _schedulerUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
     private readonly StatisticUtilities<StatisticModelPdf> _statisticUtilities;
     private readonly ComparerModel _comparerModel;
     private readonly JobStateMemoryCache<MemoryCacheModelPdf> _jobStateMemoryCache;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
 
     public PdfProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
-        IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
+        IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities,
+        IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<PdfProcessingJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerUtilities = schedulerUtilities;
+        _elasticUtilities = elasticUtilities;
         _statisticUtilities = StatisticUtilitiesProxy.PdfStatisticUtility(loggerFactory,
-            new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
             new StatisticModelPdf().StatisticFileName);
         _comparerModel = new ComparerModelPdf(loggerFactory, _cfg.ComparerDirectory);
         _jobStateMemoryCache = JobStateMemoryCacheProxy.GetPdfJobStateMemoryCache(loggerFactory, memoryCache);
@@ -98,7 +99,7 @@ public class PdfProcessingJob : IJob
                             Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                         };
                         var sw = Stopwatch.StartNew();
-                        await new TypedFilePathString(_cfg.ScanPath)
+                        await TypedFilePathString.New(_cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
                             .CountEntireDocs(_statisticUtilities)
@@ -191,7 +192,7 @@ internal static class PdfProcessingHelper
                     .Replace(@"\", "/");
 
                 var fileNameHash =
-                    await StaticHelpers.CreateHashString(new TypedHashedInputString(fileName));
+                    await StaticHelpers.CreateHashString(TypedHashedInputString.New(fileName));
 
                 var elasticDoc = new PdfElasticDocument
                 {
@@ -215,7 +216,7 @@ internal static class PdfProcessingHelper
                     .Distinct()
                     .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                     .Filter(d => d.Length > 2);
-                var completionField = new CompletionField { Input = searchAsYouTypeContent };
+                var completionField = new CompletionField {Input = searchAsYouTypeContent};
                 elasticDoc.CompletionContent = completionField;
 
                 var listElementsToHash = new List<string>
@@ -225,7 +226,8 @@ internal static class PdfProcessingHelper
                 };
                 elasticDoc.Content = contentString;
                 elasticDoc.ContentHash =
-                    (await StaticHelpers.CreateHashString(new TypedHashedInputString(listElementsToHash.Concat()))).Value;
+                    (await StaticHelpers.CreateHashString(TypedHashedInputString.New(listElementsToHash.Concat())))
+                    .Value;
 
                 return elasticDoc;
             }

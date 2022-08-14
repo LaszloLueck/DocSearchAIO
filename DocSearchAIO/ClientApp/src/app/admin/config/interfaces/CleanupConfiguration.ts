@@ -1,9 +1,9 @@
 export interface CleanupConfiguration {
   forComparer: string;
   forIndexSuffix: string;
-  startDelay: string;
-  runsEvery: string;
-  parallelism: string;
+  startDelay: number;
+  runsEvery: number;
+  parallelism: number;
   jobName: string;
   triggerName: string;
 }

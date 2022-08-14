@@ -13,24 +13,25 @@ public class OfficeWordCleanupJob : IJob
 {
     private readonly ILogger _logger;
     private readonly ConfigurationObject _cfg;
-    private readonly SchedulerUtilities _schedulerUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
     private readonly ReverseComparerService<ComparerModelWord> _reverseComparerService;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
     private readonly JobStateMemoryCache<MemoryCacheModelWordCleanup> _jobStateMemoryCache;
     private readonly CleanUpEntry _cleanUpEntry;
 
     public OfficeWordCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-        IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ActorSystem actorSystem)
+        IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ActorSystem actorSystem,
+        ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<OfficeWordCleanupJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _cleanUpEntry = _cfg.Cleanup[nameof(WordCleanupDocument)];
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
+        _schedulerUtilities = schedulerUtilities;
         _reverseComparerService =
             new ReverseComparerService<ComparerModelWord>(loggerFactory,
                 new ComparerModelWord(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _elasticUtilities = elasticUtilities;
         _jobStateMemoryCache =
             JobStateMemoryCacheProxy.GetWordCleanupJobStateMemoryCache(loggerFactory, memoryCache);
     }
@@ -63,7 +64,8 @@ public class OfficeWordCleanupJob : IJob
 
                     _logger.LogInformation("start processing cleanup job");
                     var cleanupIndexName =
-                        _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
+                        TypedIndexNameString.New(
+                            _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
 
                     await _reverseComparerService.Process(cleanupIndexName);
                 });

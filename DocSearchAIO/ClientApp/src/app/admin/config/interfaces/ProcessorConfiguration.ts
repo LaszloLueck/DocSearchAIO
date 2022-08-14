@@ -1,7 +1,7 @@
 export interface ProcessorConfiguration {
-  parallelism: string;
-  startDelay: string;
-  runsEvery: string;
+  parallelism: number;
+  startDelay: number;
+  runsEvery: number;
   excludeFilter: string;
   indexSuffix: string;
   fileExtension: string;

@@ -31,7 +31,7 @@ public class ActionContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAction
     {
         _logger.LogInformation("method getActionContentData called");
         var result = await _administrationService.ActionContent()
-            .ToDictionaryAsync(d => d.Item1, d => d.Item2, cancellationToken: cancellationToken);
+            .ToDictionaryAsync(d => d.Item1.Value, d => d.Item2, cancellationToken: cancellationToken);
         return result;
     }
 }

@@ -11,7 +11,7 @@ public abstract class StatisticModel
     protected abstract string DerivedModelName { get; }
     protected abstract TypedDirectoryPathString StatisticsDirectory { get; }
 
-    public TypedFileNameString StatisticFileName => new($"statistics_{DerivedModelName}.txt");
+    public TypedFileNameString StatisticFileName => TypedFileNameString.New($"statistics_{DerivedModelName}.txt");
 
     protected StatisticModel(ILoggerFactory loggerFactory)
     {
@@ -47,7 +47,7 @@ public abstract class StatisticModel
 public class StatisticModelWord : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
-    protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
 
     public StatisticModelWord()
     {
@@ -63,7 +63,7 @@ public class StatisticModelWord : StatisticModel
 public class StatisticModelPowerpoint : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
-    protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
 
     public StatisticModelPowerpoint()
     {
@@ -79,7 +79,7 @@ public class StatisticModelPowerpoint : StatisticModel
 public class StatisticModelPdf : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
-    protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
 
     public StatisticModelPdf()
     {
@@ -95,7 +95,7 @@ public class StatisticModelPdf : StatisticModel
 public class StatisticModelExcel : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
-    protected override TypedDirectoryPathString StatisticsDirectory { get; } = new("");
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
 
     public StatisticModelExcel()
     {

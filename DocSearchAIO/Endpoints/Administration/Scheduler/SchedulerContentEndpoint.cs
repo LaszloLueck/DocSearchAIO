@@ -29,7 +29,7 @@ public class SchedulerContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
         _logger.LogInformation("method getSchedulerContentData called");
         var result = _administrationService
             .SchedulerContent()
-            .ToDictionaryAsync(d => d.Item1, d => d.Item2, cancellationToken: cancellationToken);
+            .ToDictionaryAsync(d => d.Item1.Value, d => d.Item2, cancellationToken: cancellationToken);
         return await result;
 
     }

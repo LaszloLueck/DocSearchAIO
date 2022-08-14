@@ -72,18 +72,19 @@ public class ReverseComparerService<T> where T : ComparerModel
         ComparerHelper.FillConcurrentDictionary(_comparerFile, _logger);
     }
 
-    public async Task Process(string indexName)
+    public async Task Process(TypedIndexNameString indexName)
     {
         _logger.LogInformation("process comparer file {ComparerFile}", _comparerFile);
-        _logger.LogInformation("process elastic index {IndexName}", indexName);
+        _logger.LogInformation("process elastic index {IndexName}", indexName.Value);
         var sw = Stopwatch.StartNew();
         try
         {
-            await ReverseComparerServiceHelper.RemoveFromIndexById(ComparerHelper
-                    .GetComparerObjectSource(_comparerFile)
-                    .CheckCacheEntry(_allFileCount)
-                    .GroupedWithin(200, TimeSpan.FromSeconds(2))
-                    .WithMaybeFilter(), _removedFileCount, _elasticSearchService, _logger, indexName)
+            await ComparerHelper
+                .GetComparerObjectSource(_comparerFile)
+                .CheckCacheEntry(_allFileCount)
+                .GroupedWithin(200, TimeSpan.FromSeconds(2))
+                .WithMaybeFilter()
+                .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName.Value)
                 .RemoveFromCache(_lazyCache)
                 .RunIgnore(_actorSystem.Materializer());
 

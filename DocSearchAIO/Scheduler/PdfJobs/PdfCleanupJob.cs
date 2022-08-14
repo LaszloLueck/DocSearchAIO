@@ -13,21 +13,22 @@ public class PdfCleanupJob : IJob
 {
     private readonly ILogger _logger;
     private readonly ConfigurationObject _cfg;
-    private readonly SchedulerUtilities _schedulerUtilities;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
     private readonly ReverseComparerService<ComparerModelPdf> _reverseComparerService;
     private readonly JobStateMemoryCache<MemoryCacheModelPdfCleanup> _jobStateMemoryCache;
     private readonly CleanUpEntry _cleanUpEntry;
 
     public PdfCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-        IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ActorSystem actorSystem)
+        IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ActorSystem actorSystem,
+        ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<PdfCleanupJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _cleanUpEntry = _cfg.Cleanup[nameof(PdfCleanupDocument)];
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerUtilities = schedulerUtilities;
+        _elasticUtilities = elasticUtilities;
         _reverseComparerService =
             new ReverseComparerService<ComparerModelPdf>(loggerFactory,
                 new ComparerModelPdf(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
@@ -63,7 +64,8 @@ public class PdfCleanupJob : IJob
 
                     _logger.LogInformation("start processing cleanup job");
                     var cleanupIndexName =
-                        _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix);
+                        TypedIndexNameString.New(
+                            _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
                     await _reverseComparerService.Process(cleanupIndexName);
                 });
             }

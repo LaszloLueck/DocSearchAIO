@@ -1,1 +1,42 @@
-<p>{{triggerElement.description}}</p>
+<div class="rounded border m-3">
+  <div class="input-group input-group-sm ps-2 pt-2 pe-2">
+    <span class="input-group-text" id="triggerName">Triggername</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.triggerName}}"
+           disabled="disabled" aria-label="Triggername" aria-describedby="triggerName">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerDescription">Triggerbeschreibung</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.description}}"
+           disabled="disabled" aria-label="Triggerbeschreibung" aria-describedby="triggerDescription">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerJobname">Trigger Jobname</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.jobName}}" disabled="disabled"
+           aria-label="Triggerjobname" aria-describedby="triggerJobname">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerGroupname">Trigger Gruppenname</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.groupName}}"
+           disabled="disabled" aria-label="Triggergruppenname" aria-describedby="triggerGroupname">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerState">Trigger Status</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.triggerState}}"
+           disabled="disabled" aria-label="TriggerState" aria-describedby="triggerState">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerStarttime">Trigger Startzeit</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.startTime | date:'medium':'+01:00':'de'}}"
+           disabled="disabled" aria-label="TriggerStarttime" aria-describedby="triggerStarttime">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerNextFireTime">Trigger Nächster Start</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.nextFireTime | date:'medium':'+01:00':'de'}}"
+           disabled="disabled" aria-label="TriggerNextFireTime" aria-describedby="triggerNextFireTime">
+  </div>
+  <div class="input-group input-group-sm ps-2 pe-2 pt-2">
+    <span class="input-group-text" id="triggerLastFireTime">Trigger Letzter Start</span>
+    <input type="text" class="form-control form-control-sm" value="{{triggerElement.lastFireTime | date:'medium':'+01:00':'de'}}"
+           disabled="disabled" aria-label="TriggerLastFireTime" aria-describedby="triggerLastFireTime">
+  </div>
+</div>

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Utilities;
 using FluentAssertions;
 using Xunit;
@@ -15,7 +16,7 @@ public class EncryptionServiceTest
     [Fact]
     public async Task Generate_Hash_of_a_string_in_asynchronous_way()
     {
-        var bt = await EncryptionService.ComputeHashAsync(StringToHash);
+        var bt = await EncryptionService.ComputeHashAsync(TypedHashedInputString.New(StringToHash));
             
         var result = EncryptionService.ConvertToStringFromByteArray(bt);
 

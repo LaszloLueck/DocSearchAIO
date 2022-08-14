@@ -9,7 +9,7 @@ namespace DocSearchAIO.DocSearch.Services;
 
 public interface ISchedulerStatisticsService
 {
-    public IAsyncEnumerable<(string key, SchedulerStatistics statistics)> SchedulerStatistics();
+    public IAsyncEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)> SchedulerStatistics();
 }
 
 public class SchedulerStatisticsService : ISchedulerStatisticsService
@@ -43,8 +43,6 @@ public class SchedulerStatisticsService : ISchedulerStatisticsService
     private static readonly Func<ConfigurationObject, IEnumerable<(string TriggerName, bool Active)>> Tuples =
         configurationObject =>
         {
-            var foo = configurationObject.Processing.Map(kv => (kv.Value.TriggerName, kv.Value.Active));
-
             var processing =
                 configurationObject
                     .Processing
@@ -118,24 +116,24 @@ public class SchedulerStatisticsService : ISchedulerStatisticsService
                 return await t;
             };
 
-    public IAsyncEnumerable<(string key, SchedulerStatistics statistics)> SchedulerStatistics()
+    public IAsyncEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)> SchedulerStatistics()
     {
         var source = new List<TypedGroupNameString>
         {
-            new(_configurationObject.SchedulerGroupName),
-            new(_configurationObject.CleanupGroupName)
+            TypedGroupNameString.New(_configurationObject.SchedulerGroupName),
+            TypedGroupNameString.New(_configurationObject.CleanupGroupName)
         };
         return CalculateSchedulerStatistics(source);
     }
 
-    private async IAsyncEnumerable<(string, SchedulerStatistics)> CalculateSchedulerStatistics(
+    private async IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> CalculateSchedulerStatistics(
         List<TypedGroupNameString> source)
     {
         foreach (var groupNameString in source)
         {
             var schedulerStatistic =
                 await SchedulerStatistic(_configurationObject, groupNameString, _logger);
-            yield return (groupNameString.Value, schedulerStatistic);
+            yield return (groupNameString, schedulerStatistic);
         }
     }
 }

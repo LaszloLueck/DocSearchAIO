@@ -27,24 +27,25 @@ public class OfficePowerpointProcessingJob : IJob
     private readonly ConfigurationObject _cfg;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly SchedulerUtilities _schedulerUtilities;
+    private readonly ISchedulerUtilities _schedulerUtilities;
     private readonly StatisticUtilities<StatisticModelPowerpoint> _statisticUtilities;
     private readonly ComparerModel _comparerModel;
     private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
 
     public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
-        ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
+        ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
+        ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
         _logger = loggerFactory.CreateLogger<OfficePowerpointProcessingJob>();
         _cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(_cfg);
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
-        _schedulerUtilities = new SchedulerUtilities(loggerFactory);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerUtilities = schedulerUtilities;
+        _elasticUtilities = elasticUtilities;
         _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
-            new TypedDirectoryPathString(_cfg.StatisticsDirectory),
+            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
             new StatisticModelPowerpoint().StatisticFileName);
         _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
         _jobStateMemoryCache =
@@ -101,7 +102,7 @@ public class OfficePowerpointProcessingJob : IJob
                         };
 
                         var sw = Stopwatch.StartNew();
-                        await new TypedFilePathString(_cfg.ScanPath)
+                        await TypedFilePathString.New(_cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
                             .CountEntireDocs(_statisticUtilities)
@@ -192,7 +193,7 @@ public static class PowerpointProcessingHelper
                     .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                     .Replace(@"\", "/");
 
-                var id = await StaticHelpers.CreateHashString(new TypedHashedInputString(currentFile));
+                var id = await StaticHelpers.CreateHashString(TypedHashedInputString.New(currentFile));
                 var slideCount = presentationPart
                     .SlideParts
                     .Count();
@@ -226,7 +227,7 @@ public static class PowerpointProcessingHelper
                     string contentString) =>
                     commentsArray
                         .StringFromCommentsArray()
-                        .GenerateTextToSuggest(new TypedContentString(contentString))
+                        .GenerateTextToSuggest(TypedContentString.New(contentString))
                         .GenerateSearchAsYouTypeArray()
                         .WrapCompletionField();
 
@@ -274,7 +275,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Map(comment => OfficeDocumentComment((Comment)comment));
+        comments.Map(comment => OfficeDocumentComment((Comment) comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()

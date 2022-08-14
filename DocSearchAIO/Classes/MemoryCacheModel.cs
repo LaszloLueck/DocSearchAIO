@@ -75,8 +75,11 @@ public abstract class MemoryCacheModel
 
     public Option<CacheEntry> CacheEntry()
     {
-        _logger?.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
-        _memoryCache.TryGetValue(DerivedModelName, out CacheEntry cacheEntry);
+        if (_logger is null || _memoryCache is null)
+            return Option<CacheEntry>.None;
+
+        _logger.LogInformation("try to get cache entry for model {DerivedModelName}", DerivedModelName);
+        _memoryCache.TryGetValue(DerivedModelName, out CacheEntry? cacheEntry);
         return cacheEntry;
     }
 }

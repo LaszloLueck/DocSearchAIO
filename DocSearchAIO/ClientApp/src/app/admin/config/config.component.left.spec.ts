@@ -7,19 +7,20 @@ import {RouterTestingModule} from "@angular/router/testing";
 import {of} from "rxjs";
 import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
 import {Either, makeLeft} from "./Either";
+import {DynamicElementComponent} from "./dynamic-element/dynamic-element.component";
 
-describe('ConfigComponent', () => {
+describe('ConfigComponent left result', () => {
   let component: ConfigComponent;
   let fixture: ComponentFixture<ConfigComponent>;
   let fakeConfigApiService: ConfigApiService;
 
   beforeEach(async() => {
     const err: BaseError = {errorMessage: 'errorOperationMessage', errorCode: 999, operation: "errorOperation"};
-    const bla: Either<BaseError, DocSearchConfiguration> = makeLeft(err);
+    const eitherLeft: Either<BaseError, DocSearchConfiguration> = makeLeft(err);
 
 
     fakeConfigApiService = jasmine.createSpyObj<ConfigApiService>('ConfigApiService', {
-      getConfiguration: of(bla),
+      getConfiguration: of(eitherLeft),
       setConfiguration: undefined,
       }
     )

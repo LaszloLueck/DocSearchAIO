@@ -7,7 +7,10 @@ import {CommonDataService} from "./services/CommonDataService";
 import {NgModule} from "@angular/core";
 import {HttpClientModule} from "@angular/common/http";
 import {FormsModule} from "@angular/forms";
+import {registerLocaleData} from "@angular/common";
+import localeDe from '@angular/common/locales/de'
 
+registerLocaleData(localeDe);
 
 @NgModule({
   declarations: [

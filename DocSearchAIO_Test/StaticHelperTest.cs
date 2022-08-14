@@ -18,12 +18,12 @@ public class StaticHelperTest
     [Fact]
     public void Build_a_content_and_comment_string_for_suggest()
     {
-        var testStringContent = "Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
-        var testStringComment = "Fritz jagt im total verwahrlosten Taxi quer durch München";
+        const string testStringContent = "Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
+        const string testStringComment = "Fritz jagt im total verwahrlosten Taxi quer durch München";
 
 
-        var typedCommentString = new TypedCommentString(testStringComment);
-        var typedContentString = new TypedContentString(testStringContent);
+        var typedCommentString = TypedCommentString.New(testStringComment);
+        var typedContentString = TypedContentString.New(testStringContent);
 
         var result = typedCommentString.GenerateTextToSuggest(typedContentString);
 
@@ -36,11 +36,11 @@ public class StaticHelperTest
     [Fact]
     public void Build_a_content_and_comment_string_for_suggest_with_replaces()
     {
-        var testStringContent = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
-        var testStringComment = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
+        const string testStringContent = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
+        const string testStringComment = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
 
-        var typedCommentString = new TypedCommentString(testStringComment);
-        var typedContentString = new TypedContentString(testStringContent);
+        var typedCommentString = TypedCommentString.New(testStringComment);
+        var typedContentString = TypedContentString.New(testStringContent);
 
         var result = typedCommentString.GenerateTextToSuggest(typedContentString);
         var expectedString =
@@ -53,7 +53,7 @@ public class StaticHelperTest
     [Fact]
     public void Build_a_suggest_array_from_a_text_string()
     {
-        var testString = new TypedSuggestString("The quick brown fo jumps over the lazy do");
+        var testString = TypedSuggestString.New("The quick brown fo jumps over the lazy do");
         var result = testString.GenerateSearchAsYouTypeArray();
 
         Assert.Collection(result,
@@ -80,7 +80,7 @@ public class StaticHelperTest
 
         var p1 = new Paragraph(list1);
         var p2 = new Paragraph(list2);
-        var pList = new List<OpenXmlElement> { p1, p2 };
+        var pList = new List<OpenXmlElement> {p1, p2};
 
         var result = pList.ContentString();
 

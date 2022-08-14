@@ -37,11 +37,11 @@ public interface IAdministrationService
 
     public AdministrationGenericRequest GenericContent();
 
-    public IAsyncEnumerable<(string, SchedulerStatistics)> SchedulerContent();
+    public IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> SchedulerContent();
 
     public Task<IndexStatistic> StatisticsContent();
 
-    public IAsyncEnumerable<(string, Seq<AdministrationActionSchedulerModel>)> ActionContent();
+    public IAsyncEnumerable<(TypedGroupNameString, Seq<AdministrationActionSchedulerModel>)> ActionContent();
 }
 
 public class AdministrationService : IAdministrationService
@@ -340,7 +340,7 @@ public class AdministrationService : IAdministrationService
         return adminGenModel;
     }
 
-    public IAsyncEnumerable<(string, SchedulerStatistics)> SchedulerContent()
+    public IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> SchedulerContent()
     {
         return _schedulerStatisticsService.SchedulerStatistics();
     }
@@ -381,7 +381,7 @@ public class AdministrationService : IAdministrationService
             ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
             StatisticUtilitiesProxy
                 .AsIEnumerable(loggerFactory,
-                    new TypedDirectoryPathString(configurationObject.StatisticsDirectory));
+                    TypedDirectoryPathString.New(configurationObject.StatisticsDirectory));
 
         static Seq<(ProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(
             ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
@@ -477,7 +477,7 @@ public class AdministrationService : IAdministrationService
             .ToOption()
             .Flatten();
 
-    public IAsyncEnumerable<(string, Seq<AdministrationActionSchedulerModel>)> ActionContent()
+    public IAsyncEnumerable<(TypedGroupNameString, Seq<AdministrationActionSchedulerModel>)> ActionContent()
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
         var groupedSchedulerModels = _schedulerStatisticsService
