@@ -15,6 +15,7 @@ import { IndexConfigurationComponent } from './config/index-configuration/index-
 import { ButtonBarComponent } from './config/button-bar/button-bar.component';
 import { SchedulerstatisticComponent } from './scheduler/schedulerstatistic/schedulerstatistic.component';
 import { TriggerElementComponent } from './scheduler/triggerelement/trigger-element.component';
+import { DetailComponent } from './scheduler/component/detail/detail.component';
 
 
 @NgModule({
@@ -30,7 +31,8 @@ import { TriggerElementComponent } from './scheduler/triggerelement/trigger-elem
     IndexConfigurationComponent,
     ButtonBarComponent,
     SchedulerstatisticComponent,
-    TriggerElementComponent
+    TriggerElementComponent,
+    DetailComponent
   ],
     imports: [
         CommonModule,

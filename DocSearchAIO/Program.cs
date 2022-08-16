@@ -47,26 +47,26 @@ builder.Services.AddElasticSearch(builder.Configuration);
 builder.Services.AddQuartzScheduler(builder.Configuration);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
-builder.Services.AddScoped<IInitService>(x =>
+builder.Services.AddSingleton<IInitService>(x =>
     new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
-builder.Services.AddScoped<IDoSearchService>(x =>
+builder.Services.AddSingleton<IDoSearchService>(x =>
     new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
         builder.Configuration));
-builder.Services.AddScoped<ISearchSuggestService>(x =>
+builder.Services.AddSingleton<ISearchSuggestService>(x =>
     new SearchSuggestService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
         builder.Configuration));
-builder.Services.AddScoped<IDocumentDetailService>(x =>
+builder.Services.AddSingleton<IDocumentDetailService>(x =>
     new DocumentDetailService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>()));
-builder.Services.AddScoped<IAdministrationService>(x =>
+builder.Services.AddSingleton<IAdministrationService>(x =>
     new AdministrationService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration,
         x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<IMemoryCache>()));
-builder.Services.AddScoped<ISchedulerStatisticsService>(x =>
+builder.Services.AddSingleton<ISchedulerStatisticsService>(x =>
     new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
-builder.Services.AddScoped<IOptionDialogService>(x =>
+builder.Services.AddSingleton<IOptionDialogService>(x =>
     new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
-builder.Services.AddScoped<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
-builder.Services.AddScoped<IElasticUtilities>(x =>
+builder.Services.AddSingleton<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddSingleton<IElasticUtilities>(x =>
     new ElasticUtilities(x.GetRequiredService<ILoggerFactory>(), x.GetRequiredService<IElasticSearchService>()));
 
 var app = builder.Build();
