@@ -5,7 +5,7 @@
     "ng": "ng",
     "prestart": "node aspnetcore-https",
     "start": "run-script-os",
-    "start:windows": "ng serve --port 44435 --ssl --ssl-cert c:\\Users\\lueckl\\AppData\\Roaming\\ASP.NET\\https\\docsearchaio.pem --ssl-key c:\\Users\\lueckl\\AppData\\Roaming\\ASP.NET\\https\\docsearchaio.key",
+    "start:windows": "ng serve --port 44435 --ssl --ssl-cert %APPDATA%\\ASP.NET\\https\\%npm_packa^ge_name%.pem --ssl-key %APPDATA%\\ASP.NET\\https\\%npm_package_name%.key",
     "start:default": "ng serve --port 44435 --ssl --ssl-cert $HOME/.aspnet/https/${npm_package_name}.pem --ssl-key $HOME/.aspnet/https/${npm_package_name}.key",
     "build": "ng build",
     "build:ssr": "ng run DocSearchAIO:server:dev",
