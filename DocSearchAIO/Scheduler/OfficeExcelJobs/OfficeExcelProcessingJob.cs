@@ -55,90 +55,88 @@ public class OfficeExcelProcessingJob : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(ExcelElasticDocument)];
-        await Task.Run(async () =>
+
+        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelExcelCleanup());
+        if (cacheEntryOpt.IsSome &&
+            (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelExcelCleanup());
-            if (cacheEntryOpt.IsSome &&
-                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
-            {
-                _logger.LogInformation(
-                    "cannot execute scanning and processing documents, opponent job cleanup running");
-                return;
-            }
+            _logger.LogInformation(
+                "cannot execute scanning and processing documents, opponent job cleanup running");
+            return;
+        }
 
 
-            if (!configEntry.Active)
+        if (!configEntry.Active)
+        {
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                configEntry.TriggerName,
+                _cfg.SchedulerGroupName, TriggerState.Paused);
+            _logger.LogWarning(
+                "skip processing of word documents because the scheduler is inactive per config");
+        }
+        else
+        {
+            _logger.LogInformation("start job");
+            var indexName =
+                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+            await _elasticUtilities.CheckAndCreateElasticIndex<ExcelElasticDocument>(indexName);
+            _logger.LogInformation("start crunching and indexing some excel-documents");
+            if (!Directory.Exists(_cfg.ScanPath))
             {
-                await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                    configEntry.TriggerName,
-                    _cfg.SchedulerGroupName, TriggerState.Paused);
                 _logger.LogWarning(
-                    "skip processing of word documents because the scheduler is inactive per config");
+                    "directory to scan <{ScanPath}> does not exists. skip working",
+                    _cfg.ScanPath);
             }
             else
             {
-                _logger.LogInformation("start job");
-                var indexName =
-                    _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
-                await _elasticUtilities.CheckAndCreateElasticIndex<ExcelElasticDocument>(indexName);
-                _logger.LogInformation("start crunching and indexing some excel-documents");
-                if (!Directory.Exists(_cfg.ScanPath))
+                try
                 {
-                    _logger.LogWarning(
-                        "directory to scan <{ScanPath}> does not exists. skip working",
-                        _cfg.ScanPath);
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                    var jobStatistic = new ProcessingJobStatistic
+                    {
+                        Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                    };
+                    var sw = Stopwatch.StartNew();
+
+                    await TypedFilePathString.New(_cfg.ScanPath)
+                        .CreateSource(configEntry.FileExtension)
+                        .UseExcludeFileFilter(configEntry.ExcludeFilter)
+                        .CountEntireDocs(_statisticUtilities)
+                        .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
+                            _logger)
+                        .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                        .WithMaybeFilter()
+                        .CountFilteredDocs(_statisticUtilities)
+                        .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
+                            indexName)
+                        .RunIgnore(_actorSystem.Materializer());
+
+                    _logger.LogInformation("finished processing excel-documents");
+                    sw.Stop();
+                    await _elasticSearchService.FlushIndexAsync(indexName);
+                    await _elasticSearchService.RefreshIndexAsync(indexName);
+                    jobStatistic.EndJob = DateTime.Now;
+                    jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                    jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                    jobStatistic.ProcessingError =
+                        _statisticUtilities.FailedDocumentsCount();
+                    jobStatistic.IndexedDocCount =
+                        _statisticUtilities.ChangedDocumentsCount();
+                    _statisticUtilities
+                        .AddJobStatisticToDatabase(jobStatistic);
+                    _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                        sw.ElapsedMilliseconds);
+                    _comparerModel.RemoveComparerFile();
+                    await _comparerModel.WriteAllLinesAsync();
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                 }
-                else
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                        var jobStatistic = new ProcessingJobStatistic
-                        {
-                            Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
-                        };
-                        var sw = Stopwatch.StartNew();
-
-                        await TypedFilePathString.New(_cfg.ScanPath)
-                            .CreateSource(configEntry.FileExtension)
-                            .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                            .CountEntireDocs(_statisticUtilities)
-                            .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                                _logger)
-                            .FilterExistingUnchangedAsync(configEntry, _comparerModel)
-                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .WithMaybeFilter()
-                            .CountFilteredDocs(_statisticUtilities)
-                            .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
-                                indexName)
-                            .RunIgnore(_actorSystem.Materializer());
-
-                        _logger.LogInformation("finished processing excel-documents");
-                        sw.Stop();
-                        await _elasticSearchService.FlushIndexAsync(indexName);
-                        await _elasticSearchService.RefreshIndexAsync(indexName);
-                        jobStatistic.EndJob = DateTime.Now;
-                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                        jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
-                        jobStatistic.ProcessingError =
-                            _statisticUtilities.FailedDocumentsCount();
-                        jobStatistic.IndexedDocCount =
-                            _statisticUtilities.ChangedDocumentsCount();
-                        _statisticUtilities
-                            .AddJobStatisticToDatabase(jobStatistic);
-                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                            sw.ElapsedMilliseconds);
-                        _comparerModel.RemoveComparerFile();
-                        await _comparerModel.WriteAllLinesAsync();
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "An error in processing pipeline occured");
-                    }
+                    _logger.LogError(ex, "An error in processing pipeline occured");
                 }
             }
-        });
+        }
     }
 }
 
@@ -261,7 +259,7 @@ internal static class ExcelProcessingHelper
         {
             logger.LogError(e, "an error while creating a indexing object");
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Option<ExcelElasticDocument>.None);
+            return await Task.FromResult(Option<ExcelElasticDocument>.None);
         }
     }
 

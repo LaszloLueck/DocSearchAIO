@@ -98,7 +98,7 @@ public class AdministrationService : IAdministrationService
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                             return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
                         },
-                        async () => await Task.Run(() => false)
+                        async () => await Task.FromResult(false)
                     );
                 await scheduler.PauseTrigger(triggerKey);
                 return result;
@@ -107,7 +107,7 @@ public class AdministrationService : IAdministrationService
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
                     _configurationObject.SchedulerName);
-                return await Task.Run(() => false);
+                return await Task.FromResult(false);
             });
     }
 
@@ -155,7 +155,7 @@ public class AdministrationService : IAdministrationService
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                             return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
                         },
-                        async () => await Task.Run(() => false)
+                        async () => await Task.FromResult(false)
                     );
                 await scheduler.ResumeTrigger(triggerKey);
                 return result;
@@ -164,7 +164,7 @@ public class AdministrationService : IAdministrationService
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
                     _configurationObject.SchedulerName);
-                return await Task.Run(() => false);
+                return await Task.FromResult(false);
             });
     }
 
@@ -184,7 +184,7 @@ public class AdministrationService : IAdministrationService
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
                     _configurationObject.SchedulerName);
-                return await Task.Run(() => false);
+                return await Task.FromResult(false);
             });
     }
 
@@ -286,12 +286,12 @@ public class AdministrationService : IAdministrationService
                             var jobKey = new JobKey(reindexAndStartJobRequest.JobName,
                                 reindexAndStartJobRequest.GroupId);
                             await scheduler.TriggerJob(jobKey);
-                            return await Task.Run(() => true);
+                            return await Task.FromResult(true);
                         },
                         async () =>
                         {
                             _logger.LogWarning("cannot remove elastic index");
-                            return await Task.Run(() => false);
+                            return await Task.FromResult(false);
                         });
                 return boolReturn;
             },
@@ -299,7 +299,7 @@ public class AdministrationService : IAdministrationService
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
                     _configurationObject.SchedulerName);
-                return await Task.Run(() => false);
+                return await Task.FromResult(false);
             });
         return true;
     }
@@ -317,7 +317,7 @@ public class AdministrationService : IAdministrationService
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
                     _configurationObject.SchedulerName);
-                return await Task.Run(() => string.Empty);
+                return await Task.FromResult(string.Empty);
             });
     }
 

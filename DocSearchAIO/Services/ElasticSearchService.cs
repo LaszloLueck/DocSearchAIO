@@ -82,7 +82,7 @@ public class ElasticSearchService : IElasticSearchService
         var docs = documents.ToArray();
             
         if (!docs.Any())
-            return await Task.Run(() => false);
+            return await Task.FromResult(false);
 
         var bulkResponse = await _elasticClient.IndexManyAsync(docs, indexName);
         if (bulkResponse.IsValid)

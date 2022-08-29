@@ -25,7 +25,7 @@
     <PackageReference Include="Akka.Streams" Version="1.4.40" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.17.1" />
     <PackageReference Include="itext7" Version="7.2.3" />
-    <PackageReference Include="MsgReader" Version="4.4.8" />
+    <PackageReference Include="MsgReader" Version="4.4.10" />
     <PackageReference Include="NEST" Version="7.17.4" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />

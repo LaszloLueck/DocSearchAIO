@@ -39,38 +39,33 @@ public class MsgCleanupJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Task.Run(async () =>
+        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+        if (!_cleanUpEntry.Active)
         {
-            _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-            if (!_cleanUpEntry.Active)
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
+                _cfg.CleanupGroupName,
+                TriggerState.Paused);
+            _logger.LogWarning(
+                "skip cleanup of msg-files documents because the scheduler is inactive per config");
+        }
+        else
+        {
+            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
+            if (cacheEntryOpt.IsSome &&
+                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
-                await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
-                    _cfg.CleanupGroupName,
-                    TriggerState.Paused);
-                _logger.LogWarning(
-                    "skip cleanup of msg-files documents because the scheduler is inactive per config");
-            }
-            else
-            {
-                await Task.Run(async () =>
-                {
-                    var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
-                    if (cacheEntryOpt.IsSome &&
-                        (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
-                    {
-                        _logger.LogInformation(
-                            "cannot execute cleanup documents, opponent job scanning and processing running");
-                        return;
-                    }
-
-                    _logger.LogInformation("start processing cleanup job");
-                    var cleanupIndexName =
-                        TypedIndexNameString.New(_elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
-                    await _reverseComparerService.Process(cleanupIndexName);
-                });
+                _logger.LogInformation(
+                    "cannot execute cleanup documents, opponent job scanning and processing running");
+                return;
             }
 
-            _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-        });
+            _logger.LogInformation("start processing cleanup job");
+            var cleanupIndexName =
+                TypedIndexNameString.New(
+                    _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
+            await _reverseComparerService.Process(cleanupIndexName);
+        }
+
+        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
     }
 }

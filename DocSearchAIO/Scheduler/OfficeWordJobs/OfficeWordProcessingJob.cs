@@ -53,92 +53,89 @@ public class OfficeWordProcessingJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Task.Run(async () =>
+        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelWordCleanup());
+        if (cacheEntryOpt.IsSome &&
+            (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelWordCleanup());
-            if (cacheEntryOpt.IsSome &&
-                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
-            {
-                _logger.LogInformation(
-                    "cannot execute scanning and processing documents, opponent job cleanup running");
-                return;
-            }
+            _logger.LogInformation(
+                "cannot execute scanning and processing documents, opponent job cleanup running");
+            return;
+        }
 
-            var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
-            if (!configEntry.Active)
+        var configEntry = _cfg.Processing[nameof(WordElasticDocument)];
+        if (!configEntry.Active)
+        {
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                configEntry.TriggerName,
+                _cfg.SchedulerGroupName, TriggerState.Paused);
+            _logger.LogWarning(
+                "skip processing of word documents because the scheduler is inactive per config");
+        }
+        else
+        {
+            _logger.LogInformation("start job");
+            var indexName =
+                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+
+            await _elasticUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
+
+            _logger.LogInformation("start crunching and indexing some word-documents");
+
+            if (!Directory.Exists(_cfg.ScanPath))
             {
-                await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                    configEntry.TriggerName,
-                    _cfg.SchedulerGroupName, TriggerState.Paused);
                 _logger.LogWarning(
-                    "skip processing of word documents because the scheduler is inactive per config");
+                    "directory to scan <{ScanPath}> does not exists. skip working",
+                    _cfg.ScanPath);
             }
             else
             {
-                _logger.LogInformation("start job");
-                var indexName =
-                    _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
-
-                await _elasticUtilities.CheckAndCreateElasticIndex<WordElasticDocument>(indexName);
-
-                _logger.LogInformation("start crunching and indexing some word-documents");
-
-                if (!Directory.Exists(_cfg.ScanPath))
+                try
                 {
-                    _logger.LogWarning(
-                        "directory to scan <{ScanPath}> does not exists. skip working",
-                        _cfg.ScanPath);
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                    var jobStatistic = new ProcessingJobStatistic
+                    {
+                        Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                    };
+                    var sw = Stopwatch.StartNew();
+                    await TypedFilePathString.New(_cfg.ScanPath)
+                        .CreateSource(configEntry.FileExtension)
+                        .UseExcludeFileFilter(configEntry.ExcludeFilter)
+                        .CountEntireDocs(_statisticUtilities)
+                        .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
+                        .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                        .WithMaybeFilter()
+                        .CountFilteredDocs(_statisticUtilities)
+                        .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
+                            indexName)
+                        .RunIgnore(_actorSystem.Materializer());
+
+                    _logger.LogInformation("finished processing word-documents");
+                    sw.Stop();
+                    await _elasticSearchService.FlushIndexAsync(indexName);
+                    await _elasticSearchService.RefreshIndexAsync(indexName);
+                    jobStatistic.EndJob = DateTime.Now;
+                    jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                    jobStatistic.EntireDocCount =
+                        _statisticUtilities.EntireDocumentsCount();
+                    jobStatistic.ProcessingError =
+                        _statisticUtilities.FailedDocumentsCount();
+                    jobStatistic.IndexedDocCount =
+                        _statisticUtilities.ChangedDocumentsCount();
+                    _statisticUtilities
+                        .AddJobStatisticToDatabase(jobStatistic);
+                    _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                        sw.ElapsedMilliseconds);
+                    _comparerModel.RemoveComparerFile();
+                    await _comparerModel.WriteAllLinesAsync();
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                 }
-                else
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                        var jobStatistic = new ProcessingJobStatistic
-                        {
-                            Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
-                        };
-                        var sw = Stopwatch.StartNew();
-                        await TypedFilePathString.New(_cfg.ScanPath)
-                            .CreateSource(configEntry.FileExtension)
-                            .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                            .CountEntireDocs(_statisticUtilities)
-                            .ProcessWordDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
-                            .FilterExistingUnchangedAsync(configEntry, _comparerModel)
-                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .WithMaybeFilter()
-                            .CountFilteredDocs(_statisticUtilities)
-                            .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
-                                indexName)
-                            .RunIgnore(_actorSystem.Materializer());
-
-                        _logger.LogInformation("finished processing word-documents");
-                        sw.Stop();
-                        await _elasticSearchService.FlushIndexAsync(indexName);
-                        await _elasticSearchService.RefreshIndexAsync(indexName);
-                        jobStatistic.EndJob = DateTime.Now;
-                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                        jobStatistic.EntireDocCount =
-                            _statisticUtilities.EntireDocumentsCount();
-                        jobStatistic.ProcessingError =
-                            _statisticUtilities.FailedDocumentsCount();
-                        jobStatistic.IndexedDocCount =
-                            _statisticUtilities.ChangedDocumentsCount();
-                        _statisticUtilities
-                            .AddJobStatisticToDatabase(jobStatistic);
-                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                            sw.ElapsedMilliseconds);
-                        _comparerModel.RemoveComparerFile();
-                        await _comparerModel.WriteAllLinesAsync();
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "An error in processing pipeline occured");
-                    }
+                    _logger.LogError(ex, "An error in processing pipeline occured");
                 }
             }
-        });
+        }
     }
 }
 
@@ -159,130 +156,127 @@ internal static class WordProcessingHelper
     {
         try
         {
-            return await Task.Run(async () =>
+            var wdOpt = WordprocessingDocument.Open(currentFile, false);
+
+            Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
+            if (mainDocumentPartOpt.IsNone)
+                return Option<WordElasticDocument>.None;
+
+            var mainDocumentPart = mainDocumentPartOpt.ValueUnsafe();
+            var fInfo = wdOpt.PackageProperties;
+            var category = fInfo.Category.IfNull(string.Empty);
+            var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
+            var creator = fInfo.Creator.IfNull(string.Empty);
+            var description = fInfo.Description.IfNull(string.Empty);
+            var identifier = fInfo.Identifier.IfNull(string.Empty);
+            var keywords = fInfo.Keywords.IfNull(string.Empty);
+            var language = fInfo.Language.IfNull(string.Empty);
+            var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+            var revision = fInfo.Revision.IfNull(string.Empty);
+            var subject = fInfo.Subject.IfNull(string.Empty);
+            var title = fInfo.Title.IfNull(string.Empty);
+            var version = fInfo.Version.IfNull(string.Empty);
+            var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
+            const string contentType = "docx";
+            var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+            var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
+            var uriPath = currentFile
+                .Replace(configurationObject.ScanPath,
+                    configurationObject.UriReplacement)
+                .Replace(@"\", "/");
+
+            var id = await StaticHelpers.CreateHashString(
+                TypedHashedInputString.New(currentFile));
+
+
+            static IEnumerable<OfficeDocumentComment> CommentArray(
+                MainDocumentPart mainDocumentPart)
             {
-                var wdOpt = WordprocessingDocument.Open(currentFile, false);
+                var comments = mainDocumentPart
+                    .WordprocessingCommentsPart
+                    .ResolveNullable(new Comments(), (v, _) => v.Comments);
 
-                Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
-                if (mainDocumentPartOpt.IsNone)
-                    return Option<WordElasticDocument>.None;
-
-                var mainDocumentPart = mainDocumentPartOpt.ValueUnsafe();
-                var fInfo = wdOpt.PackageProperties;
-                var category = fInfo.Category.IfNull(string.Empty);
-                var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
-                var creator = fInfo.Creator.IfNull(string.Empty);
-                var description = fInfo.Description.IfNull(string.Empty);
-                var identifier = fInfo.Identifier.IfNull(string.Empty);
-                var keywords = fInfo.Keywords.IfNull(string.Empty);
-                var language = fInfo.Language.IfNull(string.Empty);
-                var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
-                var revision = fInfo.Revision.IfNull(string.Empty);
-                var subject = fInfo.Subject.IfNull(string.Empty);
-                var title = fInfo.Title.IfNull(string.Empty);
-                var version = fInfo.Version.IfNull(string.Empty);
-                var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
-                const string contentType = "docx";
-                var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
-                var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
-                var uriPath = currentFile
-                    .Replace(configurationObject.ScanPath,
-                        configurationObject.UriReplacement)
-                    .Replace(@"\", "/");
-
-                var id = await StaticHelpers.CreateHashString(
-                    TypedHashedInputString.New(currentFile));
-
-
-                static IEnumerable<OfficeDocumentComment> CommentArray(
-                    MainDocumentPart mainDocumentPart)
+                return comments.Map(comment =>
                 {
-                    var comments = mainDocumentPart
-                        .WordprocessingCommentsPart
-                        .ResolveNullable(new Comments(), (v, _) => v.Comments);
+                    var d = (Comment) comment;
 
-                    return comments.Map(comment =>
+                    var retValue = new OfficeDocumentComment
                     {
-                        var d = (Comment) comment;
+                        Author = d.Author?.Value ?? string.Empty,
+                        Comment = d.InnerText,
+                        Date = d.Date?.Value ?? new DateTime(1970, 1, 1),
+                        Id = d.Id?.Value ?? string.Empty,
+                        Initials = d.Initials?.Value ?? string.Empty
+                    };
+                    return retValue;
+                });
+            }
 
-                        var retValue = new OfficeDocumentComment
-                        {
-                            Author = d.Author?.Value ?? string.Empty,
-                            Comment = d.InnerText,
-                            Date = d.Date?.Value ?? new DateTime(1970, 1, 1),
-                            Id = d.Id?.Value ?? string.Empty,
-                            Initials = d.Initials?.Value ?? string.Empty
-                        };
-                        return retValue;
-                    });
-                }
-
-                var toReplaced = new List<(string, string)>()
-                {
-                    (@"\r\n?|\n", ""),
-                    ("[ ]{2,}", " ")
-                };
+            var toReplaced = new List<(string, string)>()
+            {
+                (@"\r\n?|\n", ""),
+                ("[ ]{2,}", " ")
+            };
 
 
-                var contentString = mainDocumentPart
-                    .Elements()
-                    .ContentString()
-                    .ReplaceSpecialStrings(toReplaced);
+            var contentString = mainDocumentPart
+                .Elements()
+                .ContentString()
+                .ReplaceSpecialStrings(toReplaced);
 
-                OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
+            OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
 
-                var toHash = new ElementsToHash(category, created, contentString,
-                    creator,
-                    description, identifier, keywords, language, modified, revision,
-                    subject, title, version, contentStatus, contentType, lastPrinted,
-                    lastModifiedBy);
+            var toHash = new ElementsToHash(category, created, contentString,
+                creator,
+                description, identifier, keywords, language, modified, revision,
+                subject, title, version, contentStatus, contentType, lastPrinted,
+                lastModifiedBy);
 
-                var elementsHash = await (
-                        StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                    .ContentHashString();
+            var elementsHash = await (
+                    StaticHelpers.ListElementsToHash(toHash), commentsArray)
+                .ContentHashString();
 
-                var completionField = commentsArray
-                    .StringFromCommentsArray()
-                    .GenerateTextToSuggest(TypedContentString.New(contentString))
-                    .GenerateSearchAsYouTypeArray()
-                    .WrapCompletionField();
+            var completionField = commentsArray
+                .StringFromCommentsArray()
+                .GenerateTextToSuggest(TypedContentString.New(contentString))
+                .GenerateSearchAsYouTypeArray()
+                .WrapCompletionField();
 
-                var returnValue = new WordElasticDocument
-                {
-                    Category = category,
-                    CompletionContent = completionField,
-                    Content = contentString,
-                    ContentHash = elementsHash.Value,
-                    ContentStatus = contentStatus,
-                    ContentType = contentType,
-                    Created = created,
-                    Creator = creator,
-                    Description = description,
-                    Id = id.Value,
-                    Identifier = identifier,
-                    Keywords = StaticHelpers.KeywordsList(keywords),
-                    Language = language,
-                    Modified = modified,
-                    Revision = revision,
-                    Subject = subject,
-                    Title = title,
-                    Version = version,
-                    LastPrinted = lastPrinted,
-                    ProcessTime = DateTime.Now,
-                    LastModifiedBy = lastModifiedBy,
-                    OriginalFilePath = currentFile,
-                    UriFilePath = uriPath,
-                    Comments = commentsArray
-                };
+            var returnValue = new WordElasticDocument
+            {
+                Category = category,
+                CompletionContent = completionField,
+                Content = contentString,
+                ContentHash = elementsHash.Value,
+                ContentStatus = contentStatus,
+                ContentType = contentType,
+                Created = created,
+                Creator = creator,
+                Description = description,
+                Id = id.Value,
+                Identifier = identifier,
+                Keywords = StaticHelpers.KeywordsList(keywords),
+                Language = language,
+                Modified = modified,
+                Revision = revision,
+                Subject = subject,
+                Title = title,
+                Version = version,
+                LastPrinted = lastPrinted,
+                ProcessTime = DateTime.Now,
+                LastModifiedBy = lastModifiedBy,
+                OriginalFilePath = currentFile,
+                UriFilePath = uriPath,
+                Comments = commentsArray
+            };
 
-                return returnValue;
-            });
+            return returnValue;
         }
         catch (Exception e)
         {
             logger.LogError(e, "an error while creating a indexing object");
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Option<WordElasticDocument>.None);
+            return await Task.FromResult(Option<WordElasticDocument>.None);
         }
     }
 

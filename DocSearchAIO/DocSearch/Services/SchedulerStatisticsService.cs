@@ -111,7 +111,7 @@ public class SchedulerStatisticsService : ISchedulerStatisticsService
 
                             return statistics;
                         },
-                        () => Task.Run(() => new SchedulerStatistics("", "", "")));
+                        () => Task.FromResult(new SchedulerStatistics("", "", "")));
 
                 return await t;
             };

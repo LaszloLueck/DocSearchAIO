@@ -81,9 +81,8 @@ public abstract class ComparerModel
     public async Task<Option<TModel>> FilterExistingUnchanged<TModel>(Option<TModel> document)
         where TModel : ElasticDocument
     {
-        return await Task.Run(() =>
-        {
-            var opt = document.Bind(doc =>
+        return await Task.FromResult(
+            document.Bind(doc =>
             {
                 var contentHash = doc.ContentHash;
                 var pathHash = doc.Id;
@@ -111,9 +110,8 @@ public abstract class ComparerModel
                                 (_, _) => comparerObjectCopy);
                             return doc;
                         });
-            });
-            return opt;
-        });
+            })
+        );
     }
 }
 

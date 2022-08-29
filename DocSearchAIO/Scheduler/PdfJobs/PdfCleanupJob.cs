@@ -38,7 +38,7 @@ public class PdfCleanupJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Task.Run(async () =>
+        await Task.FromResult(async () =>
         {
             _jobStateMemoryCache.SetCacheEntry(JobState.Running);
             if (!_cleanUpEntry.Active)
@@ -51,23 +51,20 @@ public class PdfCleanupJob : IJob
             }
             else
             {
-                await Task.Run(async () =>
+                var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdf());
+                if (cacheEntryOpt.IsSome &&
+                    (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
                 {
-                    var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPdf());
-                    if (cacheEntryOpt.IsSome &&
-                        (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
-                    {
-                        _logger.LogInformation(
-                            "cannot execute cleanup documents, opponent job scanning and processing running");
-                        return;
-                    }
+                    _logger.LogInformation(
+                        "cannot execute cleanup documents, opponent job scanning and processing running");
+                    return;
+                }
 
-                    _logger.LogInformation("start processing cleanup job");
-                    var cleanupIndexName =
-                        TypedIndexNameString.New(
-                            _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
-                    await _reverseComparerService.Process(cleanupIndexName);
-                });
+                _logger.LogInformation("start processing cleanup job");
+                var cleanupIndexName =
+                    TypedIndexNameString.New(
+                        _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
+                await _reverseComparerService.Process(cleanupIndexName);
             }
 
             _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);

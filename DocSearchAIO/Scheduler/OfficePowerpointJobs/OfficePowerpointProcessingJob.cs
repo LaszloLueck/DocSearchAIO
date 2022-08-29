@@ -56,93 +56,90 @@ public class OfficePowerpointProcessingJob : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
-        await Task.Run(async () =>
+        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
+        if (cacheEntryOpt.IsSome &&
+            (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
-            if (cacheEntryOpt.IsSome &&
-                (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
-            {
-                _logger.LogInformation(
-                    "cannot execute scanning and processing documents, opponent job cleanup running");
-                return;
-            }
+            _logger.LogInformation(
+                "cannot execute scanning and processing documents, opponent job cleanup running");
+            return;
+        }
 
-            if (!configEntry.Active)
+        if (!configEntry.Active)
+        {
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
+                configEntry.TriggerName,
+                _cfg.SchedulerGroupName, TriggerState.Paused);
+            _logger.LogWarning(
+                "skip processing of powerpoint documents because the scheduler is inactive per config");
+        }
+        else
+        {
+            _logger.LogInformation("start job");
+            var indexName =
+                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+
+            await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
+
+            _logger.LogInformation("start crunching and indexing some powerpoint documents");
+
+            if (!Directory.Exists(_cfg.ScanPath))
             {
-                await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
-                    configEntry.TriggerName,
-                    _cfg.SchedulerGroupName, TriggerState.Paused);
                 _logger.LogWarning(
-                    "skip processing of powerpoint documents because the scheduler is inactive per config");
+                    "directory to scan <{ScanPath}> does not exists. skip working", _cfg.ScanPath);
             }
             else
             {
-                _logger.LogInformation("start job");
-                var indexName =
-                    _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
-
-                await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
-
-                _logger.LogInformation("start crunching and indexing some powerpoint documents");
-
-                if (!Directory.Exists(_cfg.ScanPath))
+                try
                 {
-                    _logger.LogWarning(
-                        "directory to scan <{ScanPath}> does not exists. skip working", _cfg.ScanPath);
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                    var jobStatistic = new ProcessingJobStatistic
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        StartJob = DateTime.Now
+                    };
+
+                    var sw = Stopwatch.StartNew();
+                    await TypedFilePathString.New(_cfg.ScanPath)
+                        .CreateSource(configEntry.FileExtension)
+                        .UseExcludeFileFilter(configEntry.ExcludeFilter)
+                        .CountEntireDocs(_statisticUtilities)
+                        .ProcessPowerpointDocumentAsync(configEntry, _cfg,
+                            _statisticUtilities, _logger)
+                        .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                        .GroupedWithin(50, TimeSpan.FromSeconds(10))
+                        .WithMaybeFilter()
+                        .CountFilteredDocs(_statisticUtilities)
+                        .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
+                            indexName)
+                        .RunIgnore(_actorSystem.Materializer());
+
+                    _logger.LogInformation("finished processing powerpoint documents");
+
+                    sw.Stop();
+                    await _elasticSearchService.FlushIndexAsync(indexName);
+                    await _elasticSearchService.RefreshIndexAsync(indexName);
+                    jobStatistic.EndJob = DateTime.Now;
+                    jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
+                    jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                    jobStatistic.ProcessingError =
+                        _statisticUtilities.FailedDocumentsCount();
+                    jobStatistic.IndexedDocCount =
+                        _statisticUtilities.ChangedDocumentsCount();
+                    _statisticUtilities.AddJobStatisticToDatabase(
+                        jobStatistic);
+                    _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
+                        sw.ElapsedMilliseconds);
+                    _comparerModel.RemoveComparerFile();
+                    await _comparerModel.WriteAllLinesAsync();
+                    _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                 }
-                else
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-                        var jobStatistic = new ProcessingJobStatistic
-                        {
-                            Id = Guid.NewGuid().ToString(),
-                            StartJob = DateTime.Now
-                        };
-
-                        var sw = Stopwatch.StartNew();
-                        await TypedFilePathString.New(_cfg.ScanPath)
-                            .CreateSource(configEntry.FileExtension)
-                            .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                            .CountEntireDocs(_statisticUtilities)
-                            .ProcessPowerpointDocumentAsync(configEntry, _cfg,
-                                _statisticUtilities, _logger)
-                            .FilterExistingUnchangedAsync(configEntry, _comparerModel)
-                            .GroupedWithin(50, TimeSpan.FromSeconds(10))
-                            .WithMaybeFilter()
-                            .CountFilteredDocs(_statisticUtilities)
-                            .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
-                                indexName)
-                            .RunIgnore(_actorSystem.Materializer());
-
-                        _logger.LogInformation("finished processing powerpoint documents");
-
-                        sw.Stop();
-                        await _elasticSearchService.FlushIndexAsync(indexName);
-                        await _elasticSearchService.RefreshIndexAsync(indexName);
-                        jobStatistic.EndJob = DateTime.Now;
-                        jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                        jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
-                        jobStatistic.ProcessingError =
-                            _statisticUtilities.FailedDocumentsCount();
-                        jobStatistic.IndexedDocCount =
-                            _statisticUtilities.ChangedDocumentsCount();
-                        _statisticUtilities.AddJobStatisticToDatabase(
-                            jobStatistic);
-                        _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                            sw.ElapsedMilliseconds);
-                        _comparerModel.RemoveComparerFile();
-                        await _comparerModel.WriteAllLinesAsync();
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "An error in processing pipeline occured");
-                    }
+                    _logger.LogError(ex, "An error in processing pipeline occured");
                 }
             }
-        });
+        }
     }
 }
 
@@ -163,112 +160,109 @@ public static class PowerpointProcessingHelper
     {
         try
         {
-            return await Task.Run(async () =>
+            var wdOpt = PresentationDocument.Open(currentFile, false);
+
+            Option<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
+            if (presentationPartOpt.IsNone)
+                return Option<PowerpointElasticDocument>.None;
+
+            var presentationPart = presentationPartOpt.ValueUnsafe();
+            var fInfo = wdOpt.PackageProperties;
+            var category = fInfo.Category.IfNull(string.Empty);
+            var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
+            var creator = fInfo.Creator.IfNull(string.Empty);
+            var description = fInfo.Description.IfNull(string.Empty);
+            var identifier = fInfo.Identifier.IfNull(string.Empty);
+            var keywords = fInfo.Keywords.IfNull(string.Empty);
+            var language = fInfo.Language.IfNull(string.Empty);
+            var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+            var revision = fInfo.Revision.IfNull(string.Empty);
+            var subject = fInfo.Subject.IfNull(string.Empty);
+            var title = fInfo.Title.IfNull(string.Empty);
+            var version = fInfo.Version.IfNull(string.Empty);
+            var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
+            const string contentType = "pptx";
+            var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+            var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
+            var uriPath = currentFile
+                .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
+                .Replace(@"\", "/");
+
+            var id = await StaticHelpers.CreateHashString(TypedHashedInputString.New(currentFile));
+            var slideCount = presentationPart
+                .SlideParts
+                .Count();
+
+            static IEnumerable<OfficeDocumentComment>
+                CommentArray(PresentationPart presentationPart) =>
+                CommentsFromDocument(presentationPart.SlideParts);
+
+            var commentsArray = CommentArray(presentationPart).ToArray();
+
+            var toReplaced = new List<(string, string)>()
             {
-                var wdOpt = PresentationDocument.Open(currentFile, false);
+                (@"\r\n?|\n", ""),
+                ("[ ]{2,}", " ")
+            };
 
-                Option<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
-                if (presentationPartOpt.IsNone)
-                    return Option<PowerpointElasticDocument>.None;
+            var contentString = presentationPart
+                .Elements()
+                .ContentString()
+                .ReplaceSpecialStrings(toReplaced);
 
-                var presentationPart = presentationPartOpt.ValueUnsafe();
-                var fInfo = wdOpt.PackageProperties;
-                var category = fInfo.Category.IfNull(string.Empty);
-                var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
-                var creator = fInfo.Creator.IfNull(string.Empty);
-                var description = fInfo.Description.IfNull(string.Empty);
-                var identifier = fInfo.Identifier.IfNull(string.Empty);
-                var keywords = fInfo.Keywords.IfNull(string.Empty);
-                var language = fInfo.Language.IfNull(string.Empty);
-                var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
-                var revision = fInfo.Revision.IfNull(string.Empty);
-                var subject = fInfo.Subject.IfNull(string.Empty);
-                var title = fInfo.Title.IfNull(string.Empty);
-                var version = fInfo.Version.IfNull(string.Empty);
-                var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
-                const string contentType = "pptx";
-                var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
-                var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
-                var uriPath = currentFile
-                    .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
-                    .Replace(@"\", "/");
+            var toHash = new ElementsToHash(category, created, contentString, creator,
+                description, identifier, keywords, language, modified, revision,
+                subject, title, version, contentStatus, contentType, lastPrinted,
+                lastModifiedBy);
 
-                var id = await StaticHelpers.CreateHashString(TypedHashedInputString.New(currentFile));
-                var slideCount = presentationPart
-                    .SlideParts
-                    .Count();
+            var elementsHash = await (
+                StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
 
-                static IEnumerable<OfficeDocumentComment>
-                    CommentArray(PresentationPart presentationPart) =>
-                    CommentsFromDocument(presentationPart.SlideParts);
-
-                var commentsArray = CommentArray(presentationPart).ToArray();
-
-                var toReplaced = new List<(string, string)>()
-                {
-                    (@"\r\n?|\n", ""),
-                    ("[ ]{2,}", " ")
-                };
-
-                var contentString = presentationPart
-                    .Elements()
-                    .ContentString()
-                    .ReplaceSpecialStrings(toReplaced);
-
-                var toHash = new ElementsToHash(category, created, contentString, creator,
-                    description, identifier, keywords, language, modified, revision,
-                    subject, title, version, contentStatus, contentType, lastPrinted,
-                    lastModifiedBy);
-
-                var elementsHash = await (
-                    StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
-
-                static CompletionField CompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
-                    string contentString) =>
-                    commentsArray
-                        .StringFromCommentsArray()
-                        .GenerateTextToSuggest(TypedContentString.New(contentString))
-                        .GenerateSearchAsYouTypeArray()
-                        .WrapCompletionField();
+            static CompletionField CompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
+                string contentString) =>
+                commentsArray
+                    .StringFromCommentsArray()
+                    .GenerateTextToSuggest(TypedContentString.New(contentString))
+                    .GenerateSearchAsYouTypeArray()
+                    .WrapCompletionField();
 
 
-                var returnValue = new PowerpointElasticDocument
-                {
-                    Category = category,
-                    CompletionContent = CompletionField(commentsArray, contentString),
-                    Content = contentString,
-                    ContentHash = elementsHash.Value,
-                    ContentStatus = contentStatus,
-                    ContentType = contentType,
-                    Created = created,
-                    Creator = creator,
-                    Description = description,
-                    Id = id.Value,
-                    Identifier = identifier,
-                    Keywords = StaticHelpers.KeywordsList(keywords),
-                    Language = language,
-                    Modified = modified,
-                    Revision = revision,
-                    Subject = subject,
-                    Title = title,
-                    Version = version,
-                    LastPrinted = lastPrinted,
-                    ProcessTime = DateTime.Now,
-                    LastModifiedBy = lastModifiedBy,
-                    OriginalFilePath = currentFile,
-                    UriFilePath = uriPath,
-                    SlideCount = slideCount,
-                    Comments = commentsArray
-                };
+            var returnValue = new PowerpointElasticDocument
+            {
+                Category = category,
+                CompletionContent = CompletionField(commentsArray, contentString),
+                Content = contentString,
+                ContentHash = elementsHash.Value,
+                ContentStatus = contentStatus,
+                ContentType = contentType,
+                Created = created,
+                Creator = creator,
+                Description = description,
+                Id = id.Value,
+                Identifier = identifier,
+                Keywords = StaticHelpers.KeywordsList(keywords),
+                Language = language,
+                Modified = modified,
+                Revision = revision,
+                Subject = subject,
+                Title = title,
+                Version = version,
+                LastPrinted = lastPrinted,
+                ProcessTime = DateTime.Now,
+                LastModifiedBy = lastModifiedBy,
+                OriginalFilePath = currentFile,
+                UriFilePath = uriPath,
+                SlideCount = slideCount,
+                Comments = commentsArray
+            };
 
-                return returnValue;
-            });
+            return returnValue;
         }
         catch (Exception e)
         {
             logger.LogError(e, "an error while creating a indexing object at <{CurrentFile}>", currentFile);
             statisticUtilities.AddToFailedDocuments();
-            return await Task.Run(() => Option<PowerpointElasticDocument>.None);
+            return await Task.FromResult(Option<PowerpointElasticDocument>.None);
         }
     }
 
