@@ -16,6 +16,7 @@ import { ButtonBarComponent } from './config/button-bar/button-bar.component';
 import { SchedulerstatisticComponent } from './scheduler/schedulerstatistic/schedulerstatistic.component';
 import { TriggerElementComponent } from './scheduler/triggerelement/trigger-element.component';
 import { DetailComponent } from './scheduler/component/detail/detail.component';
+import { BytesvisualizerPipe } from './statistics/pipes/bytesvisualizer.pipe';
 
 
 @NgModule({
@@ -32,7 +33,8 @@ import { DetailComponent } from './scheduler/component/detail/detail.component';
     ButtonBarComponent,
     SchedulerstatisticComponent,
     TriggerElementComponent,
-    DetailComponent
+    DetailComponent,
+    BytesvisualizerPipe
   ],
     imports: [
         CommonModule,

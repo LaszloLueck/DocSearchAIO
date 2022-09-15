@@ -16,7 +16,7 @@ public class StatisticContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
         _logger = loggerFactory.CreateLogger<StatisticContentEndpoint>();
     }
 
-    [HttpPost("/api/administration/getStatisticContentData")]
+    [HttpGet("/api/administration/getStatisticContentData")]
     [SwaggerOperation(
         Summary = "receive statistic content information",
         Description = "receive statistic content information",

@@ -37,8 +37,6 @@ public interface IAdministrationService
 
     public AdministrationGenericRequest GenericContent();
 
-    public IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> SchedulerContent();
-
     public Task<IndexStatistic> StatisticsContent();
 
     public IAsyncEnumerable<(TypedGroupNameString, Seq<AdministrationActionSchedulerModel>)> ActionContent();
@@ -338,11 +336,6 @@ public class AdministrationService : IAdministrationService
             .Map(kv => (kv.Key, (CleanupConfiguration) kv.Value))
             .ToDictionary();
         return adminGenModel;
-    }
-
-    public IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> SchedulerContent()
-    {
-        return _schedulerStatisticsService.SchedulerStatistics();
     }
 
     private static async IAsyncEnumerable<IndicesStatsResponse> CalculateIndicesStatsResponse(

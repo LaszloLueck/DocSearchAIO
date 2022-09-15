@@ -115,7 +115,7 @@ public abstract class ComparerModel
     }
 }
 
-public class ComparerModelWord : ComparerModel
+public sealed class ComparerModelWord : ComparerModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -129,7 +129,7 @@ public class ComparerModelWord : ComparerModel
     }
 }
 
-public class ComparerModelPowerpoint : ComparerModel
+public sealed class ComparerModelPowerpoint : ComparerModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -143,7 +143,7 @@ public class ComparerModelPowerpoint : ComparerModel
     }
 }
 
-public class ComparerModelPdf : ComparerModel
+public sealed class ComparerModelPdf : ComparerModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -157,7 +157,7 @@ public class ComparerModelPdf : ComparerModel
     }
 }
 
-public class ComparerModelExcel : ComparerModel
+public sealed class ComparerModelExcel : ComparerModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -171,7 +171,7 @@ public class ComparerModelExcel : ComparerModel
     }
 }
 
-public class ComparerModelMsg : ComparerModel
+public sealed class ComparerModelMsg : ComparerModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -185,7 +185,7 @@ public class ComparerModelMsg : ComparerModel
     }
 }
 
-public class ComparerModelEml : ComparerModel
+public sealed class ComparerModelEml : ComparerModel
 {
     public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
         comparerDirectory)

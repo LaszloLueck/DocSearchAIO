@@ -76,9 +76,7 @@ public static class StaticHelpers
 
     [Pure]
     public static string Concat(this IEnumerable<string> source) => string.Concat(source);
-
-    [Pure]
-    public static string Concat(this IEnumerable<char> source) => string.Concat(source);
+    
 
     [Pure]
     public static Source<IEnumerable<TSource>, TMat> CountFilteredDocs<TSource, TMat, TModel>(

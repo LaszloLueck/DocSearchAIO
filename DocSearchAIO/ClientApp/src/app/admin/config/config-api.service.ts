@@ -36,9 +36,7 @@ export class ConfigApiService {
       .get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContent`)
       .pipe(
         take(1),
-        map(result => {
-          return makeRight(result);
-        }),
+        map(result => makeRight(result)),
         catchError(this.handleError('getConfiguration'))
       )
   }

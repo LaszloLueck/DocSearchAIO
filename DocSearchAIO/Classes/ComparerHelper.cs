@@ -9,8 +9,6 @@ public static class ComparerHelper
 {
     public static readonly Func<string, Source<ComparerObject, NotUsed>> GetComparerObjectSource = path => File
         .ReadAllLines(path)
-        .AsParallel()
-        .WithDegreeOfParallelism(10)
         .Map(ConvertLine)
         .Somes()
         .AsAkkaSource();
@@ -36,8 +34,6 @@ public static class ComparerHelper
                 {
                     return File
                         .ReadAllLines(path)
-                        .AsParallel()
-                        .WithDegreeOfParallelism(10)
                         .Map(ConvertLine)
                         .Somes()
                         .Map(cpo => (cpo.PathHash, cpo))

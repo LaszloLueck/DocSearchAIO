@@ -1,8 +1,11 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
 import {SchedulerserviceService} from "./services/schedulerservice.service";
-import {Observable, Subscription} from "rxjs";
+import {Subscription} from "rxjs";
 import {SchedulerStatisticResponseBase} from "../config/interfaces/SchedulerStatisticResponse";
+import {Either, match} from "../config/Either";
+import {BaseError} from "../config/interfaces/DocSearchConfiguration";
+import {AlternateReturn} from "../config/interfaces/AlternateReturn";
 
 @Component({
   selector: 'app-scheduler',
@@ -12,8 +15,10 @@ import {SchedulerStatisticResponseBase} from "../config/interfaces/SchedulerStat
 export class SchedulerComponent implements OnInit, OnDestroy {
   private subscription!: Subscription;
   public data!: SchedulerStatisticResponseBase;
+  public alternateReturn!: AlternateReturn;
 
-  constructor(private commonDataService: CommonDataService, private schedulerService: SchedulerserviceService) { }
+  constructor(private commonDataService: CommonDataService, private schedulerService: SchedulerserviceService) {
+  }
 
   ngOnDestroy(): void {
     this
@@ -30,9 +35,18 @@ export class SchedulerComponent implements OnInit, OnDestroy {
     this.subscription = this
       .schedulerService
       .getSchedulerInfo()
-      .subscribe(data => this.data = data);
+      .subscribe((data: Either<BaseError, SchedulerStatisticResponseBase>) => {
+        match(
+          data,
+          left => {
+            this.alternateReturn = left;
+          },
+          right => {
+            this.data = right;
+          }
+        )
+      });
   }
-
 
 
 }
