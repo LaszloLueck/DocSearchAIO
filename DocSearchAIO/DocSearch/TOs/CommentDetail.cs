@@ -15,7 +15,7 @@ public sealed class CommentDetail
     [JsonPropertyName("author")]
     public string Author { get; set; } = null!;
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
