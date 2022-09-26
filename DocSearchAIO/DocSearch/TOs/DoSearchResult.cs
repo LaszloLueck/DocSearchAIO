@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
+using LanguageExt;
 
 namespace DocSearchAIO.DocSearch.TOs;
 
-public record DoSearchResult(
+[Record]
+public sealed record DoSearchResult(
     [property: JsonPropertyName("currentPage")] int CurrentPage, 
     [property: JsonPropertyName("currentPageSize")] int CurrentPageSize, 
     [property: JsonPropertyName("docCount")] long DocCount, 

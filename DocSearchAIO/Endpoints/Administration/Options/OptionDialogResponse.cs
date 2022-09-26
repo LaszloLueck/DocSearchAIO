@@ -4,7 +4,7 @@ using LanguageExt;
 namespace DocSearchAIO.Endpoints.Administration.Options;
 
 [Record]
-public record OptionDialogResponse(
+public sealed record OptionDialogResponse(
     [property: JsonPropertyName("filterWord")] bool FilterWord, 
     [property: JsonPropertyName("filterExcel")] bool FilterExcel, 
     [property: JsonPropertyName("filterPowerpoint")] bool FilterPowerpoint, 

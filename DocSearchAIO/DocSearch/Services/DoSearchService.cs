@@ -17,7 +17,6 @@ public interface IDoSearchService
     public Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest);
 }
 
-
 public class DoSearchService : IDoSearchService
 {
     private readonly ILogger<DoSearchService> _logger;
@@ -42,7 +41,7 @@ public class DoSearchService : IDoSearchService
             var size = doSearchRequest.Size;
             var searchPhrase = CheckSearchPhrase(doSearchRequest.SearchPhrase);
             var query = new SimpleQueryStringQuery();
-            var include = new[] { new Field("comments.comment"), new Field("content") };
+            var include = new[] {new Field("comments.comment"), new Field("content")};
             query.Fields = include;
             query.Query = searchPhrase;
             query.AnalyzeWildcard = true;
@@ -54,11 +53,11 @@ public class DoSearchService : IDoSearchService
 
             var highlight = new Highlight
             {
-                PreTags = new[] { @"<span class=""hilightText""><strong>" },
-                PostTags = new[] { "</strong></span>" },
+                PreTags = new[] {@"<span class=""hilightText""><strong>"},
+                PostTags = new[] {"</strong></span>"},
                 Fields = new Dictionary<Field, IHighlightField>
                 {
-                    { "content", new HighlightField() }, { "comments.comment", new HighlightField() }
+                    {"content", new HighlightField()}, {"comments.comment", new HighlightField()}
                 },
                 Fragmenter = HighlighterFragmenter.Span,
                 FragmentSize = 500,
@@ -66,7 +65,7 @@ public class DoSearchService : IDoSearchService
                 Encoder = HighlighterEncoder.Html
             };
 
-            var io = new[] { new Field("completionContent") };
+            var io = new[] {new Field("completionContent")};
 
             var indicesResponse =
                 await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
@@ -81,15 +80,16 @@ public class DoSearchService : IDoSearchService
                 (typeof(MsgElasticDocument), doSearchRequest.FilterMsg),
                 (typeof(EmlElasticDocument), doSearchRequest.FilterEml)
             };
-                
+
             var selectedIndices = new List<string>();
             var enumerable = Some(knownIndices)
                 .IfNone(System.Array.Empty<string>())
                 .ToArray();
-            
-            documentTypesAndFilters.ForEach((filterType, requestFilter) => 
+
+            documentTypesAndFilters.ForEach((filterType, requestFilter) =>
             {
-                if(StaticHelpers.TypedIndexKeyExistsAndFilter(filterType,_configurationObject, enumerable, requestFilter))
+                if (StaticHelpers.TypedIndexKeyExistsAndFilter(filterType, _configurationObject, enumerable,
+                        requestFilter))
                     selectedIndices.Add(StaticHelpers.IndexNameByType(filterType, _configurationObject));
             });
 
@@ -101,7 +101,7 @@ public class DoSearchService : IDoSearchService
 
             var indices = Indices.Index(selectedIndices);
 
-            var f = new SourceFilter { Excludes = io };
+            var f = new SourceFilter {Excludes = io};
 
             var request = new SearchRequest(indices)
             {
@@ -145,7 +145,7 @@ public class DoSearchService : IDoSearchService
                         {
                             new(hit.Source.Content[..512] + " ...")
                         }
-                        : new List<ContentDetail> { new(hit.Source.Content) };
+                        : new List<ContentDetail> {new(hit.Source.Content)};
                 }
 
                 if (hit.Highlight.ContainsKey("comments.comment"))
@@ -160,7 +160,8 @@ public class DoSearchService : IDoSearchService
                         var retVal = commentObj.IsSome
                             ? new CommentDetail(p)
                             {
-                                Author = commentObj.ValueUnsafe().Author, Date = commentObj.ValueUnsafe().Date, Id = commentObj.ValueUnsafe().Id,
+                                Author = commentObj.ValueUnsafe().Author, Date = commentObj.ValueUnsafe().Date,
+                                Id = commentObj.ValueUnsafe().Id,
                                 Initials = commentObj.ValueUnsafe().Initials
                             }
                             : new CommentDetail(p);
@@ -170,12 +171,14 @@ public class DoSearchService : IDoSearchService
                     });
                 }
 
-                DoSearchResultContainer container = hit.Source;
-                container.Contents = highlightContent;
-                container.Comments = highlightComments;
-                container.Relevance = hit.Score.IfNone(0d);
-                container.ProgramIcon = IconType(hit.Source.ContentType);
-                return container;
+                return new DoSearchResultContainer(hit.Source.UriFilePath, hit.Source.Id,
+                    hit.Source.ProcessTime, hit.Source.OriginalFilePath, hit.Source.ContentType, hit.Index)
+                {
+                    Contents = highlightContent,
+                    Comments = highlightComments,
+                    Relevance = hit.Score.IfNone(0d),
+                    ProgramIcon = IconType(hit.Source.ContentType)
+                };
             });
 
             return new DoSearchResponse(retCol, paginationResult, statisticsModel);
@@ -183,7 +186,8 @@ public class DoSearchService : IDoSearchService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured");
-            return new DoSearchResponse(System.Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""), new SearchStatisticsModel(0, 0));
+            return new DoSearchResponse(System.Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""),
+                new SearchStatisticsModel(0, 0));
         }
     }
 #pragma warning restore S3776

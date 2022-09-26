@@ -84,6 +84,7 @@ public abstract class ComparerModel
         return await Task.FromResult(
             document.Bind(doc =>
             {
+                
                 var contentHash = doc.ContentHash;
                 var pathHash = doc.Id;
                 var originalFilePath = doc.OriginalFilePath;

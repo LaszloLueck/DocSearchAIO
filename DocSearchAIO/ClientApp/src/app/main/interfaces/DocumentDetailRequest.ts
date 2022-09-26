@@ -1,3 +1,4 @@
 export interface DocumentDetailRequest {
-  id: string
+  id: string,
+  indexName: string
 }

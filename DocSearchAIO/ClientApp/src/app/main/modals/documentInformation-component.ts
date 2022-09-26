@@ -25,19 +25,21 @@ export class DocumentInformationContent {
 })
 export class DocumentInformationComponent {
   @Input() informationId!: string;
+  @Input() indexName!: string;
 
   constructor(private modalService: NgbModal, private documentDetailService: DocumentdetailService) {}
 
   open():void {
     const modalRef = this.modalService.open(DocumentInformationContent, {size: 'xl'});
     modalRef.componentInstance.informationId = this.informationId;
-    modalRef.componentInstance.documentDetailResponse = this.fetchData(this.informationId);
+    modalRef.componentInstance.documentDetailResponse = this.fetchData(this.informationId, this.indexName);
   }
 
 
-  fetchData(documentId: string): Observable<DocumentDetailResponse>{
+  fetchData(documentId: string, indexName: string): Observable<DocumentDetailResponse>{
     const request: DocumentDetailRequest = {
-      id: documentId
+      id: documentId,
+      indexName: indexName
     }
     console.log(documentId);
     return this.documentDetailService.documentDetail(request);

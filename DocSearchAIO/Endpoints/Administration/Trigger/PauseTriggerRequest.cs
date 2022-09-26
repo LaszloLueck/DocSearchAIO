@@ -4,5 +4,5 @@ using LanguageExt;
 namespace DocSearchAIO.Endpoints.Administration.Trigger;
 
 [Record]
-public record PauseTriggerRequest([property: JsonPropertyName("triggerId")] string TriggerId,
+public sealed record PauseTriggerRequest([property: JsonPropertyName("triggerId")] string TriggerId,
     [property: JsonPropertyName("groupId")] string GroupId);

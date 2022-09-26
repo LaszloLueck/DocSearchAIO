@@ -3,7 +3,8 @@ using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Administration.GenericContent;
 
-public record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName,
+[Record]
+public sealed record AdministrationGenericRequest(string ScanPath, List<string> ElasticEndpoints, string IndexName,
     string ElasticUser, string ElasticPassword,
     string SchedulerName, string SchedulerId, string ActorSystemName, string ProcessorGroupName,
     string CleanupGroupName, string UriReplacement, string ComparerDirectory, string StatisticsDirectory)
@@ -21,7 +22,8 @@ public record AdministrationGenericRequest(string ScanPath, List<string> Elastic
             .StatisticsDirectory);
 }
 
-public record ProcessorConfiguration(int Parallelism, int StartDelay, int RunsEvery, string ExcludeFilter,
+[Record]
+public sealed record ProcessorConfiguration(int Parallelism, int StartDelay, int RunsEvery, string ExcludeFilter,
     string IndexSuffix, string FileExtension, string JobName, string TriggerName)
 {
     public static implicit operator ProcessorConfiguration(SchedulerEntry schedulerEntry) =>
@@ -30,7 +32,8 @@ public record ProcessorConfiguration(int Parallelism, int StartDelay, int RunsEv
                 .JobName, schedulerEntry.TriggerName);
 }
 
-public record CleanupConfiguration(string ForComparer, string ForIndexSuffix, int StartDelay, int RunsEvery,
+[Record]
+public sealed record CleanupConfiguration(string ForComparer, string ForIndexSuffix, int StartDelay, int RunsEvery,
     int Parallelism, string JobName, string TriggerName)
 {
     public static implicit operator CleanupConfiguration(CleanUpEntry source) =>

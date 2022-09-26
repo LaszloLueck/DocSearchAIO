@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DocSearchAIO.Endpoints.Suggest;
 
 [Record]
-public record SuggestRequest(
+public sealed record SuggestRequest(
     [FromBody] [property: JsonPropertyName("searchPhrase")]
     string SearchPhrase,
     [FromBody] [property: JsonPropertyName("suggestWord")]

@@ -7,21 +7,21 @@ public class ConfigurationObject
 {
     [JsonPropertyName("elasticEndpoints")] public List<string> ElasticEndpoints { get; set; } = new();
 
-    [JsonPropertyName("elasticUser")] public string ElasticUser { get; set; } = "";
+    [JsonPropertyName("elasticUser")] public string ElasticUser { get; set; } = null!;
 
-    [JsonPropertyName("elasticPassword")] public string ElasticPassword { get; set; } = "";
+    [JsonPropertyName("elasticPassword")] public string ElasticPassword { get; set; } = null!;
 
-    [JsonPropertyName("scanPath")] public string ScanPath { get; set; } = "";
+    [JsonPropertyName("scanPath")] public string ScanPath { get; set; } = null!;
 
-    [JsonPropertyName("indexName")] public string IndexName { get; set; } = "";
+    [JsonPropertyName("indexName")] public string IndexName { get; set; } = null!;
 
-    [JsonPropertyName("actorSystemName")] public string ActorSystemName { get; set; } = "";
+    [JsonPropertyName("actorSystemName")] public string ActorSystemName { get; set; } = null!;
 
-    [JsonPropertyName("schedulerName")] public string SchedulerName { get; set; } = "";
+    [JsonPropertyName("schedulerName")] public string SchedulerName { get; set; } = null!;
 
-    [JsonPropertyName("schedulerId")] public string SchedulerId { get; set; } = "";
+    [JsonPropertyName("schedulerId")] public string SchedulerId { get; set; } = null!;
 
-    [JsonPropertyName("uriReplacement")] public string UriReplacement { get; set; } = "";
+    [JsonPropertyName("uriReplacement")] public string UriReplacement { get; set; } = null!;
 
     [JsonPropertyName("processing")]
     public Dictionary<string, SchedulerEntry> Processing { get; set; } = new();
@@ -29,13 +29,13 @@ public class ConfigurationObject
     [JsonPropertyName("cleanup")]
     public Dictionary<string, CleanUpEntry> Cleanup { get; set; } = new();
 
-    [JsonPropertyName("schedulerGroupName")] public string SchedulerGroupName { get; set; } = "";
+    [JsonPropertyName("schedulerGroupName")] public string SchedulerGroupName { get; set; } = null!;
 
-    [JsonPropertyName("cleanupGroupName")] public string CleanupGroupName { get; set; } = "";
+    [JsonPropertyName("cleanupGroupName")] public string CleanupGroupName { get; set; } = null!;
 
-    [JsonPropertyName("comparerDirectory")] public string ComparerDirectory { get; set; } = "";
+    [JsonPropertyName("comparerDirectory")] public string ComparerDirectory { get; set; } = null!;
 
-    [JsonPropertyName("statisticsDirectory")] public string StatisticsDirectory { get; set; } = "";
+    [JsonPropertyName("statisticsDirectory")] public string StatisticsDirectory { get; set; } = null!;
 }
 
 
@@ -49,13 +49,13 @@ public class CleanUpEntry
 
     [JsonPropertyName("parallelism")] public int Parallelism { get; set; }
 
-    [JsonPropertyName("jobName")] public string JobName { get; set; } = "";
+    [JsonPropertyName("jobName")] public string JobName { get; set; } = null!;
 
-    [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = "";
+    [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = null!;
 
-    [JsonPropertyName("forComparerName")] public string ForComparerName { get; set; } = "";
+    [JsonPropertyName("forComparerName")] public string ForComparerName { get; set; } = null!;
 
-    [JsonPropertyName("forIndexSuffix")] public string ForIndexSuffix { get; set; } = "";
+    [JsonPropertyName("forIndexSuffix")] public string ForIndexSuffix { get; set; } = null!;
 
     public static implicit operator CleanUpEntry(CleanupConfiguration cleanupConfiguration) => new()
     {
@@ -80,15 +80,15 @@ public class SchedulerEntry
 
     [JsonPropertyName("parallelism")] public int Parallelism { get; set; }
 
-    [JsonPropertyName("jobName")] public string JobName { get; set; } = "";
+    [JsonPropertyName("jobName")] public string JobName { get; set; } = null!;
 
-    [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = "";
+    [JsonPropertyName("triggerName")] public string TriggerName { get; set; } = null!;
 
-    [JsonPropertyName("excludeFilter")] public string ExcludeFilter { get; set; } = "";
+    [JsonPropertyName("excludeFilter")] public string ExcludeFilter { get; set; } = null!;
 
-    [JsonPropertyName("fileExtension")] public string FileExtension { get; set; } = "";
+    [JsonPropertyName("fileExtension")] public string FileExtension { get; set; } = null!;
 
-    [JsonPropertyName("indexSuffix")] public string IndexSuffix { get; set; } = "";
+    [JsonPropertyName("indexSuffix")] public string IndexSuffix { get; set; } = null!;
 
     public static implicit operator SchedulerEntry(ProcessorConfiguration processorConfiguration) => new()
     {

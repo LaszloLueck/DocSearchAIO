@@ -84,7 +84,7 @@ public abstract class MemoryCacheModel
     }
 }
 
-public class MemoryCacheModelWord : MemoryCacheModel
+public sealed class MemoryCacheModelWord : MemoryCacheModel
 {
     public MemoryCacheModelWord(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -98,7 +98,7 @@ public class MemoryCacheModelWord : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelPowerpoint : MemoryCacheModel
+public sealed class MemoryCacheModelPowerpoint : MemoryCacheModel
 {
     public MemoryCacheModelPowerpoint(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -112,7 +112,7 @@ public class MemoryCacheModelPowerpoint : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelPdf : MemoryCacheModel
+public sealed class MemoryCacheModelPdf : MemoryCacheModel
 {
     public MemoryCacheModelPdf(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -126,7 +126,7 @@ public class MemoryCacheModelPdf : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelExcel : MemoryCacheModel
+public sealed class MemoryCacheModelExcel : MemoryCacheModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -140,7 +140,7 @@ public class MemoryCacheModelExcel : MemoryCacheModel
     }
 }
 
-public class MemoryCacheModelExcelCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelExcelCleanup : MemoryCacheModel
 {
     public MemoryCacheModelExcelCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(
         loggerFactory, memoryCache)
@@ -154,7 +154,7 @@ public class MemoryCacheModelExcelCleanup : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelMsg : MemoryCacheModel
+public sealed class MemoryCacheModelMsg : MemoryCacheModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -168,7 +168,7 @@ public class MemoryCacheModelMsg : MemoryCacheModel
     }
 }
 
-public class MemoryCacheModelMsgCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelMsgCleanup : MemoryCacheModel
 {
     public MemoryCacheModelMsgCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -182,7 +182,7 @@ public class MemoryCacheModelMsgCleanup : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelEml : MemoryCacheModel
+public sealed class MemoryCacheModelEml : MemoryCacheModel
 {
     protected override string DerivedModelName => GetType().Name;
 
@@ -196,7 +196,7 @@ public class MemoryCacheModelEml : MemoryCacheModel
     }
 }
 
-public class MemoryCacheModelEmlCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelEmlCleanup : MemoryCacheModel
 {
     public MemoryCacheModelEmlCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -210,7 +210,7 @@ public class MemoryCacheModelEmlCleanup : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelWordCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelWordCleanup : MemoryCacheModel
 {
     public MemoryCacheModelWordCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)
@@ -224,7 +224,7 @@ public class MemoryCacheModelWordCleanup : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelPowerpointCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelPowerpointCleanup : MemoryCacheModel
 {
     public MemoryCacheModelPowerpointCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(
         loggerFactory, memoryCache)
@@ -238,7 +238,7 @@ public class MemoryCacheModelPowerpointCleanup : MemoryCacheModel
     protected override string DerivedModelName => GetType().Name;
 }
 
-public class MemoryCacheModelPdfCleanup : MemoryCacheModel
+public sealed class MemoryCacheModelPdfCleanup : MemoryCacheModel
 {
     public MemoryCacheModelPdfCleanup(ILoggerFactory loggerFactory, IMemoryCache memoryCache) : base(loggerFactory,
         memoryCache)

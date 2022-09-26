@@ -1,8 +1,10 @@
 ﻿using System.Text.Json.Serialization;
+using LanguageExt;
 
 namespace DocSearchAIO.DocSearch.TOs;
 
-public record SearchStatisticsModel(
+[Record]
+public sealed record SearchStatisticsModel(
     [property: JsonPropertyName("searchTime")] long SearchTime, 
     [property: JsonPropertyName("docCount")] long DocCount
 );

@@ -1,8 +1,11 @@
 using System.Text.Json.Serialization;
+using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Search;
 
-public record DoSearchRequest(
+
+[Record]
+public sealed record DoSearchRequest(
     [property:JsonPropertyName("searchPhrase")] string SearchPhrase, 
     [property:JsonPropertyName("from")] int From, 
     [property:JsonPropertyName("size")] int Size, 

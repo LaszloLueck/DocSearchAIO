@@ -1,5 +1,7 @@
 using DocSearchAIO.DocSearch.TOs;
+using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Suggest;
 
-public record SuggestResult(string SearchPhrase, IEnumerable<SuggestEntry> Suggests);
+[Record]
+public sealed record SuggestResult(string SearchPhrase, IEnumerable<SuggestEntry> Suggests);

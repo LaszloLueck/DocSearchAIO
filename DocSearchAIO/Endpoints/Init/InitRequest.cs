@@ -2,7 +2,7 @@
 
 namespace DocSearchAIO.Endpoints.Init;
 
-public class InitRequest
+public sealed class InitRequest
 {
     [JsonPropertyName("filterExcel")] public bool FilterExcel { get; set; }
 

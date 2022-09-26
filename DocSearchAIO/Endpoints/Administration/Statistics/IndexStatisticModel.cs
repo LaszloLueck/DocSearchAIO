@@ -4,7 +4,7 @@ using Nest;
 namespace DocSearchAIO.Endpoints.Administration.Statistics;
 
 [Record]
-public record IndexStatisticModel(string IndexName, long DocCount, double SizeInBytes, long FetchTimeMs,
+public sealed record IndexStatisticModel(string IndexName, long DocCount, double SizeInBytes, long FetchTimeMs,
     long FetchTotal, long QueryTimeMs, long QueryTotal, long SuggestTimeMs, long SuggestTotal)
 {
     public static explicit operator IndexStatisticModel(IndicesStatsResponse response) =>

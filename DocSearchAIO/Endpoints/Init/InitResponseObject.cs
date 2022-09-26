@@ -5,7 +5,7 @@ using DocSearchAIO.Utilities;
 
 namespace DocSearchAIO.Endpoints.Init;
 
-public class InitResponseObject
+public sealed class InitResponseObject
 {
     public InitResponseObject(){}
     

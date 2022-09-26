@@ -1,9 +1,11 @@
 ﻿using DocSearchAIO.Scheduler;
 using DocSearchAIO.Statistics;
+using LanguageExt;
 
 namespace DocSearchAIO.DocSearch.TOs;
 
-public record RunnableStatistic(string Id, int EntireDocCount, int IndexedDocCount, int ProcessingError,
+[Record]
+public sealed record RunnableStatistic(string Id, int EntireDocCount, int IndexedDocCount, int ProcessingError,
     DateTime StartJob, DateTime EndJob, long ElapsedTimeMillis)
 {
     public CacheEntry? CacheEntry { get; set; }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DocSearchAIO.Endpoints.DownloadFile;
 
-public class FileDownloadRequest
+public sealed class FileDownloadRequest
 {
     [FromQuery(Name = "path"), Required] public string? Path { get; set; }
 

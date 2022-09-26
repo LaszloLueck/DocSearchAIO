@@ -3,4 +3,4 @@ using LanguageExt;
 namespace DocSearchAIO.Endpoints.Suggest;
 
 [Record]
-public record SuggestEntry(string Label, string[] IndexNames);
+public sealed record SuggestEntry(string Label, string[] IndexNames);

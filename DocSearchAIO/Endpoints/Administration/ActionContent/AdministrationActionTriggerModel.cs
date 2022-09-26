@@ -4,8 +4,8 @@ using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Administration.ActionContent;
 
-
-public record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
+[Record]
+public sealed record AdministrationActionTriggerModel(string TriggerName, string GroupName, string CurrentState,
     string JobName)
 {
     public JobState JobState { get; set; } = JobState.Undefined;
