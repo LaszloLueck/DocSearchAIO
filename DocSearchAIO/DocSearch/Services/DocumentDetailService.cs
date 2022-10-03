@@ -2,7 +2,6 @@ using System.Diagnostics;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Endpoints.Detail;
 using DocSearchAIO.Services;
-using LanguageExt;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 

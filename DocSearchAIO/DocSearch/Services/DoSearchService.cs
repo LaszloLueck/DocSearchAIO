@@ -130,7 +130,7 @@ public class DoSearchService : IDoSearchService
                     _ => "./images/unknown.svg"
                 };
 
-                IEnumerable<ContentDetail> highlightContent = System.Array.Empty<ContentDetail>();
+                IEnumerable<ContentDetail> highlightContent;
                 IEnumerable<CommentDetail> highlightComments = System.Array.Empty<CommentDetail>();
 
                 if (hit.Highlight.ContainsKey("content"))
@@ -148,7 +148,15 @@ public class DoSearchService : IDoSearchService
                         : new List<ContentDetail> {new(hit.Source.Content)};
                 }
 
-                if (hit.Highlight.ContainsKey("comments.comment"))
+                if (!hit.Highlight.ContainsKey("comments.comment"))
+                    return new DoSearchResultContainer(hit.Source.UriFilePath, hit.Source.Id,
+                        hit.Source.ProcessTime, hit.Source.OriginalFilePath, hit.Source.ContentType, hit.Index)
+                    {
+                        Contents = highlightContent,
+                        Comments = highlightComments,
+                        Relevance = hit.Score.IfNone(0d),
+                        ProgramIcon = IconType(hit.Source.ContentType)
+                    };
                 {
                     var originalComments = hit.Source.Comments;
 
