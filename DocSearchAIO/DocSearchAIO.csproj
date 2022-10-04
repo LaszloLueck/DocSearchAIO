@@ -51,7 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ClientApp\src\app\admin\scheduler\services" />
     <Folder Include="ClientApp\src\app\admin\statistics\pipes" />
     <Folder Include="ClientApp\src\app\interfaces" />
   </ItemGroup>

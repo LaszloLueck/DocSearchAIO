@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonDataService} from "../../services/CommonDataService";
-import {SchedulerserviceService} from "./services/schedulerservice.service";
+import {SchedulerDataService} from "./services/scheduler-data.service";
 import {Subscription} from "rxjs";
 import {SchedulerStatisticResponseBase} from "../config/interfaces/SchedulerStatisticResponse";
 import {Either, match} from "../config/Either";
@@ -17,7 +17,7 @@ export class SchedulerComponent implements OnInit, OnDestroy {
   public data!: SchedulerStatisticResponseBase;
   public alternateReturn!: AlternateReturn;
 
-  constructor(private commonDataService: CommonDataService, private schedulerService: SchedulerserviceService) {
+  constructor(private commonDataService: CommonDataService, private schedulerService: SchedulerDataService) {
   }
 
   ngOnDestroy(): void {

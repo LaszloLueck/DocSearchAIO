@@ -10,7 +10,7 @@ import {Either, makeLeft, makeRight} from "../../config/Either";
 @Injectable({
   providedIn: 'root'
 })
-export class SchedulerserviceService {
+export class SchedulerDataService {
   baseUrl: string;
 
   private handleError(operation = 'operation') {
