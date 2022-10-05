@@ -1,7 +1,7 @@
 import {SchedulerDataService} from "./scheduler-data.service";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {asyncData, asyncError} from "../../config/config-api.service.spec";
-import {isLeft, isRight, unwrapEither} from "../../config/Either";
+import {isLeft, isRight, unwrapEither} from "../../../generic/either";
+import {asyncData, asyncError} from "../../../generic/helper";
 
 
 describe('SchedulerService', () => {

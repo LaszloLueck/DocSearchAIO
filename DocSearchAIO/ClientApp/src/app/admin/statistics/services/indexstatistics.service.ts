@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {map, Observable, of} from "rxjs";
-import {Either, makeLeft, makeRight} from "../../config/Either";
+import {Either, makeLeft, makeRight} from "../../../generic/either";
 import {BaseError} from "../../config/interfaces/DocSearchConfiguration";
 import {IndexStatisticsResponse} from "../../config/interfaces/IndexStatisticsResponse";
 import {environment} from "../../../../environments/environment";

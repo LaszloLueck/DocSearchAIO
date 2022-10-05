@@ -3,7 +3,7 @@ import {CommonDataService} from "../../services/CommonDataService";
 import {SchedulerDataService} from "./services/scheduler-data.service";
 import {Subscription} from "rxjs";
 import {SchedulerStatisticResponseBase} from "../config/interfaces/SchedulerStatisticResponse";
-import {Either, match} from "../config/Either";
+import {Either, match} from "../../generic/either";
 import {BaseError} from "../config/interfaces/DocSearchConfiguration";
 import {AlternateReturn} from "../config/interfaces/AlternateReturn";
 

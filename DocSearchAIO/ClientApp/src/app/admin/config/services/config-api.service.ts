@@ -1,10 +1,10 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {map, Observable, of} from "rxjs";
-import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration"
+import {BaseError, DocSearchConfiguration} from "../interfaces/DocSearchConfiguration"
 import {catchError, take} from "rxjs/operators";
-import {environment} from "../../../environments/environment";
-import {Either, makeLeft, makeRight} from "./Either";
+import {environment} from "../../../../environments/environment";
+import {Either, makeLeft, makeRight} from "../../../generic/either";
 
 @Injectable({
   providedIn: 'root'

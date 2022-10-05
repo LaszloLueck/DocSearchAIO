@@ -5,7 +5,7 @@ import {environment} from "../../../../environments/environment";
 import {catchError, take} from "rxjs/operators";
 import {SchedulerStatisticResponseBase} from "../../config/interfaces/SchedulerStatisticResponse";
 import {BaseError} from "../../config/interfaces/DocSearchConfiguration";
-import {Either, makeLeft, makeRight} from "../../config/Either";
+import {Either, makeLeft, makeRight} from "../../../generic/either";
 
 @Injectable({
   providedIn: 'root'

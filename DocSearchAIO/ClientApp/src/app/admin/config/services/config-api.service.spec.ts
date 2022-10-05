@@ -1,7 +1,7 @@
-import {ConfigApiService} from './config-api.service';
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {defer} from "rxjs";
-import {isLeft, isRight, unwrapEither} from "./Either";
+import {isLeft, isRight, unwrapEither} from "../../../generic/either"
+import {ConfigApiService} from "./config-api.service";
+import {asyncData, asyncError} from "../../../generic/helper";
 
 describe('ConfigApiServiceService', () => {
   let service: ConfigApiService;
@@ -213,10 +213,3 @@ describe('ConfigApiServiceService', () => {
 
 });
 
-export function asyncData<T>(data: T) {
-  return defer(() => Promise.resolve(data));
-}
-
-export function asyncError<T>(errorObject: any) {
-  return defer(() => Promise.reject(errorObject));
-}

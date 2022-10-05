@@ -2,16 +2,16 @@ import {ComponentFixture, TestBed} from "@angular/core/testing";
 import {ConfigComponent} from "./config.component";
 import {ReactiveFormsModule} from "@angular/forms";
 import {CommonDataService} from "../../services/CommonDataService";
-import {ConfigApiService} from "./config-api.service";
 import {RouterTestingModule} from "@angular/router/testing";
 import {of} from "rxjs";
 import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
-import {Either, makeRight} from "./Either";
+import {Either, makeRight} from "../../generic/either";
 import {FormControlConverterPipe} from "../../pipes/formcontrolconverter.pipe";
 import {DynamicElementComponent} from "./dynamic-element/dynamic-element.component";
 import {FormControlValidatorPipe} from "../../pipes/fomcontrolvalidator.pipe";
 import {IndexConfigurationComponent} from "./index-configuration/index-configuration.component";
 import {ButtonBarComponent} from "./button-bar/button-bar.component";
+import {ConfigApiService} from "./services/config-api.service";
 
 describe('ConfigComponent right result', () => {
   let component: ConfigComponent;

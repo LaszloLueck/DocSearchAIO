@@ -1,5 +1,4 @@
 import {CommonDataService} from "../../services/CommonDataService";
-import {ConfigApiService} from "./config-api.service";
 import {Subscription} from "rxjs";
 import {AlternateReturn} from "./interfaces/AlternateReturn";
 import {UntypedFormArray, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
@@ -7,7 +6,8 @@ import {Router} from "@angular/router";
 import {take} from "rxjs/operators";
 import {BaseError, DocSearchConfiguration} from "./interfaces/DocSearchConfiguration";
 import {Component, OnDestroy, OnInit} from "@angular/core";
-import {Either, match} from "./Either";
+import {ConfigApiService} from "./services/config-api.service";
+import {Either, match} from "../../generic/either";
 
 @Component({
   selector: 'app-config',
