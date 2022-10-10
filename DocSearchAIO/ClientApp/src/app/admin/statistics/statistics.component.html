@@ -1,3 +1,13 @@
 <div class="container">
   <p>statistics works!</p>
 </div>
+<ng-container *ngIf="alternateReturn">
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <div class="alert alert-danger" role="alert">
+        Ein Fehler ist aufgetreten!<br>
+        {{alternateReturn.errorMessage}}
+      </div>
+    </div>
+  </div>
+</ng-container>

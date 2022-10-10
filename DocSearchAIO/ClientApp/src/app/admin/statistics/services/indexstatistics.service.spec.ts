@@ -1,16 +1,16 @@
-import {IndexstatisticsService} from "./indexstatistics.service";
+import {IndexStatisticsService} from "./index-statistics.service";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {isLeft, isRight, unwrapEither} from "../../../generic/either";
 import {asyncData, asyncError} from "../../../generic/helper";
 
 
 describe('IndexStatisticsService', () => {
-  let service: IndexstatisticsService;
+  let service: IndexStatisticsService;
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
 
   beforeEach(() => {
     httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-    service = new IndexstatisticsService(httpClientSpy, 'http://localhost/');
+    service = new IndexStatisticsService(httpClientSpy, 'http://localhost/');
   });
 
   it('should be created', () => {

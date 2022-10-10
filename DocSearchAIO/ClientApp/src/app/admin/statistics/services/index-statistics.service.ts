@@ -10,7 +10,7 @@ import {catchError, take} from "rxjs/operators";
 @Injectable({
   providedIn: 'root'
 })
-export class IndexstatisticsService {
+export class IndexStatisticsService {
   baseUrl: string;
 
   private handleError(operation: string = 'operation') {

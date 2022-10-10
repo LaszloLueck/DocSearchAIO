@@ -5,7 +5,7 @@
     ],
     "elasticUser": "elastic",
     "elasticPassword": "8USt79lz2UEkPs3q",
-    "scanPath": "/Users/laszlo/Documents/bva/02_Chefdesign",
+    "scanPath": "d:\\bva",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",

@@ -38,12 +38,8 @@ export class SchedulerComponent implements OnInit, OnDestroy {
       .subscribe((data: Either<BaseError, SchedulerStatisticResponseBase>) => {
         match(
           data,
-          left => {
-            this.alternateReturn = left;
-          },
-          right => {
-            this.data = right;
-          }
+          left => this.alternateReturn = left,
+          right => this.data = right
         )
       });
   }
