@@ -21,7 +21,7 @@
     <PackageReference Include="LanguageExt.CodeGen" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Core" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Transformers" Version="4.2.9" />
-    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.10" />
     <PackageReference Include="Akka.Streams" Version="1.4.43" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.18.0" />
     <PackageReference Include="itext7" Version="7.2.3" />
