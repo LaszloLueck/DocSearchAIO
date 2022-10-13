@@ -1,5 +1,9 @@
 <div class="container">
-  <p>statistics works!</p>
+  <div *ngIf="data">
+    <div class="rounded border m-3">
+      <app-detail propertyName="Anzahl Dokumente im Index" propertyValue="{{data.entireDocCount}}"></app-detail>
+    </div>
+  </div>
 </div>
 <ng-container *ngIf="alternateReturn">
   <div class="container">
