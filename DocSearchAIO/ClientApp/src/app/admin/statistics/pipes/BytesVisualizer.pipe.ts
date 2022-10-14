@@ -3,9 +3,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 export type ByteUnit = 'B' | 'kB' | 'KB' | 'MB' | 'GB' | 'TB';
 
 @Pipe({
-  name: 'bytesvisualizer'
+  name: 'BytesVisualizer'
 })
-export class BytesvisualizerPipe implements PipeTransform {
+export class BytesVisualizerPipe implements PipeTransform {
 
   static formats: { [key: string]: { max: number; prev?: ByteUnit } } = {
     B: { max: 1024 },
@@ -17,7 +17,7 @@ export class BytesvisualizerPipe implements PipeTransform {
   };
 
   transform(input: any, decimal: number = 0, from: ByteUnit = 'B', to?: ByteUnit): any {
-    if (!(BytesvisualizerPipe.isNumberFinite(input) && BytesvisualizerPipe.isNumberFinite(decimal) && BytesvisualizerPipe.isInteger(decimal) && BytesvisualizerPipe.isPositive(decimal))) {
+    if (!(BytesVisualizerPipe.isNumberFinite(input) && BytesVisualizerPipe.isNumberFinite(decimal) && BytesVisualizerPipe.isInteger(decimal) && BytesVisualizerPipe.isPositive(decimal))) {
       return input;
     }
 
@@ -25,24 +25,24 @@ export class BytesvisualizerPipe implements PipeTransform {
     let unit = from;
     while (unit !== 'B') {
       bytes *= 1024;
-      unit = BytesvisualizerPipe.formats[unit].prev!;
+      unit = BytesVisualizerPipe.formats[unit].prev!;
     }
 
     if (to) {
-      const format = BytesvisualizerPipe.formats[to];
+      const format = BytesVisualizerPipe.formats[to];
 
-      const result = BytesvisualizerPipe.toDecimal(BytesvisualizerPipe.calculateResult(format, bytes), decimal);
+      const result = BytesVisualizerPipe.toDecimal(BytesVisualizerPipe.calculateResult(format, bytes), decimal);
 
-      return BytesvisualizerPipe.formatResult(result, to);
+      return BytesVisualizerPipe.formatResult(result, to);
     }
 
-    for (const key in BytesvisualizerPipe.formats) {
-      if (BytesvisualizerPipe.formats.hasOwnProperty(key)) {
-        const format = BytesvisualizerPipe.formats[key];
+    for (const key in BytesVisualizerPipe.formats) {
+      if (BytesVisualizerPipe.formats.hasOwnProperty(key)) {
+        const format = BytesVisualizerPipe.formats[key];
         if (bytes < format.max) {
-          const result = BytesvisualizerPipe.toDecimal(BytesvisualizerPipe.calculateResult(format, bytes), decimal);
+          const result = BytesVisualizerPipe.toDecimal(BytesVisualizerPipe.calculateResult(format, bytes), decimal);
 
-          return BytesvisualizerPipe.formatResult(result, key);
+          return BytesVisualizerPipe.formatResult(result, key);
         }
       }
     }
@@ -66,7 +66,7 @@ export class BytesvisualizerPipe implements PipeTransform {
   }
 
   static isNumberFinite(value: any): value is number {
-    return BytesvisualizerPipe.isNumber(value) && isFinite(value);
+    return BytesVisualizerPipe.isNumber(value) && isFinite(value);
   }
 
   static formatResult(result: number, unit: string): string {
@@ -74,7 +74,7 @@ export class BytesvisualizerPipe implements PipeTransform {
   }
 
   static calculateResult(format: { max: number; prev?: ByteUnit }, bytes: number) {
-    const prev = format.prev ? BytesvisualizerPipe.formats[format.prev] : undefined;
+    const prev = format.prev ? BytesVisualizerPipe.formats[format.prev] : undefined;
     return prev ? bytes / prev.max : bytes;
   }
 
