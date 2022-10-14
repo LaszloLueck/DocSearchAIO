@@ -4,6 +4,11 @@
       <app-detail propertyName="Anzahl Dokumente im Index" propertyValue="{{data.entireDocCount}}"></app-detail>
       <app-detail propertyName="Gesamtgröße des Index" propertyValue="{{data.entireSizeInBytes | BytesVisualizer}}" [lastElement]=true></app-detail>
     </div>
+    <div class="rounded border m-3" *ngFor="let element of data.runtimeStatistics | keyvalue">
+      <h6>{{element.key}}</h6>
+
+
+    </div>
   </div>
 </div>
 <ng-container *ngIf="alternateReturn">
