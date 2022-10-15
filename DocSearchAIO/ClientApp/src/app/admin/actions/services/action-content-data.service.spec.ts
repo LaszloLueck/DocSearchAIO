@@ -1,13 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 
 import { ActionContentDataService } from './action-content-data.service';
+import {SchedulerDataService} from "../../scheduler/services/scheduler-data.service";
+import {HttpClient} from "@angular/common/http";
 
 describe('ActionContentDataService', () => {
   let service: ActionContentDataService;
+  let httpClientSpy: jasmine.SpyObj<HttpClient>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(ActionContentDataService);
+    httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
+    service = new ActionContentDataService(httpClientSpy, 'http://localhost/');
   });
 
   it('should be created', () => {
