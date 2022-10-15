@@ -2,12 +2,34 @@
   <div *ngIf="data">
     <div class="rounded border m-3">
       <app-detail propertyName="Anzahl Dokumente im Index" propertyValue="{{data.entireDocCount}}"></app-detail>
-      <app-detail propertyName="Gesamtgröße des Index" propertyValue="{{data.entireSizeInBytes | BytesVisualizer}}" [lastElement]=true></app-detail>
+      <app-detail propertyName="Gesamtgröße des Index" propertyValue="{{data.entireSizeInBytes | BytesVisualizer}}"
+                  [lastElement]=true></app-detail>
     </div>
-    <div class="rounded border m-3" *ngFor="let element of data.runtimeStatistics | keyvalue">
-      <h6>{{element.key}}</h6>
-
-
+    <div class="rounded border m-2" *ngIf="data.indexStatisticModels && data.indexStatisticModels.length > 0">
+      <h6>IndexStatistiken</h6>
+      <div class="rounded border m-3" *ngFor="let element of data.indexStatisticModels">
+        <app-detail propertyName="Indexname" propertyValue="{{element.indexName}}"></app-detail>
+        <app-detail propertyName="Anzahl Dokumente" propertyValue="{{element.docCount}}"></app-detail>
+        <app-detail propertyName="Indexgröße" propertyValue="{{element.sizeInBytes | BytesVisualizer}}"></app-detail>
+        <app-detail propertyName="Anzahl Anfragen" propertyValue="{{element.fetchTotal}}"></app-detail>
+        <app-detail propertyName="Anfragezeit in ms" propertyValue="{{element.fetchTimeMs}}"></app-detail>
+        <app-detail propertyName="Anzahl Suchen" propertyValue="{{element.queryTotal}}"></app-detail>
+        <app-detail propertyName="Suchzeit in ms" propertyValue="{{element.queryTimeMs}}"></app-detail>
+        <app-detail propertyName="Anzahl Suggests" propertyValue="{{element.suggestTotal}}"></app-detail>
+        <app-detail propertyName="Suggestzeit in ms" propertyValue="{{element.suggestTimeMs}}" [lastElement]=true></app-detail>
+      </div>
+    </div>
+    <div class="rounded border m-2" *ngIf="data.runtimeStatistics && data.runtimeStatistics.length > 0">
+      <h6>Laufzeitstatistiken</h6>
+      <div class="rounded border m-3" *ngFor="let element of data.runtimeStatistics">
+        <app-detail propertyName="Id" propertyValue="{{element.id}}"></app-detail>
+        <app-detail propertyName="Jobstart" propertyValue="{{element.startJob}}"></app-detail>
+        <app-detail propertyName="Jobende" propertyValue="{{element.endJob}}"></app-detail>
+        <app-detail propertyName="Gesamtanzahl Dokumente" propertyValue="{{element.entireDocCount}}"></app-detail>
+        <app-detail propertyName="Indexierte Dokumente" propertyValue="{{element.indexDocCount}}"></app-detail>
+        <app-detail propertyName="Laufzeit in ms" propertyValue="{{element.elapsedTimeMillis}}"></app-detail>
+        <app-detail propertyName="Anzahl Fehler" propertyValue="{{element.processingError}}"></app-detail>
+      </div>
     </div>
   </div>
 </div>

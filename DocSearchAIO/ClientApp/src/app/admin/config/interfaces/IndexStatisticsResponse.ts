@@ -2,8 +2,8 @@
 export interface IndexStatisticsResponse {
   entireDocCount: number;
   entireSizeInBytes: number;
-  runtimeStatistics: { [item1: string] : RunnableStatistic };
-  indexStatisticModels : IndesStatistic[];
+  indexStatisticModels: IndesStatistic[];
+  runtimeStatistics : RunnableStatistic[];
 }
 
 export interface IndesStatistic {
