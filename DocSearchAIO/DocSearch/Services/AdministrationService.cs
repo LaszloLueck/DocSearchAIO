@@ -39,7 +39,7 @@ public interface IAdministrationService
 
     public Task<IndexStatistic> StatisticsContent();
 
-    public IAsyncEnumerable<(TypedGroupNameString, Seq<AdministrationActionSchedulerModel>)> ActionContent();
+    public IAsyncEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)> ActionContent();
 }
 
 public class AdministrationService : IAdministrationService
@@ -470,7 +470,7 @@ public class AdministrationService : IAdministrationService
             .ToOption()
             .Flatten();
 
-    public IAsyncEnumerable<(TypedGroupNameString, Seq<AdministrationActionSchedulerModel>)> ActionContent()
+    public IAsyncEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)> ActionContent()
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
         var groupedSchedulerModels = _schedulerStatisticsService
@@ -479,7 +479,7 @@ public class AdministrationService : IAdministrationService
             {
                 var state = CalculateJobState(kv.statistics, memoryCacheStates);
                 var model = ConvertToActionModel(kv.statistics, state);
-                return (kv.key, Seq<AdministrationActionSchedulerModel>().Add(model));
+                return (kv.key, model);
             });
         return groupedSchedulerModels;
     }

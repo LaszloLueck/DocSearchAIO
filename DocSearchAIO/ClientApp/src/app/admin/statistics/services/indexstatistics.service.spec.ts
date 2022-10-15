@@ -24,7 +24,7 @@ describe('IndexStatisticsService', () => {
       .returnValue(asyncData(JSON.parse(responseBody)));
 
     service
-      .getIndexcStatisticsData()
+      .getIndexStatisticsData()
       .subscribe({
         next: either => {
           if(isLeft(either)) {
@@ -53,7 +53,7 @@ describe('IndexStatisticsService', () => {
     httpClientSpy.get.and.returnValue(asyncError(response));
 
     service
-      .getIndexcStatisticsData()
+      .getIndexStatisticsData()
       .subscribe({
         next: either => {
           if(isRight(either)) {

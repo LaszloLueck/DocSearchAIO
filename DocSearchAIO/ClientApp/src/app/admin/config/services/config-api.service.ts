@@ -5,6 +5,7 @@ import {BaseError, DocSearchConfiguration} from "../interfaces/DocSearchConfigur
 import {catchError, take} from "rxjs/operators";
 import {environment} from "../../../../environments/environment";
 import {Either, makeLeft, makeRight} from "../../../generic/either";
+import {getErrorHandler} from "../../../generic/helper";
 
 @Injectable({
   providedIn: 'root'
@@ -18,18 +19,6 @@ export class ConfigApiService {
   })
   };
 
-  private handleError(operation = 'operation') {
-    return (error: any): Observable<Either<BaseError, DocSearchConfiguration>> => {
-      console.error(error); // log to console instead
-      const ret: BaseError = {
-        errorMessage: error.message,
-        errorCode: error.status,
-        operation: operation
-      }
-      return of(makeLeft(ret));
-    };
-  }
-
   getConfiguration(): Observable<Either<BaseError, DocSearchConfiguration>> {
     return this
       .httpClient
@@ -37,7 +26,7 @@ export class ConfigApiService {
       .pipe(
         take(1),
         map(result => makeRight(result)),
-        catchError(this.handleError('getConfiguration'))
+        catchError(getErrorHandler<DocSearchConfiguration>('getConfiguration'))
       )
   }
 
@@ -48,7 +37,7 @@ export class ConfigApiService {
       .pipe(
         take(1),
         catchError(err => {
-          this.handleError(err)
+          getErrorHandler<DocSearchConfiguration>(err)
           return of(false);
         })
       )

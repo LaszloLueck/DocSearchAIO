@@ -6,6 +6,7 @@ import {BaseError} from "../../config/interfaces/DocSearchConfiguration";
 import {IndexStatisticsResponse} from "../../config/interfaces/IndexStatisticsResponse";
 import {environment} from "../../../../environments/environment";
 import {catchError, take} from "rxjs/operators";
+import {getErrorHandler} from "../../../generic/helper";
 
 @Injectable({
   providedIn: 'root'
@@ -13,27 +14,14 @@ import {catchError, take} from "rxjs/operators";
 export class IndexStatisticsService {
   baseUrl: string;
 
-  private handleError(operation: string = 'operation') {
-    return (error: any): Observable<Either<BaseError, IndexStatisticsResponse>> => {
-      console.error(error);
-      const ret: BaseError = {
-        errorMessage: error.message,
-        errorCode: error.status,
-        operation: operation
-      };
-      return of(makeLeft(ret));
-    }
-  }
-
-
-  getIndexcStatisticsData(): Observable<Either<BaseError, IndexStatisticsResponse>> {
+  getIndexStatisticsData(): Observable<Either<BaseError, IndexStatisticsResponse>> {
     return this
       .httpClient
       .get<IndexStatisticsResponse>(`${environment.apiUrl}api/administration/getStatisticContentData`)
       .pipe(
         take(1),
         map(result => makeRight(result)),
-        catchError(this.handleError('getIndexStatisticsData'))
+        catchError(getErrorHandler<IndexStatisticsResponse>('getIndexStatisticsData'))
       )
   }
 

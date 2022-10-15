@@ -35,7 +35,7 @@ export class StatisticsComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.subscription = this
       .indexStatisticsService
-      .getIndexcStatisticsData()
+      .getIndexStatisticsData()
       .subscribe((data: Either<BaseError, IndexStatisticsResponse>) => {
         match(
           data,
