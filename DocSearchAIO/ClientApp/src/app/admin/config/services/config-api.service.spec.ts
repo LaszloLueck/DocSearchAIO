@@ -61,8 +61,8 @@ describe('ConfigApiServiceService', () => {
             done.fail("unwanted result");
           }
           if (isLeft(either)) {
-            const foo = unwrapEither(either);
-            expect(foo.errorCode).toBe(500);
+            const result = unwrapEither(either);
+            expect(result.errorCode).toBe(500);
           }
           done();
         },

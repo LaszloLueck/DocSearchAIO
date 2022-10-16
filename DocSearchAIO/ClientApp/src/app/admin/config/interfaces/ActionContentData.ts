@@ -1,7 +1,7 @@
 
 export interface ActionContentData {
-  doSearch_Processing: Scheduler;
-  doSearch_Cleanup: Scheduler;
+  docSearch_Processing: Scheduler;
+  docSearch_Cleanup: Scheduler;
 
 
 }

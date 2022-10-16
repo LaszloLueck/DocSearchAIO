@@ -8,7 +8,7 @@ import {Component, OnInit} from "@angular/core";
   styleUrls: ['./navigation.component.scss']
 })
 export class NavigationComponent implements OnInit {
-  foo!: Subscription;
+  subscription!: Subscription;
   title!: string;
 
   constructor(private commonDataService: CommonDataService) {
@@ -17,11 +17,11 @@ export class NavigationComponent implements OnInit {
 
   ngOnDestroy(): void {
     this.commonDataService.clearData();
-    this.foo.unsubscribe();
+    this.subscription.unsubscribe();
   }
 
 
   ngOnInit(): void {
-    this.foo = this.commonDataService.getData().subscribe(d => this.title = d);
+    this.subscription = this.commonDataService.getData().subscribe(d => this.title = d);
   }
 }

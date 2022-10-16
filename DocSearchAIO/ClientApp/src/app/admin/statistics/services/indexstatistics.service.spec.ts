@@ -60,8 +60,8 @@ describe('IndexStatisticsService', () => {
             done.fail('unwanted result');
           }
           if(isLeft(either)) {
-            const foo = unwrapEither(either);
-            expect(foo.errorCode).toBe(500);
+            const response = unwrapEither(either);
+            expect(response.errorCode).toBe(500);
           }
           done();
         },
