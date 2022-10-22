@@ -13,9 +13,7 @@ import {getErrorHandler} from "../../../generic/helper";
   providedIn: 'root'
 })
 export class ResumeTriggerService {
-  baseUrl: string;
-
-  httpOptions = {
+  private httpOptions = {
     headers: new HttpHeaders({
       'Content-Type':  'application/json'
     })
@@ -30,7 +28,6 @@ export class ResumeTriggerService {
         catchError(getErrorHandler<TriggerResult>('resumeTrigger')))
   }
 
-  constructor(private httpClient: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-    this.baseUrl = baseUrl;
+  constructor(private httpClient: HttpClient, @Inject('BASE_URL') private baseUrl: string) {
   }
 }

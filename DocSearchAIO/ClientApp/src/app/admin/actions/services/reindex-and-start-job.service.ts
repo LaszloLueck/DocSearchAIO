@@ -13,9 +13,7 @@ import {getErrorHandler} from "../../../generic/helper";
   providedIn: 'root'
 })
 export class ReindexAndStartJobService {
-  baseUrl: string;
-
-  httpOptions = {
+  private httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
     })
@@ -33,7 +31,6 @@ export class ReindexAndStartJobService {
   }
 
 
-  constructor(private httpClient: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-    this.baseUrl = baseUrl;
+  constructor(private httpClient: HttpClient, @Inject('BASE_URL') private baseUrl: string) {
   }
 }
