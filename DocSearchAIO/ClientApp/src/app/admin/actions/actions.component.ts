@@ -28,10 +28,14 @@ export class ActionsComponent implements OnInit, OnDestroy {
     this.loadData();
   }
 
-  resumeTrigger(triggerName: string, groupName: string): void {
-    this.message = "KFEKEPRERKF";
+  writeAlert(message: string, timeout: number = 3000): void {
+    this.message = message;
     this.alertClosed = false;
     setTimeout(() => this.alertClosed = true, 3000);
+  }
+
+  resumeTrigger(triggerName: string, groupName: string): void {
+
   }
 
   pauseTrigger(triggerName: string, groupName: string): void {
