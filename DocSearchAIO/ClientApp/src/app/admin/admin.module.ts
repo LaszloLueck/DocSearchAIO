@@ -17,6 +17,8 @@ import { SchedulerstatisticComponent } from './scheduler/schedulerstatistic/sche
 import { TriggerElementComponent } from './scheduler/triggerelement/trigger-element.component';
 import { DetailComponent } from './scheduler/component/detail/detail.component';
 import { BytesVisualizerPipe } from './statistics/pipes/BytesVisualizer.pipe';
+import {MainModule} from "../main/main.module";
+import {NgbAlertModule} from "@ng-bootstrap/ng-bootstrap";
 
 
 @NgModule({
@@ -39,7 +41,9 @@ import { BytesVisualizerPipe } from './statistics/pipes/BytesVisualizer.pipe';
     imports: [
         CommonModule,
         AdminRoutingModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        MainModule,
+        NgbAlertModule
     ],
   providers: [
     FormControlValidatorPipe

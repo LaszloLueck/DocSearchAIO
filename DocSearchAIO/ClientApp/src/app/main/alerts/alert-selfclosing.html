@@ -1,2 +1,1 @@
-<ngb-alert *ngIf="message" #selfClosingAlert type="warning"><span [innerHTML]="message"></span></ngb-alert>
-
+<ngb-alert *ngIf="message" #selfClosingAlert type="warning" (close)="message=''"><span [innerHTML]="message"></span></ngb-alert>

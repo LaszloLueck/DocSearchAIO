@@ -1,4 +1,4 @@
-import {Component, Input, OnInit, Pipe, PipeTransform, ViewChild} from "@angular/core";
+import {Component, Input, OnChanges, OnInit, Pipe, PipeTransform, SimpleChanges, ViewChild} from "@angular/core";
 import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
 
 
@@ -6,12 +6,13 @@ import {NgbAlert} from "@ng-bootstrap/ng-bootstrap";
   selector: 'ngbd-alert-selfclosing',
   templateUrl: './alert-selfclosing.html'})
 export class NgbdAlertSelfclosing implements OnInit{
-  @Input() message!: string;
+  @Input() message: string = '';
   @Input() timeout: number = 5000;
   @ViewChild('selfClosingAlert', {static: false}) selfClosingAlert!: NgbAlert;
 
   ngOnInit(): void {
-    if(this.message)
-      setTimeout(() => this.selfClosingAlert.close(), this.timeout);
+    setTimeout(() => this.selfClosingAlert.close(), this.timeout);
   }
+
+
 }
