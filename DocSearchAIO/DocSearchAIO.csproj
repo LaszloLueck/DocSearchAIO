@@ -56,38 +56,6 @@
     <Folder Include="ClientApp\src\app\admin\statistics\pipes" />
     <Folder Include="ClientApp\src\app\interfaces" />
   </ItemGroup>
-
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\DocSearch.html" />
-    <_ContentIncludedByDefault Remove="wwwroot\favicon.ico" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\docsearch.png" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\eml.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\excel.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\info.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\outlook.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\pdf.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\powerpoint.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\unknown.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\images\word.svg" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\actionModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\adminActionModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\adminGenericModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\adminModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\adminSchedulerModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\adminStatisticModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\bootstrap-autocomplete.min.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\documentDetail.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\doSearch.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\genericModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\init.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\luxon.min.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\optionDialog.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\pagination.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\resultPageConfigurationModal.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\searchResultDetail.js" />
-    <_ContentIncludedByDefault Remove="wwwroot\javascript\statistics.js" />
-  </ItemGroup>
-
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
     <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
