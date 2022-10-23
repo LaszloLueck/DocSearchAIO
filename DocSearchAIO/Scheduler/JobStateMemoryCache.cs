@@ -1,5 +1,6 @@
 using DocSearchAIO.Classes;
 using LanguageExt;
+using LanguageExt.Pretty;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DocSearchAIO.Scheduler;
@@ -10,8 +11,7 @@ public static class JobStateMemoryCacheProxy
             Seq<(ProcessorBase, Func<MemoryCacheModel>)>>
         AsIEnumerable = (loggerFactory, memoryCache) =>
         {
-            return new Seq<(ProcessorBase, Func<MemoryCacheModel>)>
-            {
+            return Seq<(ProcessorBase, Func<MemoryCacheModel>)>(
                 (new ProcessorBaseWord(),
                     () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
                 (new ProcessorBasePowerpoint(),
@@ -24,7 +24,7 @@ public static class JobStateMemoryCacheProxy
                     () => new MemoryCacheModelMsg(loggerFactory, memoryCache)),
                 (new ProcessorBaseEml(),
                     () => new MemoryCacheModelEml(loggerFactory, memoryCache))
-            };
+            );
         };
 
     public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWord>>
