@@ -71,7 +71,7 @@
         "active": false,
         "startDelay": 1,
         "runsEvery": 3600,
-        "parallelism": 10,
+        "parallelism": 20,
         "jobName": "wordProcessingJob",
         "triggerName": "wordProcessingTrigger",
         "excludeFilter": "~$",
