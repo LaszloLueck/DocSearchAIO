@@ -22,7 +22,7 @@ export class PauseTriggerService {
   pauseTrigger(triggerData: TriggerRequest): Observable<Either<BaseError, TriggerResult>> {
     return this
       .httpClient
-      .post<TriggerResult>(`${environment.apiUrl}api/administration/pauseTrigger`, this.httpOptions)
+      .post<TriggerResult>(`${environment.apiUrl}api/administration/pauseTrigger`, triggerData ,this.httpOptions)
       .pipe(
         take(1),
         map(result => makeRight(result)),

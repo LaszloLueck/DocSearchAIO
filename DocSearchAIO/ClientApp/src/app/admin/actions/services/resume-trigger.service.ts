@@ -22,7 +22,7 @@ export class ResumeTriggerService {
   resumeTrigger(triggerData: TriggerRequest): Observable<Either<BaseError, TriggerResult>> {
     return this
       .httpClient
-      .post<TriggerResult>(`${environment.apiUrl}api/administration/resumeTrigger`, this.httpOptions)
+      .post<TriggerResult>(`${environment.apiUrl}api/administration/resumeTrigger`, triggerData, this.httpOptions)
       .pipe(take(1),
         map(result => makeRight(result)),
         catchError(getErrorHandler<TriggerResult>('resumeTrigger')))

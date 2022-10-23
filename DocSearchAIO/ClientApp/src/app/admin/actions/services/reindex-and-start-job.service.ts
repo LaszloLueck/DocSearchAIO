@@ -22,7 +22,7 @@ export class ReindexAndStartJobService {
   reindexAndStartJob(jobData: JobRequest): Observable<Either<BaseError, JobResult>> {
     return this
       .httpClient
-      .post<JobResult>(`${environment.apiUrl}api/administration/reindexAndStartJob`, this.httpOptions)
+      .post<JobResult>(`${environment.apiUrl}api/administration/reindexAndStartJob`, jobData, this.httpOptions)
       .pipe(
         take(1),
         map(result => makeRight(result)),

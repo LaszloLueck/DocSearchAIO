@@ -94,11 +94,13 @@ public class AdministrationService : IAdministrationService
                             }
 
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
-                            return await scheduler.GetTriggerState(triggerKey) == TriggerState.Paused;
+                            await scheduler.PauseTrigger(triggerKey);
+                            var currentState = await scheduler.GetTriggerState(triggerKey);
+                            _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}", triggerKey, currentState);
+                            return currentState == TriggerState.Paused;
                         },
                         async () => await Task.FromResult(false)
                     );
-                await scheduler.PauseTrigger(triggerKey);
                 return result;
             },
             async () =>
@@ -151,11 +153,13 @@ public class AdministrationService : IAdministrationService
                             }
 
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
-                            return await scheduler.GetTriggerState(triggerKey) == TriggerState.Normal;
+                            await scheduler.ResumeTrigger(triggerKey);
+                            var currentState = await scheduler.GetTriggerState(triggerKey);
+                            _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}", triggerKey, currentState);
+                            return currentState == TriggerState.Normal;
                         },
                         async () => await Task.FromResult(false)
                     );
-                await scheduler.ResumeTrigger(triggerKey);
                 return result;
             },
             async () =>
