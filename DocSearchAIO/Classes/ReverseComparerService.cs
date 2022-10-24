@@ -68,14 +68,14 @@ public class ReverseComparerService<T> where T : ComparerModel
         _actorSystem = actorSystem;
         _allFileCount = new InterlockedCounter();
         _removedFileCount = new InterlockedCounter();
-        _lazyCache = new ConcurrentDictionary<string, ComparerObject>();
-        ComparerHelper.FillConcurrentDictionary(_comparerFile, _logger);
+        _lazyCache = ComparerHelper.FillConcurrentDictionary(_comparerFile, _logger);
     }
 
     public async Task Process(TypedIndexNameString indexName)
     {
         _logger.LogInformation("process comparer file {ComparerFile}", _comparerFile);
         _logger.LogInformation("process elastic index {IndexName}", indexName.Value);
+        _logger.LogInformation("lazy cache contains {CacheSize} entries", _lazyCache.Count);
         var sw = Stopwatch.StartNew();
         try
         {

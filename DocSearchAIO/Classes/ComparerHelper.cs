@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Akka;
 using Akka.Streams.Dsl;
+using DocSearchAIO.Utilities;
 using LanguageExt;
 
 namespace DocSearchAIO.Classes;
@@ -26,22 +27,24 @@ public static class ComparerHelper
         return cpo;
     };
 
-    public static readonly Func<string, ILogger, Map<string, ComparerObject>>
+    public static readonly Func<string, ILogger, ConcurrentDictionary<string, ComparerObject>>
         FillConcurrentDictionary =
             (path, logger) =>
             {
                 if (File.Exists(path))
                 {
-                    return File
+                    var result = File
                         .ReadAllLines(path)
                         .Map(ConvertLine)
                         .Somes()
                         .Map(cpo => (cpo.PathHash, cpo))
-                        .ToMap();
+                        .ToDictionary();
+
+                    return new ConcurrentDictionary<string, ComparerObject>(result);
                 }
 
                 logger.LogWarning("Cannot read Comparer file <{Path}> it does not exist, gave up", path);
-                return new Map<string, ComparerObject>();
+                return new ConcurrentDictionary<string, ComparerObject>();
             };
 
     public static void RemoveComparerFile(string fileName)
