@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
@@ -417,9 +418,11 @@ public class AdministrationService : IAdministrationService
             var convertedModel = ConvertToIndexStatisticModel(indexStatsResponses);
             var entireDocCount = await CalculateEntireDocCount(ref convertedModel);
             var entireSizeInBytes = await CalculateEntireIndexSize(ref convertedModel);
-            return new IndexStatistic(convertedModel, runtimeStatistic, entireDocCount, entireSizeInBytes);
-        }
 
+           
+            return new IndexStatistic(convertedModel.ToEnumerable(), runtimeStatistic.ToDictionary(), entireDocCount, entireSizeInBytes);
+        }
+        
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
     }
 

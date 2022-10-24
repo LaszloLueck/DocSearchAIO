@@ -1,4 +1,5 @@
-﻿using DocSearchAIO.Scheduler;
+﻿using System.Text.Json.Serialization;
+using DocSearchAIO.Scheduler;
 using DocSearchAIO.Statistics;
 using LanguageExt;
 
@@ -8,6 +9,8 @@ namespace DocSearchAIO.DocSearch.TOs;
 public sealed record RunnableStatistic(string Id, int EntireDocCount, int IndexedDocCount, int ProcessingError,
     DateTime StartJob, DateTime EndJob, long ElapsedTimeMillis)
 {
+    
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CacheEntry? CacheEntry { get; set; }
 
     public static implicit operator RunnableStatistic(ProcessingJobStatistic source) => new(

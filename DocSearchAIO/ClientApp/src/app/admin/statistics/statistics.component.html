@@ -6,7 +6,7 @@
                   [lastElement]=true></app-detail>
     </div>
     <div class="rounded border m-2" *ngIf="data.indexStatisticModels && data.indexStatisticModels.length > 0">
-      <h6>IndexStatistiken</h6>
+      <h6 class="ms-2">IndexStatistiken</h6>
       <div class="rounded border m-3" *ngFor="let element of data.indexStatisticModels">
         <app-detail propertyName="Indexname" propertyValue="{{element.indexName}}"></app-detail>
         <app-detail propertyName="Anzahl Dokumente" propertyValue="{{element.docCount}}"></app-detail>
@@ -19,16 +19,17 @@
         <app-detail propertyName="Suggestzeit in ms" propertyValue="{{element.suggestTimeMs}}" [lastElement]=true></app-detail>
       </div>
     </div>
-    <div class="rounded border m-2" *ngIf="data.runtimeStatistics && data.runtimeStatistics.length > 0">
-      <h6>Laufzeitstatistiken</h6>
-      <div class="rounded border m-3" *ngFor="let element of data.runtimeStatistics">
-        <app-detail propertyName="Id" propertyValue="{{element.id}}"></app-detail>
-        <app-detail propertyName="Jobstart" propertyValue="{{element.startJob}}"></app-detail>
-        <app-detail propertyName="Jobende" propertyValue="{{element.endJob}}"></app-detail>
-        <app-detail propertyName="Gesamtanzahl Dokumente" propertyValue="{{element.entireDocCount}}"></app-detail>
-        <app-detail propertyName="Indexierte Dokumente" propertyValue="{{element.indexDocCount}}"></app-detail>
-        <app-detail propertyName="Laufzeit in ms" propertyValue="{{element.elapsedTimeMillis}}"></app-detail>
-        <app-detail propertyName="Anzahl Fehler" propertyValue="{{element.processingError}}"></app-detail>
+    <div class="rounded border m-2" *ngIf="data.runtimeStatistics">
+      <h6 class="ms-2">Laufzeitstatistiken</h6>
+      <div class="rounded border m-3" *ngFor="let element of data.runtimeStatistics | keyvalue">
+        <h6 class="small ms-2">{{element.key}}</h6>
+        <app-detail propertyName="Id" propertyValue="{{element.value.id}}"></app-detail>
+        <app-detail propertyName="Jobstart" propertyValue="{{element.value.startJob | date:'medium':'+02:00':'de'}}"></app-detail>
+        <app-detail propertyName="Jobende" propertyValue="{{element.value.endJob | date:'medium':'+02:00':'de'}}"></app-detail>
+        <app-detail propertyName="Gesamtanzahl Dokumente" propertyValue="{{element.value.entireDocCount}}"></app-detail>
+        <app-detail propertyName="Indexierte Dokumente" propertyValue="{{element.value.indexDocCount}}"></app-detail>
+        <app-detail propertyName="Laufzeit in ms" propertyValue="{{element.value.elapsedTimeMillis}}"></app-detail>
+        <app-detail propertyName="Anzahl Fehler" propertyValue="{{element.value.processingError}}" [lastElement]="true"></app-detail>
       </div>
     </div>
   </div>

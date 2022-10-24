@@ -1,9 +1,10 @@
+import {ProcessorConfiguration} from "./ProcessorConfiguration";
 
 export interface IndexStatisticsResponse {
   entireDocCount: number;
   entireSizeInBytes: number;
   indexStatisticModels: IndesStatistic[];
-  runtimeStatistics : RunnableStatistic[];
+  runtimeStatistics : { [item1: string] : RunnableStatistic };
 }
 
 export interface IndesStatistic {

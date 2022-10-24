@@ -4,5 +4,5 @@ using LanguageExt;
 namespace DocSearchAIO.Endpoints.Administration.Statistics;
 
 [Record]
-public sealed record IndexStatistic(IAsyncEnumerable<IndexStatisticModel> IndexStatisticModels,
-    Seq<(string, RunnableStatistic)> RuntimeStatistics, long EntireDocCount, double EntireSizeInBytes);
+public sealed record IndexStatistic(IEnumerable<IndexStatisticModel> IndexStatisticModels,
+    Dictionary<string, RunnableStatistic> RuntimeStatistics, long EntireDocCount, double EntireSizeInBytes);

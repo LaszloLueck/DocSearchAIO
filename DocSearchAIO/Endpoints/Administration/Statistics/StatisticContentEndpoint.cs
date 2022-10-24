@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ardalis.ApiEndpoints;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,10 @@ public class StatisticContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
     public override async Task<ActionResult<IndexStatistic>> HandleAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("method getStatisticsContentData called");
-        return await _administrationService.StatisticsContent();
+        var knor = await _administrationService.StatisticsContent();
+
+        var str = JsonSerializer.Serialize(knor, new JsonSerializerOptions{WriteIndented = true});
+        Console.WriteLine(str);
+        return knor;
     }
 }
