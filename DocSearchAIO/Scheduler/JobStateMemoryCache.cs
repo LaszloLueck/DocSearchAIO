@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using DocSearchAIO.Classes;
 using LanguageExt;
 using LanguageExt.Pretty;
@@ -122,7 +123,10 @@ public enum JobState
 
 public class CacheEntry
 {
+    [JsonPropertyName("cacheKey")]
     public string CacheKey { get; set; } = string.Empty;
+    [JsonPropertyName("dateTime")]
     public DateTime DateTime { get; set; }
+    [JsonPropertyName("jobState")]
     public JobState JobState { get; set; }
 }

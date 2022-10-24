@@ -28,10 +28,6 @@ public class StatisticContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
     public override async Task<ActionResult<IndexStatistic>> HandleAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("method getStatisticsContentData called");
-        var knor = await _administrationService.StatisticsContent();
-
-        var str = JsonSerializer.Serialize(knor, new JsonSerializerOptions{WriteIndented = true});
-        Console.WriteLine(str);
-        return knor;
+        return await _administrationService.StatisticsContent();
     }
 }

@@ -3,11 +3,11 @@ import {ProcessorConfiguration} from "./ProcessorConfiguration";
 export interface IndexStatisticsResponse {
   entireDocCount: number;
   entireSizeInBytes: number;
-  indexStatisticModels: IndesStatistic[];
+  indexStatisticModels: IndexStatistic[];
   runtimeStatistics : { [item1: string] : RunnableStatistic };
 }
 
-export interface IndesStatistic {
+export interface IndexStatistic {
   indexName: string;
   docCount: number;
   sizeInBytes: number;
@@ -22,9 +22,16 @@ export interface IndesStatistic {
 export interface RunnableStatistic {
   id: string;
   entireDocCount: number;
-  indexDocCount: number;
+  indexedDocCount: number;
   processingError: number;
   startJob: Date;
   endJob: Date;
   elapsedTimeMillis: number;
+  cacheEntry: CacheEntry
+}
+
+export interface CacheEntry {
+  cacheKey: string;
+  dateTime: Date;
+  jobState: number;
 }

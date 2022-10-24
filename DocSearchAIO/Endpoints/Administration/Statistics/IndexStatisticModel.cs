@@ -1,11 +1,29 @@
-﻿using LanguageExt;
+﻿using System.Text.Json.Serialization;
+using LanguageExt;
 using Nest;
 
 namespace DocSearchAIO.Endpoints.Administration.Statistics;
 
 [Record]
-public sealed record IndexStatisticModel(string IndexName, long DocCount, double SizeInBytes, long FetchTimeMs,
-    long FetchTotal, long QueryTimeMs, long QueryTotal, long SuggestTimeMs, long SuggestTotal)
+public sealed record IndexStatisticModel(
+    [property: JsonPropertyName("indexName")]
+    string IndexName, 
+    [property: JsonPropertyName("docCount")]
+    long DocCount, 
+    [property: JsonPropertyName("sizeInBytes")]
+    double SizeInBytes, 
+    [property: JsonPropertyName("fetchTimeMs")]
+    long FetchTimeMs,
+    [property: JsonPropertyName("fetchTotal")]
+    long FetchTotal, 
+    [property: JsonPropertyName("queryTimeMs")]
+    long QueryTimeMs, 
+    [property: JsonPropertyName("queryTotal")]
+    long QueryTotal, 
+    [property: JsonPropertyName("suggestTimeMs")]
+    long SuggestTimeMs, 
+    [property: JsonPropertyName("suggestTotal")]
+    long SuggestTotal)
 {
     public static explicit operator IndexStatisticModel(IndicesStatsResponse response) =>
         new(response.Indices.First().Key, response.Stats.Total.Documents.Count, response.Stats.Total.Store
