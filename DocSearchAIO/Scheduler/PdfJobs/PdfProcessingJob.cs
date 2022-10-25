@@ -170,6 +170,7 @@ internal static class PdfProcessingHelper
             }
 
             toProcess
+                .AsParallel()
                 .ForEach(page =>
                     pdfPages.Add(new PdfPageObject(
                         PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));

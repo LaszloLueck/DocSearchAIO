@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;

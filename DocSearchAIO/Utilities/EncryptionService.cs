@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using DocSearchAIO.Classes;
+using LanguageExt;
 
 namespace DocSearchAIO.Utilities;
 
@@ -11,8 +12,8 @@ public static class EncryptionService
         return await Task.FromResult(SHA256.HashData(Encoding.UTF8.GetBytes(input.Value)));
     }
 
-    public static string ConvertToStringFromByteArray(byte[] array)
+    public static async Task<string> ConvertToStringFromByteArray(byte[] array)
     {
-        return array.Map(bt => bt.ToString("x2")).Concat();
+        return (await array.Map(async bt => await Task.FromResult(bt.ToString("x2"))).SequenceParallel()).Concat();
     }
 }

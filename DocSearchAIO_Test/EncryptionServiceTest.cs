@@ -18,8 +18,8 @@ public class EncryptionServiceTest
     {
         var bt = await EncryptionService.ComputeHashAsync(TypedHashedInputString.New(StringToHash));
             
-        var result = EncryptionService.ConvertToStringFromByteArray(bt);
-
+        var result = await EncryptionService.ConvertToStringFromByteArray(bt);
+        
         Hash.Should().Match(result);
 
     }
