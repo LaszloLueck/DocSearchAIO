@@ -68,7 +68,7 @@ public class StaticHelperTest
     }
 
     [Fact]
-    public void Build_ContentString_From_TextElement()
+    public async Task Build_ContentString_From_TextElement()
     {
         var list1 = new List<OpenXmlElement>
         {
@@ -83,7 +83,7 @@ public class StaticHelperTest
         var p2 = new Paragraph(list2);
         var pList = new List<OpenXmlElement> {p1, p2};
 
-        var result = pList.ContentString();
+        var result = await pList.ContentString();
 
         "Text List A Text List B".Should().Match(result);
     }

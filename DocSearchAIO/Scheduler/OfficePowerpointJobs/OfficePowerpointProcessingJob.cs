@@ -205,9 +205,9 @@ public static class PowerpointProcessingHelper
                 ("[ ]{2,}", " ")
             };
 
-            var contentString = presentationPart
-                .Elements()
-                .ContentString()
+            var contentTask = await presentationPart.Elements().ContentString();
+
+            var contentString = contentTask
                 .ReplaceSpecialStrings(toReplaced);
 
             var toHash = new ElementsToHash(category, created, contentString, creator,

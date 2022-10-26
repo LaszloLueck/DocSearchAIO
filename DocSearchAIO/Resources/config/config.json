@@ -5,7 +5,7 @@
     ],
     "elasticUser": "elastic",
     "elasticPassword": "8USt79lz2UEkPs3q",
-    "scanPath": "d:\\bva",
+    "scanPath": "/Users/laszlo/Documents/bva",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -13,7 +13,7 @@
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern/",
     "processing": {
       "EmlElasticDocument": {
-        "active": true,
+        "active": false,
         "startDelay": 5,
         "runsEvery": 3600,
         "parallelism": 10,

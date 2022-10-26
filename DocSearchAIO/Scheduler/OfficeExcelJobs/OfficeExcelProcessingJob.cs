@@ -203,13 +203,16 @@ internal static class ExcelProcessingHelper
                 ("[ ]{2,}", " ")
             };
 
-            var contentString = mainWorkbookPart
-                .SharedStringTablePart
-                .ResolveNullable(string.Empty,
-                    (v, _) =>
-                        Elements(v)
-                            .ContentString()
-                            .ReplaceSpecialStrings(toReplaced));
+            var contentString = mainWorkbookPart.SharedStringTablePart != null
+                ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentString()).ReplaceSpecialStrings(
+                    toReplaced)
+                : string.Empty;
+
+            // var contentString = mainWorkbookPart
+            //     .SharedStringTablePart
+            //     .ResolveNullable(string.Empty,
+            //         (v, _) =>
+            //             Elements(v).ContentString().ReplaceSpecialStrings(toReplaced));
 
             var toHash = new ElementsToHash(category, created, contentString, creator,
                 description, identifier, keywords, language, modified, revision,

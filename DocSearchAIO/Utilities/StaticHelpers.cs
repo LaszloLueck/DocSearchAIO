@@ -1,6 +1,5 @@
 using System.Diagnostics.Contracts;
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 using Akka;
 using Akka.Streams;
@@ -14,6 +13,7 @@ using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using LanguageExt;
 using Nest;
+using Array = System.Array;
 using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace DocSearchAIO.Utilities;
@@ -58,7 +58,7 @@ public static class StaticHelpers
         $"{configurationObject.IndexName}-{configurationObject.Processing[type.Name].IndexSuffix}";
 
     public static readonly Func<string, string[]> KeywordsList = keywords =>
-        keywords.Length == 0 ? System.Array.Empty<string>() : keywords.Split(",");
+        keywords.Length == 0 ? Array.Empty<string>() : keywords.Split(",");
 
     [Pure]
     public static Source<TSource, TMat> CountEntireDocs<TSource, TMat, TModel>(this Source<TSource, TMat> source,
@@ -179,101 +179,108 @@ public static class StaticHelpers
         };
 
     [Pure]
-    public static string ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
+    public static async Task<string> ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
     {
-        return openXmlElementList
-            .Map(TextFromParagraph)
-            .Join(" ");
+        // return openXmlElementList
+        //     .Map(TextFromParagraph)
+        //     .Join(" ");
+        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceParallel();
+        return resultTasks.Join(" ");
     }
 
     [Pure]
-    private static string TextFromParagraph(this OpenXmlElement paragraph)
+    private static async Task<string> TextFromParagraph(this OpenXmlElement paragraph)
     {
-        return Foo(paragraph.ChildElements).Join(" ");
+        var resultTask = await ExtractTextFromElementAsync(paragraph.ChildElements);
+        return resultTask.Join(" ");
         // var sb = new StringBuilder();
         // ExtractTextFromElement(paragraph.ChildElements, sb);
         // return sb.ToString();
     }
 
 
-    private static IEnumerable<string> Foo(IEnumerable<OpenXmlElement> list)
+    private static async Task<IEnumerable<string>> ExtractTextFromElementAsync(IEnumerable<OpenXmlElement> list)
     {
-        return list.Map(element =>
-        {
-            return element switch
-            {
-                Paragraph p when p.InnerText.Any() => ' ' + Foo(element.ChildElements).Join(" ") + " ",
-                Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                TextBody {HasChildren: false} t => ' ' + t.TextFromParagraph() + " ",
-                DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() => " " + Foo(d.ChildElements) + " ",
-                DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
-                Break => Environment.NewLine,
-                _ when element.InnerText.Any() => Foo(element.ChildElements).Join(" "),
-                _ => ""
-            };
-        });
-    }
-    
-    
-    private static void ExtractTextFromElement(IEnumerable<OpenXmlElement> list,
-        StringBuilder sb)
-    {
-        list
-            .AsParallel()
-            .ForEach(element =>
-            {
-                switch (element)
+        var resultTasks = await Task.FromResult(
+                list.Map(async element =>
                 {
-                    case Paragraph p when p.InnerText.Any():
-                        sb.Append(' ');
-                        ExtractTextFromElement(element.ChildElements, sb);
-                        sb.Append(' ');
-                        break;
-                    case Text {HasChildren: false} wText:
-                        if (wText.Text.Any())
-                            sb.Append(wText.Text);
-                        break;
-                    case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
-                        if (sText.Text.Any())
-                            sb.Append(sText.Text);
-                        break;
-                    case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
-                        if (dText.Text.Any())
-                            sb.Append(dText.Text);
-                        break;
-                    case TextBody {HasChildren: false} tText:
-                        var tfp = tText.TextFromParagraph();
-                        if (tfp.Any())
-                            sb.Append(' ' + tfp + ' ');
-                        break;
-                    case DocumentFormat.OpenXml.Drawing.Paragraph drawParagraph when drawParagraph.InnerText.Any():
-                        sb.Append(' ');
-                        ExtractTextFromElement(drawParagraph.ChildElements, sb);
-                        sb.Append(' ');
-                        break;
-                    case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
-                        if (pText.Text.Any())
-                            sb.Append(pText.Text);
-                        break;
-                    case FieldChar
+                    return element switch
                     {
-                        FieldCharType: {Value: FieldCharValues.Separate}
-                    }:
-                        sb.Append(' ');
-                        break;
-                    case Break:
-                        sb.Append(Environment.NewLine);
-                        break;
-                    default:
-                        if (element.InnerText.Any())
-                            ExtractTextFromElement(element.ChildElements, sb);
-                        break;
-                }
-            });
+                        Paragraph p when p.InnerText.Any() => $" {(await ContentString(element.ChildElements))} ",
+                        Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                        DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                        DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                        TextBody {HasChildren: false} t => $" {await t.TextFromParagraph()} ",
+                        DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() => $" {await ContentString(d)} ",
+                        DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                        FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
+                        Break => Environment.NewLine,
+                        _ when element.InnerText.Any() => await ContentString(element.ChildElements),
+                        _ => ""
+                    };
+                })
+            );
+
+        return await resultTasks.SequenceParallel();
     }
+
+
+    // private static void ExtractTextFromElement(IEnumerable<OpenXmlElement> list,
+    //     StringBuilder sb)
+    // {
+    //     list
+    //         .AsParallel()
+    //         .ForEach(element =>
+    //         {
+    //             switch (element)
+    //             {
+    //                 case Paragraph p when p.InnerText.Any():
+    //                     sb.Append(' ');
+    //                     ExtractTextFromElement(element.ChildElements, sb);
+    //                     sb.Append(' ');
+    //                     break;
+    //                 case Text {HasChildren: false} wText:
+    //                     if (wText.Text.Any())
+    //                         sb.Append(wText.Text);
+    //                     break;
+    //                 case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
+    //                     if (sText.Text.Any())
+    //                         sb.Append(sText.Text);
+    //                     break;
+    //                 case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
+    //                     if (dText.Text.Any())
+    //                         sb.Append(dText.Text);
+    //                     break;
+    //                 case TextBody {HasChildren: false} tText:
+    //                     var tfp = tText.TextFromParagraph();
+    //                     if (tfp.Any())
+    //                         sb.Append(' ' + tfp + ' ');
+    //                     break;
+    //                 case DocumentFormat.OpenXml.Drawing.Paragraph drawParagraph when drawParagraph.InnerText.Any():
+    //                     sb.Append(' ');
+    //                     ExtractTextFromElement(drawParagraph.ChildElements, sb);
+    //                     sb.Append(' ');
+    //                     break;
+    //                 case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
+    //                     if (pText.Text.Any())
+    //                         sb.Append(pText.Text);
+    //                     break;
+    //                 case FieldChar
+    //                 {
+    //                     FieldCharType: {Value: FieldCharValues.Separate}
+    //                 }:
+    //                     sb.Append(' ');
+    //                     break;
+    //                 case Break:
+    //                     sb.Append(Environment.NewLine);
+    //                     break;
+    //                 default:
+    //                     if (element.InnerText.Any())
+    //                         ExtractTextFromElement(element.ChildElements, sb);
+    //                     break;
+    //             }
+    //         });
+    // }
 
 
     [Pure]

@@ -218,10 +218,9 @@ internal static class WordProcessingHelper
                 ("[ ]{2,}", " ")
             };
 
-
-            var contentString = mainDocumentPart
-                .Elements()
-                .ContentString()
+            var contentTask = await mainDocumentPart.Elements().ContentString();
+            
+            var contentString = contentTask
                 .ReplaceSpecialStrings(toReplaced);
 
             OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
