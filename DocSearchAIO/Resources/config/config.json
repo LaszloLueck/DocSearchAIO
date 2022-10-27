@@ -1,11 +1,11 @@
 ﻿{
   "configurationObject": {
     "elasticEndpoints": [
-      "http://127.0.0.1:9200"
+      "http://192.168.0.14:9200"
     ],
     "elasticUser": "elastic",
     "elasticPassword": "8USt79lz2UEkPs3q",
-    "scanPath": "/Users/laszlo/Documents/bva",
+    "scanPath": "d:\\bva",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -68,10 +68,10 @@
         "indexSuffix": "powerpoint"
       },
       "WordElasticDocument": {
-        "active": false,
+        "active": true,
         "startDelay": 1,
         "runsEvery": 3600,
-        "parallelism": 20,
+        "parallelism": 10,
         "jobName": "wordProcessingJob",
         "triggerName": "wordProcessingTrigger",
         "excludeFilter": "~$",

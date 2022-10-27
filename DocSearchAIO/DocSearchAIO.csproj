@@ -55,6 +55,7 @@
     <Folder Include="ClientApp\src\app\admin\statistics\components" />
     <Folder Include="ClientApp\src\app\admin\statistics\pipes" />
     <Folder Include="ClientApp\src\app\interfaces" />
+    <Folder Include="wwwroot" />
   </ItemGroup>
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
     <!-- Ensure Node.js is installed -->
@@ -72,13 +73,6 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build --prod" />
 
     <!-- Include the newly-built files in the publish output -->
-    <ItemGroup>
-      <DistFiles Include="$(SpaRoot)dist\**; $(SpaRoot)dist-server\**" />
-      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
-        <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      </ResolvedFileToPublish>
-    </ItemGroup>
+    
   </Target>
 </Project>

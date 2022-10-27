@@ -181,27 +181,22 @@ public static class StaticHelpers
     [Pure]
     public static async Task<string> ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
     {
-        // return openXmlElementList
-        //     .Map(TextFromParagraph)
-        //     .Join(" ");
-        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceParallel();
+        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceParallel(32);
         return resultTasks.Join(" ");
     }
 
     [Pure]
     private static async Task<string> TextFromParagraph(this OpenXmlElement paragraph)
     {
-        var resultTask = await ExtractTextFromElementAsync(paragraph.ChildElements);
+        var resultTask = await (await ExtractTextFromElementAsync(paragraph.ChildElements)).SequenceParallel(16);
         return resultTask.Join(" ");
-        // var sb = new StringBuilder();
-        // ExtractTextFromElement(paragraph.ChildElements, sb);
-        // return sb.ToString();
     }
 
 
-    private static async Task<IEnumerable<string>> ExtractTextFromElementAsync(IEnumerable<OpenXmlElement> list)
+    [Pure]
+    private static async Task<IEnumerable<Task<string>>> ExtractTextFromElementAsync(IEnumerable<OpenXmlElement> list)
     {
-        var resultTasks = await Task.FromResult(
+        return await Task.FromResult(
                 list.Map(async element =>
                 {
                     return element switch
@@ -220,68 +215,7 @@ public static class StaticHelpers
                     };
                 })
             );
-
-        return await resultTasks.SequenceParallel();
     }
-
-
-    // private static void ExtractTextFromElement(IEnumerable<OpenXmlElement> list,
-    //     StringBuilder sb)
-    // {
-    //     list
-    //         .AsParallel()
-    //         .ForEach(element =>
-    //         {
-    //             switch (element)
-    //             {
-    //                 case Paragraph p when p.InnerText.Any():
-    //                     sb.Append(' ');
-    //                     ExtractTextFromElement(element.ChildElements, sb);
-    //                     sb.Append(' ');
-    //                     break;
-    //                 case Text {HasChildren: false} wText:
-    //                     if (wText.Text.Any())
-    //                         sb.Append(wText.Text);
-    //                     break;
-    //                 case DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} sText:
-    //                     if (sText.Text.Any())
-    //                         sb.Append(sText.Text);
-    //                     break;
-    //                 case DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} dText:
-    //                     if (dText.Text.Any())
-    //                         sb.Append(dText.Text);
-    //                     break;
-    //                 case TextBody {HasChildren: false} tText:
-    //                     var tfp = tText.TextFromParagraph();
-    //                     if (tfp.Any())
-    //                         sb.Append(' ' + tfp + ' ');
-    //                     break;
-    //                 case DocumentFormat.OpenXml.Drawing.Paragraph drawParagraph when drawParagraph.InnerText.Any():
-    //                     sb.Append(' ');
-    //                     ExtractTextFromElement(drawParagraph.ChildElements, sb);
-    //                     sb.Append(' ');
-    //                     break;
-    //                 case DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} pText:
-    //                     if (pText.Text.Any())
-    //                         sb.Append(pText.Text);
-    //                     break;
-    //                 case FieldChar
-    //                 {
-    //                     FieldCharType: {Value: FieldCharValues.Separate}
-    //                 }:
-    //                     sb.Append(' ');
-    //                     break;
-    //                 case Break:
-    //                     sb.Append(Environment.NewLine);
-    //                     break;
-    //                 default:
-    //                     if (element.InnerText.Any())
-    //                         ExtractTextFromElement(element.ChildElements, sb);
-    //                     break;
-    //             }
-    //         });
-    // }
-
 
     [Pure]
     public static Source<string, NotUsed> UseExcludeFileFilter(this Source<TypedFilePathString, NotUsed> source,
