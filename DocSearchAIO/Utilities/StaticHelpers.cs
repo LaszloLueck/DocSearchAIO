@@ -111,7 +111,7 @@ public static class StaticHelpers
     
     
 
-    private static readonly Func<string, Task<string?>> Repl = input => Task.FromResult(
+    private static readonly Func<string, Task<string>> Repl = input => Task.FromResult(
         input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat());
 
     [Pure]

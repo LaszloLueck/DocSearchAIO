@@ -17,7 +17,7 @@ public class StaticHelperTest
     }
 
     [Fact]
-    public void Build_a_content_and_comment_string_for_suggest()
+    public async Task Build_a_content_and_comment_string_for_suggest()
     {
         const string testStringContent = "Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
         const string testStringComment = "Fritz jagt im total verwahrlosten Taxi quer durch München";
@@ -26,7 +26,7 @@ public class StaticHelperTest
         var typedCommentString = TypedCommentString.New(testStringComment);
         var typedContentString = TypedContentString.New(testStringContent);
 
-        var result = typedCommentString.GenerateTextToSuggest(typedContentString);
+        var result = await typedCommentString.GenerateTextToSuggest(typedContentString);
 
         var compareString =
             "Fritz jagt im total verwahrlosten Taxi quer durch München Fritz jagt im total verwahrlosten Taxi quer durch Berlin";
