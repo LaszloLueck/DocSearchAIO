@@ -101,12 +101,18 @@ public static class StaticHelpers
     private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ ";
 
     [Pure]
-    public static TypedSuggestString GenerateTextToSuggest(this TypedCommentString commentString,
-        TypedContentString contentString) =>
-        TypedSuggestString.New(Repl(commentString.Value + " " + contentString.Value) ?? "");
+    public static async Task<TypedSuggestString> GenerateTextToSuggest(this TypedCommentString commentString,
+        TypedContentString contentString)
+    {
+        var allowed = await Repl($"{commentString.Value} {contentString.Value}");
+        return TypedSuggestString.New(allowed ?? "");
+    }
+    
+    
+    
 
-    private static readonly Func<string, string?> Repl = input =>
-        input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat();
+    private static readonly Func<string, Task<string?>> Repl = input => Task.FromResult(
+        input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat());
 
     [Pure]
     public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
@@ -186,7 +192,7 @@ public static class StaticHelpers
     }
 
     [Pure]
-    private static async Task<string> TextFromParagraph(this OpenXmlElement paragraph)
+    private static async Task<string> TextFromParagraph(OpenXmlElement paragraph)
     {
         var resultTask = await (await ExtractTextFromElementAsync(paragraph.ChildElements)).SequenceParallel(16);
         return resultTask.Join(" ");
@@ -201,16 +207,16 @@ public static class StaticHelpers
                 {
                     return element switch
                     {
-                        Paragraph p when p.InnerText.Any() => $" {(await ContentString(element.ChildElements))} ",
+                        Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraph(element))} ",
                         Text {HasChildren: false} t when t.Text.Any() => t.Text,
                         DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
                         DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                        TextBody {HasChildren: false} t => $" {await t.TextFromParagraph()} ",
-                        DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() => $" {await ContentString(d)} ",
+                        TextBody {HasChildren: false} t => $" {await TextFromParagraph(t)} ",
+                        DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() => $" {await TextFromParagraph(d)} ",
                         DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
                         FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
-                        Break => Environment.NewLine,
-                        _ when element.InnerText.Any() => await ContentString(element.ChildElements),
+                        Break => " ",
+                        _ when element.InnerText.Any() => await TextFromParagraph(element),
                         _ => ""
                     };
                 })

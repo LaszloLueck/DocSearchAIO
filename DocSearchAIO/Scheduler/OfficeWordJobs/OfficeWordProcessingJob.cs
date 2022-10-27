@@ -235,9 +235,11 @@ internal static class WordProcessingHelper
                     StaticHelpers.ListElementsToHash(toHash), commentsArray)
                 .ContentHashString();
 
-            var completionField = commentsArray
-                .StringFromCommentsArray()
-                .GenerateTextToSuggest(TypedContentString.New(contentString))
+
+            var tempVal = await commentsArray.StringFromCommentsArray()
+                .GenerateTextToSuggest(TypedContentString.New(contentString));
+
+            var completionField = tempVal
                 .GenerateSearchAsYouTypeArray()
                 .WrapCompletionField();
 

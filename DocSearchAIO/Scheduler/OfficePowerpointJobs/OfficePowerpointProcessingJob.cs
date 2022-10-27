@@ -217,12 +217,12 @@ public static class PowerpointProcessingHelper
 
             var elementsHash = await (
                 StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
+            
+            var tempVal =
+            await commentsArray.StringFromCommentsArray().GenerateTextToSuggest(TypedContentString.New(contentString));
 
-            static CompletionField CompletionField(IEnumerable<OfficeDocumentComment> commentsArray,
-                string contentString) =>
-                commentsArray
-                    .StringFromCommentsArray()
-                    .GenerateTextToSuggest(TypedContentString.New(contentString))
+            static CompletionField CompletionField(TypedSuggestString suggestString) =>
+                suggestString
                     .GenerateSearchAsYouTypeArray()
                     .WrapCompletionField();
 
@@ -230,7 +230,7 @@ public static class PowerpointProcessingHelper
             var returnValue = new PowerpointElasticDocument
             {
                 Category = category,
-                CompletionContent = CompletionField(commentsArray, contentString),
+                CompletionContent = CompletionField(tempVal),
                 Content = contentString,
                 ContentHash = elementsHash.Value,
                 ContentStatus = contentStatus,

@@ -35,7 +35,7 @@ public class StaticHelperTest
     }
 
     [Fact]
-    public void Build_a_content_and_comment_string_for_suggest_with_replaces()
+    public async Task Build_a_content_and_comment_string_for_suggest_with_replaces()
     {
         const string testStringContent = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
         const string testStringComment = "T§h$e &q+u/i?ck \\b[r=o<wn fo>x jump´s ove'r the l@a{z€y do!§g}";
@@ -47,8 +47,8 @@ public class StaticHelperTest
         var expectedString =
             "The quick brown fox jumps over the lazy dog The quick brown fox jumps over the lazy dog";
 
-
-        expectedString.Should().Match(result.Value);
+        var asExpectedTask = (await result).Value;
+        expectedString.Should().Match(asExpectedTask);
     }
 
     [Fact]

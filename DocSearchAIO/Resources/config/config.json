@@ -5,7 +5,7 @@
     ],
     "elasticUser": "elastic",
     "elasticPassword": "8USt79lz2UEkPs3q",
-    "scanPath": "d:\\bva",
+    "scanPath": "c:\\Users\\lueckl\\Projekte\\SVN\\BVA\\",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",
@@ -68,7 +68,7 @@
         "indexSuffix": "powerpoint"
       },
       "WordElasticDocument": {
-        "active": true,
+        "active": false,
         "startDelay": 1,
         "runsEvery": 3600,
         "parallelism": 10,
