@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO.Packaging;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
@@ -97,6 +98,7 @@ public class OfficeWordProcessingJob : IJob
                         Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
                     };
                     var sw = Stopwatch.StartNew();
+                    
                     await TypedFilePathString.New(_cfg.ScanPath)
                         .CreateSource(configEntry.FileExtension)
                         .UseExcludeFileFilter(configEntry.ExcludeFilter)
@@ -141,6 +143,7 @@ public class OfficeWordProcessingJob : IJob
 
 internal static class WordProcessingHelper
 {
+    
     public static Source<Option<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
         this Source<string, NotUsed> source,
         SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
@@ -156,30 +159,39 @@ internal static class WordProcessingHelper
     {
         try
         {
-            var wdOpt = WordprocessingDocument.Open(currentFile, false);
+            (Option<MainDocumentPart> MainDocumentPartOpt, PackageProperties FInfo, WordprocessingDocument Document) docTuple = await Task.Run(() =>
+            {
+                var wdOpt = WordprocessingDocument.Open(currentFile, false);
+                Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
+                var fInfo = wdOpt.PackageProperties;
+                return (mainDocumentPartOpt, fInfo, wdOpt);
+            });
 
-            Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
-            if (mainDocumentPartOpt.IsNone)
+
+            if (docTuple.MainDocumentPartOpt.IsNone)
                 return Option<WordElasticDocument>.None;
-
-            var mainDocumentPart = mainDocumentPartOpt.ValueUnsafe();
-            var fInfo = wdOpt.PackageProperties;
-            var category = fInfo.Category.IfNull(string.Empty);
-            var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
-            var creator = fInfo.Creator.IfNull(string.Empty);
-            var description = fInfo.Description.IfNull(string.Empty);
-            var identifier = fInfo.Identifier.IfNull(string.Empty);
-            var keywords = fInfo.Keywords.IfNull(string.Empty);
-            var language = fInfo.Language.IfNull(string.Empty);
-            var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
-            var revision = fInfo.Revision.IfNull(string.Empty);
-            var subject = fInfo.Subject.IfNull(string.Empty);
-            var title = fInfo.Title.IfNull(string.Empty);
-            var version = fInfo.Version.IfNull(string.Empty);
-            var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
+            var mainDocumentPart = docTuple.MainDocumentPartOpt.ValueUnsafe();
+            
+            
+            var category = docTuple.FInfo.Category.IfNull(string.Empty);
+            var created = docTuple.FInfo.Created.IfNone(new DateTime(1970, 1, 1));
+            var creator = docTuple.FInfo.Creator.IfNull(string.Empty);
+            var description = docTuple.FInfo.Description.IfNull(string.Empty);
+            var identifier = docTuple.FInfo.Identifier.IfNull(string.Empty);
+            var keywords = docTuple.FInfo.Keywords.IfNull(string.Empty);
+            var language = docTuple.FInfo.Language.IfNull(string.Empty);
+            var modified = docTuple.FInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+            var revision = docTuple.FInfo.Revision.IfNull(string.Empty);
+            var subject = docTuple.FInfo.Subject.IfNull(string.Empty);
+            var title = docTuple.FInfo.Title.IfNull(string.Empty);
+            var version = docTuple.FInfo.Version.IfNull(string.Empty);
+            var contentStatus = docTuple.FInfo.ContentStatus.IfNull(string.Empty);
             const string contentType = "docx";
-            var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
-            var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
+            var lastPrinted = docTuple.FInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+            var lastModifiedBy = docTuple.FInfo.LastModifiedBy.IfNull(string.Empty);
+            
+            
+            
             var uriPath = currentFile
                 .Replace(configurationObject.ScanPath,
                     configurationObject.UriReplacement)
@@ -225,6 +237,9 @@ internal static class WordProcessingHelper
 
             OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
 
+            docTuple.Document.Close();
+            docTuple.Document.Dispose();
+            
             var toHash = new ElementsToHash(category, created, contentString,
                 creator,
                 description, identifier, keywords, language, modified, revision,
@@ -270,6 +285,7 @@ internal static class WordProcessingHelper
                 UriFilePath = uriPath,
                 Comments = commentsArray
             };
+            
 
             return returnValue;
         }

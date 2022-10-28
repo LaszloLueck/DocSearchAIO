@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO.Packaging;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
@@ -160,30 +161,37 @@ public static class PowerpointProcessingHelper
     {
         try
         {
-            var wdOpt = PresentationDocument.Open(currentFile, false);
-
-            Option<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
-            if (presentationPartOpt.IsNone)
+            (Option<PresentationPart> PresentationPartOpt, PackageProperties FInfo, PresentationDocument Document)
+                docTuple = await Task.Run(
+                    () =>
+                    {
+                        var wdOpt = PresentationDocument.Open(currentFile, false);
+                        Option<PresentationPart> presentationPartOpt = wdOpt.PresentationPart!;
+                        var fInfo = wdOpt.PackageProperties;
+                        return (presentationPartOpt, fInfo, wdOpt);
+                    });
+            
+            
+            if (docTuple.PresentationPartOpt.IsNone)
                 return Option<PowerpointElasticDocument>.None;
 
-            var presentationPart = presentationPartOpt.ValueUnsafe();
-            var fInfo = wdOpt.PackageProperties;
-            var category = fInfo.Category.IfNull(string.Empty);
-            var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
-            var creator = fInfo.Creator.IfNull(string.Empty);
-            var description = fInfo.Description.IfNull(string.Empty);
-            var identifier = fInfo.Identifier.IfNull(string.Empty);
-            var keywords = fInfo.Keywords.IfNull(string.Empty);
-            var language = fInfo.Language.IfNull(string.Empty);
-            var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
-            var revision = fInfo.Revision.IfNull(string.Empty);
-            var subject = fInfo.Subject.IfNull(string.Empty);
-            var title = fInfo.Title.IfNull(string.Empty);
-            var version = fInfo.Version.IfNull(string.Empty);
-            var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
+            var presentationPart = docTuple.PresentationPartOpt.ValueUnsafe();
+            var category = docTuple.FInfo.Category.IfNull(string.Empty);
+            var created = docTuple.FInfo.Created.IfNone(new DateTime(1970, 1, 1));
+            var creator = docTuple.FInfo.Creator.IfNull(string.Empty);
+            var description = docTuple.FInfo.Description.IfNull(string.Empty);
+            var identifier = docTuple.FInfo.Identifier.IfNull(string.Empty);
+            var keywords = docTuple.FInfo.Keywords.IfNull(string.Empty);
+            var language = docTuple.FInfo.Language.IfNull(string.Empty);
+            var modified = docTuple.FInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+            var revision = docTuple.FInfo.Revision.IfNull(string.Empty);
+            var subject = docTuple.FInfo.Subject.IfNull(string.Empty);
+            var title = docTuple.FInfo.Title.IfNull(string.Empty);
+            var version = docTuple.FInfo.Version.IfNull(string.Empty);
+            var contentStatus = docTuple.FInfo.ContentStatus.IfNull(string.Empty);
             const string contentType = "pptx";
-            var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
-            var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
+            var lastPrinted = docTuple.FInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+            var lastModifiedBy = docTuple.FInfo.LastModifiedBy.IfNull(string.Empty);
             var uriPath = currentFile
                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                 .Replace(@"\", "/");
@@ -206,6 +214,8 @@ public static class PowerpointProcessingHelper
             };
 
             var contentTask = await presentationPart.Elements().ContentString();
+            docTuple.Document.Close();
+            docTuple.Document.Dispose();
 
             var contentString = contentTask
                 .ReplaceSpecialStrings(toReplaced);

@@ -18,6 +18,7 @@ using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
+using Array = System.Array;
 
 namespace DocSearchAIO.Scheduler.PdfJobs;
 
@@ -156,34 +157,31 @@ internal static class PdfProcessingHelper
         try
         {
             var pdfReader = new PdfReader(fileName);
-            using var document = new PdfDocument(pdfReader);
-            var info = document.GetDocumentInfo();
-            var pdfPages = new ConcurrentBag<PdfPageObject>();
-
-            var toProcess = new ConcurrentBag<PdfPage>();
 
 
-            for (var i = 1; i <= document.GetNumberOfPages(); i++)
-            {
-                var pdfPage = document.GetPage(i);
-                toProcess.Add(pdfPage);
-            }
+            (ConcurrentBag<PdfPageObject> PdfPages, string Creator, string[] Keywords, string Subject, string Title)
+                pdfObject = await Task.Run(() =>
+                {
+                    using var document = new PdfDocument(pdfReader);
+                    var info = document.GetDocumentInfo();
+                    var tmpPages = new ConcurrentBag<PdfPageObject>();
+                    for (var i = 1; i <= document.GetNumberOfPages(); i++)
+                    {
+                        var pdfPage = document.GetPage(i);
+                        tmpPages.Add(new PdfPageObject(
+                            PdfTextExtractor.GetTextFromPage(pdfPage, new SimpleTextExtractionStrategy())));
+                    }
 
-            toProcess
-                .AsParallel()
-                .ForEach(page =>
-                    pdfPages.Add(new PdfPageObject(
-                        PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy()))));
+                    var creator = info.GetCreator();
+                    var keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
+                        ? Array.Empty<string>()
+                        : info.GetKeywords().Split(" ");
+                    var subject = info.GetSubject();
+                    var title = info.GetTitle();
+                    document.Close();
 
-            var creator = info.GetCreator();
-            var keywords = info.GetKeywords() == null || info.GetKeywords().Length == 0
-                ? System.Array.Empty<string>()
-                : info.GetKeywords().Split(" ");
-            var subject = info.GetSubject();
-            var title = info.GetTitle();
-
-            document.Close();
-
+                    return (tmpPages, creator, keywords, subject, title);
+                });
             var uriPath = fileName
                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                 .Replace(@"\", "/");
@@ -194,25 +192,25 @@ internal static class PdfProcessingHelper
             var elasticDoc = new PdfElasticDocument
             {
                 OriginalFilePath = fileName,
-                PageCount = pdfPages.Count,
-                Creator = creator,
-                Keywords = keywords,
-                Subject = subject,
-                Title = title,
+                PageCount = pdfObject.PdfPages.Count,
+                Creator = pdfObject.Creator,
+                Keywords = pdfObject.Keywords,
+                Subject = pdfObject.Subject,
+                Title = pdfObject.Title,
                 ProcessTime = DateTime.Now,
                 Id = fileNameHash.Value,
                 UriFilePath = uriPath,
                 ContentType = "pdf"
             };
 
-            var contentString = pdfPages.Map(p => p.PageText).Join(" ");
-            var suggestedText = Regex.Replace(contentString, "[^a-zA-Zäöüß]", " ");
+            var contentString = await Task.Run(() => pdfObject.PdfPages.Map(p => p.PageText).Join(" "));
+            var suggestedText = await Task.Run(() => Regex.Replace(contentString, "[^a-zA-Zäöüß]", " "));
             var searchAsYouTypeContent = suggestedText
-                .ToLower()
-                .Split(" ")
-                .Distinct()
-                .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
-                .Filter(d => d.Length > 2);
+                    .ToLower()
+                    .Split(" ")
+                    .Distinct()
+                    .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
+                    .Filter(d => d.Length > 2);
             var completionField = new CompletionField {Input = searchAsYouTypeContent};
             elasticDoc.CompletionContent = completionField;
 

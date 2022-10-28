@@ -38,7 +38,7 @@ public class PdfCleanupJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Task.FromResult(async () =>
+        await Task.Run(async () =>
         {
             _jobStateMemoryCache.SetCacheEntry(JobState.Running);
             if (!_cleanUpEntry.Active)

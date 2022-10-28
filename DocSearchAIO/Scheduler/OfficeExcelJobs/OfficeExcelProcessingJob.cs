@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Packaging;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
@@ -156,32 +157,40 @@ internal static class ExcelProcessingHelper
     {
         try
         {
-            var wdOpt = SpreadsheetDocument.Open(currentFile, false);
-            Option<WorkbookPart> workBookPartOpt = wdOpt.WorkbookPart!;
 
-            if (workBookPartOpt.IsNone)
-            {
+            (Option<WorkbookPart> WorkbookOption, PackageProperties FInfo, SpreadsheetDocument Document) docTuple =
+                await Task.Run(() =>
+                {
+                    var wdOpt = SpreadsheetDocument.Open(currentFile, false);
+                    Option<WorkbookPart> workBookPartOpt = wdOpt.WorkbookPart!;
+                    var fInfo = wdOpt.PackageProperties;
+
+                    return (workBookPartOpt, fInfo, wdOpt);
+                });
+            
+
+            
+            if (docTuple.WorkbookOption.IsNone)
                 return Option<ExcelElasticDocument>.None;
-            }
-
-            var mainWorkbookPart = workBookPartOpt.ValueUnsafe();
-            var fInfo = wdOpt.PackageProperties;
-            var category = fInfo.Category.IfNull(string.Empty);
-            var created = fInfo.Created.IfNone(new DateTime(1970, 1, 1));
-            var creator = fInfo.Creator.IfNull(string.Empty);
-            var description = fInfo.Description.IfNull(string.Empty);
-            var identifier = fInfo.Identifier.IfNull(string.Empty);
-            var keywords = fInfo.Keywords.IfNull(string.Empty);
-            var language = fInfo.Language.IfNull(string.Empty);
-            var modified = fInfo.Modified.IfNone(new DateTime(1970, 1, 1));
-            var revision = fInfo.Revision.IfNull(string.Empty);
-            var subject = fInfo.Subject.IfNull(string.Empty);
-            var title = fInfo.Title.IfNull(string.Empty);
-            var version = fInfo.Version.IfNull(string.Empty);
-            var contentStatus = fInfo.ContentStatus.IfNull(string.Empty);
+            var mainWorkbookPart = docTuple.WorkbookOption.ValueUnsafe();
+            
+            
+            var category = docTuple.FInfo.Category.IfNull(string.Empty);
+            var created = docTuple.FInfo.Created.IfNone(new DateTime(1970, 1, 1));
+            var creator = docTuple.FInfo.Creator.IfNull(string.Empty);
+            var description = docTuple.FInfo.Description.IfNull(string.Empty);
+            var identifier = docTuple.FInfo.Identifier.IfNull(string.Empty);
+            var keywords = docTuple.FInfo.Keywords.IfNull(string.Empty);
+            var language = docTuple.FInfo.Language.IfNull(string.Empty);
+            var modified = docTuple.FInfo.Modified.IfNone(new DateTime(1970, 1, 1));
+            var revision = docTuple.FInfo.Revision.IfNull(string.Empty);
+            var subject = docTuple.FInfo.Subject.IfNull(string.Empty);
+            var title = docTuple.FInfo.Title.IfNull(string.Empty);
+            var version = docTuple.FInfo.Version.IfNull(string.Empty);
+            var contentStatus = docTuple.FInfo.ContentStatus.IfNull(string.Empty);
             const string contentType = "xlsx";
-            var lastPrinted = fInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
-            var lastModifiedBy = fInfo.LastModifiedBy.IfNull(string.Empty);
+            var lastPrinted = docTuple.FInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
+            var lastModifiedBy = docTuple.FInfo.LastModifiedBy.IfNull(string.Empty);
             var uriPath = currentFile
                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                 .Replace(@"\", "/");
@@ -207,13 +216,10 @@ internal static class ExcelProcessingHelper
                 ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentString()).ReplaceSpecialStrings(
                     toReplaced)
                 : string.Empty;
-
-            // var contentString = mainWorkbookPart
-            //     .SharedStringTablePart
-            //     .ResolveNullable(string.Empty,
-            //         (v, _) =>
-            //             Elements(v).ContentString().ReplaceSpecialStrings(toReplaced));
-
+            
+            docTuple.Document.Close();
+            docTuple.Document.Dispose();
+            
             var toHash = new ElementsToHash(category, created, contentString, creator,
                 description, identifier, keywords, language, modified, revision,
                 subject, title, version, contentStatus, contentType, lastPrinted,

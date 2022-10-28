@@ -111,7 +111,7 @@ public static class StaticHelpers
     
     
 
-    private static readonly Func<string, Task<string>> Repl = input => Task.FromResult(
+    private static readonly Func<string, Task<string>> Repl = input => Task.Run(() =>
         input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat());
 
     [Pure]
@@ -187,14 +187,14 @@ public static class StaticHelpers
     [Pure]
     public static async Task<string> ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
     {
-        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceParallel(32);
+        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceSerial();
         return resultTasks.Join(" ");
     }
 
     [Pure]
     private static async Task<string> TextFromParagraph(OpenXmlElement paragraph)
     {
-        var resultTask = await (await ExtractTextFromElementAsync(paragraph.ChildElements)).SequenceParallel(16);
+        var resultTask = await (await ExtractTextFromElementAsync(paragraph.ChildElements)).SequenceSerial();
         return resultTask.Join(" ");
     }
 
@@ -202,7 +202,7 @@ public static class StaticHelpers
     [Pure]
     private static async Task<IEnumerable<Task<string>>> ExtractTextFromElementAsync(IEnumerable<OpenXmlElement> list)
     {
-        return await Task.FromResult(
+        return await Task.Run(() =>
                 list.Map(async element =>
                 {
                     return element switch
@@ -221,6 +221,29 @@ public static class StaticHelpers
                     };
                 })
             );
+    }
+
+    [Pure]
+    public static Source<TypedFilePathString, NotUsed> CreateSource(this IEnumerable<TypedFilePathString> paths)
+    {
+        return Source.From(paths);
+    } 
+
+    [Pure]
+    public static IEnumerable<TypedFilePathString> CreateFilePaths(this TypedFilePathString path, string fileExtension)
+    {
+        return Directory
+            .GetFiles(path.Value, fileExtension, SearchOption.AllDirectories)
+            .Map(d => TypedFilePathString.New(d));
+    }
+
+    [Pure]
+    public static IEnumerable<TypedFilePathString> UseExcludeFilter(this IEnumerable<TypedFilePathString> source, string excludeFilter)
+    {
+        if (excludeFilter.Length == 0)
+            return source;
+
+        return source.Filter(d => !d.Value.Contains(excludeFilter));
     }
 
     [Pure]
