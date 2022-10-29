@@ -7,7 +7,7 @@ import {LocalStorageDataset} from "../interfaces/LocalStorageDataset";
   name: 'suggestOrder'
 })
 export class SuggestOrderPipe implements PipeTransform {
-  transform(suggests: SuggestResponseDetail[], searchTerm: string, localStorageDataset: LocalStorageDataset): SuggestResponseDetail[] {
+  transform(suggests: SuggestResponseDetail[], searchTerm: string): SuggestResponseDetail[] {
     if(suggests.length > 1 && suggests.map(s => s.label).includes(searchTerm) && suggests.findIndex(d => d.label === searchTerm) > 0){
       const elementPlace = suggests.findIndex(d => d.label === searchTerm);
       const element = suggests[elementPlace];

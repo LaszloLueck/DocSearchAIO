@@ -5,7 +5,7 @@
         <button type="button" id="suggestitem_{{i}}" (mouseover)="prepareHoverOver($event)"
            (mouseleave)="prepareHoverOut($event)" (click)="setToSearch(suggest.label)"
            class="list-group-item" [style]="setStyle(i)"
-           *ngFor="let suggest of responses.suggests | suggestOrder: responses.searchPhrase: localStorageDataset; let i=index;">
+           *ngFor="let suggest of responses.suggests | suggestOrder: responses.searchPhrase; let i=index;">
           {{suggest.label}}
         </button>
       </ng-container>

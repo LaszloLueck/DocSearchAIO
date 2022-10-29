@@ -17,7 +17,7 @@ import { NgbdAlertSelfclosing} from "./alerts/alert-selfclosing";
 import { OffcanvasComponent } from './components/offcanvas/offcanvas.component';
 import { SuggestionComponent } from './components/suggestion/suggestion.component';
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
-import {SuggestOrderPipe} from "./pipes/SuggestOrderPipe";
+import {SuggestOrderPipe} from "./pipes/SuggestOrder.pipe";
 import {LocalStorageService} from "../services/LocalStorageService";
 
 @NgModule({
