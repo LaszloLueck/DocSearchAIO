@@ -53,7 +53,6 @@
   <ItemGroup>
     <Folder Include="ClientApp\src\app\admin\actions\services" />
     <Folder Include="ClientApp\src\app\admin\statistics\components" />
-    <Folder Include="ClientApp\src\app\admin\statistics\pipes" />
     <Folder Include="ClientApp\src\app\interfaces" />
     <Folder Include="wwwroot" />
   </ItemGroup>
