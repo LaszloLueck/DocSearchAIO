@@ -2,6 +2,7 @@ import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {isLeft, isRight, unwrapEither} from "../../../generic/either"
 import {ConfigApiService} from "./config-api.service";
 import {asyncData, asyncError} from "../../../generic/helper";
+import {Observable} from "rxjs";
 
 describe('ConfigApiServiceService', () => {
   let service: ConfigApiService;
@@ -74,6 +75,22 @@ describe('ConfigApiServiceService', () => {
 
   });
 
+  it('should return a correct result when the dataset is stored', (done: DoneFn) => {
+    httpClientSpy
+      .post
+      .and
+      .returnValue(asyncData(true));
+
+    service
+      .setConfiguration(JSON.parse(responseBody))
+      .subscribe({
+        next: trueResult => {
+          expect(trueResult).toBeTruthy();
+          done()
+        }
+      });
+
+  });
 
   const responseBody: string = `{
   "scanPath": "/Users/laszlo/Documents/bva/02_Chefdesign",
