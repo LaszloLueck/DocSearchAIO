@@ -282,7 +282,7 @@ internal static class ExcelProcessingHelper
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()
         {
-            Comment = comment.CommentText.ResolveNullable(string.Empty, (v, _) => v.InnerText)
+            Comment = comment.CommentText?.InnerText ?? string.Empty
         };
 
     private static IEnumerable<OfficeDocumentComment>
