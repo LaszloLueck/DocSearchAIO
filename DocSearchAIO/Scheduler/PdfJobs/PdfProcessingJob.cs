@@ -156,12 +156,12 @@ internal static class PdfProcessingHelper
     {
         try
         {
-            var pdfReader = new PdfReader(fileName);
 
 
             (ConcurrentBag<PdfPageObject> PdfPages, string Creator, string[] Keywords, string Subject, string Title)
                 pdfObject = await Task.Run(() =>
                 {
+                    var pdfReader = new PdfReader(fileName);
                     using var document = new PdfDocument(pdfReader);
                     var info = document.GetDocumentInfo();
                     var tmpPages = new ConcurrentBag<PdfPageObject>();

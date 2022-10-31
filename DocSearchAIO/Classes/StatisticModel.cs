@@ -28,6 +28,12 @@ public abstract class StatisticModel
         _logger?.LogInformation("load statistics information from {FilePath} for model {DerivedModelName}",
             filePath,
             DerivedModelName);
+        if (!File.Exists(filePath))
+        {
+            _logger?.LogWarning("statistic file <{FilePath}> does not exist. Lets create them", filePath);
+            File.Create(filePath).Close();
+        }
+        
         var content = File.ReadAllText(filePath);
         if (!content.Any())
             return Option<ProcessingJobStatistic>.None;
@@ -44,7 +50,7 @@ public abstract class StatisticModel
     }
 }
 
-public class StatisticModelWord : StatisticModel
+public sealed class StatisticModelWord : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
@@ -60,7 +66,7 @@ public class StatisticModelWord : StatisticModel
     }
 }
 
-public class StatisticModelPowerpoint : StatisticModel
+public sealed class StatisticModelPowerpoint : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
@@ -76,7 +82,7 @@ public class StatisticModelPowerpoint : StatisticModel
     }
 }
 
-public class StatisticModelPdf : StatisticModel
+public sealed class StatisticModelPdf : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
@@ -92,7 +98,7 @@ public class StatisticModelPdf : StatisticModel
     }
 }
 
-public class StatisticModelExcel : StatisticModel
+public sealed class StatisticModelExcel : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
@@ -106,4 +112,34 @@ public class StatisticModelExcel : StatisticModel
     {
         StatisticsDirectory = statisticsDirectory;
     }
+}
+
+public sealed class StatisticModelMsg : StatisticModel
+{
+    protected override string DerivedModelName => GetType().Name;
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
+    
+    public StatisticModelMsg(){}
+
+    public StatisticModelMsg(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
+        loggerFactory)
+    {
+        StatisticsDirectory = statisticsDirectory;
+    }
+}
+
+public sealed class StatisticModelEml : StatisticModel
+{
+    protected override string DerivedModelName => GetType().Name;
+
+    protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
+    
+    public StatisticModelEml(){}
+
+    public StatisticModelEml(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
+        loggerFactory)
+    {
+        StatisticsDirectory = statisticsDirectory;
+    }
+    
 }

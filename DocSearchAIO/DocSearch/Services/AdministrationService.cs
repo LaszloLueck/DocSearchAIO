@@ -1,4 +1,3 @@
-using System.Text.Json;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using DocSearchAIO.DocSearch.ServiceHooks;
@@ -98,7 +97,7 @@ public class AdministrationService : IAdministrationService
                             await scheduler.PauseTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
-                                triggerKey, currentState);
+                                triggerKey.Name, currentState);
                             return currentState == TriggerState.Paused;
                         },
                         async () => await Task.FromResult(false)
@@ -158,7 +157,7 @@ public class AdministrationService : IAdministrationService
                             await scheduler.ResumeTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
-                                triggerKey, currentState);
+                                triggerKey.Name, currentState);
                             return currentState == TriggerState.Normal;
                         },
                         async () => await Task.FromResult(false)

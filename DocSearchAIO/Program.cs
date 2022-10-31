@@ -1,5 +1,6 @@
 global using static LanguageExt.Prelude;
 using Akka.Actor;
+using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Services;

@@ -10,16 +10,12 @@ public static class StatisticUtilitiesProxy
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
             Seq<(ProcessorBase, Func<StatisticModel>)>>
         AsIEnumerable = (loggerFactory, statisticsPath) => Seq<(ProcessorBase, Func<StatisticModel>)>()
-            .Add((
-                new ProcessorBaseWord(),
-                () => new StatisticModelWord(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBasePowerpoint(),
-                () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)))
-            .Add((
-                new ProcessorBasePdf(),
-                () => new StatisticModelPdf(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBaseExcel(),
-                () => new StatisticModelExcel(loggerFactory, statisticsPath)));
+            .Add((new ProcessorBaseWord(), () => new StatisticModelWord(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBasePowerpoint(), () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBasePdf(), () => new StatisticModelPdf(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBaseExcel(), () => new StatisticModelExcel(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBaseMsg(), () => new StatisticModelMsg(loggerFactory, statisticsPath)))
+            .Add((new ProcessorBaseEml(), () => new StatisticModelEml(loggerFactory, statisticsPath)));
 
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelWord>>
@@ -41,6 +37,16 @@ public static class StatisticUtilitiesProxy
             StatisticUtilities<StatisticModelExcel>>
         ExcelStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
             new StatisticUtilities<StatisticModelExcel>(loggerFactory, statisticDirectory, statisticsFile);
+
+    public static readonly
+        Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelMsg>>
+        MsgStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelMsg>(loggerFactory, statisticDirectory, statisticsFile);
+
+    public static readonly
+        Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelEml>>
+        EmlStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelEml>(loggerFactory, statisticDirectory, statisticsFile);
 }
 
 public class StatisticUtilities<TModel> where TModel : StatisticModel
@@ -66,7 +72,7 @@ public class StatisticUtilities<TModel> where TModel : StatisticModel
 
     private void _checkAndCreateStatisticsDirectory(TypedDirectoryPathString directoryPath)
     {
-        _logger.LogInformation("check if directory {@DirectoryPath} exists", directoryPath);
+        _logger.LogInformation("check if directory {DirectoryPath} exists", directoryPath.Value);
         if (!Directory.Exists(directoryPath.Value))
             Directory.CreateDirectory(directoryPath.Value);
     }
