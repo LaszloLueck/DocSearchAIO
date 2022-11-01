@@ -191,8 +191,7 @@ internal static class MsgProcessingHelper
                 .ReplaceSpecialStrings(ToReplaced);
                 // .Unescape();
 
-
-            var searchAsYouTypeContent = cleanContent
+                var searchAsYouTypeContent = cleanContent
                 .ToLower()
                 .Split(" ")
                 .Distinct()
@@ -204,7 +203,7 @@ internal static class MsgProcessingHelper
             var contentHash =
                 (await StaticHelpers.CreateHashString(TypedHashedInputString.New(listElementsToHash.Concat()))).Value;
 
-            var elasticDoc = new MsgElasticDocument
+            return new MsgElasticDocument
             {
                 OriginalFilePath = fileName,
                 ContentType = "msg",
@@ -218,7 +217,6 @@ internal static class MsgProcessingHelper
                 ProcessTime = DateTime.Now,
                 ContentHash = contentHash
             };
-            return Some(elasticDoc);
         }
         catch (Exception exception)
         {
