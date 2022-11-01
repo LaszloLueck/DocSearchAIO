@@ -152,6 +152,11 @@ internal static class WordProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
     }
+    
+    private static readonly Lst<(string, string)> ToReplaced = List(
+        (@"\r\n?|\n", ""),
+        ("[ ]{2,}", " ")
+    );
 
     private static async Task<Option<WordElasticDocument>> ProcessWordDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelWord> statisticUtilities,
@@ -224,16 +229,10 @@ internal static class WordProcessingHelper
                 });
             }
 
-            var toReplaced = new List<(string, string)>()
-            {
-                (@"\r\n?|\n", ""),
-                ("[ ]{2,}", " ")
-            };
-
             var contentTask = await mainDocumentPart.Elements().ContentString();
             
             var contentString = contentTask
-                .ReplaceSpecialStrings(toReplaced);
+                .ReplaceSpecialStrings(ToReplaced);
 
             OfficeDocumentComment[] commentsArray = CommentArray(mainDocumentPart).ToArray();
 

@@ -1,3 +1,4 @@
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DocSearchAIO.Classes;
@@ -5,6 +6,7 @@ using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Wordprocessing;
 using FluentAssertions;
+using LanguageExt;
 using Xunit;
 
 namespace DocSearchAIO_Test;
@@ -93,11 +95,10 @@ public class StaticHelperTest
     {
         var testString = "The quick brown fox jumps over the lazy dog";
 
-        var listToReplace = new List<(string, string)>
-        {
+        var listToReplace = Prelude.List(
             ("o", ""),
             ("u", "")
-        };
+        );
 
         var result = testString.ReplaceSpecialStrings(listToReplace);
         "The qick brwn fx jmps ver the lazy dg".Should().Match(result);

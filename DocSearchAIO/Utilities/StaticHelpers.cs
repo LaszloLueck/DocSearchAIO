@@ -256,15 +256,13 @@ public static class StaticHelpers
     }
 
     [Pure]
-    public static string ReplaceSpecialStrings(this string input, IList<(string, string)> list)
+    public static string ReplaceSpecialStrings(this string input, Lst<(string, string)> list)
     {
-        while (true)
+        list.ForEach(tuple =>
         {
-            if (!list.Any()) return input;
-
-            input = Regex.Replace(input, list[0].Item1, list[0].Item2);
-            list.RemoveAt(0);
-        }
+            input = Regex.Replace(input, tuple.Item1, tuple.Item2);
+        });
+        return input;
     }
 
     [Pure]

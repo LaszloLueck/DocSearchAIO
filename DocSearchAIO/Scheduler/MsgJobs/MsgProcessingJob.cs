@@ -33,6 +33,7 @@ public class MsgProcessingJob : IJob
     private readonly JobStateMemoryCache<MemoryCacheModelMsg> _jobStateMemoryCache;
     private readonly IElasticUtilities _elasticUtilities;
 
+
     public MsgProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
         IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities,
         IElasticUtilities elasticUtilities)
@@ -94,7 +95,7 @@ public class MsgProcessingJob : IJob
                         };
 
                         var sw = Stopwatch.StartNew();
-
+                        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                         await TypedFilePathString.New(_cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
@@ -146,6 +147,14 @@ internal static class MsgProcessingHelper
             f => ProcessMsgDocument(f, configurationObject, statisticUtilities, logger));
     }
 
+
+    private static readonly Lst<(string, string)> ToReplaced = List(
+        ("&nbsp;", " "),
+        (@"[^a-zA-Zäöüß@.0-9]", " "),
+        (Environment.NewLine, " "),
+        ("[ ]{2,}", " ")
+    );
+
     private static string Unescape(this string value) => Regex.Unescape(value);
 
     private static async Task<Option<MsgElasticDocument>> ProcessMsgDocument(this string fileName,
@@ -154,15 +163,16 @@ internal static class MsgProcessingHelper
     {
         try
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            (Either<string, string> Content, string Title, string Id, string Creator, IEnumerable<string> recipients)
+            (string Content, string Title, string Id, string Creator, IEnumerable<string>
+                recipients)
                 resultSet =
                     await Task.Run(() =>
                     {
-                        var msgReader = new Storage.Message(fileName);
-                        var content = msgReader.BodyHtml.IsNullOrWhiteSpace()
-                            ? Either<string, string>.Left(msgReader.BodyText)
-                            : Either<string, string>.Right(msgReader.BodyHtml ?? "");
+                        using var msgReader = new Storage.Message(fileName);
+                        // var content = msgReader.BodyText.IsNullOrWhiteSpace()
+                        //     ? Either<string, string>.Left(msgReader.BodyText ?? "")
+                        //     : Either<string, string>.Right(msgReader.BodyText ?? "");
+                        var content = msgReader.BodyText ?? "";
                         var title = msgReader.Subject;
                         var id = msgReader.Id ?? Guid.NewGuid().ToString();
                         var creator = msgReader.Sender.Email;
@@ -172,28 +182,18 @@ internal static class MsgProcessingHelper
                         return (content, title, id, creator, receiver);
                     });
 
+
             var uriPath = fileName
                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
                 .Replace(@"\", "/");
 
-            var toReplaced = new List<(string, string)>()
-            {
-                ("&nbsp;", " "),
-                (@"[^a-zA-Zäöüß@.0-9]", " "),
-                (Environment.NewLine, " "),
-                ("[ ]{2,}", " ")
-            };
+            var fileNameHash = await StaticHelpers.CreateHashString(TypedHashedInputString.New(fileName));
 
-            var cleanContentOpt = await resultSet
-                .Content.Match(
-                    Right: html => html.ExtractTextFromHtml(logger),
-                    Left: text => Task.FromResult(Some(text))
-                    );
+            var cleanContent = resultSet
+                .Content;
+                // .ReplaceSpecialStrings(ToReplaced)
+                // .Unescape();
 
-            var cleanContent = cleanContentOpt.Match(
-                Some: t => t.ReplaceSpecialStrings(toReplaced),
-                None: () => ""
-            );
 
             var searchAsYouTypeContent = cleanContent
                 .ToLower()
@@ -203,23 +203,25 @@ internal static class MsgProcessingHelper
                 .Filter(d => d.Length() > 2);
             var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
+            var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "pdf");
+            var contentHash =
+                (await StaticHelpers.CreateHashString(TypedHashedInputString.New(listElementsToHash.Concat()))).Value;
+
             var elasticDoc = new MsgElasticDocument
             {
                 OriginalFilePath = fileName,
                 ContentType = "msg",
                 Content = cleanContent,
                 Title = resultSet.Title,
-                Id = resultSet.Id,
+                Id = fileNameHash.Value,
                 UriFilePath = uriPath,
                 Creator = resultSet.Creator,
                 CompletionContent = completionField,
-                Receiver = resultSet.recipients
+                Receiver = resultSet.recipients,
+                ProcessTime = DateTime.Now,
+                ContentHash = contentHash
             };
-
-            // var foo = JsonSerializer.Serialize(elasticDoc);
-            // logger.LogInformation(foo);
-
-            return elasticDoc;
+            return Some(elasticDoc);
         }
         catch (Exception exception)
         {

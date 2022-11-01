@@ -150,6 +150,11 @@ internal static class ExcelProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
     }
+    
+    private static readonly Lst<(string, string)> ToReplaced = List(
+        (@"\r\n?|\n", ""),
+        ("[ ]{2,}", " ")
+    );
 
     private static async Task<Option<ExcelElasticDocument>> ProcessingExcelDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelExcel> statisticUtilities,
@@ -206,15 +211,10 @@ internal static class ExcelProcessingHelper
 
             OfficeDocumentComment[] commentsArray = CommentArray(mainWorkbookPart).ToArray();
 
-            var toReplaced = new List<(string, string)>()
-            {
-                (@"\r\n?|\n", ""),
-                ("[ ]{2,}", " ")
-            };
 
             var contentString = mainWorkbookPart.SharedStringTablePart != null
                 ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentString()).ReplaceSpecialStrings(
-                    toReplaced)
+                    ToReplaced)
                 : string.Empty;
             
             docTuple.Document.Close();

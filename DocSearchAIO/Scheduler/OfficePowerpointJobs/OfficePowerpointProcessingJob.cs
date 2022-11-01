@@ -154,6 +154,11 @@ public static class PowerpointProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
     }
+    
+    private static readonly Lst<(string, string)> ToReplaced = List(
+        (@"\r\n?|\n", ""),
+        ("[ ]{2,}", " ")
+    );
 
     private static async Task<Option<PowerpointElasticDocument>> ProcessPowerpointDocument(string currentFile,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelPowerpoint> statisticUtilities,
@@ -207,18 +212,12 @@ public static class PowerpointProcessingHelper
 
             var commentsArray = CommentArray(presentationPart).ToArray();
 
-            var toReplaced = new List<(string, string)>()
-            {
-                (@"\r\n?|\n", ""),
-                ("[ ]{2,}", " ")
-            };
-
             var contentTask = await presentationPart.Elements().ContentString();
             docTuple.Document.Close();
             docTuple.Document.Dispose();
 
             var contentString = contentTask
-                .ReplaceSpecialStrings(toReplaced);
+                .ReplaceSpecialStrings(ToReplaced);
 
             var toHash = new ElementsToHash(category, created, contentString, creator,
                 description, identifier, keywords, language, modified, revision,
