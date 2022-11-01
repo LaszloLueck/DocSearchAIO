@@ -169,9 +169,6 @@ internal static class MsgProcessingHelper
                     await Task.Run(() =>
                     {
                         using var msgReader = new Storage.Message(fileName);
-                        // var content = msgReader.BodyText.IsNullOrWhiteSpace()
-                        //     ? Either<string, string>.Left(msgReader.BodyText ?? "")
-                        //     : Either<string, string>.Right(msgReader.BodyText ?? "");
                         var content = msgReader.BodyText ?? "";
                         var title = msgReader.Subject;
                         var id = msgReader.Id ?? Guid.NewGuid().ToString();
@@ -190,8 +187,8 @@ internal static class MsgProcessingHelper
             var fileNameHash = await StaticHelpers.CreateHashString(TypedHashedInputString.New(fileName));
 
             var cleanContent = resultSet
-                .Content;
-                // .ReplaceSpecialStrings(ToReplaced)
+                .Content
+                .ReplaceSpecialStrings(ToReplaced);
                 // .Unescape();
 
 
