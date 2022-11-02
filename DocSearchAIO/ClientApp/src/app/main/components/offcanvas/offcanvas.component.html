@@ -39,8 +39,8 @@
         </div>
         <div class="form-check ms-2 mb-2 d-flex align-items-center">
           <input class="form-check-input mb-2 me-2" type="checkbox" value="" id="powerpointFilter"
-                 [(ngModel)] = "localStorageDataSet.filterPowerpoint"
-                 (change) = "clickSaveLocalStorage()"
+                 [(ngModel)]="localStorageDataSet.filterPowerpoint"
+                 (change)="clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.powerpointFilterActive && localStorageDataSet.filterPowerpoint"
                  [disabled]="disableItemWhileCondition(docType.Powerpoint)">
           <img src="assets/images/powerpoint.svg" style="width: 35px" alt="Powerpoint">
@@ -50,8 +50,8 @@
         </div>
         <div class="form-check ms-2 mb-2 d-flex align-items-center">
           <input class="form-check-input mb-2 me-3" type="checkbox" value="" id="pdfFilter"
-                 [(ngModel)] = "localStorageDataSet.filterPdf"
-                 (change)= "clickSaveLocalStorage()"
+                 [(ngModel)]="localStorageDataSet.filterPdf"
+                 (change)="clickSaveLocalStorage()"
                  [checked]="localStorageDataSet.pdfFilterActive && localStorageDataSet.filterPdf"
                  [disabled]="disableItemWhileCondition(docType.Pdf)">
           <img src="assets/images/pdf.svg" style="width: 30px" alt="Pdf">
@@ -59,8 +59,31 @@
             Pdf
           </label>
         </div>
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-3" type="checkbox" value="" id="msgFilter"
+                 [(ngModel)]="localStorageDataSet.filterMsg"
+                 (change)="clickSaveLocalStorage()"
+                 [checked]="localStorageDataSet.msgFilterActive && localStorageDataSet.filterMsg"
+                 [disabled]="disableItemWhileCondition(docType.Msg)">
+          <img src="assets/images/outlook2.svg" style="width: 30px" alt="Msg">
+          <label class="form-check-label ms-2" for="msgFilter">
+            Msg
+          </label>
+        </div>
+        <div class="form-check ms-2 mb-2 d-flex align-items-center">
+          <input class="form-check-input mb-2 me-3" type="checkbox" value="" id="emlFilter"
+                 [(ngModel)]="localStorageDataSet.filterEml"
+                 (change)="clickSaveLocalStorage()"
+                 [checked]="localStorageDataSet.emlFilterActive && localStorageDataSet.filterEml"
+                 [disabled]="disableItemWhileCondition(docType.Eml)">
+          <img src="assets/images/eml.svg" style="width: 30px" alt="Eml">
+          <label class="form-check-label ms-2" for="emlFilter">
+            Eml
+          </label>
+        </div>
       </div>
-      <button class="btn btn-secondary searchButton" (click)="doSearch()"><em class="bi-arrow-clockwise"></em> Aktualisieren
+      <button class="btn btn-secondary searchButton" (click)="doSearch()"><em class="bi-arrow-clockwise"></em>
+        Aktualisieren
       </button>
     </div>
   </div>

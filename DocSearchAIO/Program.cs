@@ -59,16 +59,21 @@ builder.Services.AddSingleton<ISearchSuggestService>(x =>
         builder.Configuration));
 builder.Services.AddSingleton<IDocumentDetailService>(x =>
     new DocumentDetailService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>()));
-builder.Services.AddSingleton<IAdministrationService>(x =>
-    new AdministrationService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration,
-        x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<IMemoryCache>()));
-builder.Services.AddSingleton<ISchedulerStatisticsService>(x =>
-    new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
-builder.Services.AddSingleton<IOptionDialogService>(x =>
-    new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 builder.Services.AddSingleton<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddSingleton<IElasticUtilities>(x =>
     new ElasticUtilities(x.GetRequiredService<ILoggerFactory>(), x.GetRequiredService<IElasticSearchService>()));
+builder.Services.AddSingleton<ISchedulerStatisticsService>(x =>
+    new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
+builder.Services.AddSingleton<IAdministrationService>(x =>
+    new AdministrationService(
+        x.GetRequiredService<ILoggerFactory>(), 
+        builder.Configuration,
+        x.GetRequiredService<IElasticSearchService>(), 
+        x.GetRequiredService<IMemoryCache>(), 
+        x.GetRequiredService<IElasticUtilities>(),
+        x.GetRequiredService<ISchedulerStatisticsService>()));
+builder.Services.AddSingleton<IOptionDialogService>(x =>
+    new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 
 var app = builder.Build();
 

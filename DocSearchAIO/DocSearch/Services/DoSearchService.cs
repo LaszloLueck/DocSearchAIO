@@ -32,7 +32,6 @@ public class DoSearchService : IDoSearchService
         configuration.GetSection("configurationObject").Bind(_configurationObject);
     }
 
-#pragma warning disable S3776
     public async Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest)
     {
         try
@@ -198,5 +197,4 @@ public class DoSearchService : IDoSearchService
                 new SearchStatisticsModel(0, 0));
         }
     }
-#pragma warning restore S3776
 }

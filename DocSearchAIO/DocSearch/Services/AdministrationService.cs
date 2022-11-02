@@ -47,22 +47,22 @@ public class AdministrationService : IAdministrationService
     private readonly ILogger _logger;
     private readonly ConfigurationObject _configurationObject;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly SchedulerStatisticsService _schedulerStatisticsService;
+    private readonly ISchedulerStatisticsService _schedulerStatisticsService;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMemoryCache _memoryCache;
-    private readonly ElasticUtilities _elasticUtilities;
+    private readonly IElasticUtilities _elasticUtilities;
     private readonly MemoryCacheModelProxy _memoryCacheModelProxy;
 
     public AdministrationService(ILoggerFactory loggerFactory,
-        IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache)
+        IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache, IElasticUtilities elasticUtilities, ISchedulerStatisticsService schedulerStatisticsService)
     {
         _logger = loggerFactory.CreateLogger<AdministrationService>();
         var cfgTmp = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(cfgTmp);
         _configurationObject = cfgTmp;
         _elasticSearchService = elasticSearchService;
-        _schedulerStatisticsService = new SchedulerStatisticsService(loggerFactory, configuration);
-        _elasticUtilities = new ElasticUtilities(loggerFactory, elasticSearchService);
+        _schedulerStatisticsService = schedulerStatisticsService;
+        _elasticUtilities = elasticUtilities;
         _memoryCacheModelProxy = new MemoryCacheModelProxy(loggerFactory, memoryCache);
         _loggerFactory = loggerFactory;
         _memoryCache = memoryCache;
