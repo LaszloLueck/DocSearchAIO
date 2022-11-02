@@ -18,6 +18,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="LanguageExt.CodeGen" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Core" Version="4.2.9" />
     <PackageReference Include="LanguageExt.Transformers" Version="4.2.9" />

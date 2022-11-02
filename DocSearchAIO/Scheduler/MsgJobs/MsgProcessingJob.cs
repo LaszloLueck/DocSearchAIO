@@ -10,6 +10,7 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
+using HtmlAgilityPack;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
 using Microsoft.Extensions.Caching.Memory;
@@ -150,12 +151,13 @@ internal static class MsgProcessingHelper
 
     private static readonly Lst<(string, string)> ToReplaced = List(
         ("&nbsp;", " "),
-        (@"[^a-zA-Zäöüß@.0-9]", " "),
+        (@"[^a-zA-ZäöüßÄÜÖ@.0-9]", " "),
         (Environment.NewLine, " "),
         ("[ ]{2,}", " ")
     );
-
-    private static string Unescape(this string value) => Regex.Unescape(value);
+    
+    private static string RemoveCharsFromSuggest(string input) =>
+        Regex.Replace(input, @"[^a-zäöüß@.]", string.Empty);
 
     private static async Task<Option<MsgElasticDocument>> ProcessMsgDocument(this string fileName,
         ConfigurationObject configurationObject, StatisticUtilities<StatisticModelMsg> statisticUtilities,
@@ -163,22 +165,44 @@ internal static class MsgProcessingHelper
     {
         try
         {
-            (string Content, string Title, string Id, string Creator, IEnumerable<string>
-                recipients)
-                resultSet =
-                    await Task.Run(() =>
+            static async Task<string> GenerateBodyFromHtml(string html)
+            {
+                return await Task.Run(() =>
+                {
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+                    var sb = new StringBuilder();
+                    foreach (var node in doc.DocumentNode.DescendantsAndSelf())
                     {
-                        using var msgReader = new Storage.Message(fileName);
-                        var content = msgReader.BodyText ?? "";
-                        var title = msgReader.Subject;
-                        var id = msgReader.Id ?? Guid.NewGuid().ToString();
-                        var creator = msgReader.Sender.Email;
-                        var receiver =
-                            msgReader.Recipients.Map(recipient => recipient.Email);
-                        msgReader.Dispose();
-                        return (content, title, id, creator, receiver);
-                    });
+                        if (node.HasChildNodes) continue;
+                        var text = node.InnerText;
+                        if (!string.IsNullOrEmpty(text) && !text.StartsWith("<!--"))
+                            sb.AppendLine(text);
+                    }
+                    return sb.ToString();
+                });
+            }
+            
 
+            static async Task<(string Content, string Title, string Id, string Creator, IEnumerable<string>
+                recipients)> ResultSet(string fileName) {
+                return await Task.Run(async () =>
+                 {
+                    using var msgReader = new Storage.Message(fileName);
+                    var content = msgReader.BodyHtml != null
+                        ? await GenerateBodyFromHtml(msgReader.BodyHtml)
+                        : msgReader.BodyText;
+                    var title = msgReader.Subject;
+                    var id = msgReader.Id ?? Guid.NewGuid().ToString();
+                    var creator = msgReader.Sender.Email;
+                    var receiver =
+                        msgReader.Recipients.Map(recipient => recipient.Email);
+                    msgReader.Dispose();
+                    return (content, title, id, creator, receiver);
+                });
+            }
+
+            var resultSet = await ResultSet(fileName);
 
             var uriPath = fileName
                 .Replace(configurationObject.ScanPath, configurationObject.UriReplacement)
@@ -189,17 +213,18 @@ internal static class MsgProcessingHelper
             var cleanContent = resultSet
                 .Content
                 .ReplaceSpecialStrings(ToReplaced);
-                // .Unescape();
 
-                var searchAsYouTypeContent = cleanContent
+            var searchAsYouTypeContent = cleanContent
                 .ToLower()
                 .Split(" ")
+                .Map(RemoveCharsFromSuggest)
                 .Distinct()
                 .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                 .Filter(d => d.Length() > 2);
+            
             var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
-            var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "pdf");
+            var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "msg");
             var contentHash =
                 (await StaticHelpers.CreateHashString(TypedHashedInputString.New(listElementsToHash.Concat()))).Value;
 

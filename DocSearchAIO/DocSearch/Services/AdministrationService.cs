@@ -245,6 +245,10 @@ public class AdministrationService : IAdministrationService
                     new ComparerModelPdf(_loggerFactory, _configurationObject.ComparerDirectory),
                 nameof(ExcelElasticDocument) =>
                     new ComparerModelExcel(_loggerFactory, _configurationObject.ComparerDirectory),
+                nameof(MsgElasticDocument) => 
+                    new ComparerModelMsg(_loggerFactory, _configurationObject.ComparerDirectory),
+                nameof(EmlElasticDocument) =>
+                    new ComparerModelEml(_loggerFactory, _configurationObject.ComparerDirectory),
                 _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
                     $"cannot cast from parameter {parameter}")
             };
