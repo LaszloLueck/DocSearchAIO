@@ -168,7 +168,7 @@ internal static class WordProcessingHelper
             {
                 var wdOpt = WordprocessingDocument.Open(currentFile, false);
                 Option<MainDocumentPart> mainDocumentPartOpt = wdOpt.MainDocumentPart!;
-                var fInfo = wdOpt.PackageProperties;
+                PackageProperties fInfo = wdOpt.PackageProperties;
                 return (mainDocumentPartOpt, fInfo, wdOpt);
             });
 
