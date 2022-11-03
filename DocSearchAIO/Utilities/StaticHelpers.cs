@@ -12,6 +12,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using LanguageExt;
+using MsgReader.Outlook;
 using Nest;
 using Array = System.Array;
 using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
@@ -96,24 +97,17 @@ public static class StaticHelpers
     public static TypedCommentString StringFromCommentsArray(
         this IEnumerable<OfficeDocumentComment> commentsArray) =>
         TypedCommentString.New(commentsArray.Map(d => d.Comment).Join(" "));
-
-
-    private const string AllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüßÄÖÜ ";
-
+    
     [Pure]
     public static async Task<TypedSuggestString> GenerateTextToSuggest(this TypedCommentString commentString,
         TypedContentString contentString)
     {
-        var allowed = await Repl($"{commentString.Value} {contentString.Value}");
+        var allowed = await Task.Run(() =>
+            Regex.Replace($"{commentString.Value} {contentString.Value}", @"[^a-zA-Z äöüÄÖÜß]", string.Empty));
+
         return TypedSuggestString.New(allowed ?? "");
     }
     
-    
-    
-
-    private static readonly Func<string, Task<string>> Repl = input => Task.Run(() =>
-        input.Map(chr => AllowedChars.Contains(chr) ? chr.ToString() : string.Empty).Concat());
-
     [Pure]
     public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
         suggestedText
@@ -203,31 +197,32 @@ public static class StaticHelpers
     private static async Task<IEnumerable<Task<string>>> ExtractTextFromElementAsync(IEnumerable<OpenXmlElement> list)
     {
         return await Task.Run(() =>
-                list.Map(async element =>
+            list.Map(async element =>
+            {
+                return element switch
                 {
-                    return element switch
-                    {
-                        Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraph(element))} ",
-                        Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                        DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                        DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                        TextBody {HasChildren: false} t => $" {await TextFromParagraph(t)} ",
-                        DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() => $" {await TextFromParagraph(d)} ",
-                        DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                        FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
-                        Break => " ",
-                        _ when element.InnerText.Any() => await TextFromParagraph(element),
-                        _ => ""
-                    };
-                })
-            );
+                    Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraph(element))} ",
+                    Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                    DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                    DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                    TextBody {HasChildren: false} t => $" {await TextFromParagraph(t)} ",
+                    DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() =>
+                        $" {await TextFromParagraph(d)} ",
+                    DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
+                    FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
+                    Break => " ",
+                    _ when element.InnerText.Any() => await TextFromParagraph(element),
+                    _ => ""
+                };
+            })
+        );
     }
 
     [Pure]
     public static Source<TypedFilePathString, NotUsed> CreateSource(this IEnumerable<TypedFilePathString> paths)
     {
         return Source.From(paths);
-    } 
+    }
 
     [Pure]
     public static IEnumerable<TypedFilePathString> CreateFilePaths(this TypedFilePathString path, string fileExtension)
@@ -238,7 +233,8 @@ public static class StaticHelpers
     }
 
     [Pure]
-    public static IEnumerable<TypedFilePathString> UseExcludeFilter(this IEnumerable<TypedFilePathString> source, string excludeFilter)
+    public static IEnumerable<TypedFilePathString> UseExcludeFilter(this IEnumerable<TypedFilePathString> source,
+        string excludeFilter)
     {
         if (excludeFilter.Length == 0)
             return source;
@@ -258,10 +254,7 @@ public static class StaticHelpers
     [Pure]
     public static string ReplaceSpecialStrings(this string input, Lst<(string, string)> list)
     {
-        list.ForEach(tuple =>
-        {
-            input = Regex.Replace(input, tuple.Item1, tuple.Item2);
-        });
+        list.ForEach(tuple => { input = Regex.Replace(input, tuple.Item1, tuple.Item2); });
         return input;
     }
 
