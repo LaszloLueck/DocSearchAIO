@@ -12,7 +12,6 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using LanguageExt;
-using MsgReader.Outlook;
 using Nest;
 using Array = System.Array;
 using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
@@ -97,15 +96,17 @@ public static class StaticHelpers
     public static TypedCommentString StringFromCommentsArray(
         this IEnumerable<OfficeDocumentComment> commentsArray) =>
         TypedCommentString.New(commentsArray.Map(d => d.Comment).Join(" "));
+
+    private const string RegexPattern = @"[^a-zA-Z äöüÄÖÜß]";
     
     [Pure]
     public static async Task<TypedSuggestString> GenerateTextToSuggest(this TypedCommentString commentString,
         TypedContentString contentString)
     {
         var allowed = await Task.Run(() =>
-            Regex.Replace($"{commentString.Value} {contentString.Value}", @"[^a-zA-Z äöüÄÖÜß]", string.Empty));
+            Regex.Replace($"{commentString.Value} {contentString.Value}", RegexPattern, string.Empty));
 
-        return TypedSuggestString.New(allowed ?? "");
+        return TypedSuggestString.New(allowed);
     }
     
     [Pure]
@@ -252,9 +253,9 @@ public static class StaticHelpers
     }
 
     [Pure]
-    public static string ReplaceSpecialStrings(this string input, Lst<(string, string)> list)
+    public static string ReplaceSpecialStrings(this string input, Lst<(string Pattern, string ToReplaced)> list)
     {
-        list.ForEach(tuple => { input = Regex.Replace(input, tuple.Item1, tuple.Item2); });
+        list.ForEach(tuple => { input = Regex.Replace(input, tuple.Pattern, tuple.ToReplaced); });
         return input;
     }
 
