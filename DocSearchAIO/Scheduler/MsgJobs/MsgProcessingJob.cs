@@ -17,7 +17,6 @@ using Microsoft.Extensions.Caching.Memory;
 using MsgReader.Outlook;
 using Nest;
 using Quartz;
-using Quartz.Util;
 
 namespace DocSearchAIO.Scheduler.MsgJobs;
 
@@ -155,7 +154,7 @@ internal static class MsgProcessingHelper
         (Environment.NewLine, " "),
         ("[ ]{2,}", " ")
     );
-    
+
     private static string RemoveCharsFromSuggest(string input) =>
         Regex.Replace(input, @"[^a-zäöüß@.]", string.Empty);
 
@@ -179,15 +178,17 @@ internal static class MsgProcessingHelper
                         if (!string.IsNullOrEmpty(text) && !text.StartsWith("<!--"))
                             sb.AppendLine(text);
                     }
+
                     return sb.ToString();
                 });
             }
-            
+
 
             static async Task<(string Content, string Title, string Id, string Creator, IEnumerable<string>
-                recipients)> ResultSet(string fileName) {
+                recipients)> ResultSet(string fileName)
+            {
                 return await Task.Run(async () =>
-                 {
+                {
                     using var msgReader = new Storage.Message(fileName);
                     var content = msgReader.BodyHtml != null
                         ? await GenerateBodyFromHtml(msgReader.BodyHtml)
@@ -221,7 +222,7 @@ internal static class MsgProcessingHelper
                 .Distinct()
                 .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                 .Filter(d => d.Length() > 2);
-            
+
             var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
             var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "msg");
