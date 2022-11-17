@@ -33,6 +33,7 @@ backend-test:
 security-analysis:
   stage: test
   script:
+    - 'dotnet build --no-restore'
     - 'dotnet tool install --global security-scan'
     - 'security-scan ./DocSearchAIO.sln'
       
