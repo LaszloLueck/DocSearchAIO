@@ -41,13 +41,16 @@ public class EmlProcessingJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        var configEntry = _cfg.Processing[nameof(EmlElasticDocument)];
-        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelEmlCleanup());
-        if (cacheEntryOpt.IsSome && (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
+        await Task.Run(() =>
         {
-            _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
-            return;
-        }
+            var configEntry = _cfg.Processing[nameof(EmlElasticDocument)];
+            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelEmlCleanup());
+            if (cacheEntryOpt.IsSome && (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
+            {
+                _logger.LogInformation("cannot execute scanning and processing documents, opponent job cleanup running");
+                return;
+            }
+        });
         
         
     }

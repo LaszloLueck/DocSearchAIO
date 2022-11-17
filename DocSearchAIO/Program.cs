@@ -11,18 +11,14 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureLogging(logging =>
+builder.Logging.AddSimpleConsole(options =>
 {
-    logging
-        .AddSimpleConsole(options =>
-        {
-            options.IncludeScopes = false;
-            options.SingleLine = true;
-            options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
-            options.ColorBehavior = LoggerColorBehavior.Enabled;
-        })
-        .AddFilter("*", LogLevel.Information);
+    options.IncludeScopes = false;
+    options.SingleLine = true;
+    options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
+    options.ColorBehavior = LoggerColorBehavior.Enabled;
 });
+builder.Logging.AddFilter("*", LogLevel.Information);
 
 // Add services to the container.
 builder.Configuration.AddInMemoryCollection(new List<KeyValuePair<string, string?>>

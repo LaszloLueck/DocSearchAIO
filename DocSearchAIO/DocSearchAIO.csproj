@@ -9,7 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <MSBuildWarningsAsMessages>CGR1002</MSBuildWarningsAsMessages>
     <LangVersion>11</LangVersion>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,7 +4,7 @@
 		<RestoreProjectStyle>PackageReference</RestoreProjectStyle>
         <IsPackable>false</IsPackable>
         <LangVersion>11</LangVersion>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
