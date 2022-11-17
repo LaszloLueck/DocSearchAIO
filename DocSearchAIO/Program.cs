@@ -47,6 +47,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddElasticSearch(builder.Configuration);
 builder.Services.AddQuartzScheduler(builder.Configuration);
 builder.Services.AddMemoryCache();
+builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
 builder.Services.AddSingleton<IInitService>(x =>
     new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
@@ -88,6 +89,7 @@ if (app.Environment.IsDevelopment())
 
 app.Lifetime.ApplicationStarted.Register(() => app.Services.GetService<ActorSystem>());
 app.Lifetime.ApplicationStopping.Register(() => app.Services.GetService<ActorSystem>()?.Terminate().Wait());
+app.MapHealthChecks("/healthz");
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
