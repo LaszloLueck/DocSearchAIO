@@ -41,7 +41,7 @@ frontend-test:
   stage: test
   script:
     - 'cd ./DocSearchAIO/ClientApp'
-    - 'npm update'
+    - 'npm update --legacy-peer-deps'
     - 'npm run test'
 
 code-analysis:
