@@ -34,6 +34,7 @@ security-analysis:
   stage: test
   script:
     - 'dotnet tool install --global security-scan'
+    - 'dotnet --info'
     - 'security-scan ./DocSearchAIO.sln'
       
 frontend-test:
