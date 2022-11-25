@@ -41,6 +41,7 @@ public class EmlProcessingJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
+        
         await Task.Run(() =>
         {
             var configEntry = _cfg.Processing[nameof(EmlElasticDocument)];
