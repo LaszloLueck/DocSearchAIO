@@ -1,4 +1,4 @@
-FROM laszlo/containerruntimeglobal_build-full_x64:latest AS build-env
+FROM registry.gitlab.com/laszlo.lueck/containerruntimeglobal/containerruntimeglobal_build-full_x64:latest AS build-env
 WORKDIR /app
 COPY ./DocSearchAIO ./
 

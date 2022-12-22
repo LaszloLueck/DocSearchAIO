@@ -1,4 +1,4 @@
-image: laszlo/containerruntimeglobal_build-full_x64:latest
+image: registry.gitlab.com/laszlo.lueck/containerruntimeglobal/containerruntimeglobal_build-full_x64:latest
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
