@@ -77,10 +77,10 @@ deploy:
     DOCKER_HOST: tcp://172.17.0.1:2375
     PROJECT_NAME: docsearchaio
     TAG: latest
-  before_script:
-    - docker login ${GITLAB_REGISTRY} -u ${GITLAB_REGISTRY_USER} -p ${GITLAB_REGISTRY_PASSWORD}
-  after_script:
-    - docker logout
+  #before_script:
+  #  - docker login ${GITLAB_REGISTRY} -u ${GITLAB_REGISTRY_USER} -p ${GITLAB_REGISTRY_PASSWORD}
+  #after_script:
+  #  - docker logout
   script:
     - docker build --file Dockerfile -t $CI_REGISTRY_IMAGE:${TAG} --no-cache .
     - docker push $CI_REGISTRY_IMAGE:${TAG}
