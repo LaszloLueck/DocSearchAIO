@@ -78,9 +78,9 @@ deploy:
     PROJECT_NAME: docsearchaio
     TAG: latest
   before_script:
-    - docker login -u $DOCKER_IO_USER -p $DOCKER_IO_TOKEN
+    - docker login ${GITLAB_REGISTRY} -u ${GITLAB_REGISTRY_USER} -p ${GITLAB_REGISTRY_PASSWORD}
   after_script:
     - docker logout
   script:
-    - docker build --file Dockerfile -t $DOCKER_IO_USER/$PROJECT_NAME:$TAG .
-    - docker push $DOCKER_IO_USER/$PROJECT_NAME:$TAG
+    - docker build --file Dockerfile -t ${CI_REGISTRY_IMAGE}:$TAG . --no-cache
+    - docker push ${CI_REGISTRY_IMAGE}:$TAG

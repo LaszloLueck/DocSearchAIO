@@ -9,7 +9,7 @@ RUN dotnet clean
 RUN dotnet build --no-restore
 RUN dotnet publish --no-restore -c Release -o out
 
-FROM laszlo/containerruntimeglobal_runtime-full_x64:latest
+FROM registry.gitlab.com/laszlo.lueck/containerruntimeglobal/containerruntimeglobal_runtime-full_x64:latest
 WORKDIR /app
 COPY --from=build-env /app/out .
 EXPOSE 5000
