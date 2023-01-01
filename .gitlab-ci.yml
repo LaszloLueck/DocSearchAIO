@@ -1,4 +1,4 @@
-image: registry.gretzki.ddns.net:5000/laszlo.lueck/containerruntimeglobal:x64.build-full
+image: registry.gitlab.com/laszlo.lueck/containerruntimeglobal/containerruntimeglobal_build-full_x64:latest
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
@@ -17,22 +17,22 @@ cache:
     - '.npm/'
   policy: pull-push
 
+before_script:
+  - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
+
 build:
   stage: build
   script:
-    - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
     - 'dotnet build --no-restore'
 
 backend-test:
   stage: test
   script:
-    - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
     - 'dotnet test --no-restore'
 
 security-analysis:
   stage: test
   script:
-    - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
     - 'dotnet tool install --global security-scan'
     - 'dotnet --info'
     #- 'security-scan ./DocSearchAIO.sln'
@@ -58,7 +58,6 @@ code-analysis:
     - master
     - develop
   script:
-    - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY'
     - "apt-get update"
     - "apt-get install -y openjdk-11-jre"
     - "java --version"
@@ -83,5 +82,5 @@ deploy:
   after_script:
     - docker logout
   script:
-    - docker build --file Dockerfile -t $CI_REGISTRY_IMAGE:${TAG} --no-cache .
-    - docker push $CI_REGISTRY_IMAGE:${TAG}
+    - docker build --file Dockerfile -t ${CI_REGISTRY_IMAGE}:$TAG . --no-cache
+    - docker push ${CI_REGISTRY_IMAGE}:$TAG
