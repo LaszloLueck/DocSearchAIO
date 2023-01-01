@@ -2,7 +2,7 @@ FROM registry.gitlab.com/laszlo.lueck/containerruntimeglobal/containerruntimeglo
 WORKDIR /app
 COPY ./DocSearchAIO ./
 
-RUN dotnet --version
+RUN dotnet --info
 RUN dotnet restore
 RUN dotnet clean
 
@@ -15,6 +15,4 @@ COPY --from=build-env /app/out .
 EXPOSE 5000
 EXPOSE 5002
 ENV ASPNETCORE_URLS=http://+:5000;https://+:5002
-
-RUN dotnet --list-runtimes
 ENTRYPOINT ["dotnet", "DocSearchAIO.dll"]
