@@ -82,5 +82,5 @@ deploy:
   after_script:
     - docker logout ${GITLAB_REGISTRY}
   script:
-    - docker build --file Dockerfile -t ${CI_REGISTRY_IMAGE}:$TAG . --no-cache
-    - docker push ${CI_REGISTRY_IMAGE}:$TAG
+    - docker build --file Dockerfile -t ${GITLAB_REGISTRY}/${PROJECT_NAME}:$TAG . --no-cache
+    - docker push ${GITLAB_REGISTRY}/${PROJECT_NAME}:$TAG
