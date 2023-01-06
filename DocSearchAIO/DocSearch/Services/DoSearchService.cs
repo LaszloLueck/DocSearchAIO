@@ -129,7 +129,7 @@ public class DoSearchService : IDoSearchService
                     _ => "./images/unknown.svg"
                 };
 
-                IEnumerable<ContentDetail> highlightContent;
+                IEnumerable<ContentDetail> highlightContent = System.Array.Empty<ContentDetail>();
                 IEnumerable<CommentDetail> highlightComments = System.Array.Empty<CommentDetail>();
 
                 if (hit.Highlight.ContainsKey("content"))

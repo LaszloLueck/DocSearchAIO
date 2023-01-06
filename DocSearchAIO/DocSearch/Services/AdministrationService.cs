@@ -83,15 +83,13 @@ public class AdministrationService : IAdministrationService
                         {
                             _logger.LogInformation("pause trigger for {TriggerName} :: {TriggerKey}",
                                 currentSelected.Key, triggerKey.Name);
-                            switch (currentSelected.Item3)
+
+                            _configurationObject.Processing[currentSelected.Key].Active = currentSelected.Item3 switch
                             {
-                                case "processing":
-                                    _configurationObject.Processing[currentSelected.Key].Active = false;
-                                    break;
-                                case "cleanup":
-                                    _configurationObject.Cleanup[currentSelected.Key].Active = false;
-                                    break;
-                            }
+                                "processing" => false,
+                                "cleanup" => false,
+                                _ => true
+                            };
 
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                             await scheduler.PauseTrigger(triggerKey);
@@ -143,15 +141,14 @@ public class AdministrationService : IAdministrationService
                         {
                             _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}",
                                 currentSelected.Key, triggerKey.Name);
-                            switch (currentSelected.SchedulerType)
-                            {
-                                case "processing":
-                                    _configurationObject.Processing[currentSelected.Key].Active = true;
-                                    break;
-                                case "cleanup":
-                                    _configurationObject.Cleanup[currentSelected.Key].Active = true;
-                                    break;
-                            }
+
+                            _configurationObject.Processing[currentSelected.Key].Active =
+                                currentSelected.SchedulerType switch
+                                {
+                                    "processing" => true,
+                                    "cleanup" => true,
+                                    _ => false
+                                };
 
                             await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
                             await scheduler.ResumeTrigger(triggerKey);
