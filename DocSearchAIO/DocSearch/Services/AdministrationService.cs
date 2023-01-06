@@ -242,7 +242,7 @@ public class AdministrationService : IAdministrationService
                     new ComparerModelPdf(_loggerFactory, _configurationObject.ComparerDirectory),
                 nameof(ExcelElasticDocument) =>
                     new ComparerModelExcel(_loggerFactory, _configurationObject.ComparerDirectory),
-                nameof(MsgElasticDocument) => 
+                nameof(MsgElasticDocument) =>
                     new ComparerModelMsg(_loggerFactory, _configurationObject.ComparerDirectory),
                 nameof(EmlElasticDocument) =>
                     new ComparerModelEml(_loggerFactory, _configurationObject.ComparerDirectory),
@@ -334,13 +334,13 @@ public class AdministrationService : IAdministrationService
         adminGenModel.ProcessorConfigurations = _configurationObject
             .Processing
             .Filter(d => processSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv => (kv.Key, (ProcessorConfiguration) kv.Value))
+            .Map(kv => (kv.Key, (ProcessorConfiguration)kv.Value))
             .ToDictionary();
 
         adminGenModel.CleanupConfigurations = _configurationObject
             .Cleanup
             .Filter(d => cleanupSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv => (kv.Key, (CleanupConfiguration) kv.Value))
+            .Map(kv => (kv.Key, (CleanupConfiguration)kv.Value))
             .ToDictionary();
         return adminGenModel;
     }
@@ -409,7 +409,7 @@ public class AdministrationService : IAdministrationService
 
         static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(
             IAsyncEnumerable<IndicesStatsResponse> responses) =>
-            responses.Select(index => (IndexStatisticModel) index);
+            responses.Select(index => (IndexStatisticModel)index);
 
 
         static async Task<IndexStatistic> ResponseModel(IAsyncEnumerable<IndicesStatsResponse> indexStatsResponses,
@@ -419,10 +419,10 @@ public class AdministrationService : IAdministrationService
             var entireDocCount = await CalculateEntireDocCount(ref convertedModel);
             var entireSizeInBytes = await CalculateEntireIndexSize(ref convertedModel);
 
-           
+
             return new IndexStatistic(convertedModel.ToEnumerable(), runtimeStatistic.ToDictionary(), entireDocCount, entireSizeInBytes);
         }
-        
+
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
     }
 
