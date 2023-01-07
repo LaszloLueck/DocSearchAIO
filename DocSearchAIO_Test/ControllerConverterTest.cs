@@ -20,7 +20,7 @@ public class ControllerConverterTest
     [Fact]
     public void Convert_CommentDetail_To_Appropriate_Json_Return_Only_CommentText()
     {
-        var commentDetail = new CommentDetail("CommentText") { };
+        var commentDetail = new CommentDetail("CommentText");
 
         var resultJson = JsonSerializer.Serialize(commentDetail);
 
