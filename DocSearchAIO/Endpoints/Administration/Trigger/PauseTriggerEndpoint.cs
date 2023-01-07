@@ -23,7 +23,7 @@ public class
         Summary = "pause a trigger",
         Description = "pause a trigger with given triggerId and groupId",
         OperationId = "C014AE76-1183-436C-A861-B442862770B2",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(PauseTriggerResult), 200)]
     public override async Task<ActionResult<PauseTriggerResult>> HandleAsync([FromBody] PauseTriggerRequest request,

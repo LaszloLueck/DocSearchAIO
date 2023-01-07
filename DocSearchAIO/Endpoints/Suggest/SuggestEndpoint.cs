@@ -22,7 +22,7 @@ public class SuggestEndpoint : EndpointBaseAsync.WithRequest<SuggestRequest>.Wit
         Summary = "suggest words",
         Description = "delivers a list of suggested words as typed in the search field",
         OperationId = "E96F58A0-E657-45B1-A996-666F89F6F559",
-        Tags = new[] {"Suggest"}
+        Tags = new[] { "Suggest" }
     )]
     [ProducesResponseType(typeof(SuggestResult), 200)]
     public override async Task<ActionResult<SuggestResult>> HandleAsync(SuggestRequest request,

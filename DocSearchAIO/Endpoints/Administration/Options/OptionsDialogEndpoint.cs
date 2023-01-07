@@ -22,7 +22,7 @@ public class
         Summary = "data for options dialog",
         Description = "receive data necessary for showing in options dialog",
         OperationId = "FEFF0650-E863-4080-BBEF-FF29B2475F20",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(OptionDialogResponse), 200)]
     public override async Task<ActionResult<OptionDialogResponse>> HandleAsync(OptionDialogRequest request,

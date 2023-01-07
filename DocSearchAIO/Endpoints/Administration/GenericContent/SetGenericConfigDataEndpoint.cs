@@ -23,7 +23,7 @@ public class SetGenericConfigDataEndpoint : EndpointBaseAsync.WithRequest<Admini
         Summary = "receive generic configuration data",
         Description = "method to receive generic configuration data from frontend and deliver it to processing",
         OperationId = "39B92746-4510-4DA1-A516-96849365EBA4",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(SetGenericContentResult), 200)]
     public override async Task<ActionResult<SetGenericContentResult>> HandleAsync(

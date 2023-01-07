@@ -95,10 +95,11 @@ public class OfficeWordProcessingJob : IJob
                     _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                     var jobStatistic = new ProcessingJobStatistic
                     {
-                        Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                        Id = Guid.NewGuid().ToString(),
+                        StartJob = DateTime.Now
                     };
                     var sw = Stopwatch.StartNew();
-                    
+
                     await TypedFilePathString.New(_cfg.ScanPath)
                         .CreateSource(configEntry.FileExtension)
                         .UseExcludeFileFilter(configEntry.ExcludeFilter)
@@ -143,7 +144,7 @@ public class OfficeWordProcessingJob : IJob
 
 internal static class WordProcessingHelper
 {
-    
+
     public static Source<Option<WordElasticDocument>, NotUsed> ProcessWordDocumentAsync(
         this Source<string, NotUsed> source,
         SchedulerEntry schedulerEntry, ConfigurationObject configurationObject,
@@ -152,7 +153,7 @@ internal static class WordProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessWordDocument(f, configurationObject, statisticUtilities, logger));
     }
-    
+
     private static readonly Lst<(string, string)> ToReplaced = List(
         (@"\r\n?|\n", ""),
         ("[ ]{2,}", " ")
@@ -176,8 +177,8 @@ internal static class WordProcessingHelper
             if (docTuple.MainDocumentPartOpt.IsNone)
                 return Option<WordElasticDocument>.None;
             var mainDocumentPart = docTuple.MainDocumentPartOpt.ValueUnsafe();
-            
-            
+
+
             var category = docTuple.FInfo.Category.IfNull(string.Empty);
             var created = docTuple.FInfo.Created.IfNone(new DateTime(1970, 1, 1));
             var creator = docTuple.FInfo.Creator.IfNull(string.Empty);
@@ -194,9 +195,9 @@ internal static class WordProcessingHelper
             const string contentType = "docx";
             var lastPrinted = docTuple.FInfo.LastPrinted.IfNone(new DateTime(1970, 1, 1));
             var lastModifiedBy = docTuple.FInfo.LastModifiedBy.IfNull(string.Empty);
-            
-            
-            
+
+
+
             var uriPath = currentFile
                 .Replace(configurationObject.ScanPath,
                     configurationObject.UriReplacement)
@@ -215,7 +216,7 @@ internal static class WordProcessingHelper
 
                 return comments.Map(comment =>
                 {
-                    var d = (Comment) comment;
+                    var d = (Comment)comment;
 
                     var retValue = new OfficeDocumentComment
                     {
@@ -230,7 +231,7 @@ internal static class WordProcessingHelper
             }
 
             var contentTask = await mainDocumentPart.Elements().ContentString();
-            
+
             var contentString = contentTask
                 .ReplaceSpecialStrings(ToReplaced);
 
@@ -238,7 +239,7 @@ internal static class WordProcessingHelper
 
             docTuple.Document.Close();
             docTuple.Document.Dispose();
-            
+
             var toHash = new ElementsToHash(category, created, contentString,
                 creator,
                 description, identifier, keywords, language, modified, revision,
@@ -284,7 +285,7 @@ internal static class WordProcessingHelper
                 UriFilePath = uriPath,
                 Comments = commentsArray
             };
-            
+
 
             return returnValue;
         }

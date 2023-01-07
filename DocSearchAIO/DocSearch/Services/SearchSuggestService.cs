@@ -47,7 +47,7 @@ public class SearchSuggestService : ISearchSuggestService
 
         _logger.LogInformation("Build SuggestQuery. Raw query is:");
 
-        var f = new SourceFilter {Excludes = "*"};
+        var f = new SourceFilter { Excludes = "*" };
 
 
         static Option<IndexName> CheckIndexName(string indexName, bool toCheck)
@@ -72,7 +72,7 @@ public class SearchSuggestService : ISearchSuggestService
             .Somes()
             .Map(async index =>
             {
-                var request = new SearchRequest(index) {Suggest = suggestQuery, Source = f};
+                var request = new SearchRequest(index) { Suggest = suggestQuery, Source = f };
                 var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
                 var entries = result.Suggest["searchfieldsuggest"].First();
                 return entries.Options.Map(entry => (SuggestEntry: entry.Text.ToString(), IndexName: entry.Index.Name.ToString()));

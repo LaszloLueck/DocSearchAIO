@@ -5,11 +5,11 @@ namespace DocSearchAIO.Endpoints.Administration.Options;
 
 [Record]
 public sealed record OptionDialogResponse(
-    [property: JsonPropertyName("filterWord")] bool FilterWord, 
-    [property: JsonPropertyName("filterExcel")] bool FilterExcel, 
-    [property: JsonPropertyName("filterPowerpoint")] bool FilterPowerpoint, 
-    [property: JsonPropertyName("filterPdf")] bool FilterPdf, 
-    [property: JsonPropertyName("filterMsg")] bool FilterMsg, 
+    [property: JsonPropertyName("filterWord")] bool FilterWord,
+    [property: JsonPropertyName("filterExcel")] bool FilterExcel,
+    [property: JsonPropertyName("filterPowerpoint")] bool FilterPowerpoint,
+    [property: JsonPropertyName("filterPdf")] bool FilterPdf,
+    [property: JsonPropertyName("filterMsg")] bool FilterMsg,
     [property: JsonPropertyName("filterEml")] bool FilterEml,
     [property: JsonPropertyName("itemsPerPage")] int ItemsPerPage)
 {

@@ -21,7 +21,7 @@ public class GetGenericConfigDataEndpoint : EndpointBaseSync.WithoutRequest.With
         Summary = "send generic configuration data to frontend",
         Description = "method to send generic configuration data to frontend",
         OperationId = "ADF854BA-1FE2-4FE8-A1A3-8FE8921F0A8D",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     public override ActionResult<AdministrationGenericRequest> Handle()
     {

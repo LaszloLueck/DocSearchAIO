@@ -21,7 +21,7 @@ public class InitEndpoint : EndpointBaseAsync.WithRequest<InitRequest>.WithActio
         Summary = "the first method the ist called from any frontend.",
         Description = "Delivers information about state of index (active or inactive) and other useful informations",
         OperationId = "12FBE57B-DE86-4A45-8F38-B4F1A8227320",
-        Tags = new[] {"Init"}
+        Tags = new[] { "Init" }
     )]
     [ProducesResponseType(typeof(InitResponseObject), 200)]
     public override async Task<ActionResult<InitResponseObject>> HandleAsync([FromBody] InitRequest initRequest,

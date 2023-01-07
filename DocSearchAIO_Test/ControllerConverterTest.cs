@@ -33,7 +33,7 @@ public class ControllerConverterTest
     public void Convert_CommentDetail_To_Appropriate_Json_Return_All_Parameter()
     {
         var commentDetail = new CommentDetail("CommentText")
-            { Author = "Author", Date = new DateTime(1986, 12, 5, 10, 31, 22), Id = "1", Initials = "Initials" };
+        { Author = "Author", Date = new DateTime(1986, 12, 5, 10, 31, 22), Id = "1", Initials = "Initials" };
 
         var resultJson = JsonSerializer.Serialize(commentDetail);
 
@@ -53,7 +53,7 @@ public class ControllerConverterTest
         resultObject.Should().NotBeNull();
 
         (resultObject is
-                { FilterExcel: true, FilterEml: true, FilterMsg: true, FilterPowerpoint: true, FilterPdf: true, FilterWord: true, ItemsPerPage: 45 })
+        { FilterExcel: true, FilterEml: true, FilterMsg: true, FilterPowerpoint: true, FilterPdf: true, FilterWord: true, ItemsPerPage: 45 })
             .Should()
             .BeTrue();
     }
@@ -63,8 +63,17 @@ public class ControllerConverterTest
     {
         var initResponse = new InitResponseObject
         {
-            FilterEml = true, FilterMsg = true, FilterPdf = true, FilterPowerpoint = true, FilterWord = true, EmlFilterActive = true,
-            ExcelFilterActive = true, ItemsPerPage = 2, MsgFilterActive = true, PdfFilterActive = true, PowerpointFilterActive = true,
+            FilterEml = true,
+            FilterMsg = true,
+            FilterPdf = true,
+            FilterPowerpoint = true,
+            FilterWord = true,
+            EmlFilterActive = true,
+            ExcelFilterActive = true,
+            ItemsPerPage = 2,
+            MsgFilterActive = true,
+            PdfFilterActive = true,
+            PowerpointFilterActive = true,
             WordFilterActive = true
         };
 

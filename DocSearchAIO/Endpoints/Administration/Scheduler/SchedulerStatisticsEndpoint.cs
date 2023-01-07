@@ -24,7 +24,7 @@ public class
         Summary = "receive scheduler statistics",
         Description = "receive scheduler statistics",
         OperationId = "4DBE3074-7D2F-4747-A146-1469E7273C7B",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(Dictionary<string, SchedulerStatistics>), 200)]
     public override async Task<ActionResult<Dictionary<string, SchedulerStatistics>>> HandleAsync(

@@ -19,7 +19,7 @@ public class DownloadFileEndpoint : EndpointBaseAsync.WithRequest<FileDownloadRe
         Summary = "download a file from system",
         Description = "download a file from filesystem path",
         OperationId = "7E5029A8-6763-4428-90C7-CD1EFFB8E6F9",
-        Tags = new[] {"FileDownload"}
+        Tags = new[] { "FileDownload" }
     )]
     [ProducesResponseType(typeof(FileResult), 200)]
     [ProducesResponseType(404)]

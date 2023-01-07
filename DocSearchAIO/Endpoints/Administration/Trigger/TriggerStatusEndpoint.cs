@@ -23,7 +23,7 @@ public class
         Summary = "get a trigger status",
         Description = "get a trigger status with given triggerId and groupId",
         OperationId = "32D4CE8B-C40D-4AAF-844C-6915D43FC6FF",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(TriggerStatusResult), 200)]
     public override async Task<ActionResult<TriggerStatusResult>> HandleAsync([FromBody] TriggerStatusRequest request,

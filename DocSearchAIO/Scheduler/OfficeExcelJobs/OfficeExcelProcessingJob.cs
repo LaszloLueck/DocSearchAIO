@@ -95,7 +95,8 @@ public class OfficeExcelProcessingJob : IJob
                     _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                     var jobStatistic = new ProcessingJobStatistic
                     {
-                        Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                        Id = Guid.NewGuid().ToString(),
+                        StartJob = DateTime.Now
                     };
                     var sw = Stopwatch.StartNew();
 
@@ -150,7 +151,7 @@ internal static class ExcelProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessingExcelDocument(f, configurationObject, statisticUtilities, logger));
     }
-    
+
     private static readonly Lst<(string, string)> ToReplaced = List(
         (@"\r\n?|\n", ""),
         ("[ ]{2,}", " ")
@@ -172,14 +173,14 @@ internal static class ExcelProcessingHelper
 
                     return (workBookPartOpt, fInfo, wdOpt);
                 });
-            
 
-            
+
+
             if (docTuple.WorkbookOption.IsNone)
                 return Option<ExcelElasticDocument>.None;
             var mainWorkbookPart = docTuple.WorkbookOption.ValueUnsafe();
-            
-            
+
+
             var category = docTuple.FInfo.Category.IfNull(string.Empty);
             var created = docTuple.FInfo.Created.IfNone(new DateTime(1970, 1, 1));
             var creator = docTuple.FInfo.Creator.IfNull(string.Empty);
@@ -216,10 +217,10 @@ internal static class ExcelProcessingHelper
                 ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentString()).ReplaceSpecialStrings(
                     ToReplaced)
                 : string.Empty;
-            
+
             docTuple.Document.Close();
             docTuple.Document.Dispose();
-            
+
             var toHash = new ElementsToHash(category, created, contentString, creator,
                 description, identifier, keywords, language, modified, revision,
                 subject, title, version, contentStatus, contentType, lastPrinted,
@@ -231,7 +232,7 @@ internal static class ExcelProcessingHelper
 
             var tempVal = await commentsArray.StringFromCommentsArray()
                 .GenerateTextToSuggest(TypedContentString.New(contentString));
-            
+
             var completionField = tempVal
                 .GenerateSearchAsYouTypeArray()
                 .WrapCompletionField();
@@ -276,7 +277,7 @@ internal static class ExcelProcessingHelper
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments)
     {
-        return comments.ChildElements.Map(comment => OfficeDocumentComment((Comment) comment));
+        return comments.ChildElements.Map(comment => OfficeDocumentComment((Comment)comment));
     }
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>

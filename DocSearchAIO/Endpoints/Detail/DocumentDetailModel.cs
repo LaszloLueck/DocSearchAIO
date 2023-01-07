@@ -7,5 +7,5 @@ public sealed record DocumentDetailModel(string Creator, DateTime Created, strin
     DateTime LastProcessTime)
 {
     public string Id { get; set; } = null!;
-    
+
 }

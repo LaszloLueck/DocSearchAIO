@@ -10,7 +10,7 @@ public static class CSharpFunctionalHelpers
 
     [Pure]
     public static T IfNull<T>(this T? self, [NotNull, DisallowNull] T noneValue) => (self.IsNull() ? noneValue : self)!;
-    
+
     public static void ForEach<TIn>(this IEnumerable<TIn> source, Action<TIn> action)
     {
         foreach (var value in source)
@@ -42,21 +42,21 @@ public static class CSharpFunctionalHelpers
         if (!source.ContainsKey(comparer)) return;
         action.Invoke(comparer, source[comparer]);
     }
-    
+
     [Pure]
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
         this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull =>
         source.ToDictionary(d => d.Key, d => d.Value);
-    
+
     [Pure]
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(
         this IEnumerable<ValueTuple<TKey, TValue>> source) where TKey : notnull =>
         source.ToDictionary(d => d.Item1, d => d.Item2);
-    
+
     [Pure]
-    public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull] [NotNull] TOut alternative,
+    public static TOut ResolveNullable<TIn, TOut>(this TIn? nullable, [DisallowNull][NotNull] TOut alternative,
         Func<TIn, TOut, TOut> action) => nullable is not null ? action.Invoke(nullable, alternative) : alternative;
-    
+
 
     [Pure]
     public static Source<IEnumerable<TSource>, TMat> WithMaybeFilter<TSource, TMat>(
