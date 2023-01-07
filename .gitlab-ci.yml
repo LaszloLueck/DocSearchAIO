@@ -54,7 +54,7 @@ code-analysis:
   script:
     - "dotnet tool install --global coverlet.console"
     - "curl https://deepsource.io/cli | sh"
-    - "rm -r CollectorResults"
+    - "if [ -d CollectorResults ]; then rm -Rf CollectorResults; fi"
     - "dotnet build"
     - "dotnet test --results-directory:\"CollectorResults\"  --collect:\"XPlat Code Coverage\""
     - "./bin/deepsource report --analyzer test-coverage --key 331c13667f51410b95b27345f6042153 --value-file ./CollectorResults/*/coverage.cobertura.xml"
