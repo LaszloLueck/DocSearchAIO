@@ -10,7 +10,7 @@ public class ReindexAndStartJobEndpoint : EndpointBaseAsync.WithRequest<ReindexA
 {
     private readonly IAdministrationService _administrationService;
     private readonly ILogger _logger;
-    
+
     public ReindexAndStartJobEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
@@ -22,13 +22,13 @@ public class ReindexAndStartJobEndpoint : EndpointBaseAsync.WithRequest<ReindexA
         Summary = "start a job with reindexing",
         Description = "totally cleanup a search index and then index all documents of type",
         OperationId = "E26D7B0F-A6AA-4ADA-9E31-0246B93168D0",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(ReindexAndStartJobResult), 200)]
     public override async Task<ActionResult<ReindexAndStartJobResult>> HandleAsync([FromBody] ReindexAndStartJobRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("method reindexAndStartJob called");
-        ReindexAndStartJobResult result= await _administrationService.DeleteIndexAndStartJob(request);
+        ReindexAndStartJobResult result = await _administrationService.DeleteIndexAndStartJob(request);
         return result;
     }
 }

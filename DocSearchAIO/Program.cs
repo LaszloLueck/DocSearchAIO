@@ -36,7 +36,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v2", new OpenApiInfo {Title = "DocSearchAIO", Version = "v2"});
+    c.SwaggerDoc("v2", new OpenApiInfo { Title = "DocSearchAIO", Version = "v2" });
     c.EnableAnnotations();
 });
 
@@ -63,10 +63,10 @@ builder.Services.AddSingleton<ISchedulerStatisticsService>(x =>
     new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
 builder.Services.AddSingleton<IAdministrationService>(x =>
     new AdministrationService(
-        x.GetRequiredService<ILoggerFactory>(), 
+        x.GetRequiredService<ILoggerFactory>(),
         builder.Configuration,
-        x.GetRequiredService<IElasticSearchService>(), 
-        x.GetRequiredService<IMemoryCache>(), 
+        x.GetRequiredService<IElasticSearchService>(),
+        x.GetRequiredService<IMemoryCache>(),
         x.GetRequiredService<IElasticUtilities>(),
         x.GetRequiredService<ISchedulerStatisticsService>()));
 builder.Services.AddSingleton<IOptionDialogService>(x =>

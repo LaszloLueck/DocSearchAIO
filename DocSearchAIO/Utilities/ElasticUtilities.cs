@@ -32,6 +32,6 @@ public class ElasticUtilities : IElasticUtilities
     }
 
     public string CreateIndexName(string mainName, string suffix) => _createIndexNameImpl(mainName, suffix);
-    
+
     private readonly Func<string, string, string> _createIndexNameImpl = (mainName, suffix) => $"{mainName}-{suffix}";
 }

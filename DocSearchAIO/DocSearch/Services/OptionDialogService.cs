@@ -15,7 +15,7 @@ public class OptionDialogService : IOptionDialogService
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ConfigurationObject _cfg;
-        
+
     public OptionDialogService(IElasticSearchService elasticSearchService, IConfiguration configuration)
     {
         _elasticSearchService = elasticSearchService;

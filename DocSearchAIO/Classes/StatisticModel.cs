@@ -33,7 +33,7 @@ public abstract class StatisticModel
             _logger?.LogWarning("statistic file <{FilePath}> does not exist. Lets create them", filePath);
             File.Create(filePath).Close();
         }
-        
+
         var content = File.ReadAllText(filePath);
         if (!content.Any())
             return Option<ProcessingJobStatistic>.None;
@@ -118,8 +118,8 @@ public sealed class StatisticModelMsg : StatisticModel
 {
     protected override string DerivedModelName => GetType().Name;
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
-    
-    public StatisticModelMsg(){}
+
+    public StatisticModelMsg() { }
 
     public StatisticModelMsg(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
         loggerFactory)
@@ -133,13 +133,13 @@ public sealed class StatisticModelEml : StatisticModel
     protected override string DerivedModelName => GetType().Name;
 
     protected override TypedDirectoryPathString StatisticsDirectory { get; } = TypedDirectoryPathString.New("");
-    
-    public StatisticModelEml(){}
+
+    public StatisticModelEml() { }
 
     public StatisticModelEml(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
         loggerFactory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
-    
+
 }

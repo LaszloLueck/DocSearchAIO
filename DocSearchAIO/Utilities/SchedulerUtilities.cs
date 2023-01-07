@@ -13,7 +13,7 @@ public interface ISchedulerUtilities
 
 public class SchedulerUtilities : ISchedulerUtilities
 {
-    private  readonly ILogger _logger;
+    private readonly ILogger _logger;
 
     public SchedulerUtilities(ILoggerFactory loggerFactory)
     {
@@ -47,11 +47,11 @@ public class SchedulerUtilities : ISchedulerUtilities
                 throw new ArgumentOutOfRangeException($"cannot process with that trigger state {triggerState}");
         }
     }
-        
+
     public static async Task<Option<IScheduler>> StdSchedulerByName(string schedulerName)
     {
         var schedulerFactory = new StdSchedulerFactory();
         var schedulerOpt = await schedulerFactory.GetScheduler(schedulerName);
-        return schedulerOpt?.ToSome() ?? Option<IScheduler>.None; 
+        return schedulerOpt?.ToSome() ?? Option<IScheduler>.None;
     }
 }

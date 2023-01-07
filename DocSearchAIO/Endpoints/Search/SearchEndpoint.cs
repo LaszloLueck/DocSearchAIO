@@ -21,7 +21,7 @@ public class SearchEndpoint : EndpointBaseAsync.WithRequest<DoSearchRequest>.Wit
         Summary = "search documents",
         Description = "search documents for the given word or phrases, filtered by given aspects",
         OperationId = "B717827F-680A-4068-842F-B4E9512C6369",
-        Tags = new[] {"Search"}
+        Tags = new[] { "Search" }
     )]
     [ProducesResponseType(typeof(DoSearchResponse), 200)]
     public override async Task<ActionResult<DoSearchResponse>> HandleAsync([FromBody] DoSearchRequest request,

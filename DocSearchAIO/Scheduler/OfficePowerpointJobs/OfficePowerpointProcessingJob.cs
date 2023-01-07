@@ -154,7 +154,7 @@ public static class PowerpointProcessingHelper
         return source.SelectAsyncUnordered(schedulerEntry.Parallelism,
             f => ProcessPowerpointDocument(f, configurationObject, statisticUtilities, logger));
     }
-    
+
     private static readonly Lst<(string, string)> ToReplaced = List(
         (@"\r\n?|\n", ""),
         ("[ ]{2,}", " ")
@@ -175,8 +175,8 @@ public static class PowerpointProcessingHelper
                         var fInfo = wdOpt.PackageProperties;
                         return (presentationPartOpt, fInfo, wdOpt);
                     });
-            
-            
+
+
             if (docTuple.PresentationPartOpt.IsNone)
                 return Option<PowerpointElasticDocument>.None;
 
@@ -226,7 +226,7 @@ public static class PowerpointProcessingHelper
 
             var elementsHash = await (
                 StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
-            
+
             var tempVal =
             await commentsArray.StringFromCommentsArray().GenerateTextToSuggest(TypedContentString.New(contentString));
 
@@ -278,7 +278,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Map(comment => OfficeDocumentComment((Comment) comment));
+        comments.Map(comment => OfficeDocumentComment((Comment)comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()

@@ -50,7 +50,7 @@ public class ElasticSearchService : IElasticSearchService
     public async Task<bool> RemoveItemById(string indexName, string id)
     {
         var deleteResponse = await _elasticClient.DeleteAsync(
-            new DocumentPath<ElasticDocument>(new ElasticDocument {Id = id}),
+            new DocumentPath<ElasticDocument>(new ElasticDocument { Id = id }),
             f => f.Index(indexName));
         if (deleteResponse.IsValid) return deleteResponse.IsValid;
         _logger.LogWarning("{DebugInfo}", deleteResponse.DebugInformation);
@@ -63,7 +63,7 @@ public class ElasticSearchService : IElasticSearchService
     {
         var bulkResponse =
             await _elasticClient.DeleteManyAsync(
-                toRemove.Map(id => new ElasticDocument {Id = id}), indexName);
+                toRemove.Map(id => new ElasticDocument { Id = id }), indexName);
         if (bulkResponse.IsValid)
         {
             _logger.LogInformation(
@@ -80,7 +80,7 @@ public class ElasticSearchService : IElasticSearchService
         where T : ElasticDocument
     {
         var docs = documents.ToArray();
-            
+
         if (!docs.Any())
             return await Task.FromResult(false);
 

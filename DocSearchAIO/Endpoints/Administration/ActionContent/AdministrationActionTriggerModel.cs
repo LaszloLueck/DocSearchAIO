@@ -9,7 +9,7 @@ public sealed record AdministrationActionTriggerModel(string TriggerName, string
     string JobName)
 {
     public JobState JobState { get; set; } = JobState.Undefined;
-        
+
     public static implicit operator AdministrationActionTriggerModel(SchedulerTriggerStatisticElement statisticElement) =>
         new(statisticElement.TriggerName, statisticElement.GroupName, statisticElement.TriggerState,
             statisticElement.JobName);

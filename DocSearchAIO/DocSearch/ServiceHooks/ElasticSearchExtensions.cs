@@ -17,7 +17,7 @@ public static class ElasticSearchExtensions
             .DefaultIndex(cfg.IndexName)
             .BasicAuthentication(cfg.ElasticUser, cfg.ElasticPassword)
             .PrettyJson();
-            var client = new ElasticClient(settings);
+        var client = new ElasticClient(settings);
         var elasticSearchService = new ElasticSearchService(client);
         services.AddSingleton<IElasticSearchService>(elasticSearchService);
     }
