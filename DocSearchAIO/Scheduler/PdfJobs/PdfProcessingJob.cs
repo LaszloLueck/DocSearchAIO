@@ -96,7 +96,8 @@ public class PdfProcessingJob : IJob
                     _jobStateMemoryCache.SetCacheEntry(JobState.Running);
                     var jobStatistic = new ProcessingJobStatistic
                     {
-                        Id = Guid.NewGuid().ToString(), StartJob = DateTime.Now
+                        Id = Guid.NewGuid().ToString(),
+                        StartJob = DateTime.Now
                     };
                     var sw = Stopwatch.StartNew();
                     await TypedFilePathString.New(_cfg.ScanPath)
@@ -211,7 +212,7 @@ internal static class PdfProcessingHelper
                     .Distinct()
                     .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                     .Filter(d => d.Length > 2);
-            var completionField = new CompletionField {Input = searchAsYouTypeContent};
+            var completionField = new CompletionField { Input = searchAsYouTypeContent };
             elasticDoc.CompletionContent = completionField;
 
             var listElementsToHash = new List<string>

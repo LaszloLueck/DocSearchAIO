@@ -7,8 +7,8 @@ namespace DocSearchAIO.Endpoints.Init;
 
 public sealed class InitResponseObject
 {
-    public InitResponseObject(){}
-    
+    public InitResponseObject() { }
+
     public InitResponseObject(ConfigurationObject cfg, string[] indexNames, InitRequest initRequest)
     {
         FilterExcel =

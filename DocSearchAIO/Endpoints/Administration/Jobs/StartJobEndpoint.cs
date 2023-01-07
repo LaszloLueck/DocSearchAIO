@@ -6,11 +6,11 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace DocSearchAIO.Endpoints.Administration.Jobs;
 
-public class StartJobEndpoint: EndpointBaseAsync.WithRequest<StartJobRequest>.WithActionResult<StartJobResult>
+public class StartJobEndpoint : EndpointBaseAsync.WithRequest<StartJobRequest>.WithActionResult<StartJobResult>
 {
     private readonly IAdministrationService _administrationService;
     private readonly ILogger _logger;
-    
+
     public StartJobEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
@@ -22,7 +22,7 @@ public class StartJobEndpoint: EndpointBaseAsync.WithRequest<StartJobRequest>.Wi
         Summary = "start a job",
         Description = "index all documents of type",
         OperationId = "A72AEA3E-42D8-490F-AD52-28EA3493C958",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(StartJobResult), 200)]
     public override async Task<ActionResult<StartJobResult>> HandleAsync(StartJobRequest request, CancellationToken cancellationToken = default)

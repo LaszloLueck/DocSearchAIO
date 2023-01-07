@@ -19,8 +19,8 @@ public static class LoggingFactoryBuilder
                 .AddFilter("*", LogLevel.Information);
         });
     }
-        
-        
+
+
     public static ILogger<T> Build<T>()
     {
         return CreateLoggingFactory().CreateLogger<T>();

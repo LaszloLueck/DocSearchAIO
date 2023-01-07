@@ -83,7 +83,7 @@ public class StaticHelperTest
 
         var p1 = new Paragraph(list1);
         var p2 = new Paragraph(list2);
-        var pList = new List<OpenXmlElement> {p1, p2};
+        var pList = new List<OpenXmlElement> { p1, p2 };
 
         var result = await pList.ContentString();
 

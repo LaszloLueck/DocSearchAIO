@@ -23,7 +23,7 @@ public class ActionContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAction
         Summary = "data for action content",
         Description = "receive data for action content",
         OperationId = "9D32F270-8FA6-45D1-A28E-5652380072EF",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(Dictionary<string, AdministrationActionSchedulerModel>), 200)]
     public override async Task<ActionResult<Dictionary<string, AdministrationActionSchedulerModel>>>

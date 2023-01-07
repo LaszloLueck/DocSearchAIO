@@ -22,7 +22,7 @@ public class StatisticContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
         Summary = "receive statistic content information",
         Description = "receive statistic content information",
         OperationId = "26AA1AFC-5D8A-4316-BF76-B97249B50675",
-        Tags = new[] {"Administration"}
+        Tags = new[] { "Administration" }
     )]
     [ProducesResponseType(typeof(IndexStatistic), 200)]
     public override async Task<ActionResult<IndexStatistic>> HandleAsync(CancellationToken cancellationToken = default)

@@ -7,21 +7,21 @@ namespace DocSearchAIO.Endpoints.Administration.Statistics;
 [Record]
 public sealed record IndexStatisticModel(
     [property: JsonPropertyName("indexName")]
-    string IndexName, 
+    string IndexName,
     [property: JsonPropertyName("docCount")]
-    long DocCount, 
+    long DocCount,
     [property: JsonPropertyName("sizeInBytes")]
-    double SizeInBytes, 
+    double SizeInBytes,
     [property: JsonPropertyName("fetchTimeMs")]
     long FetchTimeMs,
     [property: JsonPropertyName("fetchTotal")]
-    long FetchTotal, 
+    long FetchTotal,
     [property: JsonPropertyName("queryTimeMs")]
-    long QueryTimeMs, 
+    long QueryTimeMs,
     [property: JsonPropertyName("queryTotal")]
-    long QueryTotal, 
+    long QueryTotal,
     [property: JsonPropertyName("suggestTimeMs")]
-    long SuggestTimeMs, 
+    long SuggestTimeMs,
     [property: JsonPropertyName("suggestTotal")]
     long SuggestTotal)
 {

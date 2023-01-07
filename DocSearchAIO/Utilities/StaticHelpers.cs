@@ -88,7 +88,7 @@ public static class StaticHelpers
         {
             var enumerable = e as TSource[] ?? e.ToArray();
             statisticUtilities.AddToChangedDocuments(enumerable.Length);
-            return (IEnumerable<TSource>) enumerable;
+            return (IEnumerable<TSource>)enumerable;
         });
     }
 
@@ -98,7 +98,7 @@ public static class StaticHelpers
         TypedCommentString.New(commentsArray.Map(d => d.Comment).Join(" "));
 
     private const string RegexPattern = @"[^a-zA-Z äöüÄÖÜß]";
-    
+
     [Pure]
     public static async Task<TypedSuggestString> GenerateTextToSuggest(this TypedCommentString commentString,
         TypedContentString contentString)
@@ -108,7 +108,7 @@ public static class StaticHelpers
 
         return TypedSuggestString.New(allowed);
     }
-    
+
     [Pure]
     public static IEnumerable<string> GenerateSearchAsYouTypeArray(this TypedSuggestString suggestedText) =>
         suggestedText
@@ -123,7 +123,7 @@ public static class StaticHelpers
     [Pure]
     public static CompletionField WrapCompletionField(this
         IEnumerable<string> searchAsYouTypeContent) =>
-        new() {Input = searchAsYouTypeContent};
+        new() { Input = searchAsYouTypeContent };
 
     private static readonly Func<IEnumerable<OfficeDocumentComment>, IEnumerable<string[]>> CommentsString =
         commentsArray =>
@@ -203,14 +203,14 @@ public static class StaticHelpers
                 return element switch
                 {
                     Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraph(element))} ",
-                    Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                    DocumentFormat.OpenXml.Spreadsheet.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                    DocumentFormat.OpenXml.Drawing.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                    TextBody {HasChildren: false} t => $" {await TextFromParagraph(t)} ",
+                    Text { HasChildren: false } t when t.Text.Any() => t.Text,
+                    DocumentFormat.OpenXml.Spreadsheet.Text { HasChildren: false } t when t.Text.Any() => t.Text,
+                    DocumentFormat.OpenXml.Drawing.Text { HasChildren: false } t when t.Text.Any() => t.Text,
+                    TextBody { HasChildren: false } t => $" {await TextFromParagraph(t)} ",
                     DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() =>
                         $" {await TextFromParagraph(d)} ",
-                    DocumentFormat.OpenXml.Presentation.Text {HasChildren: false} t when t.Text.Any() => t.Text,
-                    FieldChar {FieldCharType.Value: FieldCharValues.Separate} => " ",
+                    DocumentFormat.OpenXml.Presentation.Text { HasChildren: false } t when t.Text.Any() => t.Text,
+                    FieldChar { FieldCharType.Value: FieldCharValues.Separate } => " ",
                     Break => " ",
                     _ when element.InnerText.Any() => await TextFromParagraph(element),
                     _ => ""

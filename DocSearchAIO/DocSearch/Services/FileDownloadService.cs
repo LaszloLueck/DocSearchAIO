@@ -8,7 +8,7 @@ public interface IFileDownloadService
     DownloadFileResponse DownloadFileStream(string path, string documentType);
 }
 
-public class FileDownloadService: IFileDownloadService
+public class FileDownloadService : IFileDownloadService
 {
     public DownloadFileResponse DownloadFileStream(string path, string documentType)
     {

@@ -15,9 +15,9 @@ public static class EncryptionService
 
     public static async Task<string> ConvertToStringFromByteArray(byte[] array)
     {
-         var fut = await array
-             .Map(async bt => await Task.Run(() => bt.ToString("x2")))
-             .SequenceSerial();
-         return fut.Concat();
+        var fut = await array
+            .Map(async bt => await Task.Run(() => bt.ToString("x2")))
+            .SequenceSerial();
+        return fut.Concat();
     }
 }

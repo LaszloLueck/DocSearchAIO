@@ -48,7 +48,7 @@ public static class QuartzSchedulerExtensions
                         break;
                     case "msgCleanupJob":
                         q.AddJob<MsgCleanupJob>(jk, p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
-                        break;    
+                        break;
                     case "emlCleanupJob":
                         q.AddJob<EmlCleanupJob>(jk, p => p.WithDescription($"cleanup job for {cleanupKey} documents"));
                         break;

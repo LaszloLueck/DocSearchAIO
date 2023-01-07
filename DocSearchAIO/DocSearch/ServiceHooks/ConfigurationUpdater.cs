@@ -9,7 +9,7 @@ public static class ConfigurationUpdater
 {
     public static async Task UpdateConfigurationObject(ConfigurationObject configuration, bool withBackup = false)
     {
-        var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
+        var outer = new OuterConfigurationObject { ConfigurationObject = configuration };
         var options = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -19,7 +19,7 @@ public static class ConfigurationUpdater
         if (withBackup)
             File.Copy("./Resources/config/config.json",
                 $"./Resources/config/config_{DateTime.Now:yyyyMMddHHmmssfff}.json");
-            
+
         await File.WriteAllTextAsync("./Resources/config/config.json", str, Encoding.UTF8);
     }
 
