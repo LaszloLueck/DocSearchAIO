@@ -54,6 +54,7 @@ code-analysis:
   script:
     - "dotnet tool install --global coverlet.console"
     - "curl https://deepsource.io/cli | sh"
+    - "apt install -y git"
     - "if [ -d CollectorResults ]; then rm -Rf CollectorResults; fi"
     - "dotnet build"
     - "dotnet test --results-directory:\"CollectorResults\"  --collect:\"XPlat Code Coverage\""
