@@ -106,7 +106,7 @@ public class MsgProcessingJob : IJob
                             .WithMaybeFilter()
                             .CountFilteredDocs(_statisticUtilities)
                             .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService, indexName)
-                            .RunIgnore(_actorSystem.Materializer());
+                            .RunIgnoreAsync(_actorSystem.Materializer());
 
                         _logger.LogInformation("finished processing pdf documents");
                         sw.Stop();

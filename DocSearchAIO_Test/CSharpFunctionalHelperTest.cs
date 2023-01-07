@@ -116,7 +116,7 @@ public class CSharpFunctionalHelperTest
             { (1, 1), (2, 2), (3, 3) };
 
         var result = 0;
-        list.ForEach((t1, t2) => { result += t1; });
+        list.ForEach((t1, t2) => result += t1);
 
         result.Should().Be(6);
     }

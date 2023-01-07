@@ -8,8 +8,8 @@ namespace DocSearchAIO.Utilities;
 public static class StatisticUtilitiesProxy
 {
     public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
-            Seq<(ProcessorBase, Func<StatisticModel>)>>
-        AsIEnumerable = (loggerFactory, statisticsPath) => Seq<(ProcessorBase, Func<StatisticModel>)>()
+            Seq<(IProcessorBase, Func<StatisticModel>)>>
+        AsIEnumerable = (loggerFactory, statisticsPath) => Seq<(IProcessorBase, Func<StatisticModel>)>()
             .Add((new ProcessorBaseWord(), () => new StatisticModelWord(loggerFactory, statisticsPath)))
             .Add((new ProcessorBasePowerpoint(), () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)))
             .Add((new ProcessorBasePdf(), () => new StatisticModelPdf(loggerFactory, statisticsPath)))

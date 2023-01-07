@@ -86,7 +86,7 @@ public class ReverseComparerService<T> where T : ComparerModel
                 .WithMaybeFilter()
                 .RemoveFromIndexById(_removedFileCount, _elasticSearchService, _logger, indexName.Value)
                 .RemoveFromCache(_lazyCache)
-                .RunIgnore(_actorSystem.Materializer());
+                .RunIgnoreAsync(_actorSystem.Materializer());
 
 
             if (_removedFileCount.Current() > 0)

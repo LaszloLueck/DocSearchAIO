@@ -112,7 +112,7 @@ public class OfficeExcelProcessingJob : IJob
                         .CountFilteredDocs(_statisticUtilities)
                         .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                             indexName)
-                        .RunIgnore(_actorSystem.Materializer());
+                        .RunIgnoreAsync(_actorSystem.Materializer());
 
                     _logger.LogInformation("finished processing excel-documents");
                     sw.Stop();
@@ -214,7 +214,7 @@ internal static class ExcelProcessingHelper
 
 
             var contentString = mainWorkbookPart.SharedStringTablePart != null
-                ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentString()).ReplaceSpecialStrings(
+                ? (await Elements(mainWorkbookPart.SharedStringTablePart).ContentStringAsync()).ReplaceSpecialStrings(
                     ToReplaced)
                 : string.Empty;
 
@@ -228,10 +228,10 @@ internal static class ExcelProcessingHelper
 
             var elementsHash = await (
                     StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                .ContentHashString();
+                .ContentHashStringAsync();
 
             var tempVal = await commentsArray.StringFromCommentsArray()
-                .GenerateTextToSuggest(TypedContentString.New(contentString));
+                .GenerateTextToSuggestAsync(TypedContentString.New(contentString));
 
             var completionField = tempVal
                 .GenerateSearchAsYouTypeArray()

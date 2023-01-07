@@ -100,7 +100,7 @@ public static class StaticHelpers
     private const string RegexPattern = @"[^a-zA-Z äöüÄÖÜß]";
 
     [Pure]
-    public static async Task<TypedSuggestString> GenerateTextToSuggest(this TypedCommentString commentString,
+    public static async Task<TypedSuggestString> GenerateTextToSuggestAsync(this TypedCommentString commentString,
         TypedContentString contentString)
     {
         var allowed = await Task.Run(() =>
@@ -147,7 +147,7 @@ public static class StaticHelpers
             };
 
     [Pure]
-    public static async Task<TypedHashedString> ContentHashString(this (List<string> listElementsToHash,
+    public static async Task<TypedHashedString> ContentHashStringAsync(this (List<string> listElementsToHash,
         IEnumerable<OfficeDocumentComment> commentsArray) kv) =>
         await CreateHashString(
             TypedHashedInputString.New(
@@ -180,14 +180,14 @@ public static class StaticHelpers
         };
 
     [Pure]
-    public static async Task<string> ContentString(this IEnumerable<OpenXmlElement> openXmlElementList)
+    public static async Task<string> ContentStringAsync(this IEnumerable<OpenXmlElement> openXmlElementList)
     {
-        var resultTasks = await openXmlElementList.Map(TextFromParagraph).SequenceSerial();
+        var resultTasks = await openXmlElementList.Map(TextFromParagraphAsync).SequenceSerial();
         return resultTasks.Join(" ");
     }
 
     [Pure]
-    private static async Task<string> TextFromParagraph(OpenXmlElement paragraph)
+    private static async Task<string> TextFromParagraphAsync(OpenXmlElement paragraph)
     {
         var resultTask = await (await ExtractTextFromElementAsync(paragraph.ChildElements)).SequenceSerial();
         return resultTask.Join(" ");
@@ -202,17 +202,17 @@ public static class StaticHelpers
             {
                 return element switch
                 {
-                    Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraph(element))} ",
+                    Paragraph p when p.InnerText.Any() => $" {(await TextFromParagraphAsync(element))} ",
                     Text { HasChildren: false } t when t.Text.Any() => t.Text,
                     DocumentFormat.OpenXml.Spreadsheet.Text { HasChildren: false } t when t.Text.Any() => t.Text,
                     DocumentFormat.OpenXml.Drawing.Text { HasChildren: false } t when t.Text.Any() => t.Text,
-                    TextBody { HasChildren: false } t => $" {await TextFromParagraph(t)} ",
+                    TextBody { HasChildren: false } t => $" {await TextFromParagraphAsync(t)} ",
                     DocumentFormat.OpenXml.Drawing.Paragraph d when d.InnerText.Any() =>
-                        $" {await TextFromParagraph(d)} ",
+                        $" {await TextFromParagraphAsync(d)} ",
                     DocumentFormat.OpenXml.Presentation.Text { HasChildren: false } t when t.Text.Any() => t.Text,
                     FieldChar { FieldCharType.Value: FieldCharValues.Separate } => " ",
                     Break => " ",
-                    _ when element.InnerText.Any() => await TextFromParagraph(element),
+                    _ when element.InnerText.Any() => await TextFromParagraphAsync(element),
                     _ => ""
                 };
             })
@@ -237,10 +237,7 @@ public static class StaticHelpers
     public static IEnumerable<TypedFilePathString> UseExcludeFilter(this IEnumerable<TypedFilePathString> source,
         string excludeFilter)
     {
-        if (excludeFilter.Length == 0)
-            return source;
-
-        return source.Filter(d => !d.Value.Contains(excludeFilter));
+        return excludeFilter.Length == 0 ? source : source.Filter(d => !d.Value.Contains(excludeFilter));
     }
 
     [Pure]
@@ -268,7 +265,7 @@ public static class StaticHelpers
                 SearchOption.AllDirectories).Map(f => TypedFilePathString.New(f)));
     }
 
-    public static Task RunIgnore<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>
+    public static Task RunIgnoreAsync<T>(this Source<T, NotUsed> source, ActorMaterializer actorMaterializer) =>
         source.RunWith(Sink.Ignore<T>(), actorMaterializer);
 
     [Pure]

@@ -18,7 +18,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
 using JobState = DocSearchAIO.Scheduler.JobState;
-using ProcessorBase = DocSearchAIO.Classes.ProcessorBase;
 
 namespace DocSearchAIO.DocSearch.Services;
 
@@ -377,13 +376,13 @@ public class AdministrationService : IAdministrationService
             return ret;
         }
 
-        static Seq<(ProcessorBase, Func<StatisticModel>)> StatisticUtilities(
+        static Seq<(IProcessorBase, Func<StatisticModel>)> StatisticUtilities(
             ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
             StatisticUtilitiesProxy
                 .AsIEnumerable(loggerFactory,
                     TypedDirectoryPathString.New(configurationObject.StatisticsDirectory));
 
-        static Seq<(ProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(
+        static Seq<(IProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(
             ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
             JobStateMemoryCacheProxy
                 .AsIEnumerable(loggerFactory, memoryCache);

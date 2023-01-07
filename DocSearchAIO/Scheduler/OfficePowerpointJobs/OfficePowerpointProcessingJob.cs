@@ -113,7 +113,7 @@ public class OfficePowerpointProcessingJob : IJob
                         .CountFilteredDocs(_statisticUtilities)
                         .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                             indexName)
-                        .RunIgnore(_actorSystem.Materializer());
+                        .RunIgnoreAsync(_actorSystem.Materializer());
 
                     _logger.LogInformation("finished processing powerpoint documents");
 
@@ -212,7 +212,7 @@ public static class PowerpointProcessingHelper
 
             var commentsArray = CommentArray(presentationPart).ToArray();
 
-            var contentTask = await presentationPart.Elements().ContentString();
+            var contentTask = await presentationPart.Elements().ContentStringAsync();
             docTuple.Document.Close();
             docTuple.Document.Dispose();
 
@@ -225,10 +225,10 @@ public static class PowerpointProcessingHelper
                 lastModifiedBy);
 
             var elementsHash = await (
-                StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashString();
+                StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashStringAsync();
 
             var tempVal =
-            await commentsArray.StringFromCommentsArray().GenerateTextToSuggest(TypedContentString.New(contentString));
+            await commentsArray.StringFromCommentsArray().GenerateTextToSuggestAsync(TypedContentString.New(contentString));
 
             static CompletionField CompletionField(TypedSuggestString suggestString) =>
                 suggestString

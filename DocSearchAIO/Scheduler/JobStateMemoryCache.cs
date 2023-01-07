@@ -9,10 +9,10 @@ namespace DocSearchAIO.Scheduler;
 public static class JobStateMemoryCacheProxy
 {
     public static readonly Func<ILoggerFactory, IMemoryCache,
-            Seq<(ProcessorBase, Func<MemoryCacheModel>)>>
+            Seq<(IProcessorBase, Func<MemoryCacheModel>)>>
         AsIEnumerable = (loggerFactory, memoryCache) =>
         {
-            return Seq<(ProcessorBase, Func<MemoryCacheModel>)>(
+            return Seq<(IProcessorBase, Func<MemoryCacheModel>)>(
                 (new ProcessorBaseWord(),
                     () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
                 (new ProcessorBasePowerpoint(),

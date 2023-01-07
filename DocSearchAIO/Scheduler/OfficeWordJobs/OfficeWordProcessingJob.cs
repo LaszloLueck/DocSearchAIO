@@ -111,7 +111,7 @@ public class OfficeWordProcessingJob : IJob
                         .CountFilteredDocs(_statisticUtilities)
                         .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                             indexName)
-                        .RunIgnore(_actorSystem.Materializer());
+                        .RunIgnoreAsync(_actorSystem.Materializer());
 
                     _logger.LogInformation("finished processing word-documents");
                     sw.Stop();
@@ -230,7 +230,7 @@ internal static class WordProcessingHelper
                 });
             }
 
-            var contentTask = await mainDocumentPart.Elements().ContentString();
+            var contentTask = await mainDocumentPart.Elements().ContentStringAsync();
 
             var contentString = contentTask
                 .ReplaceSpecialStrings(ToReplaced);
@@ -248,11 +248,11 @@ internal static class WordProcessingHelper
 
             var elementsHash = await (
                     StaticHelpers.ListElementsToHash(toHash), commentsArray)
-                .ContentHashString();
+                .ContentHashStringAsync();
 
 
             var tempVal = await commentsArray.StringFromCommentsArray()
-                .GenerateTextToSuggest(TypedContentString.New(contentString));
+                .GenerateTextToSuggestAsync(TypedContentString.New(contentString));
 
             var completionField = tempVal
                 .GenerateSearchAsYouTypeArray()
