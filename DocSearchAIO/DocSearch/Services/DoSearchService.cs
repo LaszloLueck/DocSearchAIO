@@ -8,6 +8,7 @@ using DocSearchAIO.Utilities;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
 using Nest;
+using Quartz.Util;
 using SourceFilter = Nest.SourceFilter;
 
 namespace DocSearchAIO.DocSearch.Services;
@@ -47,7 +48,7 @@ public class DoSearchService : IDoSearchService
 
             static string CheckSearchPhrase(string searchPhrase)
             {
-                return searchPhrase == "" ? "*" : searchPhrase;
+                return searchPhrase.IsNullOrWhiteSpace() ? "*" : searchPhrase;
             }
 
             var highlight = new Highlight

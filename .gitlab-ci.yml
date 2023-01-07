@@ -58,7 +58,7 @@ code-analysis:
     - "if [ -d CollectorResults ]; then rm -Rf CollectorResults; fi"
     - "dotnet build"
     - "dotnet test --results-directory:\"CollectorResults\"  --collect:\"XPlat Code Coverage\""
-    - "./bin/deepsource report --analyzer test-coverage --key 331c13667f51410b95b27345f6042153 --value-file ./CollectorResults/*/coverage.cobertura.xml"
+    - "./bin/deepsource report --analyzer test-coverage --key ${CI_COMMIT_SHORT_SHA} --value-file ./CollectorResults/*/coverage.cobertura.xml"
 
 deploy:
   stage: deploy
