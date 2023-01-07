@@ -41,7 +41,7 @@ public class DoSearchService : IDoSearchService
             var size = doSearchRequest.Size;
             var searchPhrase = CheckSearchPhrase(doSearchRequest.SearchPhrase);
             var query = new SimpleQueryStringQuery();
-            var include = new[] {new Field("comments.comment"), new Field("content")};
+            var include = new[] { new Field("comments.comment"), new Field("content") };
             query.Fields = include;
             query.Query = searchPhrase;
             query.AnalyzeWildcard = true;
@@ -53,8 +53,8 @@ public class DoSearchService : IDoSearchService
 
             var highlight = new Highlight
             {
-                PreTags = new[] {@"<span class=""hilightText""><strong>"},
-                PostTags = new[] {"</strong></span>"},
+                PreTags = new[] { @"<span class=""hilightText""><strong>" },
+                PostTags = new[] { "</strong></span>" },
                 Fields = new Dictionary<Field, IHighlightField>
                 {
                     {"content", new HighlightField()}, {"comments.comment", new HighlightField()}
@@ -65,7 +65,7 @@ public class DoSearchService : IDoSearchService
                 Encoder = HighlighterEncoder.Html
             };
 
-            var io = new[] {new Field("completionContent")};
+            var io = new[] { new Field("completionContent") };
 
             var indicesResponse =
                 await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
@@ -101,11 +101,15 @@ public class DoSearchService : IDoSearchService
 
             var indices = Indices.Index(selectedIndices);
 
-            var f = new SourceFilter {Excludes = io};
+            var f = new SourceFilter { Excludes = io };
 
             var request = new SearchRequest(indices)
             {
-                Query = new QueryContainer(query), Highlight = highlight, From = from, Size = size, Source = f
+                Query = new QueryContainer(query),
+                Highlight = highlight,
+                From = from,
+                Size = size,
+                Source = f
             };
 
             var sw = Stopwatch.StartNew();
@@ -145,7 +149,7 @@ public class DoSearchService : IDoSearchService
                         {
                             new(hit.Source.Content[..512] + " ...")
                         }
-                        : new List<ContentDetail> {new(hit.Source.Content)};
+                        : new List<ContentDetail> { new(hit.Source.Content) };
                 }
 
                 if (!hit.Highlight.ContainsKey("comments.comment"))
@@ -168,7 +172,8 @@ public class DoSearchService : IDoSearchService
                         var retVal = commentObj.IsSome
                             ? new CommentDetail(p)
                             {
-                                Author = commentObj.ValueUnsafe().Author, Date = commentObj.ValueUnsafe().Date,
+                                Author = commentObj.ValueUnsafe().Author,
+                                Date = commentObj.ValueUnsafe().Date,
                                 Id = commentObj.ValueUnsafe().Id,
                                 Initials = commentObj.ValueUnsafe().Initials
                             }
