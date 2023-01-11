@@ -1,4 +1,4 @@
-image: registry.gretzki.ddns.net:5050/containerruntimeglobal/containerruntimeglobal_build-full_x64:22.04_7.0.2
+image: registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_build-full_x64:22.04_7.0.2
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
@@ -62,9 +62,9 @@ code-analysis:
 
 deploy:
   stage: deploy
-  image: docker:stable
+  image: registry.gretzki.ddns.net:5080/docker:stable
   services:
-    - docker:dind
+    - registry.gretzki.ddns.net:5080/docker:dind
   variables:
     DOCKER_HOST: tcp://172.17.0.1:2375
     PROJECT_NAME: docsearchaio
