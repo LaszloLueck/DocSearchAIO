@@ -13,6 +13,7 @@ using DocSearchAIO.Utilities;
 using HtmlAgilityPack;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using MsgReader.Outlook;
 using Nest;
@@ -53,6 +54,7 @@ public class MsgProcessingJob : IJob
     }
 
 
+    [Time]
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(MsgElasticDocument)];
@@ -121,8 +123,6 @@ public class MsgProcessingJob : IJob
                             _statisticUtilities.ChangedDocumentsCount();
                         _statisticUtilities.AddJobStatisticToDatabase(
                             jobStatistic);
-                        _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                            sw.ElapsedMilliseconds);
                         _comparerModel.RemoveComparerFile();
                         await _comparerModel.WriteAllLinesAsync();
                         _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -223,7 +223,7 @@ internal static class MsgProcessingHelper
                 .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                 .Filter(d => d.Length() > 2);
 
-            var completionField = new CompletionField { Input = searchAsYouTypeContent };
+            var completionField = new CompletionField {Input = searchAsYouTypeContent};
 
             var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "msg");
             var contentHash =

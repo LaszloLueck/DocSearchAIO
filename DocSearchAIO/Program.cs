@@ -4,6 +4,7 @@ using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Services;
+using DocSearchAIO.Telemetry;
 using DocSearchAIO.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Console;
@@ -73,6 +74,7 @@ builder.Services.AddSingleton<IOptionDialogService>(x =>
     new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 
 var app = builder.Build();
+MethodTimeLogger.Logger = app.Logger;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

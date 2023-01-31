@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
@@ -7,6 +6,7 @@ using Akka.Streams.Dsl;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt;
+using Array = System.Array;
 
 namespace DocSearchAIO.Classes;
 
@@ -39,7 +39,7 @@ internal static class ReverseComparerServiceHelper
         {
             var itemsArray = items.ToArray();
 
-            if (itemsArray.Length <= 0) return System.Array.Empty<ComparerObject>();
+            if (itemsArray.Length <= 0) return Array.Empty<ComparerObject>();
             logger.LogInformation("try to remove {Elements} from elastic index", itemsArray.Length);
             var resultCount =
                 await elasticSearchService.RemoveItemsById(indexName, itemsArray.Map(item => item.PathHash));
@@ -76,7 +76,6 @@ public class ReverseComparerService<T> where T : ComparerModel
         _logger.LogInformation("process comparer file {ComparerFile}", _comparerFile);
         _logger.LogInformation("process elastic index {IndexName}", indexName.Value);
         _logger.LogInformation("lazy cache contains {CacheSize} entries", _lazyCache.Count);
-        var sw = Stopwatch.StartNew();
         try
         {
             await ComparerHelper
@@ -104,10 +103,9 @@ public class ReverseComparerService<T> where T : ComparerModel
         }
         finally
         {
-            sw.Stop();
             _logger.LogInformation(
-                "cleanup done {ElapsedTime} ms, process {AllCount} files, remove {RemovedCount} entries",
-                sw.ElapsedMilliseconds, _allFileCount.Current(), _removedFileCount.Current());
+                "cleanup done, process {AllCount} files, remove {RemovedCount} entries",
+                _allFileCount.Current(), _removedFileCount.Current());
             _logger.LogInformation("finished processing cleanup job");
         }
     }

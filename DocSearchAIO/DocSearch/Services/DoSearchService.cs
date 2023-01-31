@@ -7,6 +7,7 @@ using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Nest;
 using Quartz.Util;
 using SourceFilter = Nest.SourceFilter;
@@ -33,6 +34,7 @@ public class DoSearchService : IDoSearchService
         configuration.GetSection("configurationObject").Bind(_configurationObject);
     }
 
+    [Time]
     public async Task<DoSearchResponse> DoSearch(DoSearchRequest doSearchRequest)
     {
         try
@@ -115,8 +117,7 @@ public class DoSearchService : IDoSearchService
             var sw = Stopwatch.StartNew();
             var result = await _elasticSearchService.SearchIndexAsync<ElasticDocument>(request);
             sw.Stop();
-            _logger.LogInformation("find {ResultTotal} documents in {ElapsedTimeMs} ms", result.Total,
-                sw.ElapsedMilliseconds);
+            _logger.LogInformation("find {ResultTotal} documents", result.Total);
 
             var paginationResult = new DoSearchResult(from, size, result.Total, searchPhrase);
             var statisticsModel = new SearchStatisticsModel(sw.ElapsedMilliseconds, result.Total);

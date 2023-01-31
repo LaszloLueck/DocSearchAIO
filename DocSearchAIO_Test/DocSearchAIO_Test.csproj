@@ -17,6 +17,7 @@
         <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
         <PackageReference Include="LanguageExt.Core" Version="4.4.0" />
         <PackageReference Include="LanguageExt.Transformers" Version="4.4.0" />
+        <PackageReference Include="MethodTimer.Fody" Version="3.2.1" PrivateAssets="All" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />

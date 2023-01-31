@@ -15,6 +15,7 @@ using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
@@ -54,6 +55,7 @@ public class PdfProcessingJob : IJob
         _jobStateMemoryCache.RemoveCacheEntry();
     }
 
+    [Time]
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(PdfElasticDocument)];
@@ -125,8 +127,6 @@ public class PdfProcessingJob : IJob
                         _statisticUtilities.ChangedDocumentsCount();
                     _statisticUtilities.AddJobStatisticToDatabase(
                         jobStatistic);
-                    _logger.LogInformation("index documents in {ElapsedMillis} ms",
-                        sw.ElapsedMilliseconds);
                     _comparerModel.RemoveComparerFile();
                     await _comparerModel.WriteAllLinesAsync();
                     _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);

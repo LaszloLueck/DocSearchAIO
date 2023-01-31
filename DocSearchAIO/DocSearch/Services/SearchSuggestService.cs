@@ -4,6 +4,7 @@ using DocSearchAIO.Configuration;
 using DocSearchAIO.Endpoints.Suggest;
 using DocSearchAIO.Services;
 using LanguageExt;
+using MethodTimer;
 using Nest;
 using SourceFilter = Nest.SourceFilter;
 
@@ -29,7 +30,9 @@ public class SearchSuggestService : ISearchSuggestService
         configuration.GetSection("configurationObject").Bind(cfgTmp);
         _configurationObject = cfgTmp;
     }
+    
 
+    [Time]
     public async Task<SuggestResult> Suggestions(SuggestRequest suggestRequest)
     {
         var suggestQuery = new SuggestContainer();
@@ -65,9 +68,7 @@ public class SearchSuggestService : ISearchSuggestService
             CheckIndexName($"{_configurationObject.IndexName}-eml", suggestRequest.SuggestEml),
             CheckIndexName($"{_configurationObject.IndexName}-msg", suggestRequest.SuggestMsg)
         );
-
-
-        var sw = Stopwatch.StartNew();
+        
         var resultsAsync = await indices
             .Somes()
             .Map(async index =>
@@ -85,7 +86,6 @@ public class SearchSuggestService : ISearchSuggestService
             .Map(m => (m.Key, m.Select(d => d.IndexName)))
             .Map(t => new SuggestEntry(t.Key, t.Item2.ToArray()))
             .Take(10);
-        sw.Stop();
         return new SuggestResult(suggestRequest.SearchPhrase, grouped);
     }
 }

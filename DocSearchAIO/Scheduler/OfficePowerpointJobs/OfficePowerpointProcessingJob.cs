@@ -15,9 +15,11 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
+using Array = System.Array;
 
 namespace DocSearchAIO.Scheduler.OfficePowerpointJobs;
 
@@ -54,6 +56,7 @@ public class OfficePowerpointProcessingJob : IJob
         _jobStateMemoryCache.RemoveCacheEntry();
     }
 
+    [Time]
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
@@ -129,8 +132,6 @@ public class OfficePowerpointProcessingJob : IJob
                         _statisticUtilities.ChangedDocumentsCount();
                     _statisticUtilities.AddJobStatisticToDatabase(
                         jobStatistic);
-                    _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                        sw.ElapsedMilliseconds);
                     _comparerModel.RemoveComparerFile();
                     await _comparerModel.WriteAllLinesAsync();
                     _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
@@ -228,7 +229,8 @@ public static class PowerpointProcessingHelper
                 StaticHelpers.ListElementsToHash(toHash), commentsArray).ContentHashStringAsync();
 
             var tempVal =
-            await commentsArray.StringFromCommentsArray().GenerateTextToSuggestAsync(TypedContentString.New(contentString));
+                await commentsArray.StringFromCommentsArray()
+                    .GenerateTextToSuggestAsync(TypedContentString.New(contentString));
 
             static CompletionField CompletionField(TypedSuggestString suggestString) =>
                 suggestString
@@ -278,7 +280,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Map(comment => OfficeDocumentComment((Comment)comment));
+        comments.Map(comment => OfficeDocumentComment((Comment) comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()
@@ -291,7 +293,7 @@ public static class PowerpointProcessingHelper
         CommentsFromDocument(this IEnumerable<SlidePart> slideParts) => slideParts
         .Map(part => part
             .SlideCommentsPart
-            .ResolveNullable(System.Array.Empty<OfficeDocumentComment>(),
+            .ResolveNullable(Array.Empty<OfficeDocumentComment>(),
                 (v, _) => v.CommentList.ConvertToOfficeDocumentComment().ToArray())
         )
         .Flatten();

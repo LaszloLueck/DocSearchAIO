@@ -15,6 +15,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 
@@ -53,6 +54,7 @@ public class OfficeExcelProcessingJob : IJob
     }
 
 
+    [Time]
     public async Task Execute(IJobExecutionContext context)
     {
         var configEntry = _cfg.Processing[nameof(ExcelElasticDocument)];
@@ -127,8 +129,6 @@ public class OfficeExcelProcessingJob : IJob
                         _statisticUtilities.ChangedDocumentsCount();
                     _statisticUtilities
                         .AddJobStatisticToDatabase(jobStatistic);
-                    _logger.LogInformation("index documents in {ElapsedTimeMs} ms",
-                        sw.ElapsedMilliseconds);
                     _comparerModel.RemoveComparerFile();
                     await _comparerModel.WriteAllLinesAsync();
                     _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);

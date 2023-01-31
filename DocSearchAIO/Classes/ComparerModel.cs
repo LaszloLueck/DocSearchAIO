@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DocSearchAIO.Utilities;
 using LanguageExt;
+using MethodTimer;
 
 namespace DocSearchAIO.Classes;
 
@@ -53,19 +54,11 @@ public abstract class ComparerModel
         ComparerHelper.RemoveComparerFile(ComparerFilePath);
     }
 
+    [Time]
     public async Task WriteAllLinesAsync()
     {
         _logger?.LogInformation("write new comparer file in {ComparerDirectory}", _comparerDirectory);
-        var sw = Stopwatch.StartNew();
-        try
-        {
-            await ComparerHelper.WriteAllLinesAsync(_comparerObjects, ComparerFilePath);
-        }
-        finally
-        {
-            sw.Stop();
-            _logger?.LogInformation("WriteAllLinesAsync needs {ElapsedTimeMs} ms", sw.ElapsedMilliseconds);
-        }
+        await ComparerHelper.WriteAllLinesAsync(_comparerObjects, ComparerFilePath);
     }
 
     private void CheckAndCreateComparerDirectory()
@@ -84,7 +77,6 @@ public abstract class ComparerModel
         return await Task.Run(() =>
             document.Bind(doc =>
             {
-
                 var contentHash = doc.ContentHash;
                 var pathHash = doc.Id;
                 var originalFilePath = doc.OriginalFilePath;
