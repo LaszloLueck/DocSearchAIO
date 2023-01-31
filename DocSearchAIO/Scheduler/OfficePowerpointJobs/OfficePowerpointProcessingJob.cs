@@ -280,7 +280,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Map(comment => OfficeDocumentComment((Comment) comment));
+        comments.Map(comment => OfficeDocumentComment((Comment)comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()

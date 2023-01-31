@@ -33,9 +33,9 @@ public class DocumentDetailService : IDocumentDetailService
             static async Task<DocumentDetailModel> RequestAndConvert<T>(DocumentDetailRequest request,
                 IElasticSearchService elasticSearchService) where T : ElasticDocument
             {
-                var query = new TermQuery {Field = new Field("_id"), Value = request.Id};
-                var exclude = new[] {new Field("completionContent"), new Field("content")};
-                var sf = new SourceFilter {Excludes = exclude};
+                var query = new TermQuery { Field = new Field("_id"), Value = request.Id };
+                var exclude = new[] { new Field("completionContent"), new Field("content") };
+                var sf = new SourceFilter { Excludes = exclude };
                 var searchRequest = new SearchRequest(request.IndexName)
                 {
                     Query = new QueryContainer(query),
