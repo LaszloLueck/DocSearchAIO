@@ -223,7 +223,7 @@ internal static class MsgProcessingHelper
                 .Filter(d => !string.IsNullOrWhiteSpace(d) || !string.IsNullOrEmpty(d))
                 .Filter(d => d.Length() > 2);
 
-            var completionField = new CompletionField {Input = searchAsYouTypeContent};
+            var completionField = new CompletionField { Input = searchAsYouTypeContent };
 
             var listElementsToHash = List(cleanContent, resultSet.Creator, resultSet.Title, "msg");
             var contentHash =

@@ -30,7 +30,7 @@ public class SearchSuggestService : ISearchSuggestService
         configuration.GetSection("configurationObject").Bind(cfgTmp);
         _configurationObject = cfgTmp;
     }
-    
+
 
     [Time]
     public async Task<SuggestResult> Suggestions(SuggestRequest suggestRequest)
@@ -68,7 +68,7 @@ public class SearchSuggestService : ISearchSuggestService
             CheckIndexName($"{_configurationObject.IndexName}-eml", suggestRequest.SuggestEml),
             CheckIndexName($"{_configurationObject.IndexName}-msg", suggestRequest.SuggestMsg)
         );
-        
+
         var resultsAsync = await indices
             .Somes()
             .Map(async index =>
