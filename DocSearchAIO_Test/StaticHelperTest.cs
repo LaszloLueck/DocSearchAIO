@@ -1,6 +1,10 @@
 
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using Akka.Actor;
+using Akka.Streams;
+using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Utilities;
 using DocumentFormat.OpenXml;
@@ -14,6 +18,8 @@ namespace DocSearchAIO_Test;
 public class StaticHelperTest
 {
     //if we need a Console Out, we mus inherit ITestOutputHelper testOutputHelper
+
+    private readonly ActorSystem _actorSystem = ActorSystem.Create("testActorSystem");
 
     [Fact]
     public async Task Build_a_content_and_comment_string_for_suggest_Async()
@@ -100,4 +106,84 @@ public class StaticHelperTest
         var result = testString.ReplaceSpecialStrings(listToReplace);
         "The qick brwn fx jmps ver the lazy dg".Should().Match(result);
     }
+    
+    [Fact]
+    public void TestUseExcludeFileFilterWithExcludeFilter()
+    {
+        var source = Source.From(new[]
+        {
+            new TypedFilePathString("file1.txt"),
+            new TypedFilePathString("file2.tyt"),
+            new TypedFilePathString("file3.tzt")
+        }); 
+
+        var excludeFilter = ".txt";
+        var filteredSource = source.UseExcludeFileFilter(excludeFilter);
+
+        var expectedResult = new[]
+        {
+            "file2.tyt",
+            "file3.tzt"
+        };
+
+        var result = filteredSource.RunWith(Sink.Seq<string>(), _actorSystem.Materializer());
+
+        Assert.Equal(expectedResult, result.Result);
+    }
+
+    [Fact]
+    public void TestUseExcludeFileFilterWithoutExcludeFilter()
+    {
+        var source = Source.From(new[]
+        {
+            new TypedFilePathString("file1.txt"),
+            new TypedFilePathString("file2.txt"),
+            new TypedFilePathString("file3.txt")
+        });
+
+        var excludeFilter = string.Empty;
+        var filteredSource = source.UseExcludeFileFilter(excludeFilter);
+
+        var expectedResult = new[]
+        {
+            "file1.txt",
+            "file2.txt",
+            "file3.txt"
+        };
+
+        var result = filteredSource.RunWith(Sink.Seq<string>(), _actorSystem.Materializer());
+
+        Assert.Equal(expectedResult, result.Result);
+    }
+    
+    [Fact]
+    public void TestCreateSourceWithFileExtension()
+    {
+        var scanPath = TypedFilePathString.New(Directory.GetCurrentDirectory());
+        var fileExtension = "*.txt";
+        var source = scanPath.CreateSource(fileExtension);
+
+        var expectedResult = Directory.GetFiles(scanPath.Value, fileExtension,
+            SearchOption.AllDirectories).Map(f => TypedFilePathString.New(f));
+
+        var result = source.RunWith(Sink.Seq<TypedFilePathString>(), _actorSystem.Materializer());
+
+        Assert.Equal(expectedResult, result.Result);
+    }
+
+    [Fact]
+    public void TestCreateSourceWithoutFileExtension()
+    {
+        var scanPath = TypedFilePathString.New(Directory.GetCurrentDirectory());
+        var fileExtension = "*.*";
+        var source = scanPath.CreateSource(fileExtension);
+
+        var expectedResult = Directory.GetFiles(scanPath.Value, fileExtension,
+            SearchOption.AllDirectories).Map(f => TypedFilePathString.New(f));
+
+        var result = source.RunWith(Sink.Seq<TypedFilePathString>(), _actorSystem.Materializer());
+
+        Assert.Equal(expectedResult, result.Result);
+    }
+    
 }

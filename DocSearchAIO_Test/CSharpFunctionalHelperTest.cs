@@ -16,6 +16,28 @@ namespace DocSearchAIO_Test;
 public class CSharpFunctionalHelperTest
 {
 
+    [Fact]
+    public void TestIfNullWithValue()
+    {
+        int? value = 5;
+        int noneValue = 0;
+
+        var result = value.IfNull(noneValue);
+
+        Assert.Equal(value, result);
+    }
+
+    [Fact]
+    public void TestIfNullWithoutValue()
+    {
+        int? value = null;
+        int noneValue = 0;
+
+        var result = value.IfNull(noneValue);
+
+        Assert.Equal(noneValue, result);
+    }
+    
 
     [Fact]
     public void Check_if_a_dictionary_contains_key_and_process_the_result()
