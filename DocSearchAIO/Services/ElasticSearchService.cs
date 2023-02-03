@@ -1,7 +1,9 @@
 ﻿using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using Elasticsearch.Net;
+using LanguageExt;
 using Nest;
+using Array = System.Array;
 
 namespace DocSearchAIO.Services;
 
@@ -16,7 +18,7 @@ public interface IElasticSearchService
     Task<bool> DeleteIndexAsync(string indexName);
     Task<bool> RefreshIndexAsync(string indexName);
     Task<bool> FlushIndexAsync(string indexName);
-    Task<GetIndexResponse> IndicesWithPatternAsync(string pattern, bool logToConsole = true);
+    Task<IndexResponseObject> IndicesWithPatternAsync(string pattern, bool logToConsole = true);
     Task<bool> RemoveItemById(string indexName, string id);
 
     Task<int> RemoveItemsById(string indexName, IEnumerable<string> toRemove);
@@ -145,7 +147,7 @@ public class ElasticSearchService : IElasticSearchService
         return flushResponse.IsValid;
     }
 
-    public async Task<GetIndexResponse> IndicesWithPatternAsync(string pattern, bool logToConsole = true)
+    public async Task<IndexResponseObject> IndicesWithPatternAsync(string pattern, bool logToConsole = true)
     {
         var getIndexRequest = pattern switch
         {
@@ -160,11 +162,12 @@ public class ElasticSearchService : IElasticSearchService
         }
 
         var getIndexResponse = await _elasticClient.Indices.GetAsync(getIndexRequest);
-        if (getIndexResponse.IsValid) return getIndexResponse;
+        if (getIndexResponse.IsValid)
+            return new IndexResponseObject(getIndexResponse.Indices.Keys.Map(key => key.Name).ToArray());
         _logger.LogWarning("{DebugInfo}", getIndexResponse.DebugInformation);
         _logger.LogError(getIndexResponse.OriginalException, "{Reason}",
             getIndexResponse.ServerError.Error.Reason);
-        return getIndexResponse;
+        return new IndexResponseObject(Array.Empty<string>());
     }
 
     public async Task<bool> IndexExistsAsync(string indexName)

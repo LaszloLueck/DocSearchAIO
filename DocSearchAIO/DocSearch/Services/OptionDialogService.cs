@@ -27,7 +27,7 @@ public class OptionDialogService : IOptionDialogService
         OptionDialogRequest optionDialogRequest)
     {
         var indexResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
-        var knownIndices = indexResponse.Indices.Keys.Map(key => key.Name).ToArray();
+        var knownIndices = indexResponse.IndexNames;
 
         OptionDialogResponse response = optionDialogRequest;
         response.WordIndexExists = StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, knownIndices);

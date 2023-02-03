@@ -1,61 +1,56 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
+using Microsoft.Extensions.Configuration;
 using Moq;
-using Nest;
 using Xunit;
 
 namespace DocSearchAIO_Test;
 
 public class InitServiceTest
 {
-    // [Fact]
-    // public async Task TestInitWithIndices()
+    private readonly Mock<IConfigurationSection> configurationSectionMock = new Mock<IConfigurationSection>();
+    private readonly InitRequest _initRequest = new InitRequest();
+    private readonly Mock<IConfiguration> _configMock = new Mock<IConfiguration>();
+    private readonly Mock<IElasticSearchService> _elasticSearchServiceMock = new Mock<IElasticSearchService>();
+
+    //[Fact]
+    // public async Task Given_IndicesWithPatternAsync_Returns_IndexNames_When_Init_Is_Called_Then_Result_Should_Contain_IndexNames()
     // {
-    //     var mockElasticSearchService = new Mock<IElasticSearchService>();
-    //     var fakeGetMappingResponse = new 
-    //     
-    //     
-    //     mockElasticSearchService.Setup(ess => ess.IndicesWithPatternAsync(It.IsAny<string>(), It.IsAny<bool>()))
-    //         .ReturnsAsync(new GetIndexResponse
-    //         {
-    //             Indices = new Dictionary<IndexName, IndexState>
-    //             {
-    //                 {new IndexName("index1"), new IndexState()},
-    //                 {new IndexName("index2"), new IndexState()}
-    //             }.AsReadOnly()
-    //         });
+    //     // Arrange
+    //     var indexNames = new[] {"index1", "index2", "index3"};
+    //     var indicesResponse = new IndexResponseObject(indexNames);
+    //     _elasticSearchServiceMock.Setup(x => x.IndicesWithPatternAsync(It.IsAny<string>(), It.IsAny<bool>()))
+    //         .ReturnsAsync(indicesResponse);
     //
-    //     var cfg = new Configuration();
-    //     var initRequest = new InitRequest();
+    //     var cfg = new ConfigurationObject();
+    //     //configurationSectionMock.Setup(d => d.GetValue<ConfigurationObject>("configurationObject")).Returns(cfg);
+    //     _configMock.Setup(d => d.GetSection(It.Is<string>(s => s == "configurationObject"))).Returns(cfg);
     //
-    //     var init = new Init(mockElasticSearchService.Object, cfg);
-    //     var response = await init.Init(initRequest);
+    //     var sut = new InitService(_elasticSearchServiceMock.Object, _configMock.Object);
     //
-    //     Assert.Equal(cfg, response.Configuration);
-    //     Assert.Equal(new[] {"index1", "index2"}, response.IndexNames);
-    //     Assert.Equal(initRequest, response.InitRequest);
+    //     // Act
+    //     var result = await sut.Init(_initRequest);
+    //
+    //     // Assert
+    //     Assert.Equal(false, result.FilterEml);
     // }
-    //
+
     // [Fact]
-    // public async Task TestInitWithoutIndices()
+    // public async Task Given_IndicesWithPatternAsync_Returns_Null_When_Init_Is_Called_Then_Result_Should_Contain_Empty_Array()
     // {
-    //     var mockElasticSearchService = new Mock<IElasticSearchService>();
-    //     mockElasticSearchService.Setup(ess => ess.IndicesWithPatternAsync(It.IsAny<string>(), It.IsAny<bool>()))
-    //         .ReturnsAsync(new GetIndexResponse
-    //         {
-    //             Indices = null
-    //         });
+    //     // Arrange
+    //     var indicesResponse = new IndicesResponse {IndexNames = null};
+    //     _elasticSearchServiceMock.Setup(x => x.IndicesWithPatternAsync(It.IsAny<string>()))
+    //         .ReturnsAsync(indicesResponse);
+    //     var sut = new InitService(_config, _elasticSearchServiceMock.Object);
     //
-    //     var cfg = new Configuration();
-    //     var initRequest = new InitRequest();
+    //     // Act
+    //     var result = await sut.Init(_initRequest);
     //
-    //     var init = new Init(mockElasticSearchService.Object, cfg);
-    //     var response = await init.Init(initRequest);
-    //
-    //     Assert.Equal(cfg, response.Configuration);
-    //     Assert.Empty(response.IndexNames);
-    //     Assert.Equal(initRequest, response.InitRequest);
+    //     // Assert
+    //     Assert.Empty(result.IndexNames);
     // }
 }

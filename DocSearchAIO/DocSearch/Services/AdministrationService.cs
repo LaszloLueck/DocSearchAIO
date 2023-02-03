@@ -353,15 +353,11 @@ public class AdministrationService : IAdministrationService
 
     public async Task<IndexStatistic> StatisticsContent()
     {
-        async Task<GetIndexResponse> IndicesResponse(string indexName) =>
+        async Task<IndexResponseObject> IndicesResponse(string indexName) =>
             await _elasticSearchService.IndicesWithPatternAsync($"{indexName}-*");
 
         async Task<Seq<string>> KnownIndices(string indexName) =>
-            (await IndicesResponse(indexName))
-            .Indices
-            .Keys
-            .Map(index => index.Name)
-            .ToSeq();
+            (await IndicesResponse(indexName)).IndexNames.ToSeq();
 
         var knownIndices = await KnownIndices(_configurationObject.IndexName);
         var indexStatsResponses = CalculateIndicesStatsResponse(knownIndices, _elasticSearchService);

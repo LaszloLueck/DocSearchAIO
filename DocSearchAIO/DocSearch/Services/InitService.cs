@@ -27,11 +27,7 @@ public class InitService : IInitService
     public async Task<InitResponseObject> Init(InitRequest initRequest)
     {
         var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
-        var indexNames = indicesResponse
-            .Indices
-            .IfNull(new Dictionary<IndexName, IndexState>())
-            .Map(kv => kv.Key.Name)
-            .ToArray();
+        var indexNames = indicesResponse.IndexNames;
 
         return new InitResponseObject(_cfg, indexNames, initRequest);
     }

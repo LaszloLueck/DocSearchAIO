@@ -71,7 +71,7 @@ public class DoSearchService : IDoSearchService
 
             var indicesResponse =
                 await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
-            var knownIndices = indicesResponse.Indices.Keys.Map(index => index.Name);
+            var knownIndices = indicesResponse.IndexNames;
 
             var documentTypesAndFilters = new List<(Type, bool)>
             {
