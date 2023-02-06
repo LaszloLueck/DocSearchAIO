@@ -1,15 +1,48 @@
-﻿using System.Text;
+﻿using System.Configuration;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DocSearchAIO.Configuration;
+using LanguageExt;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks;
 
-public static class ConfigurationUpdater
+public interface IConfigurationUpdater
 {
-    public static async Task UpdateConfigurationObject(ConfigurationObject configuration, bool withBackup = false)
+    public Task<ConfigurationObject> ReadConfigurationAsync();
+    public Task UpdateConfigurationObjectAsync(ConfigurationObject configuration, bool withBackup);
+}
+
+public class ConfigurationUpdater : IConfigurationUpdater
+{
+    private readonly IConfiguration _configuration;
+
+    public ConfigurationUpdater(IConfiguration configuration)
     {
-        var outer = new OuterConfigurationObject { ConfigurationObject = configuration };
+        _configuration = configuration;
+    }
+
+    public async Task<ConfigurationObject> ReadConfigurationAsync()
+    {
+        Option<string> configurationStringOpt = _configuration
+            .GetSection("configurationObject")
+            .Value;
+
+        var config = configurationStringOpt.Some(cfg => cfg).None(() =>
+            throw new ConfigurationErrorsException("cannot found section configurationObject"));
+
+        Option<ConfigurationObject> configOpt = await JsonSerializer.DeserializeAsync<ConfigurationObject>(
+            new MemoryStream(Encoding.UTF8.GetBytes(config)));
+
+
+        return configOpt.Some(cfg => cfg).None(() =>
+            throw new JsonException("cannot convert configuration section to appropriate configuration object"));
+    }
+
+
+    public async Task UpdateConfigurationObjectAsync(ConfigurationObject configuration, bool withBackup = false)
+    {
+        var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
         var options = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -25,6 +58,7 @@ public static class ConfigurationUpdater
 
     private sealed class OuterConfigurationObject
     {
-        [JsonPropertyName("configurationObject")] public ConfigurationObject ConfigurationObject { get; set; } = new();
+        [JsonPropertyName("configurationObject")]
+        public ConfigurationObject ConfigurationObject { get; set; } = new();
     }
 }

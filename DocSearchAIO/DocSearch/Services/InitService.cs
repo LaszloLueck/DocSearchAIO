@@ -1,4 +1,5 @@
 ﻿using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
@@ -14,21 +15,19 @@ public interface IInitService
 public class InitService : IInitService
 {
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
-    public InitService(IElasticSearchService elasticSearchService,
-        IConfiguration configuration)
+    public InitService(IElasticSearchService elasticSearchService, IConfigurationUpdater configurationUpdater)
     {
         _elasticSearchService = elasticSearchService;
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
+        _configurationUpdater = configurationUpdater;
     }
 
     public async Task<InitResponseObject> Init(InitRequest initRequest)
     {
-        var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var indicesResponse = await _elasticSearchService.IndicesWithPatternAsync($"{cfg.IndexName}-*");
         var indexNames = indicesResponse.IndexNames;
-
-        return new InitResponseObject(_cfg, indexNames, initRequest);
+        return new InitResponseObject(cfg, indexNames, initRequest);
     }
 }

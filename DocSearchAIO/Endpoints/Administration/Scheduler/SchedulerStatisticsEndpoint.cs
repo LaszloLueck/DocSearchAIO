@@ -24,14 +24,14 @@ public class
         Summary = "receive scheduler statistics",
         Description = "receive scheduler statistics",
         OperationId = "4DBE3074-7D2F-4747-A146-1469E7273C7B",
-        Tags = new[] { "Administration" }
+        Tags = new[] {"Administration"}
     )]
     [ProducesResponseType(typeof(Dictionary<string, SchedulerStatistics>), 200)]
     public override async Task<ActionResult<Dictionary<string, SchedulerStatistics>>> HandleAsync(
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("method getSchedulerStatistics called");
-        var result = _schedulerStatisticsService.SchedulerStatistics();
-        return await result.ToDictionaryAsync(d => d.key.Value, d => d.statistics, cancellationToken: cancellationToken);
+        var result = await _schedulerStatisticsService.SchedulerStatistics();
+        return result.ToDictionary(d => d.key.Value, d => d.statistics);
     }
 }

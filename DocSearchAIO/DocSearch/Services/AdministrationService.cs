@@ -38,7 +38,7 @@ public interface IAdministrationService
 
     public Task<IndexStatistic> StatisticsContent();
 
-    public IAsyncEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)> ActionContent();
+    public Task<IEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)>> ActionContent();
 }
 
 public class AdministrationService : IAdministrationService
@@ -51,9 +51,10 @@ public class AdministrationService : IAdministrationService
     private readonly IMemoryCache _memoryCache;
     private readonly IElasticUtilities _elasticUtilities;
     private readonly MemoryCacheModelProxy _memoryCacheModelProxy;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
     public AdministrationService(ILoggerFactory loggerFactory,
-        IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache, IElasticUtilities elasticUtilities, ISchedulerStatisticsService schedulerStatisticsService)
+        IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache, IElasticUtilities elasticUtilities, ISchedulerStatisticsService schedulerStatisticsService, IConfigurationUpdater configurationUpdater)
     {
         _logger = loggerFactory.CreateLogger<AdministrationService>();
         var cfgTmp = new ConfigurationObject();
@@ -65,6 +66,7 @@ public class AdministrationService : IAdministrationService
         _memoryCacheModelProxy = new MemoryCacheModelProxy(loggerFactory, memoryCache);
         _loggerFactory = loggerFactory;
         _memoryCache = memoryCache;
+        _configurationUpdater = configurationUpdater;
     }
 
     public async Task<bool> PauseTriggerWithTriggerId(PauseTriggerRequest pauseTriggerRequest)
@@ -90,7 +92,7 @@ public class AdministrationService : IAdministrationService
                                 _ => true
                             };
 
-                            await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
+                            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
                             await scheduler.PauseTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
@@ -149,7 +151,7 @@ public class AdministrationService : IAdministrationService
                                     _ => false
                                 };
 
-                            await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
+                            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
                             await scheduler.ResumeTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
@@ -216,7 +218,7 @@ public class AdministrationService : IAdministrationService
                 .ToDictionary();
 
 
-            await ConfigurationUpdater.UpdateConfigurationObject(_configurationObject, true);
+            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
             _logger.LogInformation("configuration successfully updated");
             return true;
         }
@@ -474,11 +476,11 @@ public class AdministrationService : IAdministrationService
             .ToOption()
             .Flatten();
 
-    public IAsyncEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)> ActionContent()
+    public async Task<IEnumerable<(TypedGroupNameString, AdministrationActionSchedulerModel)>> ActionContent()
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
-        var groupedSchedulerModels = _schedulerStatisticsService
-            .SchedulerStatistics()
+        var groupedSchedulerModels = (await _schedulerStatisticsService
+            .SchedulerStatistics())
             .Select(kv =>
             {
                 var state = CalculateJobState(kv.statistics, memoryCacheStates);

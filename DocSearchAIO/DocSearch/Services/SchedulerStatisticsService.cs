@@ -1,7 +1,9 @@
 ﻿using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Administration.Scheduler;
 using DocSearchAIO.Utilities;
+using LanguageExt;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -9,20 +11,19 @@ namespace DocSearchAIO.DocSearch.Services;
 
 public interface ISchedulerStatisticsService
 {
-    public IAsyncEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)> SchedulerStatistics();
+    public Task<IEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)>> SchedulerStatistics();
 }
 
 public class SchedulerStatisticsService : ISchedulerStatisticsService
 {
     private readonly ILogger _logger;
-    private readonly ConfigurationObject _configurationObject;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
-    public SchedulerStatisticsService(ILoggerFactory loggerFactory, IConfiguration configuration)
+    public SchedulerStatisticsService(ILoggerFactory loggerFactory,
+        IConfigurationUpdater configurationUpdater)
     {
         _logger = loggerFactory.CreateLogger<SchedulerStatisticsService>();
-        var tmpConfig = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(tmpConfig);
-        _configurationObject = tmpConfig;
+        _configurationUpdater = configurationUpdater;
     }
 
     private static readonly Func<IScheduler, SchedulerStatistics> StatisticsObject = scheduler =>
@@ -116,24 +117,28 @@ public class SchedulerStatisticsService : ISchedulerStatisticsService
                 return await t;
             };
 
-    public IAsyncEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)> SchedulerStatistics()
+    public async Task<IEnumerable<(TypedGroupNameString key, SchedulerStatistics statistics)>> SchedulerStatistics()
     {
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
         var source = new List<TypedGroupNameString>
         {
-            TypedGroupNameString.New(_configurationObject.SchedulerGroupName),
-            TypedGroupNameString.New(_configurationObject.CleanupGroupName)
+            TypedGroupNameString.New(cfg.SchedulerGroupName),
+            TypedGroupNameString.New(cfg.CleanupGroupName)
         };
-        return CalculateSchedulerStatistics(source);
+
+        return await CalculateSchedulerStatistics(source, cfg);
     }
 
-    private async IAsyncEnumerable<(TypedGroupNameString, SchedulerStatistics)> CalculateSchedulerStatistics(
-        List<TypedGroupNameString> source)
+    private async Task<IEnumerable<(TypedGroupNameString, SchedulerStatistics)>> CalculateSchedulerStatistics(
+        IEnumerable<TypedGroupNameString> source, ConfigurationObject cfg)
     {
-        foreach (var groupNameString in source)
+        var tasks = source.Map(async groupNameString =>
         {
             var schedulerStatistic =
-                await SchedulerStatistic(_configurationObject, groupNameString, _logger);
-            yield return (groupNameString, schedulerStatistic);
-        }
+                await SchedulerStatistic(cfg, groupNameString, _logger);
+            return (groupNameString, schedulerStatistic);
+        });
+
+        return await tasks.SequenceParallel(3);
     }
 }

@@ -47,7 +47,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(_ => ActorSystem.Create("DocSearchAIOActorSystem"));
 builder.Services.AddSingleton<IInitService>(x =>
-    new InitService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
+    new InitService(x.GetRequiredService<IElasticSearchService>(),x.GetRequiredService<IConfigurationUpdater>()));
 builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
 builder.Services.AddSingleton<IDoSearchService>(x =>
     new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<ILoggerFactory>(),
@@ -60,16 +60,18 @@ builder.Services.AddSingleton<IDocumentDetailService>(x =>
 builder.Services.AddSingleton<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddSingleton<IElasticUtilities>(x =>
     new ElasticUtilities(x.GetRequiredService<ILoggerFactory>(), x.GetRequiredService<IElasticSearchService>()));
+builder.Services.AddSingleton<IConfigurationUpdater>(x => new ConfigurationUpdater(builder.Configuration));
 builder.Services.AddSingleton<ISchedulerStatisticsService>(x =>
-    new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), builder.Configuration));
+    new SchedulerStatisticsService(x.GetRequiredService<ILoggerFactory>(), x.GetRequiredService<IConfigurationUpdater>()));
 builder.Services.AddSingleton<IAdministrationService>(x =>
     new AdministrationService(
-        x.GetRequiredService<ILoggerFactory>(),
+        x.GetRequiredService<ILoggerFactory>(), 
         builder.Configuration,
         x.GetRequiredService<IElasticSearchService>(),
         x.GetRequiredService<IMemoryCache>(),
         x.GetRequiredService<IElasticUtilities>(),
-        x.GetRequiredService<ISchedulerStatisticsService>()));
+        x.GetRequiredService<ISchedulerStatisticsService>(),
+        x.GetRequiredService<IConfigurationUpdater>()));
 builder.Services.AddSingleton<IOptionDialogService>(x =>
     new OptionDialogService(x.GetRequiredService<IElasticSearchService>(), builder.Configuration));
 

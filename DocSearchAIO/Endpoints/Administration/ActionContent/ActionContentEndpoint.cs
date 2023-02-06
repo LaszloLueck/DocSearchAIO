@@ -1,6 +1,5 @@
 using Ardalis.ApiEndpoints;
 using DocSearchAIO.DocSearch.Services;
-using LanguageExt;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -23,15 +22,15 @@ public class ActionContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAction
         Summary = "data for action content",
         Description = "receive data for action content",
         OperationId = "9D32F270-8FA6-45D1-A28E-5652380072EF",
-        Tags = new[] { "Administration" }
+        Tags = new[] {"Administration"}
     )]
     [ProducesResponseType(typeof(Dictionary<string, AdministrationActionSchedulerModel>), 200)]
     public override async Task<ActionResult<Dictionary<string, AdministrationActionSchedulerModel>>>
         HandleAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("method getActionContentData called");
-        var result = await _administrationService.ActionContent()
-            .ToDictionaryAsync(d => d.Item1.Value, d => d.Item2, cancellationToken: cancellationToken);
-        return result;
+        var result = await _administrationService.ActionContent();
+
+        return result.ToDictionary(d => d.Item1.Value, d => d.Item2);
     }
 }
