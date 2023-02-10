@@ -1,4 +1,5 @@
-﻿using LanguageExt;
+﻿using DocSearchAIO.DocSearch.ServiceHooks;
+using LanguageExt;
 using LanguageExt.SomeHelp;
 using Quartz;
 using Quartz.Impl;
@@ -17,7 +18,7 @@ public class SchedulerUtilities : ISchedulerUtilities
 
     public SchedulerUtilities(ILoggerFactory loggerFactory)
     {
-        _logger = loggerFactory.CreateLogger<SchedulerUtilities>();
+        _logger = LoggingFactoryBuilder.Build<SchedulerUtilities>();
     }
 
     public async Task SetTriggerStateByUserAction(IScheduler scheduler, string triggerName, string groupName, TriggerState triggerState)

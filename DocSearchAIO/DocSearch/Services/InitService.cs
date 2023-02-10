@@ -1,9 +1,6 @@
-﻿using DocSearchAIO.Configuration;
-using DocSearchAIO.DocSearch.ServiceHooks;
+﻿using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
-using DocSearchAIO.Utilities;
-using Nest;
 
 namespace DocSearchAIO.DocSearch.Services;
 

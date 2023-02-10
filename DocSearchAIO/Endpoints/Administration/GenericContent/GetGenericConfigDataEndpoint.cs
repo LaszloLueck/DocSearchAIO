@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -13,7 +14,7 @@ public class GetGenericConfigDataEndpoint : EndpointBaseSync.WithoutRequest.With
     public GetGenericConfigDataEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<GetGenericConfigDataEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<GetGenericConfigDataEndpoint>();
     }
 
     [HttpGet("/api/administration/getGenericContent")]

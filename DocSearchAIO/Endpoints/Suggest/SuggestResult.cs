@@ -1,4 +1,3 @@
-using DocSearchAIO.DocSearch.TOs;
 using LanguageExt;
 
 namespace DocSearchAIO.Endpoints.Suggest;

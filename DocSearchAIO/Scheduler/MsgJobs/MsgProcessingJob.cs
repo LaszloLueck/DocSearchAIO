@@ -7,6 +7,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
@@ -24,44 +25,44 @@ namespace DocSearchAIO.Scheduler.MsgJobs;
 [DisallowConcurrentExecution]
 public class MsgProcessingJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ISchedulerUtilities _schedulerUtilities;
-    private readonly StatisticUtilities<StatisticModelMsg> _statisticUtilities;
-    private readonly ComparerModel _comparerModel;
-    private readonly JobStateMemoryCache<MemoryCacheModelMsg> _jobStateMemoryCache;
     private readonly IElasticUtilities _elasticUtilities;
+    private readonly IMemoryCache _memoryCache;
 
-
-    public MsgProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration, ActorSystem actorSystem,
+    public MsgProcessingJob(IConfigurationUpdater configurationUpdater, ActorSystem actorSystem,
         IElasticSearchService elasticSearchService, IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities,
         IElasticUtilities elasticUtilities)
     {
-        _logger = loggerFactory.CreateLogger<MsgProcessingJob>();
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
+        _configurationUpdater = configurationUpdater;
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
         _schedulerUtilities = schedulerUtilities;
         _elasticUtilities = elasticUtilities;
-        _statisticUtilities = StatisticUtilitiesProxy.MsgStatisticUtility(loggerFactory,
-            TypedDirectoryPathString.New(_cfg.StatisticsDirectory), new StatisticModelMsg().StatisticFileName);
-        _comparerModel = new ComparerModelMsg(loggerFactory, _cfg.ComparerDirectory);
-        _jobStateMemoryCache = JobStateMemoryCacheProxy.GetMsgJobStateMemoryCache(loggerFactory, memoryCache);
-        _jobStateMemoryCache.RemoveCacheEntry();
+        _memoryCache = memoryCache;
     }
 
 
     [Time]
     public async Task Execute(IJobExecutionContext context)
     {
-        var configEntry = _cfg.Processing[nameof(MsgElasticDocument)];
-        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsgCleanup());
+        var logger = LoggingFactoryBuilder.Build<MsgProcessingJob>();
+        
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var statisticUtilities = StatisticUtilitiesProxy.MsgStatisticUtility(TypedDirectoryPathString.New(cfg.StatisticsDirectory), new StatisticModelMsg().StatisticFileName);
+        
+        var comparerModel = new ComparerModelMsg(cfg.ComparerDirectory);
+        
+        var configEntry = cfg.Processing[nameof(MsgElasticDocument)];
+
+        var jobStateMemoryCache = JobStateMemoryCacheProxy.GetMsgJobStateMemoryCache(_memoryCache);
+        jobStateMemoryCache.RemoveCacheEntry();
+        var cacheEntryOpt = jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsgCleanup());
         if (cacheEntryOpt.IsSome && (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "cannot execute scanning and processing documents, opponent job cleanup running");
             return;
         }
@@ -69,27 +70,27 @@ public class MsgProcessingJob : IJob
         if (!configEntry.Active)
         {
             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, configEntry.TriggerName,
-                _cfg.SchedulerGroupName, TriggerState.Paused);
-            _logger.LogWarning(
+                cfg.SchedulerGroupName, TriggerState.Paused);
+            logger.LogWarning(
                 "skip cleanup of PDF documents because the scheduler is inactive per config");
         }
         else
         {
-            _logger.LogInformation("start job");
-            var indexName = _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+            logger.LogInformation("start job");
+            var indexName = _elasticUtilities.CreateIndexName(cfg.IndexName, configEntry.IndexSuffix);
             await _elasticUtilities.CheckAndCreateElasticIndex<MsgElasticDocument>(indexName);
-            _logger.LogInformation("start crunching and indexing some pdf-files");
-            if (!Directory.Exists(_cfg.ScanPath))
+            logger.LogInformation("start crunching and indexing some pdf-files");
+            if (!Directory.Exists(cfg.ScanPath))
             {
-                _logger.LogWarning(
-                    "directory to scan <{ScanPath}> does not exists, skip working", _cfg.ScanPath);
+                logger.LogWarning(
+                    "directory to scan <{ScanPath}> does not exists, skip working", cfg.ScanPath);
             }
             else
             {
                 {
                     try
                     {
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                        jobStateMemoryCache.SetCacheEntry(JobState.Running);
                         var jobStatistic = new ProcessingJobStatistic
                         {
                             Id = Guid.NewGuid().ToString(),
@@ -98,38 +99,38 @@ public class MsgProcessingJob : IJob
 
                         var sw = Stopwatch.StartNew();
                         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                        await TypedFilePathString.New(_cfg.ScanPath)
+                        await TypedFilePathString.New(cfg.ScanPath)
                             .CreateSource(configEntry.FileExtension)
                             .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                            .CountEntireDocs(_statisticUtilities)
-                            .ProcessedMsgDocumentAsync(configEntry, _cfg, _statisticUtilities, _logger)
-                            .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                            .CountEntireDocs(statisticUtilities)
+                            .ProcessedMsgDocumentAsync(configEntry, cfg, statisticUtilities, logger)
+                            .FilterExistingUnchangedAsync(configEntry, comparerModel)
                             .GroupedWithin(50, TimeSpan.FromSeconds(10))
                             .WithMaybeFilter()
-                            .CountFilteredDocs(_statisticUtilities)
+                            .CountFilteredDocs(statisticUtilities)
                             .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService, indexName)
                             .RunIgnoreAsync(_actorSystem.Materializer());
 
-                        _logger.LogInformation("finished processing pdf documents");
+                        logger.LogInformation("finished processing pdf documents");
                         sw.Stop();
                         await _elasticSearchService.FlushIndexAsync(indexName);
                         await _elasticSearchService.RefreshIndexAsync(indexName);
                         jobStatistic.EndJob = DateTime.Now;
                         jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                        jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                        jobStatistic.EntireDocCount = statisticUtilities.EntireDocumentsCount();
                         jobStatistic.ProcessingError =
-                            _statisticUtilities.FailedDocumentsCount();
+                            statisticUtilities.FailedDocumentsCount();
                         jobStatistic.IndexedDocCount =
-                            _statisticUtilities.ChangedDocumentsCount();
-                        _statisticUtilities.AddJobStatisticToDatabase(
+                            statisticUtilities.ChangedDocumentsCount();
+                        statisticUtilities.AddJobStatisticToDatabase(
                             jobStatistic);
-                        _comparerModel.RemoveComparerFile();
-                        await _comparerModel.WriteAllLinesAsync();
-                        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+                        comparerModel.RemoveComparerFile();
+                        await comparerModel.WriteAllLinesAsync();
+                        jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                     }
                     catch (Exception exception)
                     {
-                        _logger.LogError(exception, "An error in processing pipeline occured");
+                        logger.LogError(exception, "An error in processing pipeline occured");
                     }
                 }
             }

@@ -6,6 +6,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
@@ -18,52 +19,54 @@ using LanguageExt.UnsafeValueAccess;
 using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
+using Array = System.Array;
 
 namespace DocSearchAIO.Scheduler.OfficeExcelJobs;
 
 [DisallowConcurrentExecution]
 public class OfficeExcelProcessingJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ISchedulerUtilities _schedulerUtilities;
-    private readonly StatisticUtilities<StatisticModelExcel> _statisticUtilities;
-    private readonly ComparerModel _comparerModel;
-    private readonly JobStateMemoryCache<MemoryCacheModelExcel> _jobStateMemoryCache;
     private readonly IElasticUtilities _elasticUtilities;
+    private readonly IMemoryCache _memoryCache;
 
-    public OfficeExcelProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+    public OfficeExcelProcessingJob(IConfigurationUpdater configurationUpdater,
         ActorSystem actorSystem, IElasticSearchService elasticSearchService,
         IMemoryCache memoryCache, ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
-        _logger = loggerFactory.CreateLogger<OfficeExcelProcessingJob>();
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
+        _configurationUpdater = configurationUpdater;
         _actorSystem = actorSystem;
         _elasticSearchService = elasticSearchService;
         _schedulerUtilities = schedulerUtilities;
         _elasticUtilities = elasticUtilities;
-        _statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(loggerFactory,
-            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
-            new StatisticModelExcel().StatisticFileName);
-        _comparerModel = new ComparerModelExcel(loggerFactory, _cfg.ComparerDirectory);
-        _jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(loggerFactory, memoryCache);
-        _jobStateMemoryCache.RemoveCacheEntry();
+        _memoryCache = memoryCache;
     }
 
 
     [Time]
     public async Task Execute(IJobExecutionContext context)
     {
-        var configEntry = _cfg.Processing[nameof(ExcelElasticDocument)];
+        var logger = LoggingFactoryBuilder.Build<OfficeExcelProcessingJob>();
+        
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        
+        var statisticUtilities = StatisticUtilitiesProxy.ExcelStatisticUtility(
+            TypedDirectoryPathString.New(cfg.StatisticsDirectory),
+            new StatisticModelExcel().StatisticFileName);
+        var comparerModel = new ComparerModelExcel(cfg.ComparerDirectory);
+        
+        var configEntry = cfg.Processing[nameof(ExcelElasticDocument)];
 
-        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelExcelCleanup());
+        var jobStateMemoryCache = JobStateMemoryCacheProxy.GetExcelJobStateMemoryCache(_memoryCache);
+        jobStateMemoryCache.RemoveCacheEntry();
+        var cacheEntryOpt = jobStateMemoryCache.CacheEntry(new MemoryCacheModelExcelCleanup());
         if (cacheEntryOpt.IsSome &&
             (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "cannot execute scanning and processing documents, opponent job cleanup running");
             return;
         }
@@ -73,28 +76,28 @@ public class OfficeExcelProcessingJob : IJob
         {
             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                 configEntry.TriggerName,
-                _cfg.SchedulerGroupName, TriggerState.Paused);
-            _logger.LogWarning(
+                cfg.SchedulerGroupName, TriggerState.Paused);
+            logger.LogWarning(
                 "skip processing of word documents because the scheduler is inactive per config");
         }
         else
         {
-            _logger.LogInformation("start job");
+            logger.LogInformation("start job");
             var indexName =
-                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+                _elasticUtilities.CreateIndexName(cfg.IndexName, configEntry.IndexSuffix);
             await _elasticUtilities.CheckAndCreateElasticIndex<ExcelElasticDocument>(indexName);
-            _logger.LogInformation("start crunching and indexing some excel-documents");
-            if (!Directory.Exists(_cfg.ScanPath))
+            logger.LogInformation("start crunching and indexing some excel-documents");
+            if (!Directory.Exists(cfg.ScanPath))
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "directory to scan <{ScanPath}> does not exists. skip working",
-                    _cfg.ScanPath);
+                    cfg.ScanPath);
             }
             else
             {
                 try
                 {
-                    _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                    jobStateMemoryCache.SetCacheEntry(JobState.Running);
                     var jobStatistic = new ProcessingJobStatistic
                     {
                         Id = Guid.NewGuid().ToString(),
@@ -102,40 +105,40 @@ public class OfficeExcelProcessingJob : IJob
                     };
                     var sw = Stopwatch.StartNew();
 
-                    await TypedFilePathString.New(_cfg.ScanPath)
+                    await TypedFilePathString.New(cfg.ScanPath)
                         .CreateSource(configEntry.FileExtension)
                         .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                        .CountEntireDocs(_statisticUtilities)
-                        .ProcessExcelDocumentAsync(configEntry, _cfg, _statisticUtilities,
-                            _logger)
-                        .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                        .CountEntireDocs(statisticUtilities)
+                        .ProcessExcelDocumentAsync(configEntry, cfg, statisticUtilities,
+                            logger)
+                        .FilterExistingUnchangedAsync(configEntry, comparerModel)
                         .GroupedWithin(50, TimeSpan.FromSeconds(10))
                         .WithMaybeFilter()
-                        .CountFilteredDocs(_statisticUtilities)
+                        .CountFilteredDocs(statisticUtilities)
                         .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                             indexName)
                         .RunIgnoreAsync(_actorSystem.Materializer());
 
-                    _logger.LogInformation("finished processing excel-documents");
+                    logger.LogInformation("finished processing excel-documents");
                     sw.Stop();
                     await _elasticSearchService.FlushIndexAsync(indexName);
                     await _elasticSearchService.RefreshIndexAsync(indexName);
                     jobStatistic.EndJob = DateTime.Now;
                     jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                    jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                    jobStatistic.EntireDocCount = statisticUtilities.EntireDocumentsCount();
                     jobStatistic.ProcessingError =
-                        _statisticUtilities.FailedDocumentsCount();
+                        statisticUtilities.FailedDocumentsCount();
                     jobStatistic.IndexedDocCount =
-                        _statisticUtilities.ChangedDocumentsCount();
-                    _statisticUtilities
+                        statisticUtilities.ChangedDocumentsCount();
+                    statisticUtilities
                         .AddJobStatisticToDatabase(jobStatistic);
-                    _comparerModel.RemoveComparerFile();
-                    await _comparerModel.WriteAllLinesAsync();
-                    _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+                    comparerModel.RemoveComparerFile();
+                    await comparerModel.WriteAllLinesAsync();
+                    jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "An error in processing pipeline occured");
+                    logger.LogError(ex, "An error in processing pipeline occured");
                 }
             }
         }
@@ -291,7 +294,7 @@ internal static class ExcelProcessingHelper
         worksheets
             .Map(part =>
             {
-                var officeDocumentCommentsEmpty = System.Array.Empty<OfficeDocumentComment>();
+                var officeDocumentCommentsEmpty = Array.Empty<OfficeDocumentComment>();
                 return part
                     .WorksheetCommentsPart
                     .ResolveNullable(officeDocumentCommentsEmpty, (commentsPart, _) =>

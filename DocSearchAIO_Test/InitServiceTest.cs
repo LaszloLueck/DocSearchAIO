@@ -5,7 +5,6 @@ using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
-using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
 
@@ -45,7 +44,7 @@ public class InitServiceTest
             IndexSuffix = "eml"
         };
         cfg.Processing.Add(nameof(EmlElasticDocument), eml);
-        _configMock.Setup(x => x.ReadConfigurationAsync()).ReturnsAsync(cfg);
+        _configMock.Setup(x => x.ReadConfiguration()).Returns(cfg);
 
         var sut = new InitService(_elasticSearchServiceMock.Object, _configMock.Object);
 

@@ -14,10 +14,13 @@ public static class QuartzSchedulerExtensions
 {
     public static void AddQuartzScheduler(this IServiceCollection services, IConfiguration configuration)
     {
+
         var cfg = new ConfigurationObject();
         configuration.GetSection("configurationObject").Bind(cfg);
+
         services.AddQuartz(q =>
         {
+            
             q.SchedulerName = cfg.SchedulerName;
             q.SchedulerId = cfg.SchedulerId;
             q.UseMicrosoftDependencyInjectionJobFactory();

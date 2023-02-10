@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Endpoints.Search;
 using DocSearchAIO.Services;
@@ -10,6 +10,7 @@ using LanguageExt.UnsafeValueAccess;
 using MethodTimer;
 using Nest;
 using Quartz.Util;
+using Array = System.Array;
 using SourceFilter = Nest.SourceFilter;
 
 namespace DocSearchAIO.DocSearch.Services;
@@ -23,15 +24,13 @@ public class DoSearchService : IDoSearchService
 {
     private readonly ILogger<DoSearchService> _logger;
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly ConfigurationObject _configurationObject;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
-    public DoSearchService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
-        IConfiguration configuration)
+    public DoSearchService(IElasticSearchService elasticSearchService, IConfigurationUpdater configurationUpdater)
     {
-        _logger = loggerFactory.CreateLogger<DoSearchService>();
+        _logger = LoggingFactoryBuilder.Build<DoSearchService>();
         _elasticSearchService = elasticSearchService;
-        _configurationObject = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_configurationObject);
+        _configurationUpdater = configurationUpdater;
     }
 
     [Time]
@@ -43,10 +42,12 @@ public class DoSearchService : IDoSearchService
             var size = doSearchRequest.Size;
             var searchPhrase = CheckSearchPhrase(doSearchRequest.SearchPhrase);
             var query = new SimpleQueryStringQuery();
-            var include = new[] { new Field("comments.comment"), new Field("content") };
+            var include = new[] {new Field("comments.comment"), new Field("content")};
             query.Fields = include;
             query.Query = searchPhrase;
             query.AnalyzeWildcard = true;
+
+            var configurationObject = await _configurationUpdater.ReadConfigurationAsync();
 
             static string CheckSearchPhrase(string searchPhrase)
             {
@@ -55,8 +56,8 @@ public class DoSearchService : IDoSearchService
 
             var highlight = new Highlight
             {
-                PreTags = new[] { @"<span class=""hilightText""><strong>" },
-                PostTags = new[] { "</strong></span>" },
+                PreTags = new[] {@"<span class=""hilightText""><strong>"},
+                PostTags = new[] {"</strong></span>"},
                 Fields = new Dictionary<Field, IHighlightField>
                 {
                     {"content", new HighlightField()}, {"comments.comment", new HighlightField()}
@@ -67,10 +68,10 @@ public class DoSearchService : IDoSearchService
                 Encoder = HighlighterEncoder.Html
             };
 
-            var io = new[] { new Field("completionContent") };
+            var io = new[] {new Field("completionContent")};
 
             var indicesResponse =
-                await _elasticSearchService.IndicesWithPatternAsync($"{_configurationObject.IndexName}-*");
+                await _elasticSearchService.IndicesWithPatternAsync($"{configurationObject.IndexName}-*");
             var knownIndices = indicesResponse.IndexNames;
 
             var documentTypesAndFilters = new List<(Type, bool)>
@@ -85,25 +86,25 @@ public class DoSearchService : IDoSearchService
 
             var selectedIndices = new List<string>();
             var enumerable = Some(knownIndices)
-                .IfNone(System.Array.Empty<string>())
+                .IfNone(Array.Empty<string>())
                 .ToArray();
 
             documentTypesAndFilters.ForEach((filterType, requestFilter) =>
             {
-                if (StaticHelpers.TypedIndexKeyExistsAndFilter(filterType, _configurationObject, enumerable,
+                if (StaticHelpers.TypedIndexKeyExistsAndFilter(filterType, configurationObject, enumerable,
                         requestFilter))
-                    selectedIndices.Add(StaticHelpers.IndexNameByType(filterType, _configurationObject));
+                    selectedIndices.Add(StaticHelpers.IndexNameByType(filterType, configurationObject));
             });
 
             if (selectedIndices.Count == 6)
             {
                 selectedIndices.Clear();
-                selectedIndices.Add($"{_configurationObject.IndexName}-*");
+                selectedIndices.Add($"{configurationObject.IndexName}-*");
             }
 
             var indices = Indices.Index(selectedIndices);
 
-            var f = new SourceFilter { Excludes = io };
+            var f = new SourceFilter {Excludes = io};
 
             var request = new SearchRequest(indices)
             {
@@ -135,8 +136,8 @@ public class DoSearchService : IDoSearchService
                     _ => "./images/unknown.svg"
                 };
 
-                IEnumerable<ContentDetail> highlightContent = System.Array.Empty<ContentDetail>();
-                IEnumerable<CommentDetail> highlightComments = System.Array.Empty<CommentDetail>();
+                IEnumerable<ContentDetail> highlightContent = Array.Empty<ContentDetail>();
+                IEnumerable<CommentDetail> highlightComments = Array.Empty<CommentDetail>();
 
                 if (hit.Highlight.ContainsKey("content"))
                 {
@@ -150,7 +151,7 @@ public class DoSearchService : IDoSearchService
                         {
                             new(hit.Source.Content[..512] + " ...")
                         }
-                        : new List<ContentDetail> { new(hit.Source.Content) };
+                        : new List<ContentDetail> {new(hit.Source.Content)};
                 }
 
                 if (!hit.Highlight.ContainsKey("comments.comment"))
@@ -200,7 +201,7 @@ public class DoSearchService : IDoSearchService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured");
-            return new DoSearchResponse(System.Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""),
+            return new DoSearchResponse(Array.Empty<DoSearchResultContainer>(), new DoSearchResult(0, 0, 0, ""),
                 new SearchStatisticsModel(0, 0));
         }
     }

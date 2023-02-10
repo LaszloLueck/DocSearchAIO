@@ -3,6 +3,7 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt;
@@ -59,10 +60,10 @@ public class ReverseComparerService<T> where T : ComparerModel
     private readonly InterlockedCounter _removedFileCount;
     private readonly ConcurrentDictionary<string, ComparerObject> _lazyCache;
 
-    public ReverseComparerService(ILoggerFactory loggerFactory, T model, IElasticSearchService elasticSearchService,
+    public ReverseComparerService(T model, IElasticSearchService elasticSearchService,
         ActorSystem actorSystem)
     {
-        _logger = loggerFactory.CreateLogger<ReverseComparerService<T>>();
+        _logger = LoggingFactoryBuilder.Build<ReverseComparerService<T>>();
         _comparerFile = model.ComparerFilePath;
         _elasticSearchService = elasticSearchService;
         _actorSystem = actorSystem;

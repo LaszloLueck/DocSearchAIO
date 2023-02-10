@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Detail;
 using DocSearchAIO.Services;
 using MethodTimer;
@@ -18,15 +18,14 @@ public class DocumentDetailService : IDocumentDetailService
     private readonly ILogger _logger;
     private readonly IElasticSearchService _elasticSearchService;
 
-    public DocumentDetailService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory)
+    public DocumentDetailService(IElasticSearchService elasticSearchService)
     {
-        _logger = loggerFactory.CreateLogger<DocumentDetailService>();
+        _logger = LoggingFactoryBuilder.Build<DocumentDetailService>();
         _elasticSearchService = elasticSearchService;
     }
 
     [Time]
-    public async Task<DocumentDetailModel> DocumentDetail(
-        DocumentDetailRequest request)
+    public async Task<DocumentDetailModel> DocumentDetail(DocumentDetailRequest request)
     {
         try
         {

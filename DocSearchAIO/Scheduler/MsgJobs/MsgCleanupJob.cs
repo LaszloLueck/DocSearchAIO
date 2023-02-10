@@ -1,6 +1,6 @@
 using Akka.Actor;
 using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt.UnsafeValueAccess;
@@ -11,61 +11,63 @@ namespace DocSearchAIO.Scheduler.MsgJobs;
 
 public class MsgCleanupJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
     private readonly ISchedulerUtilities _schedulerUtilities;
-    private readonly ReverseComparerService<ComparerModelMsg> _reverseComparerService;
     private readonly IElasticUtilities _elasticUtilities;
-    private readonly JobStateMemoryCache<MemoryCacheModelMsgCleanup> _jobStateMemoryCache;
-    private readonly CleanUpEntry _cleanUpEntry;
+    private readonly IElasticSearchService _elasticSearchService;
+    private readonly ActorSystem _actorSystem;
+    private readonly IMemoryCache _memoryCache;
 
-    public MsgCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+    public MsgCleanupJob(IConfigurationUpdater configurationUpdater,
         IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
         ActorSystem actorSystem, ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
-        _logger = loggerFactory.CreateLogger<MsgCleanupJob>();
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
-        _cleanUpEntry = _cfg.Cleanup[nameof(MsgCleanupDocument)];
+        _actorSystem = actorSystem;
+        _configurationUpdater = configurationUpdater;
         _schedulerUtilities = schedulerUtilities;
         _elasticUtilities = elasticUtilities;
-        _reverseComparerService =
-            new ReverseComparerService<ComparerModelMsg>(loggerFactory,
-                new ComparerModelMsg(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
-        _jobStateMemoryCache =
-            JobStateMemoryCacheProxy.GetMsgCleanupJobStateMemoryCache(loggerFactory, memoryCache);
+        _elasticSearchService = elasticSearchService;
+        _memoryCache = memoryCache;
     }
 
 
     public async Task Execute(IJobExecutionContext context)
     {
-        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-        if (!_cleanUpEntry.Active)
+        var logger = LoggingFactoryBuilder.Build<MsgCleanupJob>();
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var cleanUpEntry = cfg.Cleanup[nameof(MsgCleanupDocument)];
+        var reverseComparerService =
+            new ReverseComparerService<ComparerModelMsg>(new ComparerModelMsg(cfg.ComparerDirectory), _elasticSearchService, _actorSystem);
+
+        var jobStateMemoryCache =
+            JobStateMemoryCacheProxy.GetMsgCleanupJobStateMemoryCache(_memoryCache);
+        jobStateMemoryCache.SetCacheEntry(JobState.Running);
+        if (!cleanUpEntry.Active)
         {
-            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
-                _cfg.CleanupGroupName,
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, cleanUpEntry.TriggerName,
+                cfg.CleanupGroupName,
                 TriggerState.Paused);
-            _logger.LogWarning(
+            logger.LogWarning(
                 "skip cleanup of msg-files documents because the scheduler is inactive per config");
         }
         else
         {
-            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
+            var cacheEntryOpt = jobStateMemoryCache.CacheEntry(new MemoryCacheModelMsg());
             if (cacheEntryOpt.IsSome &&
                 (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     "cannot execute cleanup documents, opponent job scanning and processing running");
                 return;
             }
 
-            _logger.LogInformation("start processing cleanup job");
+            logger.LogInformation("start processing cleanup job");
             var cleanupIndexName =
                 TypedIndexNameString.New(
-                    _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
-            await _reverseComparerService.Process(cleanupIndexName);
+                    _elasticUtilities.CreateIndexName(cfg.IndexName, cleanUpEntry.ForIndexSuffix));
+            await reverseComparerService.Process(cleanupIndexName);
         }
 
-        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+        jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
     }
 }

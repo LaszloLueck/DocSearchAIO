@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Utilities;
 using LanguageExt;
 using MethodTimer;
@@ -18,11 +18,11 @@ public abstract class ComparerModel
 
     public string ComparerFilePath => $"{_comparerDirectory}/{ComparerFileName}";
 
-    private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects = new();
+    private readonly ConcurrentDictionary<string, ComparerObject> _comparerObjects;
 
-    protected ComparerModel(ILoggerFactory loggerFactory, string comparerDirectory)
+    protected ComparerModel(string comparerDirectory)
     {
-        _logger = loggerFactory.CreateLogger<ComparerModel>();
+        _logger = LoggingFactoryBuilder.Build<ComparerModel>();
         _comparerDirectory = comparerDirectory;
         var cd = Convert(ComparerHelper
             .FillConcurrentDictionary(ComparerFilePath, _logger).ToDictionary());
@@ -33,11 +33,6 @@ public abstract class ComparerModel
     private static readonly
         Func<IReadOnlyDictionary<string, ComparerObject>, ConcurrentDictionary<string, ComparerObject>>
         Convert = source => new ConcurrentDictionary<string, ComparerObject>(source);
-
-    protected ComparerModel(string comparerDirectory)
-    {
-        _comparerDirectory = comparerDirectory;
-    }
 
     public void CleanDictionaryAndRemoveComparerFile()
     {
@@ -115,11 +110,6 @@ public sealed class ComparerModelWord : ComparerModel
     public ComparerModelWord(string comparerDirectory) : base(comparerDirectory)
     {
     }
-
-    public ComparerModelWord(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
-    {
-    }
 }
 
 public sealed class ComparerModelPowerpoint : ComparerModel
@@ -127,11 +117,6 @@ public sealed class ComparerModelPowerpoint : ComparerModel
     protected override string DerivedModelName => GetType().Name;
 
     public ComparerModelPowerpoint(string comparerDirectory) : base(comparerDirectory)
-    {
-    }
-
-    public ComparerModelPowerpoint(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
     {
     }
 }
@@ -143,11 +128,6 @@ public sealed class ComparerModelPdf : ComparerModel
     public ComparerModelPdf(string comparerDirectory) : base(comparerDirectory)
     {
     }
-
-    public ComparerModelPdf(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
-    {
-    }
 }
 
 public sealed class ComparerModelExcel : ComparerModel
@@ -155,11 +135,6 @@ public sealed class ComparerModelExcel : ComparerModel
     protected override string DerivedModelName => GetType().Name;
 
     public ComparerModelExcel(string comparerDirectory) : base(comparerDirectory)
-    {
-    }
-
-    public ComparerModelExcel(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
     {
     }
 }
@@ -171,20 +146,10 @@ public sealed class ComparerModelMsg : ComparerModel
     public ComparerModelMsg(string comparerDirectory) : base(comparerDirectory)
     {
     }
-
-    public ComparerModelMsg(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
-    {
-    }
 }
 
 public sealed class ComparerModelEml : ComparerModel
 {
-    public ComparerModelEml(ILoggerFactory loggerFactory, string comparerDirectory) : base(loggerFactory,
-        comparerDirectory)
-    {
-    }
-
     public ComparerModelEml(string comparerDirectory) : base(comparerDirectory)
     {
     }

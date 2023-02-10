@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,7 +13,7 @@ public class InitEndpoint : EndpointBaseAsync.WithRequest<InitRequest>.WithActio
 
     public InitEndpoint(ILoggerFactory loggerFactory, IInitService initService)
     {
-        _logger = loggerFactory.CreateLogger<InitEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<InitEndpoint>();
         _initService = initService;
     }
 

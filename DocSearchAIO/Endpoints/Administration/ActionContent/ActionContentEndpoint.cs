@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,7 +15,7 @@ public class ActionContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAction
     public ActionContentEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<ActionContentEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<ActionContentEndpoint>();
     }
 
     [HttpGet("/api/administration/getActionContentData")]

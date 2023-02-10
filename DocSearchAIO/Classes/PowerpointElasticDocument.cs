@@ -1,5 +1,4 @@
-﻿using DocSearchAIO.Endpoints.Detail;
-using Nest;
+﻿using Nest;
 
 namespace DocSearchAIO.Classes;
 

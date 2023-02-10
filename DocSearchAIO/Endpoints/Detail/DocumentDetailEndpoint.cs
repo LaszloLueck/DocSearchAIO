@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,7 +15,7 @@ public class DocumentDetailEndpoint : EndpointBaseAsync.WithRequest<DocumentDeta
     public DocumentDetailEndpoint(IDocumentDetailService documentDetailService, ILoggerFactory loggerFactory)
     {
         _documentDetailService = documentDetailService;
-        _logger = loggerFactory.CreateLogger<DocumentDetailEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<DocumentDetailEndpoint>();
     }
 
 

@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Endpoints.Administration.GenericContent;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ public class ReindexAndStartJobEndpoint : EndpointBaseAsync.WithRequest<ReindexA
     public ReindexAndStartJobEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<ReindexAndStartJobEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<ReindexAndStartJobEndpoint>();
     }
 
     [HttpPost("/api/administration/reindexAndStartJob")]

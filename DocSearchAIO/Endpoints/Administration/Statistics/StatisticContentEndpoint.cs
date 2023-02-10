@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,7 +14,7 @@ public class StatisticContentEndpoint : EndpointBaseAsync.WithoutRequest.WithAct
     public StatisticContentEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<StatisticContentEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<StatisticContentEndpoint>();
     }
 
     [HttpGet("/api/administration/getStatisticContentData")]

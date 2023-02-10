@@ -1,4 +1,5 @@
 using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Services;
 
 namespace DocSearchAIO.Utilities;
@@ -16,7 +17,7 @@ public class ElasticUtilities : IElasticUtilities
 
     public ElasticUtilities(ILoggerFactory loggerFactory, IElasticSearchService elasticSearchService)
     {
-        _logger = loggerFactory.CreateLogger<ElasticUtilities>();
+        _logger = LoggingFactoryBuilder.Build<ElasticUtilities>();
         _elasticSearchService = elasticSearchService;
     }
 

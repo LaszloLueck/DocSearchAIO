@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Statistics;
 using LanguageExt;
 
@@ -13,13 +14,9 @@ public abstract class StatisticModel
 
     public TypedFileNameString StatisticFileName => TypedFileNameString.New($"statistics_{DerivedModelName}.txt");
 
-    protected StatisticModel(ILoggerFactory loggerFactory)
-    {
-        _logger = loggerFactory.CreateLogger<StatisticModel>();
-    }
-
     protected StatisticModel()
     {
+        _logger = LoggingFactoryBuilder.Build<StatisticModel>();
     }
 
     public Option<ProcessingJobStatistic> LatestJobStatisticByModel()
@@ -59,8 +56,7 @@ public sealed class StatisticModelWord : StatisticModel
     {
     }
 
-    public StatisticModelWord(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) :
-        base(loggerFactory)
+    public StatisticModelWord(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
@@ -75,8 +71,7 @@ public sealed class StatisticModelPowerpoint : StatisticModel
     {
     }
 
-    public StatisticModelPowerpoint(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) :
-        base(loggerFactory)
+    public StatisticModelPowerpoint(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
@@ -91,8 +86,7 @@ public sealed class StatisticModelPdf : StatisticModel
     {
     }
 
-    public StatisticModelPdf(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) :
-        base(loggerFactory)
+    public StatisticModelPdf(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
@@ -107,8 +101,7 @@ public sealed class StatisticModelExcel : StatisticModel
     {
     }
 
-    public StatisticModelExcel(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) :
-        base(loggerFactory)
+    public StatisticModelExcel(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
@@ -121,8 +114,7 @@ public sealed class StatisticModelMsg : StatisticModel
 
     public StatisticModelMsg() { }
 
-    public StatisticModelMsg(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
-        loggerFactory)
+    public StatisticModelMsg(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }
@@ -136,8 +128,7 @@ public sealed class StatisticModelEml : StatisticModel
 
     public StatisticModelEml() { }
 
-    public StatisticModelEml(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory) : base(
-        loggerFactory)
+    public StatisticModelEml(TypedDirectoryPathString statisticsDirectory)
     {
         StatisticsDirectory = statisticsDirectory;
     }

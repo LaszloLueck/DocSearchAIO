@@ -1,16 +1,27 @@
-﻿using DocSearchAIO.Configuration;
-using DocSearchAIO.Services;
+﻿using DocSearchAIO.Services;
 using Elasticsearch.Net;
 using Nest;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks;
 
-public static class ElasticSearchExtensions
+public interface IElasticSearchExtensions
 {
-    public static void AddElasticSearch(this IServiceCollection services, IConfiguration configuration)
+    public IElasticSearchService AddElasticSearch();
+}
+
+
+public class ElasticSearchExtensions : IElasticSearchExtensions
+{
+    private readonly IConfigurationUpdater _configurationUpdater;
+
+    public ElasticSearchExtensions(IConfigurationUpdater configurationUpdater)
     {
-        var cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(cfg);
+        _configurationUpdater = configurationUpdater;
+    }
+    
+    public IElasticSearchService AddElasticSearch()
+    {
+        var cfg = _configurationUpdater.ReadConfiguration();
         var uriList = cfg.ElasticEndpoints.Map(e => new Uri(e));
         var pool = new StaticConnectionPool(uriList);
         var settings = new ConnectionSettings(pool)
@@ -18,7 +29,6 @@ public static class ElasticSearchExtensions
             .BasicAuthentication(cfg.ElasticUser, cfg.ElasticPassword)
             .PrettyJson();
         var client = new ElasticClient(settings);
-        var elasticSearchService = new ElasticSearchService(client);
-        services.AddSingleton<IElasticSearchService>(elasticSearchService);
+        return new ElasticSearchService(client);
     }
 }

@@ -1,82 +1,82 @@
 using System.Text.Json.Serialization;
 using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using LanguageExt;
-using LanguageExt.Pretty;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DocSearchAIO.Scheduler;
 
 public static class JobStateMemoryCacheProxy
 {
-    public static readonly Func<ILoggerFactory, IMemoryCache,
+    public static readonly Func<IMemoryCache,
             Seq<(IProcessorBase, Func<MemoryCacheModel>)>>
-        AsIEnumerable = (loggerFactory, memoryCache) =>
+        AsIEnumerable = memoryCache =>
         {
             return Seq<(IProcessorBase, Func<MemoryCacheModel>)>(
                 (new ProcessorBaseWord(),
-                    () => new MemoryCacheModelWord(loggerFactory, memoryCache)),
+                    () => new MemoryCacheModelWord(memoryCache)),
                 (new ProcessorBasePowerpoint(),
-                    () => new MemoryCacheModelPowerpoint(loggerFactory, memoryCache)),
+                    () => new MemoryCacheModelPowerpoint(memoryCache)),
                 (new ProcessorBasePdf(),
-                    () => new MemoryCacheModelPdf(loggerFactory, memoryCache)),
+                    () => new MemoryCacheModelPdf(memoryCache)),
                 (new ProcessorBaseExcel(),
-                    () => new MemoryCacheModelExcel(loggerFactory, memoryCache)),
+                    () => new MemoryCacheModelExcel(memoryCache)),
                 (new ProcessorBaseMsg(),
-                    () => new MemoryCacheModelMsg(loggerFactory, memoryCache)),
+                    () => new MemoryCacheModelMsg(memoryCache)),
                 (new ProcessorBaseEml(),
-                    () => new MemoryCacheModelEml(loggerFactory, memoryCache))
+                    () => new MemoryCacheModelEml(memoryCache))
             );
         };
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWord>>
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelWord>>
         GetWordJobStateMemoryCache =
-            (loggerFactory, memoryCache) =>
-                new JobStateMemoryCache<MemoryCacheModelWord>(loggerFactory, memoryCache);
+            memoryCache =>
+                new JobStateMemoryCache<MemoryCacheModelWord>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpoint>>
-        GetPowerpointJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelPowerpoint>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpoint>>
+        GetPowerpointJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelPowerpoint>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdf>>
-        GetPdfJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelPdf>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdf>>
+        GetPdfJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelPdf>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcel>>
-        GetExcelJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelExcel>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcel>>
+        GetExcelJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelExcel>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsg>>
-        GetMsgJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelMsg>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsg>>
+        GetMsgJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelMsg>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEml>>
-        GetEmlJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelEml>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelEml>>
+        GetEmlJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelEml>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcelCleanup>>
-        GetExcelCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelExcelCleanup>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelExcelCleanup>>
+        GetExcelCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelExcelCleanup>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdfCleanup>>
-        GetPdfCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelPdfCleanup>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelPdfCleanup>>
+        GetPdfCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelPdfCleanup>(memoryCache);
 
     public static readonly
-        Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>>
-        GetPowerpointCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>(loggerFactory, memoryCache);
+        Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>>
+        GetPowerpointCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelPowerpointCleanup>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelWordCleanup>>
-        GetWordCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelWordCleanup>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelWordCleanup>>
+        GetWordCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelWordCleanup>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsgCleanup>>
-        GetMsgCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelMsgCleanup>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelMsgCleanup>>
+        GetMsgCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelMsgCleanup>(memoryCache);
 
-    public static readonly Func<ILoggerFactory, IMemoryCache, JobStateMemoryCache<MemoryCacheModelEmlCleanup>>
-        GetEmlCleanupJobStateMemoryCache = (loggerFactory, memoryCache) =>
-            new JobStateMemoryCache<MemoryCacheModelEmlCleanup>(loggerFactory, memoryCache);
+    public static readonly Func<IMemoryCache, JobStateMemoryCache<MemoryCacheModelEmlCleanup>>
+        GetEmlCleanupJobStateMemoryCache = memoryCache =>
+            new JobStateMemoryCache<MemoryCacheModelEmlCleanup>(memoryCache);
 }
 
 public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
@@ -84,9 +84,9 @@ public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
     private readonly ILogger _logger;
     private readonly IMemoryCache _memoryCache;
 
-    public JobStateMemoryCache(ILoggerFactory loggerFactory, IMemoryCache memoryCache)
+    public JobStateMemoryCache(IMemoryCache memoryCache)
     {
-        _logger = loggerFactory.CreateLogger<JobStateMemoryCache<TModel>>();
+        _logger = LoggingFactoryBuilder.Build<JobStateMemoryCache<TModel>>();
         _memoryCache = memoryCache;
     }
 
@@ -102,14 +102,14 @@ public class JobStateMemoryCache<TModel> where TModel : MemoryCacheModel
 
     public void RemoveCacheEntry()
     {
-        _logger.LogInformation("remove cache entry");
+        _logger.LogInformation("remove cache entry for {Name}", typeof(TModel).Name);
         _memoryCache.Remove(typeof(TModel).Name);
     }
 
     public void SetCacheEntry(JobState jobState)
     {
         _logger.LogInformation("set cache entry to {JobState}", jobState);
-        var cacheEntry = new CacheEntry { CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState };
+        var cacheEntry = new CacheEntry {CacheKey = typeof(TModel).Name, DateTime = DateTime.Now, JobState = jobState};
         _memoryCache.Set(cacheEntry.CacheKey, cacheEntry);
     }
 }
@@ -123,10 +123,7 @@ public enum JobState
 
 public class CacheEntry
 {
-    [JsonPropertyName("cacheKey")]
-    public string CacheKey { get; set; } = string.Empty;
-    [JsonPropertyName("dateTime")]
-    public DateTime DateTime { get; set; }
-    [JsonPropertyName("jobState")]
-    public JobState JobState { get; set; }
+    [JsonPropertyName("cacheKey")] public string CacheKey { get; set; } = string.Empty;
+    [JsonPropertyName("dateTime")] public DateTime DateTime { get; set; }
+    [JsonPropertyName("jobState")] public JobState JobState { get; set; }
 }

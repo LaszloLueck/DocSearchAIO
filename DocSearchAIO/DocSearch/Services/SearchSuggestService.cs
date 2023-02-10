@@ -1,6 +1,5 @@
-﻿using System.Diagnostics;
-using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
+﻿using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Suggest;
 using DocSearchAIO.Services;
 using LanguageExt;
@@ -19,16 +18,14 @@ public class SearchSuggestService : ISearchSuggestService
 {
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ILogger<SearchSuggestService> _logger;
-    private readonly ConfigurationObject _configurationObject;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
-    public SearchSuggestService(IElasticSearchService elasticSearchService, ILoggerFactory loggerFactory,
-        IConfiguration configuration)
+    public SearchSuggestService(IElasticSearchService elasticSearchService,
+        IConfigurationUpdater configurationUpdater)
     {
-        _logger = loggerFactory.CreateLogger<SearchSuggestService>();
+        _logger = LoggingFactoryBuilder.Build<SearchSuggestService>();
         _elasticSearchService = elasticSearchService;
-        var cfgTmp = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(cfgTmp);
-        _configurationObject = cfgTmp;
+        _configurationUpdater = configurationUpdater;
     }
 
 
@@ -38,6 +35,7 @@ public class SearchSuggestService : ISearchSuggestService
         var suggestQuery = new SuggestContainer();
         var suggestBucket = new SuggestBucket();
         var completionSuggester = new CompletionSuggester();
+        var configurationObject = await _configurationUpdater.ReadConfigurationAsync();
         suggestBucket.Prefix = suggestRequest.SearchPhrase;
         completionSuggester.Analyzer = "keyword";
         completionSuggester.Size = 10;
@@ -58,15 +56,14 @@ public class SearchSuggestService : ISearchSuggestService
             static IndexName ToIndexName(string indexName) => indexName;
             return toCheck ? ToIndexName(indexName) : Option<IndexName>.None;
         }
-
-
+        
         var indices = Seq(
-            CheckIndexName($"{_configurationObject.IndexName}-word", suggestRequest.SuggestWord),
-            CheckIndexName($"{_configurationObject.IndexName}-excel", suggestRequest.SuggestExcel),
-            CheckIndexName($"{_configurationObject.IndexName}-powerpoint", suggestRequest.SuggestPowerpoint),
-            CheckIndexName($"{_configurationObject.IndexName}-pdf", suggestRequest.SuggestPdf),
-            CheckIndexName($"{_configurationObject.IndexName}-eml", suggestRequest.SuggestEml),
-            CheckIndexName($"{_configurationObject.IndexName}-msg", suggestRequest.SuggestMsg)
+            CheckIndexName($"{configurationObject.IndexName}-word", suggestRequest.SuggestWord),
+            CheckIndexName($"{configurationObject.IndexName}-excel", suggestRequest.SuggestExcel),
+            CheckIndexName($"{configurationObject.IndexName}-powerpoint", suggestRequest.SuggestPowerpoint),
+            CheckIndexName($"{configurationObject.IndexName}-pdf", suggestRequest.SuggestPdf),
+            CheckIndexName($"{configurationObject.IndexName}-eml", suggestRequest.SuggestEml),
+            CheckIndexName($"{configurationObject.IndexName}-msg", suggestRequest.SuggestMsg)
         );
 
         var resultsAsync = await indices

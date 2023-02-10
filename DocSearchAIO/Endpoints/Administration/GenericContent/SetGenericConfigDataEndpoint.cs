@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -13,7 +14,7 @@ public class SetGenericConfigDataEndpoint : EndpointBaseAsync.WithRequest<Admini
 
     public SetGenericConfigDataEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
-        _logger = loggerFactory.CreateLogger<SetGenericConfigDataEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<SetGenericConfigDataEndpoint>();
         _administrationService = administrationService;
     }
 

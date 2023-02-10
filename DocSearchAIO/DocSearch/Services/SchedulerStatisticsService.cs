@@ -19,10 +19,9 @@ public class SchedulerStatisticsService : ISchedulerStatisticsService
     private readonly ILogger _logger;
     private readonly IConfigurationUpdater _configurationUpdater;
 
-    public SchedulerStatisticsService(ILoggerFactory loggerFactory,
-        IConfigurationUpdater configurationUpdater)
+    public SchedulerStatisticsService(IConfigurationUpdater configurationUpdater)
     {
-        _logger = loggerFactory.CreateLogger<SchedulerStatisticsService>();
+        _logger = LoggingFactoryBuilder.Build<SchedulerStatisticsService>();
         _configurationUpdater = configurationUpdater;
     }
 

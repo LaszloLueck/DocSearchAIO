@@ -6,6 +6,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.TOs;
 using DocSearchAIO.Services;
 using DocSearchAIO.Statistics;
@@ -26,45 +27,46 @@ namespace DocSearchAIO.Scheduler.OfficePowerpointJobs;
 [DisallowConcurrentExecution]
 public class OfficePowerpointProcessingJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _cfgConfigurationUpdater;
     private readonly ActorSystem _actorSystem;
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ISchedulerUtilities _schedulerUtilities;
-    private readonly StatisticUtilities<StatisticModelPowerpoint> _statisticUtilities;
-    private readonly ComparerModel _comparerModel;
-    private readonly JobStateMemoryCache<MemoryCacheModelPowerpoint> _jobStateMemoryCache;
     private readonly IElasticUtilities _elasticUtilities;
+    private readonly IMemoryCache _memoryCache;
 
-    public OfficePowerpointProcessingJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+    public OfficePowerpointProcessingJob(IConfigurationUpdater configurationUpdater,
         ActorSystem actorSystem, IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
         ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
-        _logger = loggerFactory.CreateLogger<OfficePowerpointProcessingJob>();
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
+        _cfgConfigurationUpdater = configurationUpdater;
         _actorSystem = actorSystem;
+        _memoryCache = memoryCache;
         _elasticSearchService = elasticSearchService;
         _schedulerUtilities = schedulerUtilities;
         _elasticUtilities = elasticUtilities;
-        _statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(loggerFactory,
-            TypedDirectoryPathString.New(_cfg.StatisticsDirectory),
-            new StatisticModelPowerpoint().StatisticFileName);
-        _comparerModel = new ComparerModelPowerpoint(loggerFactory, _cfg.ComparerDirectory);
-        _jobStateMemoryCache =
-            JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(loggerFactory, memoryCache);
-        _jobStateMemoryCache.RemoveCacheEntry();
     }
 
     [Time]
     public async Task Execute(IJobExecutionContext context)
     {
-        var configEntry = _cfg.Processing[nameof(PowerpointElasticDocument)];
-        var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
+        var logger = LoggingFactoryBuilder.Build<OfficePowerpointProcessingJob>();
+        var cfg = await _cfgConfigurationUpdater.ReadConfigurationAsync();
+
+        var statisticUtilities = StatisticUtilitiesProxy.PowerpointStatisticUtility(
+            TypedDirectoryPathString.New(cfg.StatisticsDirectory),
+            new StatisticModelPowerpoint().StatisticFileName);
+        var comparerModel = new ComparerModelPowerpoint(cfg.ComparerDirectory);
+        var jobStateMemoryCache =
+            JobStateMemoryCacheProxy.GetPowerpointJobStateMemoryCache(_memoryCache);
+        jobStateMemoryCache.RemoveCacheEntry();
+
+
+        var configEntry = cfg.Processing[nameof(PowerpointElasticDocument)];
+        var cacheEntryOpt = jobStateMemoryCache.CacheEntry(new MemoryCacheModelPowerpointCleanup());
         if (cacheEntryOpt.IsSome &&
             (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "cannot execute scanning and processing documents, opponent job cleanup running");
             return;
         }
@@ -73,30 +75,30 @@ public class OfficePowerpointProcessingJob : IJob
         {
             await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler,
                 configEntry.TriggerName,
-                _cfg.SchedulerGroupName, TriggerState.Paused);
-            _logger.LogWarning(
+                cfg.SchedulerGroupName, TriggerState.Paused);
+            logger.LogWarning(
                 "skip processing of powerpoint documents because the scheduler is inactive per config");
         }
         else
         {
-            _logger.LogInformation("start job");
+            logger.LogInformation("start job");
             var indexName =
-                _elasticUtilities.CreateIndexName(_cfg.IndexName, configEntry.IndexSuffix);
+                _elasticUtilities.CreateIndexName(cfg.IndexName, configEntry.IndexSuffix);
 
             await _elasticUtilities.CheckAndCreateElasticIndex<PowerpointElasticDocument>(indexName);
 
-            _logger.LogInformation("start crunching and indexing some powerpoint documents");
+            logger.LogInformation("start crunching and indexing some powerpoint documents");
 
-            if (!Directory.Exists(_cfg.ScanPath))
+            if (!Directory.Exists(cfg.ScanPath))
             {
-                _logger.LogWarning(
-                    "directory to scan <{ScanPath}> does not exists. skip working", _cfg.ScanPath);
+                logger.LogWarning(
+                    "directory to scan <{ScanPath}> does not exists. skip working", cfg.ScanPath);
             }
             else
             {
                 try
                 {
-                    _jobStateMemoryCache.SetCacheEntry(JobState.Running);
+                    jobStateMemoryCache.SetCacheEntry(JobState.Running);
                     var jobStatistic = new ProcessingJobStatistic
                     {
                         Id = Guid.NewGuid().ToString(),
@@ -104,41 +106,41 @@ public class OfficePowerpointProcessingJob : IJob
                     };
 
                     var sw = Stopwatch.StartNew();
-                    await TypedFilePathString.New(_cfg.ScanPath)
+                    await TypedFilePathString.New(cfg.ScanPath)
                         .CreateSource(configEntry.FileExtension)
                         .UseExcludeFileFilter(configEntry.ExcludeFilter)
-                        .CountEntireDocs(_statisticUtilities)
-                        .ProcessPowerpointDocumentAsync(configEntry, _cfg,
-                            _statisticUtilities, _logger)
-                        .FilterExistingUnchangedAsync(configEntry, _comparerModel)
+                        .CountEntireDocs(statisticUtilities)
+                        .ProcessPowerpointDocumentAsync(configEntry, cfg,
+                            statisticUtilities, logger)
+                        .FilterExistingUnchangedAsync(configEntry, comparerModel)
                         .GroupedWithin(50, TimeSpan.FromSeconds(10))
                         .WithMaybeFilter()
-                        .CountFilteredDocs(_statisticUtilities)
+                        .CountFilteredDocs(statisticUtilities)
                         .WriteDocumentsToIndexAsync(configEntry, _elasticSearchService,
                             indexName)
                         .RunIgnoreAsync(_actorSystem.Materializer());
 
-                    _logger.LogInformation("finished processing powerpoint documents");
+                    logger.LogInformation("finished processing powerpoint documents");
 
                     sw.Stop();
                     await _elasticSearchService.FlushIndexAsync(indexName);
                     await _elasticSearchService.RefreshIndexAsync(indexName);
                     jobStatistic.EndJob = DateTime.Now;
                     jobStatistic.ElapsedTimeMillis = sw.ElapsedMilliseconds;
-                    jobStatistic.EntireDocCount = _statisticUtilities.EntireDocumentsCount();
+                    jobStatistic.EntireDocCount = statisticUtilities.EntireDocumentsCount();
                     jobStatistic.ProcessingError =
-                        _statisticUtilities.FailedDocumentsCount();
+                        statisticUtilities.FailedDocumentsCount();
                     jobStatistic.IndexedDocCount =
-                        _statisticUtilities.ChangedDocumentsCount();
-                    _statisticUtilities.AddJobStatisticToDatabase(
+                        statisticUtilities.ChangedDocumentsCount();
+                    statisticUtilities.AddJobStatisticToDatabase(
                         jobStatistic);
-                    _comparerModel.RemoveComparerFile();
-                    await _comparerModel.WriteAllLinesAsync();
-                    _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+                    comparerModel.RemoveComparerFile();
+                    await comparerModel.WriteAllLinesAsync();
+                    jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "An error in processing pipeline occured");
+                    logger.LogError(ex, "An error in processing pipeline occured");
                 }
             }
         }
@@ -280,7 +282,7 @@ public static class PowerpointProcessingHelper
 
     private static IEnumerable<OfficeDocumentComment>
         ConvertToOfficeDocumentComment(this CommentList comments) =>
-        comments.Map(comment => OfficeDocumentComment((Comment)comment));
+        comments.Map(comment => OfficeDocumentComment((Comment) comment));
 
     private static OfficeDocumentComment OfficeDocumentComment(Comment comment) =>
         new()

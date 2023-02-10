@@ -1,5 +1,5 @@
 using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Administration.Options;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
@@ -14,28 +14,28 @@ public interface IOptionDialogService
 public class OptionDialogService : IOptionDialogService
 {
     private readonly IElasticSearchService _elasticSearchService;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
 
-    public OptionDialogService(IElasticSearchService elasticSearchService, IConfiguration configuration)
+    public OptionDialogService(IElasticSearchService elasticSearchService, IConfigurationUpdater configurationUpdater)
     {
         _elasticSearchService = elasticSearchService;
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
+        _configurationUpdater = configurationUpdater;
     }
 
     public async Task<OptionDialogResponse> OptionDialog(
         OptionDialogRequest optionDialogRequest)
     {
-        var indexResponse = await _elasticSearchService.IndicesWithPatternAsync($"{_cfg.IndexName}-*");
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var indexResponse = await _elasticSearchService.IndicesWithPatternAsync($"{cfg.IndexName}-*");
         var knownIndices = indexResponse.IndexNames;
 
         OptionDialogResponse response = optionDialogRequest;
-        response.WordIndexExists = StaticHelpers.IndexKeyExpression<WordElasticDocument>(_cfg, knownIndices);
-        response.ExcelIndexExists = StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(_cfg, knownIndices);
-        response.PowerpointIndexExists = StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(_cfg, knownIndices);
-        response.PdfIndexExists = StaticHelpers.IndexKeyExpression<PdfElasticDocument>(_cfg, knownIndices);
-        response.MsgIndexExists = StaticHelpers.IndexKeyExpression<MsgElasticDocument>(_cfg, knownIndices);
-        response.EmlIndexExists = StaticHelpers.IndexKeyExpression<EmlElasticDocument>(_cfg, knownIndices);
+        response.WordIndexExists = StaticHelpers.IndexKeyExpression<WordElasticDocument>(cfg, knownIndices);
+        response.ExcelIndexExists = StaticHelpers.IndexKeyExpression<ExcelElasticDocument>(cfg, knownIndices);
+        response.PowerpointIndexExists = StaticHelpers.IndexKeyExpression<PowerpointElasticDocument>(cfg, knownIndices);
+        response.PdfIndexExists = StaticHelpers.IndexKeyExpression<PdfElasticDocument>(cfg, knownIndices);
+        response.MsgIndexExists = StaticHelpers.IndexKeyExpression<MsgElasticDocument>(cfg, knownIndices);
+        response.EmlIndexExists = StaticHelpers.IndexKeyExpression<EmlElasticDocument>(cfg, knownIndices);
         return response;
     }
 }

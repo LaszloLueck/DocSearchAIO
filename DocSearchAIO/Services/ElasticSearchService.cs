@@ -1,7 +1,6 @@
 ﻿using DocSearchAIO.Classes;
 using DocSearchAIO.DocSearch.ServiceHooks;
 using Elasticsearch.Net;
-using LanguageExt;
 using Nest;
 using Array = System.Array;
 

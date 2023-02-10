@@ -1,6 +1,6 @@
 using Akka.Actor;
 using DocSearchAIO.Classes;
-using DocSearchAIO.Configuration;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Services;
 using DocSearchAIO.Utilities;
 using LanguageExt.UnsafeValueAccess;
@@ -11,60 +11,65 @@ namespace DocSearchAIO.Scheduler.EmlJobs;
 
 public class EmlCleanupJob : IJob
 {
-    private readonly ILogger _logger;
-    private readonly ConfigurationObject _cfg;
+    private readonly IConfigurationUpdater _configurationUpdater;
     private readonly ISchedulerUtilities _schedulerUtilities;
-    private readonly ReverseComparerService<ComparerModelEml> _reverseComparerService;
+    private readonly IElasticSearchService _elasticSearchService;
     private readonly IElasticUtilities _elasticUtilities;
-    private readonly JobStateMemoryCache<MemoryCacheModelEmlCleanup> _jobStateMemoryCache;
-    private readonly CleanUpEntry _cleanUpEntry;
+    private readonly ActorSystem _actorSystem;
+    private readonly IMemoryCache _memoryCache;
 
-    public EmlCleanupJob(ILoggerFactory loggerFactory, IConfiguration configuration,
+    public EmlCleanupJob(IConfigurationUpdater configurationUpdater,
         IElasticSearchService elasticSearchService, IMemoryCache memoryCache,
         ActorSystem actorSystem, ISchedulerUtilities schedulerUtilities, IElasticUtilities elasticUtilities)
     {
-        _logger = loggerFactory.CreateLogger<EmlCleanupJob>();
-        _cfg = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(_cfg);
-        _cleanUpEntry = _cfg.Cleanup[nameof(EmlCleanupDocument)];
+        _actorSystem = actorSystem;
+        _elasticSearchService = elasticSearchService;
+        _configurationUpdater = configurationUpdater;
         _schedulerUtilities = schedulerUtilities;
         _elasticUtilities = elasticUtilities;
-        _reverseComparerService =
-            new ReverseComparerService<ComparerModelEml>(loggerFactory,
-                new ComparerModelEml(_cfg.ComparerDirectory), elasticSearchService, actorSystem);
-        _jobStateMemoryCache =
-            JobStateMemoryCacheProxy.GetEmlCleanupJobStateMemoryCache(loggerFactory, memoryCache);
+        _memoryCache = memoryCache;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
-        _jobStateMemoryCache.SetCacheEntry(JobState.Running);
-        if (!_cleanUpEntry.Active)
+        var logger = LoggingFactoryBuilder.Build<EmlCleanupJob>();
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var cleanUpEntry = cfg.Cleanup[nameof(EmlCleanupDocument)];
+
+        var reverseComparerService =
+            new ReverseComparerService<ComparerModelEml>(new ComparerModelEml(cfg.ComparerDirectory), _elasticSearchService, _actorSystem);
+
+        var jobStateMemoryCache = JobStateMemoryCacheProxy.GetEmlCleanupJobStateMemoryCache(_memoryCache);
+        
+        jobStateMemoryCache.SetCacheEntry(JobState.Running);
+
+
+        if (!cleanUpEntry.Active)
         {
-            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, _cleanUpEntry.TriggerName,
-                _cfg.CleanupGroupName,
+            await _schedulerUtilities.SetTriggerStateByUserAction(context.Scheduler, cleanUpEntry.TriggerName,
+                cfg.CleanupGroupName,
                 TriggerState.Paused);
-            _logger.LogWarning(
+            logger.LogWarning(
                 "skip cleanup of eml-files documents because the scheduler is inactive per config");
         }
         else
         {
-            var cacheEntryOpt = _jobStateMemoryCache.CacheEntry(new MemoryCacheModelEml());
+            var cacheEntryOpt = jobStateMemoryCache.CacheEntry(new MemoryCacheModelEml());
             if (cacheEntryOpt.IsSome &&
                 (cacheEntryOpt.IsNone || cacheEntryOpt.ValueUnsafe().JobState != JobState.Stopped))
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     "cannot execute cleanup documents, opponent job scanning and processing running");
                 return;
             }
 
-            _logger.LogInformation("start processing cleanup job");
+            logger.LogInformation("start processing cleanup job");
             var cleanupIndexName =
                 TypedIndexNameString.New(
-                    _elasticUtilities.CreateIndexName(_cfg.IndexName, _cleanUpEntry.ForIndexSuffix));
-            await _reverseComparerService.Process(cleanupIndexName);
+                    _elasticUtilities.CreateIndexName(cfg.IndexName, cleanUpEntry.ForIndexSuffix));
+            await reverseComparerService.Process(cleanupIndexName);
         }
 
-        _jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
+        jobStateMemoryCache.SetCacheEntry(JobState.Stopped);
     }
 }

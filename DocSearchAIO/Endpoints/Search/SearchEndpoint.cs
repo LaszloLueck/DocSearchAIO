@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -13,7 +14,7 @@ public class SearchEndpoint : EndpointBaseAsync.WithRequest<DoSearchRequest>.Wit
     public SearchEndpoint(IDoSearchService searchService, ILoggerFactory loggerFactory)
     {
         _doSearchService = searchService;
-        _logger = loggerFactory.CreateLogger<SearchEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<SearchEndpoint>();
     }
 
     [HttpPost("/api/search/doSearch")]

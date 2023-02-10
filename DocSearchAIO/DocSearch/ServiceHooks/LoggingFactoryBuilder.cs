@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging.Console;
+﻿using MethodTimer;
+using Microsoft.Extensions.Logging.Console;
 
 namespace DocSearchAIO.DocSearch.ServiceHooks;
 
@@ -21,6 +22,7 @@ public static class LoggingFactoryBuilder
     }
 
 
+    [Time]
     public static ILogger<T> Build<T>()
     {
         return CreateLoggingFactory().CreateLogger<T>();

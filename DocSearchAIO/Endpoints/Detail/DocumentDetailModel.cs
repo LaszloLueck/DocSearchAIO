@@ -1,5 +1,3 @@
-using DocSearchAIO.Classes;
-
 namespace DocSearchAIO.Endpoints.Detail;
 
 public sealed record DocumentDetailModel(string Creator, DateTime Created, string LastModifiedBy, DateTime LastModified,

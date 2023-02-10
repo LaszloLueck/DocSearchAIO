@@ -44,39 +44,35 @@ public interface IAdministrationService
 public class AdministrationService : IAdministrationService
 {
     private readonly ILogger _logger;
-    private readonly ConfigurationObject _configurationObject;
     private readonly IElasticSearchService _elasticSearchService;
     private readonly ISchedulerStatisticsService _schedulerStatisticsService;
-    private readonly ILoggerFactory _loggerFactory;
     private readonly IMemoryCache _memoryCache;
     private readonly IElasticUtilities _elasticUtilities;
     private readonly MemoryCacheModelProxy _memoryCacheModelProxy;
     private readonly IConfigurationUpdater _configurationUpdater;
 
-    public AdministrationService(ILoggerFactory loggerFactory,
-        IConfiguration configuration, IElasticSearchService elasticSearchService, IMemoryCache memoryCache, IElasticUtilities elasticUtilities, ISchedulerStatisticsService schedulerStatisticsService, IConfigurationUpdater configurationUpdater)
+    public AdministrationService(IElasticSearchService elasticSearchService,
+        IMemoryCache memoryCache, IElasticUtilities elasticUtilities,
+        ISchedulerStatisticsService schedulerStatisticsService, IConfigurationUpdater configurationUpdater)
     {
-        _logger = loggerFactory.CreateLogger<AdministrationService>();
-        var cfgTmp = new ConfigurationObject();
-        configuration.GetSection("configurationObject").Bind(cfgTmp);
-        _configurationObject = cfgTmp;
+        _logger = LoggingFactoryBuilder.Build<AdministrationService>();
         _elasticSearchService = elasticSearchService;
         _schedulerStatisticsService = schedulerStatisticsService;
         _elasticUtilities = elasticUtilities;
-        _memoryCacheModelProxy = new MemoryCacheModelProxy(loggerFactory, memoryCache);
-        _loggerFactory = loggerFactory;
+        _memoryCacheModelProxy = new MemoryCacheModelProxy(memoryCache);
         _memoryCache = memoryCache;
         _configurationUpdater = configurationUpdater;
     }
 
     public async Task<bool> PauseTriggerWithTriggerId(PauseTriggerRequest pauseTriggerRequest)
     {
-        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
                 var triggerKey = new TriggerKey(pauseTriggerRequest.TriggerId, pauseTriggerRequest.GroupId);
-                var result = await ConfigurationTuple(_configurationObject)
+                var result = await ConfigurationTuple(cfg)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)
                     .ToOption()
                     .Match(
@@ -85,14 +81,14 @@ public class AdministrationService : IAdministrationService
                             _logger.LogInformation("pause trigger for {TriggerName} :: {TriggerKey}",
                                 currentSelected.Key, triggerKey.Name);
 
-                            _configurationObject.Processing[currentSelected.Key].Active = currentSelected.Item3 switch
+                            cfg.Processing[currentSelected.Key].Active = currentSelected.Item3 switch
                             {
                                 "processing" => false,
                                 "cleanup" => false,
                                 _ => true
                             };
 
-                            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
+                            await _configurationUpdater.UpdateConfigurationObjectAsync(cfg, true);
                             await scheduler.PauseTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
@@ -105,8 +101,7 @@ public class AdministrationService : IAdministrationService
             },
             async () =>
             {
-                _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                    _configurationObject.SchedulerName);
+                _logger.LogWarning("Cannot find scheduler with name {SchedulerName}", cfg.SchedulerName);
                 return await Task.FromResult(false);
             });
     }
@@ -129,12 +124,13 @@ public class AdministrationService : IAdministrationService
 
     public async Task<bool> ResumeTriggerWithTriggerId(ResumeTriggerRequest resumeTriggerRequest)
     {
-        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
                 var triggerKey = new TriggerKey(resumeTriggerRequest.TriggerId, resumeTriggerRequest.GroupId);
-                var result = await ConfigurationTuple(_configurationObject)
+                var result = await ConfigurationTuple(cfg)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)
                     .ToOption()
                     .Match(
@@ -143,7 +139,7 @@ public class AdministrationService : IAdministrationService
                             _logger.LogInformation("resume trigger for {TriggerName} :: {TriggerKey}",
                                 currentSelected.Key, triggerKey.Name);
 
-                            _configurationObject.Processing[currentSelected.Key].Active =
+                            cfg.Processing[currentSelected.Key].Active =
                                 currentSelected.SchedulerType switch
                                 {
                                     "processing" => true,
@@ -151,7 +147,7 @@ public class AdministrationService : IAdministrationService
                                     _ => false
                                 };
 
-                            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
+                            await _configurationUpdater.UpdateConfigurationObjectAsync(cfg, true);
                             await scheduler.ResumeTrigger(triggerKey);
                             var currentState = await scheduler.GetTriggerState(triggerKey);
                             _logger.LogInformation("current trigger <{TriggerKey}> state is: {CurrentState}",
@@ -165,14 +161,15 @@ public class AdministrationService : IAdministrationService
             async () =>
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                    _configurationObject.SchedulerName);
+                    cfg.SchedulerName);
                 return await Task.FromResult(false);
             });
     }
 
     public async Task<bool> InstantStartJobWithJobId(StartJobRequest startJobRequest)
     {
-        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
@@ -185,40 +182,42 @@ public class AdministrationService : IAdministrationService
             async () =>
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                    _configurationObject.SchedulerName);
+                    cfg.SchedulerName);
                 return await Task.FromResult(false);
             });
     }
 
     public async Task<bool> SetAdministrationGenericContent(AdministrationGenericRequest request)
     {
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+
         try
         {
-            _configurationObject.ElasticEndpoints = request.ElasticEndpoints;
-            _configurationObject.SchedulerGroupName = request.ProcessorGroupName;
-            _configurationObject.IndexName = request.IndexName;
-            _configurationObject.ElasticUser = request.ElasticUser;
-            _configurationObject.ElasticPassword = request.ElasticPassword;
-            _configurationObject.ScanPath = request.ScanPath;
-            _configurationObject.SchedulerId = request.SchedulerId;
-            _configurationObject.SchedulerName = request.SchedulerName;
-            _configurationObject.UriReplacement = request.UriReplacement;
-            _configurationObject.ActorSystemName = request.ActorSystemName;
-            _configurationObject.ComparerDirectory = request.ComparerDirectory;
-            _configurationObject.CleanupGroupName = request.CleanupGroupName;
+            cfg.ElasticEndpoints = request.ElasticEndpoints;
+            cfg.SchedulerGroupName = request.ProcessorGroupName;
+            cfg.IndexName = request.IndexName;
+            cfg.ElasticUser = request.ElasticUser;
+            cfg.ElasticPassword = request.ElasticPassword;
+            cfg.ScanPath = request.ScanPath;
+            cfg.SchedulerId = request.SchedulerId;
+            cfg.SchedulerName = request.SchedulerName;
+            cfg.UriReplacement = request.UriReplacement;
+            cfg.ActorSystemName = request.ActorSystemName;
+            cfg.ComparerDirectory = request.ComparerDirectory;
+            cfg.CleanupGroupName = request.CleanupGroupName;
 
-            _configurationObject.Processing = request
+            cfg.Processing = request
                 .ProcessorConfigurations
                 .Map(kv => ValueTuple.Create<string, SchedulerEntry>(kv.Key, kv.Value))
                 .ToDictionary();
 
-            _configurationObject.Cleanup = request
+            cfg.Cleanup = request
                 .CleanupConfigurations
                 .Map(kv => ValueTuple.Create<string, CleanUpEntry>(kv.Key, kv.Value))
                 .ToDictionary();
 
 
-            await _configurationUpdater.UpdateConfigurationObjectAsync(_configurationObject, true);
+            await _configurationUpdater.UpdateConfigurationObjectAsync(cfg, true);
             _logger.LogInformation("configuration successfully updated");
             return true;
         }
@@ -231,22 +230,23 @@ public class AdministrationService : IAdministrationService
 
     private Option<ComparerModel> ComparerBaseFromParameter(string parameter)
     {
+        var cfg = _configurationUpdater.ReadConfiguration();
         try
         {
             var comparerBase = parameter switch
             {
                 nameof(WordElasticDocument) =>
-                    new ComparerModelWord(_loggerFactory, _configurationObject.ComparerDirectory) as ComparerModel,
+                    new ComparerModelWord(cfg.ComparerDirectory) as ComparerModel,
                 nameof(PowerpointElasticDocument) =>
-                    new ComparerModelPowerpoint(_loggerFactory, _configurationObject.ComparerDirectory),
+                    new ComparerModelPowerpoint(cfg.ComparerDirectory),
                 nameof(PdfElasticDocument) =>
-                    new ComparerModelPdf(_loggerFactory, _configurationObject.ComparerDirectory),
+                    new ComparerModelPdf(cfg.ComparerDirectory),
                 nameof(ExcelElasticDocument) =>
-                    new ComparerModelExcel(_loggerFactory, _configurationObject.ComparerDirectory),
+                    new ComparerModelExcel(cfg.ComparerDirectory),
                 nameof(MsgElasticDocument) =>
-                    new ComparerModelMsg(_loggerFactory, _configurationObject.ComparerDirectory),
+                    new ComparerModelMsg(cfg.ComparerDirectory),
                 nameof(EmlElasticDocument) =>
-                    new ComparerModelEml(_loggerFactory, _configurationObject.ComparerDirectory),
+                    new ComparerModelEml(cfg.ComparerDirectory),
                 _ => throw new ArgumentOutOfRangeException(nameof(parameter), parameter,
                     $"cannot cast from parameter {parameter}")
             };
@@ -261,11 +261,12 @@ public class AdministrationService : IAdministrationService
 
     public async Task<bool> DeleteIndexAndStartJob(ReindexAndStartJobRequest reindexAndStartJobRequest)
     {
-        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         await schedulerOpt.Match(
             async scheduler =>
             {
-                var boolReturn = await _configurationObject
+                var boolReturn = await cfg
                     .Processing
                     .Filter(d => d.Value.JobName == reindexAndStartJobRequest.JobName)
                     .ToOption()
@@ -275,7 +276,7 @@ public class AdministrationService : IAdministrationService
                             var key = kv.Key;
                             var value = kv.Value;
 
-                            var indexName = _elasticUtilities.CreateIndexName(_configurationObject.IndexName,
+                            var indexName = _elasticUtilities.CreateIndexName(cfg.IndexName,
                                 value.IndexSuffix);
 
                             _logger.LogInformation("remove index {IndexName}", indexName);
@@ -304,7 +305,7 @@ public class AdministrationService : IAdministrationService
             async () =>
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                    _configurationObject.SchedulerName);
+                    cfg.SchedulerName);
                 return await Task.FromResult(false);
             });
         return true;
@@ -312,7 +313,8 @@ public class AdministrationService : IAdministrationService
 
     public async Task<string> TriggerStatusById(TriggerStatusRequest triggerS)
     {
-        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(_configurationObject.SchedulerName);
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+        var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
@@ -322,26 +324,27 @@ public class AdministrationService : IAdministrationService
             async () =>
             {
                 _logger.LogWarning("Cannot find scheduler with name {SchedulerName}",
-                    _configurationObject.SchedulerName);
+                    cfg.SchedulerName);
                 return await Task.FromResult(string.Empty);
             });
     }
 
     public AdministrationGenericRequest GenericContent()
     {
+        var cfg = _configurationUpdater.ReadConfiguration();
         var processSubTypes = StaticHelpers.SubtypesOfType<ElasticDocument>();
         var cleanupSubTypes = StaticHelpers.SubtypesOfType<CleanupDocument>();
-        AdministrationGenericRequest adminGenModel = _configurationObject;
-        adminGenModel.ProcessorConfigurations = _configurationObject
+        AdministrationGenericRequest adminGenModel = cfg;
+        adminGenModel.ProcessorConfigurations = cfg
             .Processing
             .Filter(d => processSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv => (kv.Key, (ProcessorConfiguration)kv.Value))
+            .Map(kv => (kv.Key, (ProcessorConfiguration) kv.Value))
             .ToDictionary();
 
-        adminGenModel.CleanupConfigurations = _configurationObject
+        adminGenModel.CleanupConfigurations = cfg
             .Cleanup
             .Filter(d => cleanupSubTypes.Map(st => st.Name).Contains(d.Key))
-            .Map(kv => (kv.Key, (CleanupConfiguration)kv.Value))
+            .Map(kv => (kv.Key, (CleanupConfiguration) kv.Value))
             .ToDictionary();
         return adminGenModel;
     }
@@ -355,13 +358,15 @@ public class AdministrationService : IAdministrationService
 
     public async Task<IndexStatistic> StatisticsContent()
     {
+        var cfg = await _configurationUpdater.ReadConfigurationAsync();
+
         async Task<IndexResponseObject> IndicesResponse(string indexName) =>
             await _elasticSearchService.IndicesWithPatternAsync($"{indexName}-*");
 
         async Task<Seq<string>> KnownIndices(string indexName) =>
             (await IndicesResponse(indexName)).IndexNames.ToSeq();
 
-        var knownIndices = await KnownIndices(_configurationObject.IndexName);
+        var knownIndices = await KnownIndices(cfg.IndexName);
         var indexStatsResponses = CalculateIndicesStatsResponse(knownIndices, _elasticSearchService);
 
         static RunnableStatistic
@@ -375,18 +380,15 @@ public class AdministrationService : IAdministrationService
         }
 
         static Seq<(IProcessorBase, Func<StatisticModel>)> StatisticUtilities(
-            ILoggerFactory loggerFactory, ConfigurationObject configurationObject) =>
+            ConfigurationObject configurationObject) =>
             StatisticUtilitiesProxy
-                .AsIEnumerable(loggerFactory,
-                    TypedDirectoryPathString.New(configurationObject.StatisticsDirectory));
+                .AsIEnumerable(TypedDirectoryPathString.New(configurationObject.StatisticsDirectory));
 
-        static Seq<(IProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(
-            ILoggerFactory loggerFactory, IMemoryCache memoryCache) =>
-            JobStateMemoryCacheProxy
-                .AsIEnumerable(loggerFactory, memoryCache);
+        static Seq<(IProcessorBase, Func<MemoryCacheModel>)> JobStateMemoryCaches(IMemoryCache memoryCache) =>
+            JobStateMemoryCacheProxy.AsIEnumerable(memoryCache);
 
-        var jobStateMemoryCaches = JobStateMemoryCaches(_loggerFactory, _memoryCache);
-        var runtimeStatistic = StatisticUtilities(_loggerFactory, _configurationObject)
+        var jobStateMemoryCaches = JobStateMemoryCaches(_memoryCache);
+        var runtimeStatistic = StatisticUtilities(cfg)
             .Map(kv =>
             {
                 var (processorBase, statisticModel) = kv;
@@ -406,7 +408,7 @@ public class AdministrationService : IAdministrationService
 
         static IAsyncEnumerable<IndexStatisticModel> ConvertToIndexStatisticModel(
             IAsyncEnumerable<IndicesStatsResponse> responses) =>
-            responses.Select(index => (IndexStatisticModel)index);
+            responses.Select(index => (IndexStatisticModel) index);
 
 
         static async Task<IndexStatistic> ResponseModel(IAsyncEnumerable<IndicesStatsResponse> indexStatsResponses,
@@ -417,7 +419,8 @@ public class AdministrationService : IAdministrationService
             var entireSizeInBytes = await CalculateEntireIndexSize(ref convertedModel);
 
 
-            return new IndexStatistic(convertedModel.ToEnumerable(), runtimeStatistic.ToDictionary(), entireDocCount, entireSizeInBytes);
+            return new IndexStatistic(convertedModel.ToEnumerable(), runtimeStatistic.ToDictionary(), entireDocCount,
+                entireSizeInBytes);
         }
 
         return await ResponseModel(indexStatsResponses, runtimeStatistic);
@@ -480,7 +483,7 @@ public class AdministrationService : IAdministrationService
     {
         var memoryCacheStates = MemoryCacheStates(_memoryCacheModelProxy);
         var groupedSchedulerModels = (await _schedulerStatisticsService
-            .SchedulerStatistics())
+                .SchedulerStatistics())
             .Select(kv =>
             {
                 var state = CalculateJobState(kv.statistics, memoryCacheStates);

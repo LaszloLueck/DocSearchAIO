@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Endpoints.Administration.GenericContent;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ public class StartJobEndpoint : EndpointBaseAsync.WithRequest<StartJobRequest>.W
     public StartJobEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<StartJobEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<StartJobEndpoint>();
     }
 
     [HttpPost("/api/administration/instandStartJob")]

@@ -1,6 +1,6 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -14,7 +14,7 @@ public class SuggestEndpoint : EndpointBaseAsync.WithRequest<SuggestRequest>.Wit
     public SuggestEndpoint(ISearchSuggestService searchSuggestService, ILoggerFactory loggerFactory)
     {
         _searchSuggestService = searchSuggestService;
-        _logger = loggerFactory.CreateLogger<SuggestEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<SuggestEndpoint>();
     }
 
     [HttpPost("/api/search/doSuggest")]

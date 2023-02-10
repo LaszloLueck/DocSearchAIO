@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -16,7 +17,7 @@ public class
         ILoggerFactory loggerFactory)
     {
         _schedulerStatisticsService = schedulerStatisticsService;
-        _logger = loggerFactory.CreateLogger<SchedulerStatisticsEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<SchedulerStatisticsEndpoint>();
     }
 
     [HttpGet("/api/administration/getSchedulerStatistics")]

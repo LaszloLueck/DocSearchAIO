@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,7 +15,7 @@ public class
     public OptionsDialogEndpoint(IOptionDialogService optionDialogService, ILoggerFactory loggerFactory)
     {
         _optionDialogService = optionDialogService;
-        _logger = loggerFactory.CreateLogger<OptionsDialogEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<OptionsDialogEndpoint>();
     }
 
     [HttpPost("/api/administration/getOptionsDialogData")]

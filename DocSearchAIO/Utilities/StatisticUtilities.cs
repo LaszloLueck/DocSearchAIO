@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DocSearchAIO.Classes;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Statistics;
 using LanguageExt;
 
@@ -7,46 +8,46 @@ namespace DocSearchAIO.Utilities;
 
 public static class StatisticUtilitiesProxy
 {
-    public static readonly Func<ILoggerFactory, TypedDirectoryPathString,
+    public static readonly Func<TypedDirectoryPathString,
             Seq<(IProcessorBase, Func<StatisticModel>)>>
-        AsIEnumerable = (loggerFactory, statisticsPath) => Seq<(IProcessorBase, Func<StatisticModel>)>()
-            .Add((new ProcessorBaseWord(), () => new StatisticModelWord(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBasePowerpoint(), () => new StatisticModelPowerpoint(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBasePdf(), () => new StatisticModelPdf(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBaseExcel(), () => new StatisticModelExcel(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBaseMsg(), () => new StatisticModelMsg(loggerFactory, statisticsPath)))
-            .Add((new ProcessorBaseEml(), () => new StatisticModelEml(loggerFactory, statisticsPath)));
+        AsIEnumerable = (statisticsPath) => Seq<(IProcessorBase, Func<StatisticModel>)>()
+            .Add((new ProcessorBaseWord(), () => new StatisticModelWord(statisticsPath)))
+            .Add((new ProcessorBasePowerpoint(), () => new StatisticModelPowerpoint(statisticsPath)))
+            .Add((new ProcessorBasePdf(), () => new StatisticModelPdf(statisticsPath)))
+            .Add((new ProcessorBaseExcel(), () => new StatisticModelExcel(statisticsPath)))
+            .Add((new ProcessorBaseMsg(), () => new StatisticModelMsg(statisticsPath)))
+            .Add((new ProcessorBaseEml(), () => new StatisticModelEml(statisticsPath)));
 
-    public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+    public static readonly Func<TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelWord>>
-        WordStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
-            new StatisticUtilities<StatisticModelWord>(loggerFactory, statisticsDirectory, statisticsFile);
+        WordStatisticUtility = (statisticsDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelWord>(statisticsDirectory, statisticsFile);
 
-    public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+    public static readonly Func<TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelPowerpoint>>
-        PowerpointStatisticUtility = (loggerFactory, statisticsDirectory, statisticsFile) =>
-            new StatisticUtilities<StatisticModelPowerpoint>(loggerFactory, statisticsDirectory, statisticsFile);
+        PowerpointStatisticUtility = (statisticsDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelPowerpoint>(statisticsDirectory, statisticsFile);
 
-    public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+    public static readonly Func<TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelPdf>>
         PdfStatisticUtility =
-            (loggerFactory, statisticsDirectory, statisticsFile) =>
-                new StatisticUtilities<StatisticModelPdf>(loggerFactory, statisticsDirectory, statisticsFile);
+            (statisticsDirectory, statisticsFile) =>
+                new StatisticUtilities<StatisticModelPdf>(statisticsDirectory, statisticsFile);
 
-    public static readonly Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString,
+    public static readonly Func<TypedDirectoryPathString, TypedFileNameString,
             StatisticUtilities<StatisticModelExcel>>
-        ExcelStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
-            new StatisticUtilities<StatisticModelExcel>(loggerFactory, statisticDirectory, statisticsFile);
+        ExcelStatisticUtility = (statisticDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelExcel>(statisticDirectory, statisticsFile);
 
     public static readonly
-        Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelMsg>>
-        MsgStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
-            new StatisticUtilities<StatisticModelMsg>(loggerFactory, statisticDirectory, statisticsFile);
+        Func<TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelMsg>>
+        MsgStatisticUtility = (statisticDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelMsg>(statisticDirectory, statisticsFile);
 
     public static readonly
-        Func<ILoggerFactory, TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelEml>>
-        EmlStatisticUtility = (loggerFactory, statisticDirectory, statisticsFile) =>
-            new StatisticUtilities<StatisticModelEml>(loggerFactory, statisticDirectory, statisticsFile);
+        Func<TypedDirectoryPathString, TypedFileNameString, StatisticUtilities<StatisticModelEml>>
+        EmlStatisticUtility = (statisticDirectory, statisticsFile) =>
+            new StatisticUtilities<StatisticModelEml>(statisticDirectory, statisticsFile);
 }
 
 public class StatisticUtilities<TModel> where TModel : StatisticModel
@@ -57,10 +58,10 @@ public class StatisticUtilities<TModel> where TModel : StatisticModel
     private readonly InterlockedCounter _changedDocuments;
     private readonly string _filePath;
 
-    public StatisticUtilities(ILoggerFactory loggerFactory, TypedDirectoryPathString statisticsDirectory,
+    public StatisticUtilities(TypedDirectoryPathString statisticsDirectory,
         TypedFileNameString statisticsFile)
     {
-        _logger = loggerFactory.CreateLogger<StatisticUtilities<TModel>>();
+        _logger = LoggingFactoryBuilder.Build<StatisticUtilities<TModel>>();
         _entireDocuments = new InterlockedCounter();
         _failedDocuments = new InterlockedCounter();
         _changedDocuments = new InterlockedCounter();

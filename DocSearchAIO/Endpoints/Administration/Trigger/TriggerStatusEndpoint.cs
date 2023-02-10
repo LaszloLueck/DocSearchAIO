@@ -1,4 +1,5 @@
 using Ardalis.ApiEndpoints;
+using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.DocSearch.Services;
 using DocSearchAIO.Endpoints.Administration.GenericContent;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,7 @@ public class
     public TriggerStatusEndpoint(IAdministrationService administrationService, ILoggerFactory loggerFactory)
     {
         _administrationService = administrationService;
-        _logger = loggerFactory.CreateLogger<TriggerStatusEndpoint>();
+        _logger = LoggingFactoryBuilder.Build<TriggerStatusEndpoint>();
     }
 
     [HttpPost("/api/administration/getTriggerStatus")]
