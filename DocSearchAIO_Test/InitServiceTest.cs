@@ -12,7 +12,7 @@ namespace DocSearchAIO_Test;
 
 public class InitServiceTest
 {
-    private readonly InitRequest _initRequest = new InitRequest
+    private readonly InitRequest _initRequest = new()
     {
         FilterEml = true,
         FilterMsg = false,
@@ -21,8 +21,8 @@ public class InitServiceTest
         FilterPowerpoint = false,
         FilterPdf = true
     };
-    private readonly Mock<IConfigurationUpdater> _configMock = new Mock<IConfigurationUpdater>();
-    private readonly Mock<IElasticSearchService> _elasticSearchServiceMock = new Mock<IElasticSearchService>();
+    private readonly Mock<IConfigurationUpdater> _configMock = new();
+    private readonly Mock<IElasticSearchService> _elasticSearchServiceMock = new();
 
     [Fact]
     public async Task
@@ -45,7 +45,8 @@ public class InitServiceTest
         };
         cfg.Processing.Add(nameof(EmlElasticDocument), eml);
         _configMock.Setup(x => x.ReadConfiguration()).Returns(cfg);
-
+        _configMock.Setup(x => x.ReadConfigurationAsync()).ReturnsAsync(cfg);
+        
         var sut = new InitService(_elasticSearchServiceMock.Object, _configMock.Object);
 
         // Act
