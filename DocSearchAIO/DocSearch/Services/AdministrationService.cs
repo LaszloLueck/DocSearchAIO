@@ -14,6 +14,7 @@ using DocSearchAIO.Statistics;
 using DocSearchAIO.Utilities;
 using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
+using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Nest;
 using Quartz;
@@ -64,13 +65,16 @@ public class AdministrationService : IAdministrationService
         _configurationUpdater = configurationUpdater;
     }
 
+    [Time]
     public async Task<bool> PauseTriggerWithTriggerId(PauseTriggerRequest pauseTriggerRequest)
     {
+        _logger.LogInformation("first try to read the configuration");
         var cfg = await _configurationUpdater.ReadConfigurationAsync();
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
+                _logger.LogInformation("try to resume trigger with trigger id {TriggerId} and group id {GroupId}", pauseTriggerRequest.TriggerId, pauseTriggerRequest.GroupId);
                 var triggerKey = new TriggerKey(pauseTriggerRequest.TriggerId, pauseTriggerRequest.GroupId);
                 var result = await ConfigurationTuple(cfg)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)
@@ -122,13 +126,16 @@ public class AdministrationService : IAdministrationService
                 return processingTuples.Concat(cleanupTuples);
             };
 
+    [Time]
     public async Task<bool> ResumeTriggerWithTriggerId(ResumeTriggerRequest resumeTriggerRequest)
     {
+        _logger.LogInformation("first try to read the configuration");
         var cfg = await _configurationUpdater.ReadConfigurationAsync();
         var schedulerOpt = await SchedulerUtilities.StdSchedulerByName(cfg.SchedulerName);
         return await schedulerOpt.Match(
             async scheduler =>
             {
+                _logger.LogInformation("try to resume trigger with trigger id {TriggerId} and group id {GroupId}", resumeTriggerRequest.TriggerId, resumeTriggerRequest.GroupId);
                 var triggerKey = new TriggerKey(resumeTriggerRequest.TriggerId, resumeTriggerRequest.GroupId);
                 var result = await ConfigurationTuple(cfg)
                     .Filter(tpl => tpl.TriggerName == triggerKey.Name)

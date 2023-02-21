@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DocSearchAIO.Classes;
 using DocSearchAIO.Configuration;
 using LanguageExt;
 using LazyCache;
@@ -17,52 +18,49 @@ public interface IConfigurationUpdater
     public Task<ConfigurationObject> ReadConfigurationAsync();
 }
 
-public class ConfigurationUpdater : IConfigurationUpdater
+public sealed class ConfigurationUpdater : IConfigurationUpdater
 {
     private readonly IConfiguration _configuration;
-    private readonly IAppCache _lazyCache;
+    //private readonly IAppCache _lazyCache;
     private readonly ILogger _logger;
+    private const string ConfigCacheKey = "configurationObject";
 
     public ConfigurationUpdater(IConfiguration configuration, IAppCache appCache)
     {
         _configuration = configuration;
-        _lazyCache = appCache;
+        //_lazyCache = appCache;
         _logger = LoggingFactoryBuilder.Build<ConfigurationUpdater>();
     }
 
     [Time]
     public ConfigurationObject ReadConfiguration()
     {
-        _logger.LogInformation("try to get cached configuration object blocking");
-        return _lazyCache.GetOrAdd("configurationObject", LoadConfigurationObject);
+        _logger.LogInformation("try to get configuration object blocking");
+        return LoadConfigurationObject();
+
     }
 
-    private ConfigurationObject LoadConfigurationObject(ICacheEntry cacheEntry)
+    private ConfigurationObject LoadConfigurationObject()
     {
-        _logger.LogInformation("cached object not available, try to load from file");
+        _logger.LogInformation("load configuration from file");
         Option<ConfigurationObject> configOpt =
             _configuration
-                .GetSection("configurationObject")
+                .GetSection(ConfigCacheKey)
                 .Get<ConfigurationObject>();
-        var entry = configOpt.Some(cfg =>
-        {
-            _logger.LogInformation("add configuration to cache");
-            _lazyCache.Add("configurationObject", cfg);
-            return cfg;
-        }).None(() =>
+        var entry = configOpt.Some(cfg => cfg).None(() =>
             throw new JsonException(
                 "cannot convert configuration section to appropriate configuration object")
         );
-        _logger.LogInformation("add loaded configuration object to cache");
-        cacheEntry.Value = entry;
         return entry;
     }
 
+
+    [Time]
     public async Task<ConfigurationObject> ReadConfigurationAsync()
     {
-        _logger.LogInformation("try to get cached configuration object blocking");
-        return await _lazyCache.GetOrAddAsync("configurationObject",
-            cacheEntry => Task.Run(() => LoadConfigurationObject(cacheEntry)));
+        _logger.LogInformation("try to get configuration object async");
+        //return await _lazyCache.GetOrAddAsync(ConfigCacheKey, async () => await Task.Run(LoadConfigurationObject));
+        return await Task.Run(LoadConfigurationObject);
     }
     
     
@@ -70,8 +68,8 @@ public class ConfigurationUpdater : IConfigurationUpdater
     [Time]
     public async Task UpdateConfigurationObjectAsync(ConfigurationObject configuration, bool withBackup = false)
     {
-        _logger.LogInformation("update configuration entry for memory cache remove old cache object");
-        _lazyCache.Remove("configurationObject");
+        //_logger.LogInformation("update configuration entry for memory cache remove old cache object");
+        //_lazyCache.Remove(ConfigCacheKey);
 
         var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
         var options = new JsonSerializerOptions
@@ -89,7 +87,7 @@ public class ConfigurationUpdater : IConfigurationUpdater
 
     private sealed class OuterConfigurationObject
     {
-        [JsonPropertyName("configurationObject")]
+        [JsonPropertyName(ConfigCacheKey)]
         public ConfigurationObject ConfigurationObject { get; set; } = new();
     }
 }

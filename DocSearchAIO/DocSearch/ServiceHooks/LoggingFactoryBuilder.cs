@@ -14,7 +14,7 @@ public static class LoggingFactoryBuilder
                 {
                     options.IncludeScopes = false;
                     options.SingleLine = true;
-                    options.TimestampFormat = "[yyy-MM-dd HH:mm:ss] ";
+                    options.TimestampFormat = "[yyy-MM-dd HH:mm:ss.ffff] ";
                     options.ColorBehavior = LoggerColorBehavior.Enabled;
                 })
                 .AddFilter("*", LogLevel.Information);

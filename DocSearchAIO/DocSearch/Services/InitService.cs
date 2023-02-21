@@ -1,6 +1,7 @@
 ﻿using DocSearchAIO.DocSearch.ServiceHooks;
 using DocSearchAIO.Endpoints.Init;
 using DocSearchAIO.Services;
+using MethodTimer;
 
 namespace DocSearchAIO.DocSearch.Services;
 
@@ -20,6 +21,7 @@ public class InitService : IInitService
         _configurationUpdater = configurationUpdater;
     }
 
+    [Time]
     public async Task<InitResponseObject> Init(InitRequest initRequest)
     {
         var cfg = await _configurationUpdater.ReadConfigurationAsync();

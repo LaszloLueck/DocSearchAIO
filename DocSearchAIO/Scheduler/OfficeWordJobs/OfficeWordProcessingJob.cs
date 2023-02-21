@@ -19,6 +19,7 @@ using LanguageExt.UnsafeValueAccess;
 using MethodTimer;
 using Microsoft.Extensions.Caching.Memory;
 using Quartz;
+using Array = System.Array;
 
 namespace DocSearchAIO.Scheduler.OfficeWordJobs;
 
@@ -305,6 +306,6 @@ internal static class WordProcessingHelper
         return mainDocumentPart
             .Document
             .Body
-            .ResolveNullable(System.Array.Empty<OpenXmlElement>(), (v, _) => v.ChildElements.ToArray());
+            .ResolveNullable(Array.Empty<OpenXmlElement>(), (v, _) => v.ChildElements.ToArray());
     }
 }

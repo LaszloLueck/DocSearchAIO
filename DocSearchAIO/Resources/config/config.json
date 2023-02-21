@@ -13,7 +13,7 @@
     "uriReplacement": "https://risprepository:8800/svns/PNR/extern/",
     "processing": {
       "EmlElasticDocument": {
-        "active": false,
+        "active": true,
         "startDelay": 5,
         "runsEvery": 3600,
         "parallelism": 10,
