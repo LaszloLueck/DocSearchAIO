@@ -21,14 +21,14 @@ public interface IConfigurationUpdater
 public sealed class ConfigurationUpdater : IConfigurationUpdater
 {
     private readonly IConfiguration _configuration;
-    //private readonly IAppCache _lazyCache;
+    private readonly IAppCache _lazyCache;
     private readonly ILogger _logger;
     private const string ConfigCacheKey = "configurationObject";
 
     public ConfigurationUpdater(IConfiguration configuration, IAppCache appCache)
     {
         _configuration = configuration;
-        //_lazyCache = appCache;
+        _lazyCache = appCache;
         _logger = LoggingFactoryBuilder.Build<ConfigurationUpdater>();
     }
 
@@ -36,31 +36,28 @@ public sealed class ConfigurationUpdater : IConfigurationUpdater
     public ConfigurationObject ReadConfiguration()
     {
         _logger.LogInformation("try to get configuration object blocking");
-        return LoadConfigurationObject();
-
+        return _lazyCache.GetOrAdd(ConfigCacheKey, () => _loadConfigurationObjectFunc(_logger, _configuration));
     }
 
-    private ConfigurationObject LoadConfigurationObject()
+    private readonly Func<ILogger, IConfiguration, ConfigurationObject> _loadConfigurationObjectFunc = (logger, configuration) =>
     {
-        _logger.LogInformation("load configuration from file");
+        logger.LogInformation("load configuration from file");
         Option<ConfigurationObject> configOpt =
-            _configuration
+            configuration
                 .GetSection(ConfigCacheKey)
                 .Get<ConfigurationObject>();
-        var entry = configOpt.Some(cfg => cfg).None(() =>
+        return configOpt.Some(cfg => cfg).None(() =>
             throw new JsonException(
                 "cannot convert configuration section to appropriate configuration object")
         );
-        return entry;
-    }
+    };
 
 
     [Time]
     public async Task<ConfigurationObject> ReadConfigurationAsync()
     {
         _logger.LogInformation("try to get configuration object async");
-        //return await _lazyCache.GetOrAddAsync(ConfigCacheKey, async () => await Task.Run(LoadConfigurationObject));
-        return await Task.Run(LoadConfigurationObject);
+        return await Task.Run(() => _lazyCache.GetOrAdd(ConfigCacheKey, () => _loadConfigurationObjectFunc(_logger, _configuration)));
     }
     
     
@@ -68,9 +65,6 @@ public sealed class ConfigurationUpdater : IConfigurationUpdater
     [Time]
     public async Task UpdateConfigurationObjectAsync(ConfigurationObject configuration, bool withBackup = false)
     {
-        //_logger.LogInformation("update configuration entry for memory cache remove old cache object");
-        //_lazyCache.Remove(ConfigCacheKey);
-
         var outer = new OuterConfigurationObject {ConfigurationObject = configuration};
         var options = new JsonSerializerOptions
         {
