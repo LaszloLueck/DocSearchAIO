@@ -22,7 +22,7 @@ export class ConfigApiService {
   getConfiguration(): Observable<Either<BaseError, DocSearchConfiguration>> {
     return this
       .httpClient
-      .get<DocSearchConfiguration>(`${this.baseUrl}api/administration/getGenericContent`)
+      .get<DocSearchConfiguration>(`${environment.apiUrl}api/administration/getGenericContent`)
       .pipe(
         take(1),
         map(result => makeRight(result)),
