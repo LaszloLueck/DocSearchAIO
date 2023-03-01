@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging.Console;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 
 builder.Logging.AddSimpleConsole(options =>
 {
@@ -45,7 +47,17 @@ builder.Services.AddSwaggerGen(c =>
     c.EnableAnnotations();
 });
 
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: myAllowSpecificOrigins,
+        policy =>
+        {
+            policy
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
 
 builder.Services.AddSingleton<IConfigurationUpdater>(x => new ConfigurationUpdater(builder.Configuration,
     x.GetRequiredService<IAppCache>()));
@@ -61,7 +73,8 @@ builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
 builder.Services.AddSingleton<IDoSearchService>(x =>
     new DoSearchService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<IConfigurationUpdater>()));
 builder.Services.AddSingleton<ISearchSuggestService>(x =>
-    new SearchSuggestService(x.GetRequiredService<IElasticSearchService>(), x.GetRequiredService<IConfigurationUpdater>()));
+    new SearchSuggestService(x.GetRequiredService<IElasticSearchService>(),
+        x.GetRequiredService<IConfigurationUpdater>()));
 builder.Services.AddSingleton<IDocumentDetailService>(x =>
     new DocumentDetailService(x.GetRequiredService<IElasticSearchService>()));
 builder.Services.AddSingleton<ISchedulerUtilities>(x => new SchedulerUtilities(x.GetRequiredService<ILoggerFactory>()));
@@ -103,17 +116,16 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapControllers();
 
-app.UseCors(x =>
-    x.AllowAnyMethod()
-        .AllowAnyHeader()
-        .SetIsOriginAllowed(_ => true)
-        .AllowCredentials()
-);
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action=Index}/{id?}");
 
-app.MapFallbackToFile("index.html");
+app.UseCors(x =>
+    x.AllowAnyMethod()
+        .AllowAnyHeader()
+        .SetIsOriginAllowed(_ => true)
+        .AllowAnyOrigin()
+        
+);
 
 await app.RunAsync();

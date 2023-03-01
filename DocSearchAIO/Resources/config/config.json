@@ -5,7 +5,7 @@
     ],
     "elasticUser": "elastic",
     "elasticPassword": "8USt79lz2UEkPs3q",
-    "scanPath": "d:\\SVN\\BVA",
+    "scanPath": "d:\\temp",
     "indexName": "officedocuments",
     "actorSystemName": "actorSystem",
     "schedulerName": "DocSearchScheduler",

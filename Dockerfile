@@ -1,4 +1,4 @@
-FROM registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_build-full_x64:22.04_7.0.2 AS build-env
+FROM registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_x64_dotnet_build:22.04_7.0.2 AS build-env
 WORKDIR /app
 COPY ./DocSearchAIO ./
 
@@ -8,7 +8,7 @@ RUN dotnet --info \
 && dotnet build --no-restore \
 && dotnet publish --no-restore -c Release -o out
 
-FROM registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_runtime-full_x64:22.04_7.0.2
+FROM registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_x64_dotnet_runtime:22.04_7.0.2
 WORKDIR /app
 COPY --from=build-env /app/out .
 EXPOSE 5000

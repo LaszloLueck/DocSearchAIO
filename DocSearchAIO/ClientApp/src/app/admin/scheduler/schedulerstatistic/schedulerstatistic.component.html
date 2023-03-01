@@ -1,8 +1,0 @@
-<div class="border rounded">
-  <div class="d-flex justify-content-center">Schedulername: {{response.schedulerName}}</div>
-  <div class="ms-2">Instanz-ID: {{response.schedulerInstanceId}}</div>
-  <div class="ms-2">Status: <span [ngClass]="renderBadgeState(response.state)">{{response.state}}</span></div>
-  <div class="ms-2" *ngFor="let element of response.triggerElements">
-    <app-triggerelement [triggerElement]="element"></app-triggerelement>
-  </div>
-</div>
