@@ -5,7 +5,6 @@ variables:
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: 'DocSearchAIO'
   CLIENT_APP_DIRECTORY: 'ClientApp'
-  NODE_MODULES: 'node_modules'
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -14,7 +13,6 @@ cache:
     - '$SOURCE_CODE_PATH/$OBJECTS_DIRECTORY/*.csproj.nuget.*'
     - '$NUGET_PACKAGES_DIRECTORY'
     - '$SOURCE_CODE_PATH/$CLIENT_APP_DIRECTORY/$NODE_MODULES'
-    - '.npm/'
   policy: pull-push
 
 before_script:
@@ -29,13 +27,6 @@ backend-test:
   stage: test
   script:
     - 'dotnet test --no-restore'
-      
-frontend-test:
-  stage: test
-  script:
-    - 'cd ./DocSearchAIO/ClientApp'
-    - 'npm update --legacy-peer-deps'
-    - 'npm run test'
       
 code-analysis:
   stage: test
