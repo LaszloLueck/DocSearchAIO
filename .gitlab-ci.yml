@@ -4,7 +4,6 @@ variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: 'DocSearchAIO'
-  CLIENT_APP_DIRECTORY: 'ClientApp'
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -12,7 +11,6 @@ cache:
     - '$SOURCE_CODE_PATH/$OBJECTS_DIRECTORY/project.assets.json'
     - '$SOURCE_CODE_PATH/$OBJECTS_DIRECTORY/*.csproj.nuget.*'
     - '$NUGET_PACKAGES_DIRECTORY'
-    - '$SOURCE_CODE_PATH/$CLIENT_APP_DIRECTORY/$NODE_MODULES'
   policy: pull-push
 
 before_script:
