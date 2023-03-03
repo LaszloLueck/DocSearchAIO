@@ -1,4 +1,4 @@
-image: registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_x64_dotnet_build:22.04_7.0.2
+image: registry.gretzki.ddns.net:5080/containerruntimeglobal/containerruntimeglobal_x64_dotnet_build:22.04_7.0.3
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
